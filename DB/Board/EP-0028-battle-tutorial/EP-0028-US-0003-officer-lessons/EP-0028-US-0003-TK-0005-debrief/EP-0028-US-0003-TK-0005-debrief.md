@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0003-officer-lessons
 ticket: EP-0028-US-0003-TK-0005-debrief
 title: Разбор итога боя
-stage: approved
+stage: implemented
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0003-TK-0004-context-lessons]
@@ -105,6 +105,31 @@ Process-tree cap 300000 ms.
 
 Каталог, тексты, метка кнопки и сценарий теста заданы.
 
+## Результат
+
+`src/DeepSpaceSaga.Client/Data/Tutorial/battle-tutorial.json`: добавлены 3 шага по каталогу — `over.victory` / `over.defeat` / `over.other` (Outcome, сигнал `outcome-victory` / `outcome-defeat` / `outcome-other`, `acknowledged`, `button:primary`, 100). Итого в сценарии 17 шагов.
+
+| Key | RU | EN |
+|---|---|---|
+| `Tutorial.Line.OverVictory` | Чистая работа, командир! Поле за нами. Жмите «На карту» — курс ждёт. | Clean work, Commander! The field is ours. Press “Back to map” — our course awaits. |
+| `Tutorial.Line.OverDefeat` | Этот бой за ними, командир. Опыт остаётся с нами — жмите «На карту», продолжим. | This one's theirs, Commander. We keep the lessons. Press “Back to map” and carry on. |
+| `Tutorial.Line.OverOther` | Бой окончен без победителя. Отходим, пока целы: жмите «На карту». | No winner this time. We'll pull back while we can — press “Back to map”. |
+
+Все три — 2 строки панели в RU и EN, содержат дословную метку `TacticalBattle.ToMap` («На карту» / "Back to map"). `OverDefeat` не утверждает, что «Скиталец» цел (поражение возможно и по `CarrierDestroyed`), и не предлагает переиграть.
+
+Тесты: `TutorialContentTests.DebriefLessonsMatchTheCatalogAndQuoteToMap` (RU, EN; поля шагов, цитата «На карту», в поражении нет «заново/снова/повтор/again/restart/retry/replay»); `TutorialLessonFlowTests.OutcomeDebriefMatchesTheResultAndKeepsOnlyToMap` (живой бой обучения RU до Outcome: показан `over.*` по `Outcome.Kind` (seed 1 — победа), ровно один разбор, подсветка `button:primary`, в `Layout.Texts` есть «На карту» и нет «Новый бой», нет `button:new`, клик `button:primary` → `CloseTacticalBattle`; синтетически A/B/Draw/Timeout → `over.victory`/`over.defeat`/`over.other`/`over.other`, в Results до Outcome — тишина); **финальный живой тест истории** `FollowingTheOfficerPlaysTheWholeTutorialInOrder` — настоящий бой обучения (сценарий `initial`, seed 1, Tabletop), игрок выполняет действие каждой показанной реплики (Tab, стрелки, клик по другой цели / «Не стрелять», Tab до пилота под прицелом + E/D, «Понял», Enter), без реплики — Enter: реплики идут в порядке intro → move.steer → move.submit → move.cycle → move.reachable → fire.target → fire.submit → salvo.watch → results.read, все Completed, ни одна не остаётся показанной после своего действия, каждая услышана один раз, последней — `over.*`; `PureEnterNeverWaitsForTheOfficer` дополнен: при игре только Enter бой доходит до Over, разбор показан, «зависших» шагов нет.
+
+Живые прогоны seed 1 (временный дамп, `snap/live-follow.txt`, `../us0003-tk0004-20261114T192910/snap/live-*.txt`): по подсказкам — победа на 19-м ходу, услышано: intro, move.steer, move.submit, move.cycle, move.reachable, ctx.anomaly, fire.target, fire.submit, salvo.watch, results.read, ctx.damage, ctx.under-fire, ctx.drone-lost, over.victory; только Enter — победа на 21-м ходу.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0003-tk0005-20261114T193247/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт: `DebriefLessonsMatchTheCatalogAndQuoteToMap` ×2 (шагов нет), `OutcomeDebriefMatchesTheResultAndKeepsOnlyToMap`, `PureEnterNeverWaitsForTheOfficer` (разбора нет), `FollowingTheOfficerPlaysTheWholeTutorialInOrder` (последней звучала `ctx.drone-lost`, не `over.*`) — 5 failed / 20 passed — `../us0003-tk0005-red/red.log`; после данных — 25/25 (`green.log`).
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~TutorialFlowTests"` — **173/173** — `debrief.trx`, `debrief.log`, включая регрессию `TutorialFlowTests.FinishedTutorialOffersOnlyTheMapThenTheMapIsNormal` (без изменений).
+- Растровые снимки панели RU/EN всех 17 реплик: `snap/panel-{ru,en}-<step>.png`, строки — `snap/lines.txt`.
+- Правок кода и `UI/Screens/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) Тексты переписаны под ёмкость панели и тон пользователя: победа — с восклицанием и теплом; поражение — ободряющее, без «Скиталец цел» (неверно при `CarrierDestroyed`) и без намёка на переигровку, направляет «На карту» и «продолжим»; ничья/тайм-аут — нейтрально. Победа описана как «поле за нами», а не «вражеский носитель», т. к. победа возможна и по `NoDrones`. (2) В этот тикет по указанию пользователя добавлен финальный живой тест истории `FollowingTheOfficerPlaysTheWholeTutorialInOrder` (игра по подсказкам в настоящем бою обучения) и проверка разбора/отсутствия зависших шагов в `PureEnterNeverWaitsForTheOfficer`. Файлы в `files_touched`.

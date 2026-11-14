@@ -220,6 +220,28 @@ public sealed class TutorialContentTests
         }
     }
 
+    [Theory]
+    [InlineData("Russian")]
+    [InlineData("English")]
+    public void DebriefLessonsMatchTheCatalogAndQuoteToMap(string language)
+    {
+        var script = Shipped();
+        AssertStep(script, "over.victory", "Tutorial.Line.OverVictory", "Outcome", null, null, null, TutorialSignal.OutcomeVictory,
+            TutorialCompletion.Acknowledged, "button:primary", 100);
+        AssertStep(script, "over.defeat", "Tutorial.Line.OverDefeat", "Outcome", null, null, null, TutorialSignal.OutcomeDefeat,
+            TutorialCompletion.Acknowledged, "button:primary", 100);
+        AssertStep(script, "over.other", "Tutorial.Line.OverOther", "Outcome", null, null, null, TutorialSignal.OutcomeOther,
+            TutorialCompletion.Acknowledged, "button:primary", 100);
+        using var locale = Localization.UseLocaleForTests(language);
+        string toMap = Localization.Get("TacticalBattle.ToMap");
+        foreach (string id in new[] { "over.victory", "over.defeat", "over.other" })
+            Assert.Contains(toMap, Localization.Get(StepOf(script, id).LineKey), StringComparison.Ordinal);
+        // A lost tutorial battle still goes on to the map: the debrief encourages and never asks for a restart.
+        string defeat = Localization.Get(StepOf(script, "over.defeat").LineKey);
+        foreach (string word in new[] { "заново", "снова", "повтор", "again", "restart", "retry", "replay" })
+            Assert.DoesNotContain(word, defeat, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void OfficerPortraitComposesDeterministicallyFromExistingHead()
     {

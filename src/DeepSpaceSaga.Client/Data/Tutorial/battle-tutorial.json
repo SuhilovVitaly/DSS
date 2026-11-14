@@ -119,6 +119,30 @@
       "complete": "acknowledged",
       "anchor": "pilot:{signal}",
       "priority": 95
+    },
+    {
+      "id": "over.victory",
+      "lineKey": "Tutorial.Line.OverVictory",
+      "when": { "phase": "Outcome", "signal": "outcome-victory" },
+      "complete": "acknowledged",
+      "anchor": "button:primary",
+      "priority": 100
+    },
+    {
+      "id": "over.defeat",
+      "lineKey": "Tutorial.Line.OverDefeat",
+      "when": { "phase": "Outcome", "signal": "outcome-defeat" },
+      "complete": "acknowledged",
+      "anchor": "button:primary",
+      "priority": 100
+    },
+    {
+      "id": "over.other",
+      "lineKey": "Tutorial.Line.OverOther",
+      "when": { "phase": "Outcome", "signal": "outcome-other" },
+      "complete": "acknowledged",
+      "anchor": "button:primary",
+      "priority": 100
     }
   ]
 }

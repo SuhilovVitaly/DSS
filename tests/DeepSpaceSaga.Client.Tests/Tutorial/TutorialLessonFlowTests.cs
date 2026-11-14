@@ -215,6 +215,147 @@ public sealed class TutorialLessonFlowTests
         Assert.Empty(stuck);
         Assert.Contains("intro", live.Director.Heard); // spoken, then left behind by Enter
         Assert.Equal(TutorialStepState.Expired, live.Director.StateOf("intro"));
+
+        // The officer still debriefs the pure-Enter player, and nothing else is left hanging.
+        live.Pause();
+        Assert.StartsWith("over.", live.Director.Current?.Step.Id);
+        AssertNothingStuck(live);
+    }
+
+    /// <summary>Every heard step is closed, except the line on screen; no step is shown outside the current phase.</summary>
+    private static void AssertNothingStuck(LiveTutorial live)
+    {
+        foreach (string id in live.Director.Heard.Where(id => id != live.Director.Current?.Step.Id))
+            Assert.NotEqual(TutorialStepState.Shown, live.Director.StateOf(id));
+        if (live.Director.Current is { } line) Assert.Equal(line.Step.When.Phase, live.Phase);
+    }
+
+    [Fact]
+    public async Task OutcomeDebriefMatchesTheResultAndKeepsOnlyToMap()
+    {
+        using var locale = Localization.UseLocaleForTests("Russian");
+        await using (var live = await LiveTutorial.Start())
+        {
+            await live.EnterUntil("Outcome");
+            live.Pause();
+            var outcome = live.Screen.Flow.State!.Outcome!;
+            string expected = outcome.Kind switch
+            {
+                TacticalBattleOutcomeCode.Draw or TacticalBattleOutcomeCode.Timeout => "over.other",
+                _ when outcome.Kind.ToString() == live.Screen.Flow.State.PlayerSide => "over.victory",
+                _ => "over.defeat",
+            };
+            Assert.Equal(expected, live.Director.Current?.Step.Id);
+            Assert.Equal(1, live.Director.Heard.Count(id => id.StartsWith("over.", StringComparison.Ordinal)));
+            Assert.Equal("button:primary", live.HighlightKey());
+            Assert.Contains(live.Texts, t => t == "На карту");
+            Assert.DoesNotContain(live.Texts, t => t == "Новый бой");
+            Assert.False(live.Screen.Layout.Rects.ContainsKey("button:new"));
+            var primary = live.Screen.Layout.Rects["button:primary"];
+            Assert.Equal(ScreenEvent.CloseTacticalBattle, live.Screen.OnMouseDown(primary.MidX, primary.MidY, MouseButton.Left));
+        }
+
+        // The other results, synthetically: exactly one debrief per outcome, through the shipped debrief steps.
+        var shipped = TutorialContentTests.Shipped();
+        var debrief = shipped with { Steps = [.. shipped.Steps.Where(s => s.Id.StartsWith("over.", StringComparison.Ordinal))] };
+        var over = TutorialTestBattle.Battle(TacticalBattlePhase.Over, 5);
+        foreach (var (kind, stepId) in new[]
+        {
+            (TacticalBattleOutcomeCode.A, "over.victory"), (TacticalBattleOutcomeCode.B, "over.defeat"),
+            (TacticalBattleOutcomeCode.Draw, "over.other"), (TacticalBattleOutcomeCode.Timeout, "over.other"),
+        })
+        {
+            var session = new TutorialSession(debrief);
+            var battle = over with { Outcome = new(kind, [], 5, [], new(0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0, []), 0) };
+            session.Observe(new("Results", 5, battle, null, null, null, 0)); // the final salvo results: not yet
+            Assert.Null(session.Director.Current);
+            session.Observe(new("Outcome", 5, battle, null, null, null, 10_000));
+            Assert.Equal(stepId, session.Director.Current?.Step.Id);
+            session.Observe(new("Outcome", 5, battle, null, null, null, 12_000));
+            Assert.Equal([stepId], session.Director.Heard);
+            session.Release();
+        }
+    }
+
+    /// <summary>
+    /// The whole tutorial battle (seed 1, Tabletop) played the way the officer suggests: every shown line is answered with the action
+    /// it teaches; with no line on screen the player presses Enter. The lessons arrive in their teaching order, none blocks progress,
+    /// and the battle ends with the matching debrief.
+    /// </summary>
+    [Fact]
+    public async Task FollowingTheOfficerPlaysTheWholeTutorialInOrder()
+    {
+        await using var live = await LiveTutorial.Start();
+        var stuck = new List<string>();
+        live.Render();
+        for (int i = 0; i < 300 && live.Phase != "Outcome"; i++)
+        {
+            live.Pause();
+            if (live.Director.Current is not { } line) { await live.Enter(); continue; }
+            string id = line.Step.Id;
+            await Follow(live, line);
+            if (live.Director.Current?.Step.Id == id && live.Director.StateOf(id) == TutorialStepState.Shown && line.Step.Complete != TutorialCompletion.PhaseLeft)
+                stuck.Add($"{id} still shown after its action in {live.Phase} T{live.Turn}");
+            if (live.Director.Current?.Step.Id == id) await live.Enter(); // phase-left lines close by moving on
+        }
+        Assert.Equal("Outcome", live.Phase);
+        live.Pause();
+        Assert.Empty(stuck);
+        AssertNothingStuck(live);
+
+        var heard = live.Director.Heard.ToList();
+        string[] teaching = ["intro", "move.steer", "move.submit", "move.cycle", "move.reachable", "fire.target", "fire.submit",
+            "salvo.watch", "results.read"];
+        var order = teaching.Select(id => heard.IndexOf(id)).ToArray();
+        Assert.True(order.All(index => index >= 0), "heard: " + string.Join(", ", heard));
+        Assert.True(order.Zip(order.Skip(1)).All(p => p.First < p.Second), "heard: " + string.Join(", ", heard));
+        foreach (string id in teaching) Assert.Equal(TutorialStepState.Completed, live.Director.StateOf(id));
+        Assert.StartsWith("over.", heard[^1]);
+        Assert.Equal(heard[^1], live.Director.Current?.Step.Id);
+        Assert.All(heard.GroupBy(id => id), g => Assert.Single(g));
+    }
+
+    /// <summary>The action a line teaches.</summary>
+    private static async Task Follow(LiveTutorial live, TutorialLine line)
+    {
+        switch (line.Step.Complete)
+        {
+            case TutorialCompletion.PilotSelected:
+            case TutorialCompletion.PilotCycled:
+                await live.Press(Key.Tab);
+                if (live.Director.Current == line) await live.Press(Key.Tab);
+                break;
+            case TutorialCompletion.PathEdited:
+                if (live.Screen.Movement.Selected is null) await live.Press(Key.Tab);
+                await live.Press(line.Step.Anchor == "reachable" ? Key.Up : Key.Right);
+                break;
+            case TutorialCompletion.TargetChosen:
+                if (live.Session.LastObservation?.FirePlan?.SelectedDroneId is null) await live.Press(Key.Tab);
+                var plan = live.Session.LastObservation!.FirePlan!;
+                var row = plan.Rows.First(r => r.Drone.Id == plan.SelectedDroneId);
+                var other = live.Screen.Layout.Rects.FirstOrDefault(r => r.Key.StartsWith("candidate:", StringComparison.Ordinal) &&
+                    r.Key != "candidate:" + row.TargetId && row.Group.List.Any(c => "candidate:" + c.TargetId == r.Key));
+                var click = other.Key is not null ? other.Value : live.Screen.Layout.Rects["card-command:hold"];
+                live.Screen.OnMouseDown(click.MidX, click.MidY, MouseButton.Left);
+                live.Screen.OnMouseUp(click.MidX, click.MidY, MouseButton.Left);
+                live.Render();
+                break;
+            case TutorialCompletion.EvadeOrDecoy:
+                // Select the threatened pilot, then E (evade) or, if it cannot evade, D (decoy).
+                for (int i = 0; i < 8 && live.Session.LastObservation?.FirePlan?.SelectedDroneId != line.SignalUnitId; i++)
+                    await live.Press(Key.Tab);
+                await live.Press(Key.E);
+                if (live.Director.Current == line) await live.Press(Key.D);
+                break;
+            case TutorialCompletion.Acknowledged:
+                var ack = live.Screen.Layout.Rects["tutorial:ack"];
+                Assert.Equal(ScreenEvent.None, live.Screen.OnMouseDown(ack.MidX, ack.MidY, MouseButton.Left));
+                live.Render();
+                break;
+            case TutorialCompletion.PhaseLeft:
+                await live.Press(Key.Enter);
+                break;
+        }
     }
 
     [Fact]
