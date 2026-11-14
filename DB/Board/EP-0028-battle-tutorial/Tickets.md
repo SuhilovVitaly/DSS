@@ -26,5 +26,6 @@
 | 20 | [EP-0028-US-0006-TK-0001-step-metrics](EP-0028-US-0006-metrics-acceptance-docs/EP-0028-US-0006-TK-0001-step-metrics/EP-0028-US-0006-TK-0001-step-metrics.md) | client | Локальные метрики шагов | 17, 14 |
 | 21 | [EP-0028-US-0006-TK-0002-native-acceptance](EP-0028-US-0006-metrics-acceptance-docs/EP-0028-US-0006-TK-0002-native-acceptance/EP-0028-US-0006-TK-0002-native-acceptance.md) | verification | Нативная приёмка на меньшем мониторе, RU/EN, вкл/выкл | 19, 20 |
 | 22 | [EP-0028-US-0006-TK-0003-project-docs](EP-0028-US-0006-metrics-acceptance-docs/EP-0028-US-0006-TK-0003-project-docs/EP-0028-US-0006-TK-0003-project-docs.md) | documentation | Документация проекта и синхронизация Board | 21 |
+| 23 | [EP-0028-US-0006-TK-0004-validation-fixes](EP-0028-US-0006-metrics-acceptance-docs/EP-0028-US-0006-TK-0004-validation-fixes/EP-0028-US-0006-TK-0004-validation-fixes.md) | client | Исправления по итогам валидации: переключатель у значка, правая кнопка, `fire.target`, тексты, кэши UI, документация | 22 |
 
 Статус 2026-11-14: все 22 тикета — `stage: implemented`, эпик — `implemented` (приёмка — за пользователем). Коммиты тикетов и покрытие критериев — в [Documentation.md](Documentation.md#статус-исполнения).

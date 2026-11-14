@@ -48,6 +48,7 @@ revision: 1
 | [TK-0001](EP-0028-US-0006-TK-0001-step-metrics/EP-0028-US-0006-TK-0001-step-metrics.md) | Метрики шагов обучения | client | US-0004-TK-0003, US-0003-TK-0005 | AC-01 |
 | [TK-0002](EP-0028-US-0006-TK-0002-native-acceptance/EP-0028-US-0006-TK-0002-native-acceptance.md) | Нативная приёмка | verification | TK-0001, US-0005-TK-0002 | AC-02 |
 | [TK-0003](EP-0028-US-0006-TK-0003-project-docs/EP-0028-US-0006-TK-0003-project-docs.md) | Документация проекта | documentation | TK-0002 | AC-03 |
+| [TK-0004](EP-0028-US-0006-TK-0004-validation-fixes/EP-0028-US-0006-TK-0004-validation-fixes.md) | Исправления по итогам валидации (Phase 4) | client | TK-0003 | AC-01…AC-03; исправления US-0002…US-0004 |
 
 Карта принята автоматическим workflow. Слои `verification` и `documentation` не содержат production-кода.
 
