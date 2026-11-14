@@ -39,7 +39,8 @@ public partial class SimulationEngine
             IsDestroyed: ship.IsDestroyed,
             AppearanceId: shipClass.AppearanceId,
             Hangars: BuildHangarSlots(ship),
-            CabinReservation: null); // US-0002 fills this
+            Crew: BuildCrewProjection(ship),
+            CabinReservation: BuildCabinReservationProjection(ship));
     }
 
     private ImmutableArray<HangarSlotSnapshot> BuildHangarSlots(SpaceObjectRuntime ship)
@@ -55,6 +56,60 @@ public partial class SimulationEngine
         }
         return slots.ToImmutable();
     }
+
+    private const int ReservedPrisonerCabins = 2;
+
+    private ImmutableArray<CrewMemberSnapshot> BuildCrewProjection(SpaceObjectRuntime ship)
+    {
+        if (ship.Crew.IsDefaultOrEmpty)
+            return ImmutableArray<CrewMemberSnapshot>.Empty;
+
+        var crew = ImmutableArray.CreateBuilder<CrewMemberSnapshot>(ship.Crew.Length);
+        foreach (var member in ship.Crew)
+        {
+            crew.Add(new CrewMemberSnapshot(
+                Id: member.Id,
+                DisplayName: member.DisplayName,
+                Gender: ParseCrewGender(member.Gender),
+                PortraitAssetId: member.PortraitAssetId,
+                Role: ParseCrewRole(member.Role),
+                Accuracy: member.AccuracySkill,
+                Maneuver: member.ManeuverabilitySkill,
+                Initiative: member.Initiative));
+        }
+        return crew.ToImmutable();
+    }
+
+    private CabinReservationSnapshot BuildCabinReservationProjection(SpaceObjectRuntime ship)
+    {
+        int operationalCabins = 0;
+        foreach (var module in ship.Modules)
+        {
+            var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+            if (moduleType.CabinesCount is { } cabins && cabins > 0 &&
+                module.StructurePoints > 0 && !module.Destroyed)
+            {
+                operationalCabins += cabins;
+            }
+        }
+
+        int occupied = ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length;
+        int reserved = ReservedPrisonerCabins;
+        return new CabinReservationSnapshot(
+            TotalCabins: operationalCabins,
+            OccupiedCabins: occupied,
+            ReservedCabins: reserved,
+            FreeCabins: Math.Max(0, operationalCabins - occupied - reserved),
+            PrisonerCount: 0);
+    }
+
+    private static CrewGender ParseCrewGender(string? value) =>
+        Enum.TryParse<CrewGender>(value, ignoreCase: true, out var gender) ? gender : CrewGender.Female;
+
+    private static CrewRole? ParseCrewRole(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : Enum.TryParse<CrewRole>(value, ignoreCase: true, out var role) ? role : null;
 
     /// <summary>
     /// A hangar bay is ready to launch when it is structurally intact, powered on and

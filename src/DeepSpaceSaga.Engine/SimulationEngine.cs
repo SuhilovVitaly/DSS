@@ -1320,7 +1320,8 @@ public sealed partial class SimulationEngine : IDisposable
     private static ShipCrewMemberData BuildSaveCrewMember(CrewMemberRuntime member)
     {
         return new ShipCrewMemberData(member.Id, member.DisplayName,
-            member.AccuracySkill, member.ManeuverabilitySkill);
+            member.AccuracySkill, member.ManeuverabilitySkill,
+            member.Gender, member.PortraitAssetId, member.Role, member.Initiative);
     }
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
@@ -1965,7 +1966,8 @@ public sealed partial class SimulationEngine : IDisposable
             }
 
             crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName,
-                member.AccuracySkill, member.ManeuverabilitySkill));
+                member.AccuracySkill, member.ManeuverabilitySkill,
+                member.Gender, member.PortraitAssetId, member.Role, member.Initiative));
         }
 
         return crew.ToImmutable();
@@ -4061,7 +4063,8 @@ internal sealed record SpaceObjectRuntime(
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName,
-    int AccuracySkill = 0, int ManeuverabilitySkill = 0);
+    int AccuracySkill = 0, int ManeuverabilitySkill = 0,
+    string? Gender = null, string? PortraitAssetId = null, string? Role = null, int Initiative = 0);
 
 /// <summary>One named crew member displayed on a station (see <see cref="StationCrewMemberData"/>).</summary>
 internal sealed record StationCrewMemberRuntime(string Id, string Role, string DisplayName, string PortraitImage);

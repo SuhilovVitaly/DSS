@@ -345,7 +345,11 @@ public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("crewId")] string CrewId,
     [property: JsonPropertyName("displayName")] string DisplayName,
     [property: JsonPropertyName("accuracySkill")] int AccuracySkill = 0,
-    [property: JsonPropertyName("maneuverabilitySkill")] int ManeuverabilitySkill = 0);
+    [property: JsonPropertyName("maneuverabilitySkill")] int ManeuverabilitySkill = 0,
+    [property: JsonPropertyName("gender")] string? Gender = null,
+    [property: JsonPropertyName("portraitAssetId")] string? PortraitAssetId = null,
+    [property: JsonPropertyName("role")] string? Role = null,
+    [property: JsonPropertyName("initiative")] int Initiative = 0);
 
 /// <summary>
 /// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative

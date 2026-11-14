@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Единая запись экипажа и назначения кают
@@ -106,4 +106,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Extended `ShipCrewMemberData` + `CrewMemberRuntime` with optional gender/portraitAssetId/role/initiative (passed through load and save), `CarrierStateData.ReservedCabins=2`, and built the crew + cabin-reservation projection in `SimulationEngine.Carrier.cs`. Crew-id uniqueness is already enforced by `ResolveShipCrew` (duplicate → `ScenarioException`, atomic load rejection). Cabin formula: `TotalCabins` = operational cabins (SP>0, !Destroyed living modules), `FreeCabins = max(0, total - occupied - reserved)`; housing damage lowers total below occupied (deficit shown) without removing crew.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0002Tk0002Tests"` — **3/3 passed** (`EightCabinsSixPeopleTwoReserved`, `DuplicateCrewRejected`, `HousingDamagePreservesCrew`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-006-us0002tk0002/US-0002-TK-0002/focused.trx`.
+- Regression: `SaveLoadContinuityTests` + `ScenarioLoaderTests` — **74/74 passed** (crew schema extension is backward-compatible).
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
