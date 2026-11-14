@@ -40,11 +40,15 @@ public partial class SimulationEngine
             AppearanceId: shipClass.AppearanceId,
             Hangars: BuildHangarSlots(ship),
             Crew: BuildCrewProjection(ship),
+            OwnedDrones: BuildOwnedWingProjection(ship),
             CabinReservation: BuildCabinReservationProjection(ship));
     }
 
     private ImmutableArray<HangarSlotSnapshot> BuildHangarSlots(SpaceObjectRuntime ship)
     {
+        var wing = GetOwnedWing(ship.InitialMotion.ObjectId);
+        var droneBySlot = wing.ToDictionary(d => (d.HangarModuleId, d.SlotIndex), d => d.DroneId);
+
         var slots = ImmutableArray.CreateBuilder<HangarSlotSnapshot>();
         foreach (var module in ship.Modules)
         {
@@ -52,7 +56,10 @@ public partial class SimulationEngine
             if (moduleType.DroneCapacity is not { } capacity || capacity <= 0)
                 continue;
             for (int i = 0; i < capacity; i++)
-                slots.Add(new HangarSlotSnapshot(module.ModuleId, i)); // DroneId arrives in US-0003
+            {
+                droneBySlot.TryGetValue((module.ModuleId, i), out var droneId);
+                slots.Add(new HangarSlotSnapshot(module.ModuleId, i, droneId));
+            }
         }
         return slots.ToImmutable();
     }

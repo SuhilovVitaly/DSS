@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Хранение и проверка крыла
@@ -106,4 +106,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `OwnedDroneData` + `CarrierStateData.OwnedDrones` (save schema), `OwnedWingValidator` (drone/slot/pilot uniqueness, pilot-in-crew + Pilot role, hangar-slot capacity, hull/ammo/decoy bounds), the carrier runtime `_ownedWing` store, `SetOwnedWingForTests` seam, and `BuildOwnedWingProjection`/`BuildHangarSlots` (populates slot DroneId, destroyed drone → tombstone readiness reason). Catalogue-reference validation (frame/weapon/armor ids against the tactical content) is deferred to TK-0011, where the starter manifest first connects the tactical content loader — noted as a deliberate scope boundary.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0003Tk0002Tests"` — **3/3 passed** (`FifthDroneRejectedWithFourSlots`, `DuplicatePilotOrSlotRejected`, `DestroyedDroneRetainsCrew`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-009-us0003tk0002/US-0003-TK-0002/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
