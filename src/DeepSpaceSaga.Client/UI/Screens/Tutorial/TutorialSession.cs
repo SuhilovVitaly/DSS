@@ -41,6 +41,18 @@ internal sealed class TutorialSession
     /// <summary>Saves a hints switch made in battle; false or an I/O error leaves the switch in effect for this battle.</summary>
     internal Func<bool, bool>? PersistHints { get; init; }
 
+    /// <summary>
+    /// Folder for the step events file (<see cref="TutorialMetrics"/>, next to the battle report); null records nothing.
+    /// The window passes <see cref="TacticalBattleMetrics.DirectoryPath"/>.
+    /// </summary>
+    internal string? MetricsDirectory { get; init; }
+
+    /// <summary>Receives a failed metrics write (default: Interface.log).</summary>
+    internal Action<string>? MetricsWarning { get; init; }
+
+    /// <summary>Step events of this battle; created from the first observation's battle when <see cref="MetricsDirectory"/> is set.</summary>
+    internal TutorialMetrics? Metrics { get; private set; }
+
     /// <summary>Officer portrait (300x300) or null: no officer, no head asset, or released.</summary>
     internal SKBitmap? Portrait => _portrait;
 
@@ -64,7 +76,23 @@ internal sealed class TutorialSession
     internal void Observe(TutorialObservation observation)
     {
         LastObservation = observation;
+        if (Metrics is null && MetricsDirectory is { } directory)
+            Metrics = new(observation.Battle.BattleId, directory)
+            {
+                ScenarioId = observation.Battle.ScenarioId,
+                Seed = observation.Battle.Seed,
+                OriginMs = observation.NowMs,
+                Warning = MetricsWarning ?? InterfaceLog.Write,
+            };
         Director.Observe(observation);
+        RecordEvents();
+    }
+
+    /// <summary>Moves the director's new step events into the metrics file; without metrics they stay in the director (bounded by the steps).</summary>
+    private void RecordEvents()
+    {
+        if (Metrics is not { } metrics) return;
+        foreach (var e in Director.DrainEvents()) metrics.Record(e);
     }
 
     internal void Draw(SKCanvas canvas, BattleLayout layout, float designWidth, long nowMs)
@@ -91,12 +119,16 @@ internal sealed class TutorialSession
             case "hints-on": SwitchHints(true); break;
             case null when Director.Collapsed && Panel.ChipBounds.Contains(designPoint): Director.Expand(); break;
         }
+        RecordEvents();
         return true;
     }
 
     private void SwitchHints(bool enabled)
     {
+        bool changed = Director.Enabled != enabled;
         Director.Enabled = enabled; // applies now, whether or not the save below succeeds
+        RecordEvents(); // a line dismissed by "off" comes before the switch itself
+        if (changed && LastObservation is { } at) Metrics?.RecordHints(enabled, at.Phase, at.Turn, at.NowMs);
         try { PersistHints?.Invoke(enabled); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // the battle goes on
     }

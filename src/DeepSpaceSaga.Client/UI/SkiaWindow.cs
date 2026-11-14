@@ -1237,6 +1237,7 @@ public sealed class SkiaWindow : IDisposable
         {
             HintsEnabled = TutorialHintsPreference.Read(SettingsFilePath, LogTutorialHintsWarning),
             PersistHints = TrySetTutorialHints,
+            MetricsDirectory = TacticalBattleMetrics.DirectoryPath, // step events next to the battle report
         };
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {

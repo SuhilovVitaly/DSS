@@ -35,6 +35,7 @@ public sealed class TutorialFlowTests
         Assert.Equal(TutorialPath, Assert.Single(fixture.CreatedPaths));
         Assert.Equal(TacticalBattlePhase.Move, battle.Flow.State!.Phase);
         Assert.Equal(SkiaWindow.TutorialBattleSeed, battle.Flow.State.Seed);
+        Assert.Equal(TacticalBattleMetrics.DirectoryPath, battle.Tutorial!.MetricsDirectory); // step events next to the battle report
         Assert.True(fixture.Engine!.IsTacticalBattleActive);
         Assert.Equal(1, fixture.Proxy!.Starts);
         Assert.Equal(2, fixture.Screens.Count);

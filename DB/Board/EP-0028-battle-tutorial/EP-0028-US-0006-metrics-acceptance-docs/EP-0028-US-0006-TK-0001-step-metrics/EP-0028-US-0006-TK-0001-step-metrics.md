@@ -3,15 +3,17 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0006-metrics-acceptance-docs
 ticket: EP-0028-US-0006-TK-0001-step-metrics
 title: Метрики шагов обучения
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0004-TK-0003-battle-toggle, EP-0028-US-0003-TK-0005-debrief]
-implementation_files: 2
+implementation_files: 3
 files_touched:
   - src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialMetrics.cs
   - src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialSession.cs
+  - src/DeepSpaceSaga.Client/UI/SkiaWindow.cs
   - tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialMetricsTests.cs
+  - tests/DeepSpaceSaga.Client.Tests/TacticalBattle/TutorialFlowTests.cs
 serves: [US-0006/AC-01]
 created: 2026-11-14T15:04:43Z
 revision: 1
@@ -103,6 +105,41 @@ DSS_VALIDATION_ROOT="$RUN" dotnet test DeepSpaceSaga.sln --results-directory "$R
 
 Путь файла, формат, атомарность и источники API указаны.
 
+## Результат
+
+- `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialMetrics.cs` (новый): `TutorialMetrics(battleId, directory)` с `ScenarioId`, `Seed`, `OriginMs`, `Warning`; `FilePath` = `Path.ChangeExtension(TacticalBattleMetrics.ReportPath(battleId, dir), ".tutorial.json")`; `Record(TutorialEvent)` → `shown|completed|dismissed|expired`, `RecordHints(enabled, phase, turn, atMs)` → `hints-enabled|hints-disabled` (`step: null`). После каждого события файл перезаписывается атомарно (temp + `File.Move(overwrite)`); IO/доступ → одна строка `TUTORIAL METRICS: …` на бой (по умолчанию в InterfaceLog), события остаются в памяти, бой продолжается. `TacticalBattleMetrics.cs` не менялся.
+- JSON: `{ schemaVersion: 1, battleId, scenarioId, seed, updatedUtc, events: [ { step, kind, phase, turn, atMs } ] }`; `atMs` — время наблюдения относительно первого кадра боя (часы окна — `Environment.TickCount64`, в файл не пишутся).
+- `TutorialSession`: `MetricsDirectory` (null — метрики выключены), `MetricsWarning`, `Metrics`; метрики создаются по `BattleId`/`ScenarioId`/`Seed` первого наблюдения; события директора забираются (`DrainEvents`) после `Observe`, кнопок панели и переключения подсказок; `hints-disabled/enabled` пишутся только при смене и после `dismissed` строки, закрытой выключением. Без метрик события остаются в директоре (прежнее поведение `DrainEvents` для тестов).
+- `SkiaWindow.CreateTutorialSession`: `MetricsDirectory = TacticalBattleMetrics.DirectoryPath` (рядом с отчётом боя; `DSS_VALIDATION_ROOT/battle-metrics` в проверках).
+- Тесты `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialMetricsTests.cs`: `StepEventsAreWrittenInOrderNextToBattleReport`, `DismissedAndExpiredStepsAreRecorded`, `HintsToggleIsRecorded`, `WriteFailureIsLoggedAndBattleContinues`, `NoMetricsWithoutDirectory`; `TutorialFlowTests.NewGameWithoutSavesStartsTutorialBattleAndNeverShowsTheMap` проверяет, что окно включает метрики в `TacticalBattleMetrics.DirectoryPath`.
+
+Проверки 2026-11-14:
+
+- Красный: `us0006-tk0001-20261114T195421/red.log` (нет API `MetricsDirectory`/`Metrics`).
+- Целевой набор (`…Tutorial|BattleMetricsTests|TutorialFlowTests`) — **193/193** — `us0006-tk0001-20261114T195421/metrics.trx`, `metrics.log`; живые бои обучения из `TutorialFlowTests` пишут `*.tutorial.json` рядом с отчётами в `…/battle-metrics/`. Первый прогон дал 1 падение (`TutorialScreenIntegrationTests.RenderedFramesFeedTheDirectorAndPilotSelectionCompletesTheStep` читает `DrainEvents` напрямую) — исправлено: сессия забирает события только при включённых метриках (`metrics-first.log`).
+- Полная проверка эпика (один раз): `dotnet build DeepSpaceSaga.sln` — 0 ошибок, 0 предупреждений (`us0006-tk0001-20261114T195421/build.log`); `dotnet test DeepSpaceSaga.sln --no-build --logger trx` с `DSS_VALIDATION_ROOT` — `us0006-tk0001-full/` (`test.log`, 6 TRX):
+
+| Проект | Всего | Прошло | Упало |
+|---|---|---|---|
+| DeepSpaceSaga.Client.Tests | 2649 | 2641 | 8 |
+| DeepSpaceSaga.Contracts.Tests | 199 | 199 | 0 |
+| DeepSpaceSaga.Motion.Tests | 1283 | 1282 | 1 |
+| DeepSpaceSaga.Engine.Tests | 2952 | 2341 | 611 |
+| DeepSpaceSaga.EconomyBalance.Tests | 61 | 58 | 3 |
+| DeepSpaceSaga.Performance.Tests | 16 | 6 | 10 |
+| **Итого** | **7360** | **6727** | **633** |
+
+- Классификация (G-03): упавшие тесты (по классам) запущены на базе `d8ab8f71` в отдельном `git worktree` (`us0006-tk0001-base/`, `base-*.trx`, `failed-base.txt`; worktree удалён). На базе падают те же **633** теста; `us0006-tk0001-full/new-failures.txt` — **0 новых**, `pre-existing-failures.txt` — 633, `base-only-failures.txt` — 0. Состав: Engine — корпуса System/Cluster/FullMap correctness, ClusterSaveState/Voyage/ResourcePlacement, OrbitalDocking, CatalogCompatibility, MasterSeed, MapEnvironmentSave, FullMapLocalLoad, `ContentSyncTests` (нет `pwsh`); Client — карта/камера (ApproachCamera, ClusterInteractionEvidence, FullMapRenderEvidence, MapLayerControls, TerritoryRendering); EconomyBalance — LongVoyageRunner; Performance — отчёты; Motion — `ForbiddenCallsTests`.
+- `ForbiddenCallsTests`: `forbidden-scan.ps1` (US-0001-TK-0004) по базе и HEAD — по 183 находки, `forbidden-diff.txt` пуст (эпик не добавил находок).
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`.
+
+Расширение allowlist без остановки по указанию пользователя 2026-11-14 («сделай без остановок»): `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` — одна строка `MetricsDirectory = TacticalBattleMetrics.DirectoryPath` в `CreateTutorialSession`: метрики включаются только окном, чтобы сотни юнит-тестов сессии не писали файлы в LocalAppData и не шумели в общий Interface.log.
+
+Расширение allowlist без остановки по указанию пользователя 2026-11-14 («сделай без остановок»): `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/TutorialFlowTests.cs` — одна проверка, что настоящий запуск обучения включает метрики в каталоге отчёта боя.
+
+Узкие решения исполнителя: (1) `atMs` относительно первого наблюдения (ticket Assumptions), а не машинные часы окна; (2) события `hints-*` без шага (`step: null`), только при фактической смене; (3) отметка «подсказки выключены с начала боя» не пишется (тикет требует событие только при смене); (4) без метрик сессия не забирает события директора — прежний контракт `DrainEvents`.
