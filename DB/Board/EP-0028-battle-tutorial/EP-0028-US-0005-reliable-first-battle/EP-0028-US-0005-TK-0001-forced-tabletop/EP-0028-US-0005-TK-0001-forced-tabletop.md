@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0005-reliable-first-battle
 ticket: EP-0028-US-0005-TK-0001-forced-tabletop
 title: Tabletop для боя обучения
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0001-TK-0004-screen-integration]
@@ -94,6 +94,20 @@ Process-tree cap 300000 ms.
 
 Точка выбора скина, API каталога и поведение фикстуры указаны с `path:line`.
 
+## Результат
+
+`src/DeepSpaceSaga.Client/UI/SkiaWindow.cs`: `internal const string TutorialSkinId = "tabletop";`; `CreateTacticalBattleView` передаёт экрану `flow.IsTutorial ? TutorialSkin() : _battleSkin`; `TutorialSkin()` — `_battleSkinCatalog.TryGet("tabletop", out var t) ? t : _battleSkin` с записью `TUTORIAL: skin 'tabletop' unavailable, using '<id>'` в InterfaceLog. `_battleSkin` и `gameSettings.tacticalBattleSkinId` не меняются; бой F8 (тот же метод после подготовки) по-прежнему получает `_battleSkin`.
+
+Тесты (`tests/DeepSpaceSaga.Client.Tests/TacticalBattle/TutorialFlowTests.cs`): фикстура `TutorialFixture` получила необязательный `installTabletop` (копирует `Skins/tabletop` из выхода тестов рядом с профилем; по умолчанию профиль без пакетов, как раньше); `TutorialBattleAlwaysUsesTabletopAndKeepsSkinPreference` (профиль `classic` + пакет: бой обучения `SkinId == "tabletop"`; после боя до Over и выхода на карту бой F8 через подготовку — `SkinId == "classic"`; `TacticalBattleSkinPreference.Read == "classic"`, файл профиля байт-в-байт прежний), `TutorialWithoutTabletopPackFallsBackToPreferredSkin` (без пакета — `classic`, сессия обучения есть, кадр рисуется, предупреждение в InterfaceLog).
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0005-tk0001-20261114T194623/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт (константа есть, выбор скина ещё нет): 2 failed — `Expected "tabletop" / Actual "classic"`, предупреждения нет — `red/red.log`.
+- `dotnet test … --filter "FullyQualifiedName~TutorialFlowTests|FullyQualifiedName~SkinBattleIntegrationTests|FullyQualifiedName~SkinCatalogTests|FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial"` — **192/192** — `tabletop.trx`, `tabletop.log`. `SkinBattleIntegrationTests.cs` не менялся (регрессия).
+- Правок в `src/**/TacticalBattle/` нет (ForbiddenCalls не затронут).
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкое решение исполнителя: Tabletop выбирается при каждом создании окна боя обучения (а не однократно при старте окна), поэтому пакет, удалённый/добавленный между запусками, учитывается так же, как каталог обычных боёв (каталог грузится при создании `SkiaWindow`).

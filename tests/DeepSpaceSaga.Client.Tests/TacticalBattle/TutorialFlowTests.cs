@@ -309,6 +309,61 @@ public sealed class TutorialFlowTests
         }
     }
 
+    /// <summary>
+    /// EP-0028-US-0005-TK-0001: with the «classic» preference and the Tabletop pack installed, the tutorial battle is Tabletop,
+    /// the saved preference stays «classic» and the next F8 battle uses it.
+    /// </summary>
+    [Fact]
+    public async Task TutorialBattleAlwaysUsesTabletopAndKeepsSkinPreference()
+    {
+        await using var fixture = new TutorialFixture(installTabletop: true);
+        string before = File.ReadAllText(fixture.SettingsPath);
+        await fixture.Route(ScreenEvent.NewGame);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.Equal(SkiaWindow.TutorialSkinId, battle.SkinId);
+        Assert.Equal("tabletop", battle.SkinId);
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+
+        for (int i = 0; battle.Flow.State!.Phase != TacticalBattlePhase.Over && i < 100; i++)
+        {
+            fixture.FinishPresentation();
+            await fixture.Route(battle.OnKeyDown(Key.Enter));
+        }
+        fixture.FinishPresentation();
+        Assert.Equal(TacticalBattlePhase.Over, battle.Flow.State!.Phase);
+        await fixture.PressKey(Key.Escape);
+        Assert.IsType<GameSessionScreen>(fixture.Screens.Current);
+
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+        await setup.Flow.OptionsTask!;
+        await fixture.Route(ScreenEvent.StartTacticalBattle);
+        var regular = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.False(regular.Flow.IsTutorial);
+        Assert.Equal("classic", regular.SkinId);
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+        Assert.Equal(before, File.ReadAllText(fixture.SettingsPath)); // the tutorial never wrote the profile
+    }
+
+    /// <summary>EP-0028-US-0005-TK-0001 / A-07: without the Tabletop pack the tutorial opens in the preferred skin and logs why.</summary>
+    [Fact]
+    public async Task TutorialWithoutTabletopPackFallsBackToPreferredSkin()
+    {
+        await using var fixture = new TutorialFixture();
+        long logLength = File.Exists(InterfaceLog.FileName) ? new FileInfo(InterfaceLog.FileName).Length : 0;
+        await fixture.Route(ScreenEvent.NewGame);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.Equal("classic", battle.SkinId);
+        Assert.NotNull(battle.Tutorial);
+        Assert.Contains("TUTORIAL: skin 'tabletop' unavailable, using 'classic'", LogTailReader.ReadTail(logLength));
+        using (var bitmap = new SKBitmap(1280, 720))
+        using (var canvas = new SKCanvas(bitmap))
+            battle.Render(canvas, 1280, 720); // renders without the pack
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+    }
+
     [Theory]
     [InlineData("Russian", "Выйти в главное меню? Прогресс обучения будет потерян.")]
     [InlineData("English", "Exit to the main menu? Tutorial progress will be lost.")]
@@ -365,7 +420,9 @@ public sealed class TutorialFlowTests
         internal GameSessionHandle? Session => Field<GameSessionHandle?>(Window, "_session");
         internal Task LastSessionDisposal => Field<Task>(Window, "_lastSessionDisposal");
 
-        internal TutorialFixture(SaveSlotInfo[]? saves = null, StartFailure failure = StartFailure.None, bool? tutorialHints = null)
+        /// <param name="installTabletop">Copies the shipped <c>Skins/tabletop</c> pack next to the profile (otherwise the profile has no packs).</param>
+        internal TutorialFixture(SaveSlotInfo[]? saves = null, StartFailure failure = StartFailure.None, bool? tutorialHints = null,
+            bool installTabletop = false)
         {
             _saves = saves ?? [];
             _failure = failure;
@@ -376,7 +433,18 @@ public sealed class TutorialFlowTests
             SettingsPath = Path.Combine(_directory, "Settings.json");
             string hints = tutorialHints is { } value ? $",\"tutorialHints\":{(value ? "true" : "false")}" : "";
             File.WriteAllText(SettingsPath, "{\"gameSettings\":{\"tacticalBattleSkinId\":\"classic\"" + hints + "}}");
+            if (installTabletop)
+                CopyDirectory(Path.Combine(AppContext.BaseDirectory, "Skins", "tabletop"), Path.Combine(_directory, "Skins", "tabletop"));
             Window = new SkiaWindow(new MainMenuScreen(), this, null, createNativeWindow: false, SettingsPath);
+        }
+
+        private static void CopyDirectory(string source, string target)
+        {
+            Directory.CreateDirectory(target);
+            foreach (string file in Directory.EnumerateFiles(source))
+                File.Copy(file, Path.Combine(target, Path.GetFileName(file)));
+            foreach (string directory in Directory.EnumerateDirectories(source))
+                CopyDirectory(directory, Path.Combine(target, Path.GetFileName(directory)));
         }
 
         internal string SettingsPath { get; }

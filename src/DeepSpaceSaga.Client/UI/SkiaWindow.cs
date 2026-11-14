@@ -1206,12 +1206,24 @@ public sealed class SkiaWindow : IDisposable
 
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
         new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+    /// <summary>The tutorial battle's skin (D-03): its hints are laid out for Tabletop.</summary>
+    internal const string TutorialSkinId = "tabletop";
+
     private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) =>
-        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, _battleSkin)
+        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, flow.IsTutorial ? TutorialSkin() : _battleSkin)
         {
             LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel,
             Tutorial = flow.IsTutorial ? CreateTutorialSession() : null,
         };
+
+    /// <summary>Tabletop for the tutorial battle without touching the saved preference; without the pack, the preferred skin (A-07).</summary>
+    private TacticalBattleSkin TutorialSkin()
+    {
+        if (_battleSkinCatalog.TryGet(TutorialSkinId, out var tabletop))
+            return tabletop;
+        LogTutorialWarning($"TUTORIAL: skin '{TutorialSkinId}' unavailable, using '{_battleSkin.Id}'");
+        return _battleSkin;
+    }
 
     /// <summary>The tutorial battle's session: hints start from <c>gameSettings.tutorialHints</c>; in-battle switches are saved there.</summary>
     private TutorialSession CreateTutorialSession() =>
