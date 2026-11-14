@@ -13,8 +13,13 @@ public sealed class TutorialDirectorTests
         int? turn = null, int? minTurn = null, string? after = null, TutorialSignal signal = TutorialSignal.None) =>
         new(id, "Tutorial.Line." + id, new TutorialCondition(phase, turn, minTurn, after, signal), complete, null, priority);
 
-    private static TutorialDirector Director(params TutorialStep[] steps) =>
-        new(new TutorialScript(1, null, new TutorialLimits(), [.. steps]));
+    /// <summary>Core step logic without pacing (quiet rules of US-0002-TK-0004 are covered by the paced tests below).</summary>
+    private static readonly TutorialLimits Unpaced = new(0, int.MaxValue, int.MaxValue);
+
+    private static TutorialDirector Director(params TutorialStep[] steps) => Paced(Unpaced, steps);
+
+    private static TutorialDirector Paced(TutorialLimits limits, params TutorialStep[] steps) =>
+        new(new TutorialScript(1, null, limits, [.. steps]));
 
     private static readonly TacticalBattleSnapshot MoveBattle = TutorialTestBattle.Battle(TacticalBattlePhase.Move, 1);
     private static readonly TacticalBattleSnapshot FireBattle = TutorialTestBattle.Battle(TacticalBattlePhase.Fire, 1);
@@ -299,6 +304,163 @@ public sealed class TutorialDirectorTests
         var observation = TutorialObservation.From(frame, "Move", 1234, interacting: true, busy: true);
 
         Assert.Equal(new TutorialObservation("Move", 3, frame.Battle, "vera", movement, null, 1234, true, true), observation);
+    }
+
+    // ---- US-0002-TK-0004: quiet rules ("don't interrupt") ----
+
+    private static TutorialObservation Interacting(TutorialObservation observation) => observation with { Interacting = true };
+
+    [Fact]
+    public void NoNewLineWhileInteractingThenSpeaksAtNextSpeechMoment()
+    {
+        var director = Paced(new TutorialLimits(1000, 60000, 5),
+            Step("select", "Move", TutorialCompletion.PilotSelected, priority: 90),
+            Step("tip", "Move", TutorialCompletion.Acknowledged, priority: 50));
+
+        director.Observe(Interacting(Move(now: 0))); // phase start while the player is dragging: silence
+        Assert.Null(director.Current);
+        director.Observe(Move(now: 100)); // released: the phase-start speech moment is still open
+        Assert.Equal("select", director.Current?.Step.Id);
+
+        director.Observe(Interacting(Move(selected: "vera", now: 200))); // the action completes the step even while interacting
+        Assert.Equal(TutorialStepState.Completed, director.StateOf("select"));
+        director.Observe(Interacting(Move(selected: "vera", now: 5000)));
+        Assert.Null(director.Current); // gap elapsed, but the player is still busy with the mouse
+        Assert.Equal(TutorialStepState.Waiting, director.StateOf("tip"));
+        director.Observe(Move(selected: "vera", now: 5100, busy: true));
+        Assert.Null(director.Current); // a pending turn is not a pause either
+        director.Observe(Move(selected: "vera", now: 5200));
+        Assert.Equal("tip", director.Current?.Step.Id);
+        Assert.Equal(5200, director.Current!.ShownAtMs);
+
+        director.Observe(Interacting(Move(selected: "vera", now: 90000)));
+        Assert.Equal("tip", director.Current?.Step.Id); // a shown line neither changes nor collapses while interacting
+        Assert.False(director.Collapsed);
+    }
+
+    [Fact]
+    public void LinesWaitForASpeechMomentInsteadOfInterruptingMidPhase()
+    {
+        // Eligible only from turn 2: on turn 1 the phase-start moment passes without it; it is not shown mid-turn later.
+        var director = Paced(new TutorialLimits(0, 60000, 5),
+            Step("intro", "Move", TutorialCompletion.PilotSelected, priority: 90),
+            Step("tip", "Move", TutorialCompletion.Acknowledged, priority: 50, after: "intro"));
+        director.Observe(Move(now: 0));
+        Assert.Equal("intro", director.Current?.Step.Id);
+        director.Observe(Interacting(Move(selected: "vera", now: 10))); // completed while dragging: the moment stays open
+        Assert.Null(director.Current);
+        director.Observe(Move(selected: "vera", now: 20));
+        Assert.Equal("tip", director.Current?.Step.Id); // spoken right after the player's action
+
+        var mid = Paced(new TutorialLimits(0, 60000, 5),
+            Step("first", "Move", TutorialCompletion.Acknowledged, priority: 90),
+            Step("signal", "Fire", TutorialCompletion.Acknowledged, priority: 50, signal: TutorialSignal.UnderFire));
+        mid.Observe(Fire(TutorialTestBattle.Plan(FireBattle), now: 0));
+        Assert.Null(mid.Current); // phase-start moment: nothing eligible in Fire without incoming shots
+        var underFire = FireBattle with { Incoming = [new("tag-1", "yun", 0.5, 100, 0, false, 0)] };
+        mid.Observe(new TutorialObservation("Fire", 1, underFire, "vera", null, TutorialTestBattle.Plan(underFire), 10));
+        Assert.Equal("signal", mid.Current?.Step.Id); // the moment stayed open because nothing was said yet
+        mid.Acknowledge();
+        mid.Observe(new TutorialObservation("Fire", 1, underFire, "vera", null, TutorialTestBattle.Plan(underFire), 20));
+        Assert.Null(mid.Current);
+    }
+
+    [Fact]
+    public void MinGapAndPerPhaseCapAreRespected()
+    {
+        var director = Paced(new TutorialLimits(2500, 60000, 2),
+            Step("a", "Move", TutorialCompletion.Acknowledged, priority: 90),
+            Step("b", "Move", TutorialCompletion.Acknowledged, priority: 80),
+            Step("c", "Move", TutorialCompletion.Acknowledged, priority: 70));
+
+        director.Observe(Move(now: 1000));
+        Assert.Equal("a", director.Current?.Step.Id); // the very first line needs no gap
+        director.Observe(Move(now: 1500));
+        director.Acknowledge(); // closed at the last observed time, 1500
+        director.Observe(Move(now: 3999));
+        Assert.Null(director.Current);
+        director.Observe(Move(now: 4000));
+        Assert.Equal("b", director.Current?.Step.Id);
+        director.Acknowledge(); // closed at 4000
+        director.Observe(Move(now: 10000));
+        Assert.Null(director.Current); // two lines in (Move, 1): cap reached
+        Assert.Equal(TutorialStepState.Waiting, director.StateOf("c"));
+
+        director.Observe(Move(turn: 2, now: 10001)); // new (phase, turn): cap resets, gap long passed
+        Assert.Equal("c", director.Current?.Step.Id);
+    }
+
+    [Fact]
+    public void OutcomeLinesAreExemptFromThePerPhaseCap()
+    {
+        var won = MoveBattle with { Phase = TacticalBattlePhase.Over, Outcome = new TacticalOutcomeSnapshot(TacticalBattleOutcomeCode.A, [], 5, [], new(0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0, []), 0) };
+        var director = Paced(new TutorialLimits(0, 60000, 1),
+            Step("debrief", "Outcome", TutorialCompletion.Acknowledged, priority: 90),
+            Step("outcome-victory", "Outcome", TutorialCompletion.Acknowledged, priority: 50, signal: TutorialSignal.OutcomeVictory));
+        var outcome = new TutorialObservation("Outcome", 5, won, null, null, null, 0);
+        director.Observe(outcome);
+        Assert.Equal("debrief", director.Current?.Step.Id);
+        director.Acknowledge();
+        director.Observe(outcome with { NowMs = 10 });
+        Assert.Equal("outcome-victory", director.Current?.Step.Id);
+    }
+
+    [Fact]
+    public void LineCollapsesAfterTimeoutAndExpandRestoresIt()
+    {
+        var director = Paced(new TutorialLimits(0, 15000, 5),
+            Step("select", "Move", TutorialCompletion.PilotSelected, priority: 90),
+            Step("note", "Move", TutorialCompletion.Acknowledged, priority: 50));
+        director.Observe(Move(now: 0));
+        Assert.Equal("select", director.Current?.Step.Id);
+        director.Observe(Move(now: 14999));
+        Assert.False(director.Collapsed);
+        director.Observe(Move(now: 15000));
+        Assert.True(director.Collapsed);
+        Assert.Equal(TutorialStepState.Shown, director.StateOf("select")); // still waiting for the action
+        Assert.Equal("select", director.Current?.Step.Id);
+
+        director.Expand();
+        Assert.False(director.Collapsed);
+        director.Observe(Move(now: 20000));
+        Assert.False(director.Collapsed); // timer restarted at the expand (last frame 15000)
+        director.Observe(Move(now: 30000));
+        Assert.True(director.Collapsed);
+
+        director.Observe(Move(selected: "vera", now: 30100));
+        Assert.Equal(TutorialStepState.Completed, director.StateOf("select"));
+        Assert.False(director.Collapsed);
+        Assert.Equal("note", director.Current?.Step.Id);
+        director.Observe(Move(selected: "vera", now: 45100));
+        Assert.Equal(TutorialStepState.Expired, director.StateOf("note")); // an acknowledged line has nothing to wait for
+        Assert.Null(director.Current);
+        Assert.False(director.Collapsed);
+    }
+
+    [Fact]
+    public void ClosedStepNeverReturns()
+    {
+        var director = Paced(new TutorialLimits(0, 1000, 10),
+            Step("note", "Move", TutorialCompletion.Acknowledged, priority: 90),
+            Step("select", "Move", TutorialCompletion.PilotSelected, priority: 50),
+            Step("cycle", "Move", TutorialCompletion.PilotCycled, priority: 40));
+        director.Observe(Move(now: 0));
+        director.Observe(Move(now: 1000)); // note expires on collapse
+        Assert.Equal(TutorialStepState.Expired, director.StateOf("note"));
+        director.Observe(Move(now: 1001));
+        Assert.Equal("select", director.Current?.Step.Id);
+        director.Acknowledge(); // dismissed
+        director.Observe(Move(now: 1002));
+        Assert.Equal("cycle", director.Current?.Step.Id);
+        director.Observe(Move(turn: 2, now: 2000)); // expired by the turn change
+
+        for (int turn = 2; turn < 6; turn++)
+            for (long t = 0; t < 3; t++)
+                director.Observe(Move(turn: turn, now: 3000 * turn + t));
+        Assert.Null(director.Current);
+        Assert.Equal(["note", "select", "cycle"], director.Heard);
+        Assert.Equal(TutorialStepState.Dismissed, director.StateOf("select"));
+        Assert.Equal(TutorialStepState.Expired, director.StateOf("cycle"));
     }
 
     [Fact]

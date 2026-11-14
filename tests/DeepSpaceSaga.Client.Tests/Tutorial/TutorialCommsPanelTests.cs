@@ -124,7 +124,7 @@ public sealed class TutorialCommsPanelTests
 
         Assert.True(session.OnMouseDown(Center(layout.Rects["tutorial:ack"]), MouseButton.Left));
         Assert.Equal(TutorialStepState.Completed, session.Director.StateOf("first"));
-        session.Observe(Move(100));
+        session.Observe(Move(new TutorialLimits().MinGapMs)); // the next line waits for the minimum gap (US-0002-TK-0004)
         layout = Draw(session);
         Assert.Equal("second", session.Director.Current?.Step.Id);
 

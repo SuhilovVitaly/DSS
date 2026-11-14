@@ -10,6 +10,10 @@ internal sealed record TutorialLine(TutorialStep Step, long ShownAtMs, string? S
 /// <summary>
 /// Deterministic, advisory step logic: decides which single line is shown from a sequence of frame observations and closes
 /// a step once the player performed the action. It never blocks input and never talks to the Engine.
+/// Quiet rules (US-0002-TK-0004, pacing from <see cref="TutorialScript.Limits"/>): no new line while the player is interacting
+/// or the frame is busy; a new line only at a speech moment (phase/turn change or a step closed/completed) and at least
+/// MinGapMs after the previous line closed; at most MaxLinesPerPhase lines per (phase, turn) except outcome lines; a line
+/// left untouched for AutoCollapseMs collapses (an acknowledge-only line expires instead). Time is the observation clock only.
 /// </summary>
 internal sealed class TutorialDirector(TutorialScript script)
 {
@@ -23,6 +27,21 @@ internal sealed class TutorialDirector(TutorialScript script)
     private string? _lastPilot;
     private bool _pilotCycled;
     private bool _enabled = true;
+    private bool _speechMoment;
+    private long? _lastClosedAtMs;
+    private int _phaseLines;
+    private long _collapseFromMs;
+
+    /// <summary>The shown line was folded into the comms chip by the auto-collapse timer; it still waits for the action.</summary>
+    internal bool Collapsed { get; private set; }
+
+    /// <summary>Unfolds a collapsed line; the collapse timer restarts from the last observed frame.</summary>
+    internal void Expand()
+    {
+        if (!Collapsed) return;
+        Collapsed = false;
+        _collapseFromMs = _last?.NowMs ?? 0;
+    }
 
     /// <summary>False: nothing is shown (a visible line is dismissed); completions are still tracked.</summary>
     internal bool Enabled
@@ -45,7 +64,7 @@ internal sealed class TutorialDirector(TutorialScript script)
     internal void Observe(TutorialObservation observation)
     {
         bool newPhase = _last is null || _last.Phase != observation.Phase || _last.Turn != observation.Turn;
-        if (newPhase) { _lastPilot = null; _pilotCycled = false; }
+        if (newPhase) { _lastPilot = null; _pilotCycled = false; _phaseLines = 0; _speechMoment = true; }
         if (observation.SelectedDroneId is { } pilot)
         {
             if (_lastPilot is not null && _lastPilot != pilot) _pilotCycled = true;
@@ -63,14 +82,27 @@ internal sealed class TutorialDirector(TutorialScript script)
         foreach (var step in script.Steps)
         {
             if (_states[step.Id] == TutorialStepState.Waiting && Eligible(step, observation) && Done(step.Complete, observation, false))
+            {
                 Record(step.Id, TutorialStepState.Completed);
+                _speechMoment = true; // the player's own action is a natural pause
+            }
         }
 
-        if (!_enabled || Current is not null || observation.Busy) return;
+        bool quiet = observation.Interacting || observation.Busy;
+        if (Current is { } shown && !Collapsed && !quiet && observation.NowMs - _collapseFromMs >= script.Limits.AutoCollapseMs)
+        {
+            if (shown.Step.Complete == TutorialCompletion.Acknowledged) Close(TutorialStepState.Expired);
+            else Collapsed = true;
+        }
+
+        if (!_enabled || Current is not null || quiet || !_speechMoment) return;
+        if (_lastClosedAtMs is { } closed && observation.NowMs - closed < script.Limits.MinGapMs) return;
+        bool capped = _phaseLines >= script.Limits.MaxLinesPerPhase;
         TutorialStep? next = null;
         foreach (var step in script.Steps)
         {
-            if (_states[step.Id] == TutorialStepState.Waiting && Eligible(step, observation) && (next is null || step.Priority > next.Priority))
+            if (_states[step.Id] == TutorialStepState.Waiting && (!capped || IsOutcome(step)) && Eligible(step, observation) &&
+                (next is null || step.Priority > next.Priority))
                 next = step;
         }
         if (next is null) return;
@@ -79,9 +111,16 @@ internal sealed class TutorialDirector(TutorialScript script)
         Current = new TutorialLine(next, observation.NowMs, signalUnit);
         _shownPhase = observation.Phase;
         _shownTurn = observation.Turn;
+        _speechMoment = false;
+        _collapseFromMs = observation.NowMs;
+        if (!IsOutcome(next)) _phaseLines++;
         _heard.Add(next.Id);
         Record(next.Id, TutorialStepState.Shown);
     }
+
+    /// <summary>Outcome debrief lines (outcome signals) are exempt from the per-phase cap.</summary>
+    private static bool IsOutcome(TutorialStep step) =>
+        step.When.Signal is TutorialSignal.OutcomeVictory or TutorialSignal.OutcomeDefeat or TutorialSignal.OutcomeOther;
 
     /// <summary>"Got it": an acknowledged step completes; any other shown step is dismissed.</summary>
     internal void Acknowledge()
@@ -123,6 +162,9 @@ internal sealed class TutorialDirector(TutorialScript script)
     {
         var line = Current!;
         Current = null;
+        Collapsed = false;
+        _speechMoment = true;
+        _lastClosedAtMs = _last?.NowMs ?? 0;
         Record(line.Step.Id, state);
     }
 

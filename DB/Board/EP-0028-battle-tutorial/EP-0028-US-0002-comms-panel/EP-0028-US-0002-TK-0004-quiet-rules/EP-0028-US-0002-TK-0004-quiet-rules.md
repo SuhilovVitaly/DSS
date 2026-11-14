@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0002-comms-panel
 ticket: EP-0028-US-0002-TK-0004-quiet-rules
 title: Правила «не перебивать»
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0002-TK-0002-comms-panel]
@@ -13,6 +13,7 @@ files_touched:
   - src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialSession.cs
   - tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialDirectorTests.cs
   - tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialScreenIntegrationTests.cs
+  - tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialCommsPanelTests.cs
 serves: [US-0002/AC-04]
 created: 2026-11-14T15:04:43Z
 revision: 1
@@ -107,6 +108,21 @@ dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -
 
 Все правила и источник флагов наблюдения заданы; изменяются только файлы обучения.
 
+## Результат
+
+`TutorialDirector` (правила проверяются в `Observe` до показа новой реплики): (1) при `Interacting` или `Busy` новая реплика не показывается, текущая не заменяется и не сворачивается (завершение действием игрока по-прежнему засчитывается); (2) «момент речи» открывается сменой (фаза, ход), закрытием реплики (Completed/Dismissed/Expired) и тихим завершением ожидающего шага действием игрока, закрывается показом; (3) одна реплика и приоритет — без изменений; (4) интервал `limits.minGapMs` от закрытия предыдущей реплики (время последнего наблюдения на момент закрытия); (5) не больше `limits.maxLinesPerPhase` показов на пару (фаза, ход), шаги с сигналами итога (`OutcomeVictory/Defeat/Other`) из предела исключены; (6) реплика без ввода игрока `limits.autoCollapseMs` → `Collapsed = true` (шаг `acknowledged` вместо этого переходит в Expired и освобождает канал); `Expand()` разворачивает и перезапускает таймер от последнего кадра; (7) закрытые шаги не возвращаются. `TutorialSession`: свёрнутая реплика рисуется значком без подсветки; клик по значку при свёрнутой реплике → `Director.Expand()`.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0002-tk0004-20261114T175810/`):
+
+- Красный старт: тесты не компилируются (`TutorialDirector.Collapsed`/`Expand` отсутствуют) — `../us0002-tk0004-red/build-red.log`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~TutorialFlowTests" --results-directory "$RUN" --logger "trx;LogFileName=quiet.trx"` (`DSS_VALIDATION_ROOT` = папка прогона) — **141/141** — `quiet.trx`, `quiet.log`. Новые: `TutorialDirectorTests.NoNewLineWhileInteractingThenSpeaksAtNextSpeechMoment`, `LinesWaitForASpeechMomentInsteadOfInterruptingMidPhase`, `MinGapAndPerPhaseCapAreRespected`, `OutcomeLinesAreExemptFromThePerPhaseCap`, `LineCollapsesAfterTimeoutAndExpandRestoresIt`, `ClosedStepNeverReturns`; `TutorialScreenIntegrationTests.DraggingPathKeepsOfficerQuiet` (живой Tabletop: перетаскивание конца пути после истечения интервала — тишина, после отпускания — реплика), `CollapsedLineShowsTheChipWithoutHighlightAndAClickExpandsIt`.
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` — 0 предупреждений, 0 ошибок — `build.log`.
+- ForbiddenCalls не затрагивается: правок в `UI/Screens/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) «момент речи» открывается и тихим завершением ожидающего шага действием игрока — так выполняется AC-04 истории «после завершения шага», даже если реплика шага не успела прозвучать; (2) исключение из предела — по сигналу шага (`outcome-*` сигналы), а не по префиксу ID; (3) сворачивание откладывается, пока игрок взаимодействует или кадр занят (`Busy`); (4) существующие тесты директора US-0001 проверяют базовую логику шагов и теперь явно получают `TutorialLimits(0, int.MaxValue, int.MaxValue)` (без темпа), а `EveryPhaseScript` геометрического теста панели — те же лимиты: правила темпа покрыты новыми тестами.
+
+2026-11-14 — Расширение allowlist без остановки по указанию пользователя 2026-11-14 («сделай без остановок»): `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialCommsPanelTests.cs` — в `AcknowledgeAndHintsButtonsDriveTheDirector` (TK-0002) второе наблюдение было через 100 мс после «Понял»; по правилу интервала следующая реплика ждёт `minGapMs`, поэтому время наблюдения заменено на `new TutorialLimits().MinGapMs` (одна строка, проверка кнопок не ослаблена).

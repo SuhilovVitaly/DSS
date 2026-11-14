@@ -46,10 +46,11 @@ internal sealed class TutorialSession
     {
         if (Script.Steps.IsDefaultOrEmpty) return; // no lessons, no comms panel
         if (!_portraitComposed) ComposePortrait();
-        if (Director.Enabled && Director.Current is { Step.Anchor: { } anchor } line && LastObservation is { } observation &&
+        var line = Director.Collapsed ? null : Director.Current; // a collapsed line shows as the chip, without a highlight
+        if (Director.Enabled && line is { Step.Anchor: { } anchor } && LastObservation is { } observation &&
             TutorialHighlight.Target(layout, TutorialHighlight.ResolveKey(anchor, layout, observation, line.SignalUnitId)) is { } target)
             TutorialHighlight.Draw(canvas, layout, target, nowMs); // under the panel; not part of Bounds
-        Panel.Draw(canvas, layout, designWidth, Director.Current, Director.Enabled, _portrait, Script.Officer);
+        Panel.Draw(canvas, layout, designWidth, line, Director.Enabled, _portrait, Script.Officer);
     }
 
     internal bool OnMouseDown(SKPoint designPoint, MouseButton button)
@@ -61,6 +62,7 @@ internal sealed class TutorialSession
             case "ack": Director.Acknowledge(); break;
             case "hints-off": Director.Enabled = false; break;
             case "hints-on": Director.Enabled = true; break;
+            case null when Director.Collapsed && Panel.ChipBounds.Contains(designPoint): Director.Expand(); break;
         }
         return true;
     }

@@ -122,7 +122,8 @@ public sealed class TutorialScreenIntegrationTests
     }
 
 
-    private static TutorialScript EveryPhaseScript() => new(1, null, new TutorialLimits(),
+    // Unpaced: the geometry check needs an expanded line in every phase, independent of the quiet rules (US-0002-TK-0004).
+    private static TutorialScript EveryPhaseScript() => new(1, null, new TutorialLimits(0, int.MaxValue, int.MaxValue),
     [
         .. new[] { "Move", "Fire", "Salvo", "Results", "Outcome" }.Select(phase => new TutorialStep("say." + phase,
             "Tutorial.Journal.Empty", new TutorialCondition(phase, null, null, null, TutorialSignal.None),
@@ -227,6 +228,79 @@ public sealed class TutorialScreenIntegrationTests
         Assert.Contains(chip, screen.PanelRects);
         Assert.DoesNotContain(panel, screen.PanelRects);
     }
+
+
+    [Fact]
+    public async Task DraggingPathKeepsOfficerQuiet()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var started = await StartF8(fixture);
+        using var skins = TutorialSkins();
+        var session = new TutorialSession(new TutorialScript(1, null, new TutorialLimits(2500, 15000, 2),
+        [
+            new TutorialStep("select", "Tutorial.Journal.Empty", new TutorialCondition("Move", 1, null, null, TutorialSignal.None),
+                TutorialCompletion.PilotSelected, "pilot:{own}", 90),
+            new TutorialStep("tip", "Tutorial.Journal.Empty", new TutorialCondition("Move", 1, null, "select", TutorialSignal.None),
+                TutorialCompletion.Acknowledged, "endpoint:{selected}", 50),
+        ]));
+        var screen = new TacticalBattleScreen(started.Flow, 1, skins.GetOrClassic("tabletop"))
+        { ClockMilliseconds = started.ClockMilliseconds, Tutorial = session };
+        fixture.Screens.Replace(screen);
+
+        Render(screen);
+        Assert.Equal("select", session.Director.Current?.Step.Id);
+        screen.OnKeyDown(Key.Tab);
+        Render(screen);
+        Assert.Equal(TutorialStepState.Completed, session.Director.StateOf("select"));
+        Assert.Null(session.Director.Current); // inside the minimum gap
+
+        var end = screen.Layout.Rects["endpoint:" + screen.Movement.Selected];
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(end.MidX, end.MidY, MouseButton.Left)); // grab the path end
+        fixture.AdvanceAnimation(5000);
+        for (int i = 1; i <= 3; i++)
+        {
+            screen.OnMouseMove(end.MidX + 10 * i, end.MidY - 6 * i);
+            Render(screen);
+            Assert.True(session.LastObservation!.Interacting);
+            Assert.Null(session.Director.Current); // the gap has passed, but the player is steering: silence
+        }
+        screen.OnMouseUp(end.MidX + 30, end.MidY - 18, MouseButton.Left);
+        Render(screen);
+        Assert.False(session.LastObservation!.Interacting);
+        Assert.Equal("tip", session.Director.Current?.Step.Id); // the next pause is the speech moment
+    }
+
+    [Fact]
+    public async Task CollapsedLineShowsTheChipWithoutHighlightAndAClickExpandsIt()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var started = await StartF8(fixture);
+        using var skins = TutorialSkins();
+        var session = new TutorialSession(SelectPilotScript());
+        var screen = new TacticalBattleScreen(started.Flow, 1, skins.GetOrClassic("tabletop"))
+        { ClockMilliseconds = started.ClockMilliseconds, Tutorial = session };
+        fixture.Screens.Replace(screen);
+        Render(screen);
+        Assert.True(screen.Layout.Rects.ContainsKey("tutorial:panel"));
+        Assert.True(screen.Layout.Rects.ContainsKey("tutorial:highlight"));
+
+        fixture.AdvanceAnimation(new TutorialLimits().AutoCollapseMs);
+        Render(screen);
+        Assert.True(session.Director.Collapsed);
+        Assert.Equal(TutorialStepState.Shown, session.Director.StateOf("move.select-pilot"));
+        Assert.False(screen.Layout.Rects.ContainsKey("tutorial:panel"));
+        Assert.False(screen.Layout.Rects.ContainsKey("tutorial:highlight"));
+        var chip = screen.Layout.Rects["tutorial:chip"];
+
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(chip.MidX, chip.MidY, MouseButton.Left));
+        Assert.False(session.Director.Collapsed);
+        Render(screen);
+        Assert.True(screen.Layout.Rects.ContainsKey("tutorial:panel"));
+        Assert.True(screen.Layout.Rects.ContainsKey("tutorial:highlight"));
+        Assert.Equal("move.select-pilot", session.Director.Current?.Step.Id);
+    }
+
+    private static TacticalBattleSkinCatalog TutorialSkins() => TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
 
     private static string Json<T>(T value) => JsonSerializer.Serialize(value);
 }
