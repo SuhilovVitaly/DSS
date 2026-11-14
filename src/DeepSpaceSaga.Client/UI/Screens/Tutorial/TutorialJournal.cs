@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using SkiaSharp;
@@ -24,6 +25,12 @@ internal sealed class TutorialJournal
     internal SKRect Bounds => IsOpen ? new SKRect(TutorialCommsPanel.Left, BottomEdge - Height, TutorialCommsPanel.Left + Width, BottomEdge) : SKRect.Empty;
     internal float Scroll { get; private set; }
     internal float MaxScroll { get; private set; }
+    /// <summary>Wrapped rows of every heard line as last drawn; cached until the heard lines or their texts (language) change.</summary>
+    internal IReadOnlyList<ImmutableArray<string>> Entries => _entries;
+
+    private ImmutableArray<string>[] _entries = [];
+    private string[] _texts = [];
+    private float _content;
 
     internal void Toggle()
     {
@@ -58,8 +65,8 @@ internal sealed class TutorialJournal
             return;
         }
 
-        var entries = heard.Select(step => TutorialCommsPanel.Wrap(Localization.Get(step.LineKey), TextWidth)).ToArray();
-        float content = entries.Sum(rows => rows.Length * TutorialCommsPanel.RowHeight) + (entries.Length - 1) * EntryGap;
+        var entries = Rows(heard);
+        float content = _content;
         MaxScroll = content > body.Height ? content - body.Height : 0;
         if (_stickToEnd) Scroll = MaxScroll;
         Scroll = Scroll < 0 ? 0 : Scroll > MaxScroll ? MaxScroll : Scroll;
@@ -87,6 +94,32 @@ internal sealed class TutorialJournal
             float thumbTop = body.Top + (track - thumb) * Scroll / MaxScroll;
             Round(c, SKRect.Create(body.Right + 6, thumbTop, 3, thumb), Muted, radius: 1);
         }
+    }
+
+    /// <summary>
+    /// Wrapped rows of the heard lines. A frame only resolves the texts (dictionary lookups); wrapping and its paint happen
+    /// again only when a line was added or a text changed (game language switched).
+    /// </summary>
+    private ImmutableArray<string>[] Rows(IReadOnlyList<TutorialStep> heard)
+    {
+        bool same = _texts.Length == heard.Count;
+        for (int i = 0; same && i < heard.Count; i++) same = string.Equals(_texts[i], Localization.Get(heard[i].LineKey), StringComparison.Ordinal);
+        if (same) return _entries;
+
+        var texts = new string[heard.Count];
+        var entries = new ImmutableArray<string>[heard.Count];
+        float content = 0;
+        using var paint = BattleTypography.TextPaint(TutorialCommsPanel.FontSize, false);
+        for (int i = 0; i < heard.Count; i++)
+        {
+            texts[i] = Localization.Get(heard[i].LineKey);
+            entries[i] = ControlText.Wrap(texts[i], TextWidth, paint);
+            content += entries[i].Length * TutorialCommsPanel.RowHeight;
+        }
+        _texts = texts;
+        _entries = entries;
+        _content = content + (entries.Length - 1) * EntryGap;
+        return entries;
     }
 
     /// <summary>True when the press is inside the open log (the close button closes it).</summary>

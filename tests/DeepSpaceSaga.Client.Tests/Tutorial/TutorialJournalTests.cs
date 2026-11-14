@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.Tests.TacticalBattle;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
@@ -94,7 +95,7 @@ public sealed class TutorialJournalTests
         var journal = layout.Rects["tutorial:journal"];
 
         Assert.True(session.OnMouseDown(new SKPoint(journal.MidX, journal.MidY), MouseButton.Left));
-        Assert.True(session.OnMouseDown(new SKPoint(journal.MidX, journal.MidY), MouseButton.Right));
+        Assert.False(session.OnMouseDown(new SKPoint(journal.MidX, journal.MidY), MouseButton.Right)); // passes through (camera pan)
         Assert.True(session.Journal.IsOpen);
         Assert.True(session.OnMouseWheel(new SKPoint(journal.MidX, journal.MidY), -1));
         Assert.False(session.OnMouseWheel(new SKPoint(journal.Right + 10, journal.MidY), -1));
@@ -130,6 +131,67 @@ public sealed class TutorialJournalTests
         for (int i = 0; i < 50; i++) session.OnMouseWheel(new SKPoint(journal.MidX, journal.MidY), -1);
         Draw(session);
         Assert.Equal(end, session.Journal.Scroll);
+    }
+
+    /// <summary>US-0006-TK-0004: the journal source is not reallocated every frame; it changes only when a new line is heard.</summary>
+    [Fact]
+    public void HeardStepsIsCachedUntilHeardChanges()
+    {
+        var session = new TutorialSession(new TutorialScript(1, null, new TutorialLimits(0, int.MaxValue, int.MaxValue),
+            [Step("one", LineKeys[0], priority: 90), Step("two", LineKeys[1], priority: 80)]));
+        var empty = session.HeardSteps;
+        Assert.Empty(empty);
+        Assert.Same(empty, session.HeardSteps);
+        session.Observe(Move(0));
+        var first = session.HeardSteps;
+        Assert.Equal(["one"], first.Select(s => s.Id));
+        Assert.Same(first, session.HeardSteps);
+        Draw(session);
+        Assert.Same(first, session.HeardSteps);
+        session.Director.Acknowledge();
+        session.Observe(Move(1));
+        var second = session.HeardSteps;
+        Assert.NotSame(first, second);
+        Assert.Equal(["one", "two"], second.Select(s => s.Id));
+    }
+
+    /// <summary>US-0006-TK-0004: wrapped journal rows are built once and rebuilt only when the language or the content changes.</summary>
+    [Fact]
+    public void JournalRowsAreCachedUntilLanguageOrContentChanges()
+    {
+        var session = HeardThree();
+        session.OnKeyDown(Key.H, KeyModifiers.None, false);
+        IReadOnlyList<ImmutableArray<string>> russian;
+        using (Localization.UseLocaleForTests("Russian"))
+        {
+            Draw(session);
+            russian = session.Journal.Entries;
+            Assert.Equal(3, russian.Count);
+            Draw(session);
+            Assert.Same(russian, session.Journal.Entries);
+        }
+        using (Localization.UseLocaleForTests("English"))
+        {
+            var layout = Draw(session);
+            var english = session.Journal.Entries;
+            Assert.NotSame(russian, english);
+            Assert.Equal(TutorialCommsPanel.Wrap(Localization.Get(LineKeys[0]), TutorialJournal.TextWidth).ToArray(), english[0].ToArray());
+            Assert.Contains(english[0][0], layout.Texts.Select(t => t.Text));
+            Draw(session);
+            Assert.Same(english, session.Journal.Entries);
+        }
+
+        var growing = new TutorialSession(new TutorialScript(1, null, new TutorialLimits(0, int.MaxValue, int.MaxValue),
+            [Step("one", LineKeys[0], priority: 90), Step("two", LineKeys[1], priority: 80)]));
+        growing.Observe(Move(0));
+        growing.OnKeyDown(Key.H, KeyModifiers.None, false);
+        Draw(growing);
+        var one = growing.Journal.Entries;
+        Assert.Single(one);
+        growing.Director.Acknowledge();
+        growing.Observe(Move(1));
+        Draw(growing);
+        Assert.Equal(2, growing.Journal.Entries.Count); // a new line rebuilds
     }
 
     [Fact]

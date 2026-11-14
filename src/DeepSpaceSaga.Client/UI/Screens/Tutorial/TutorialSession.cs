@@ -9,12 +9,13 @@ namespace DeepSpaceSaga.Client.UI.Screens.Tutorial;
 /// <summary>
 /// Battle-tutorial companion of <see cref="TacticalBattleScreen"/>: fed with every rendered frame, draws on top of the overlay
 /// and gets the first look at input that targets its own areas. Exists only in the tutorial battle. It never calls the Engine
-/// and never touches battle orders; input hooks return true only for its own areas (the comms panel).
+/// and never touches battle orders; input hooks return true only for its own areas (left button on the comms panel and log).
 /// </summary>
 internal sealed class TutorialSession
 {
     private bool _portraitComposed;
     private SKBitmap? _portrait;
+    private TutorialStep[] _heardSteps = [];
 
     internal TutorialSession(TutorialScript script)
     {
@@ -69,9 +70,20 @@ internal sealed class TutorialSession
     /// <summary>The last frame observation (anchor templates are resolved against it).</summary>
     internal TutorialObservation? LastObservation { get; private set; }
 
-    /// <summary>Steps heard in this battle, in spoken order (journal source).</summary>
-    internal IReadOnlyList<TutorialStep> HeardSteps =>
-        Director.Heard.Select(id => Script.Steps.First(s => s.Id == id)).ToArray();
+    /// <summary>
+    /// Steps heard in this battle, in spoken order (journal source). Cached: rebuilt only when <see cref="TutorialDirector.Heard"/>
+    /// grows (it is append-only), so a render frame allocates nothing here.
+    /// </summary>
+    internal IReadOnlyList<TutorialStep> HeardSteps
+    {
+        get
+        {
+            var heard = Director.Heard;
+            if (_heardSteps.Length != heard.Count)
+                _heardSteps = heard.Select(id => Script.Steps.First(s => s.Id == id)).ToArray();
+            return _heardSteps;
+        }
+    }
 
     internal void Observe(TutorialObservation observation)
     {
@@ -98,7 +110,6 @@ internal sealed class TutorialSession
     internal void Draw(SKCanvas canvas, BattleLayout layout, float designWidth, long nowMs)
     {
         if (Script.Steps.IsDefaultOrEmpty) return; // no lessons, no comms panel
-        if (!_portraitComposed) ComposePortrait();
         var line = Director.Collapsed ? null : Director.Current; // a collapsed line shows as the chip, without a highlight
         if (Director.Enabled && line is { Step.Anchor: { } anchor } && LastObservation is { } observation &&
             TutorialHighlight.Target(layout, TutorialHighlight.ResolveKey(anchor, layout, observation, line.SignalUnitId)) is { } target)
@@ -109,9 +120,9 @@ internal sealed class TutorialSession
 
     internal bool OnMouseDown(SKPoint designPoint, MouseButton button)
     {
+        if (button != MouseButton.Left) return false; // right/middle pass through: the battle pans the camera from here too
         if (Journal.OnMouseDown(designPoint)) return true;
         if (!Panel.Bounds.Contains(designPoint)) return false;
-        if (button != MouseButton.Left) return true;
         switch (Panel.Hit(designPoint))
         {
             case "ack": Director.Acknowledge(); break;
@@ -144,7 +155,16 @@ internal sealed class TutorialSession
 
     internal bool OnMouseWheel(SKPoint designPoint, float delta) => Journal.OnMouseWheel(designPoint, delta);
 
-    /// <summary>Releases the portrait bitmap; the next <see cref="Draw"/> composes it again.</summary>
+    /// <summary>
+    /// Composes the portrait again after <see cref="Release"/>; called on screen activation (a transition), never from a render
+    /// frame. Keeps an already composed bitmap.
+    /// </summary>
+    internal void Prepare()
+    {
+        if (!_portraitComposed) ComposePortrait();
+    }
+
+    /// <summary>Releases the portrait bitmap; <see cref="Draw"/> shows the placeholder until <see cref="Prepare"/>.</summary>
     internal void Release()
     {
         _portrait?.Dispose();

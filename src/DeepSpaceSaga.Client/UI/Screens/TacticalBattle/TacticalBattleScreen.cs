@@ -139,6 +139,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private InteractiveAnomalyField? _interactiveField;
     private PaintedCloudLayer? _paintedClouds;
 
+    public override void OnActivated()
+    {
+        Tutorial?.Prepare(); // a screen transition, not a render frame: the officer portrait is composed here
+        base.OnActivated();
+    }
+
     public override void OnDeactivated()
     {
         _interactiveField?.Dispose();
@@ -306,6 +312,13 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         }
     }
 
+    /// <summary>A right-drag pan starts outside the battle panels; the tutorial comms areas pass the right button through.</summary>
+    private bool BlocksPan(SKPoint p)
+    {
+        var tutorial = Tutorial?.Bounds.ToArray() ?? [];
+        return OverlayRects().Any(r => r.Contains(p) && Array.IndexOf(tutorial, r) < 0);
+    }
+
     public override ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
         if (ConfirmExit) return base.OnMouseDown(x, y, button);
@@ -316,7 +329,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (button == MouseButton.Left && CenterFromMinimap(p)) return ScreenEvent.None;
         if (button == MouseButton.Right)
         {
-            if (!OverlayHit(p)) _camera.BeginPan(p.X, p.Y);
+            if (!BlocksPan(p)) _camera.BeginPan(p.X, p.Y);
             return ScreenEvent.None;
         }
         if (TurnBusy) return ScreenEvent.None;

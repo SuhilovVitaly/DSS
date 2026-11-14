@@ -10,14 +10,15 @@ namespace DeepSpaceSaga.Client.UI.Screens.Tutorial;
 /// <summary>
 /// The «Связь» panel of the battle tutorial at the bottom edge of the field, between the pilot column and the right panel
 /// (design coordinates 1280x720). Expanded: officer portrait, «name · role», up to two rows of the current line, «Got it» and
-/// «Hints: off». Otherwise a compact chip («COMMS · H — comms log», or «Hints: on» when hints are disabled). Every text is a
-/// Locale key resolved at draw time, so the panel always speaks the current game language.
+/// «Hints: off». Otherwise a compact chip («COMMS · H — comms log» with a small «Hints: off» button beside it, or «Hints: on»
+/// when hints are disabled). Every text is a Locale key resolved at draw time, so the panel always speaks the current game
+/// language.
 /// </summary>
 internal sealed class TutorialCommsPanel
 {
     internal const float Width = 460, Height = 100, TextWidth = 352, Left = 206, Bottom = 714;
     internal const float FontSize = 13, RowHeight = 18, ChipWidth = 190, ChipHeight = 30;
-    private const float Pad = 8, PortraitSize = 72, TextLeft = Pad + PortraitSize + 10, RightReserve = 246, ButtonHeight = 20;
+    private const float Pad = 8, PortraitSize = 72, TextLeft = Pad + PortraitSize + 10, RightReserve = 246, ButtonHeight = 20, ChipGap = 6;
 
     internal SKRect Bounds { get; private set; } = SKRect.Empty;
     internal SKRect AcknowledgeBounds { get; private set; } = SKRect.Empty;
@@ -96,6 +97,10 @@ internal sealed class TutorialCommsPanel
         Button(c, AcknowledgeBounds, ack, big: true);
     }
 
+    /// <summary>
+    /// The chip; with hints on it also carries a small «Hints: off» button to its right, so the switch stays reachable while
+    /// no line is shown (<see cref="Bounds"/> then spans chip and button). With hints off the chip itself is «Hints: on».
+    /// </summary>
     private void DrawChip(SKCanvas c, BattleLayout layout, bool hintsEnabled)
     {
         var r = new SKRect(Left, Bottom - ChipHeight, Left + ChipWidth, Bottom);
@@ -110,6 +115,12 @@ internal sealed class TutorialCommsPanel
             text = ControlText.SafeSymbols(text);
             float size = FitSize(text, 11, r.Width - 16);
             T(c, text, r.Left + 8, r.MidY + size * .36f, size, Muted);
+            string off = Localization.Get("Tutorial.Panel.HintsOff");
+            float top = r.MidY - ButtonHeight * .5f;
+            HintsBounds = SKRect.Create(r.Right + ChipGap, top, ButtonWidth(off), ButtonHeight);
+            layout.Rects["tutorial:hints"] = HintsBounds;
+            Bounds = SKRect.Union(r, HintsBounds);
+            Button(c, HintsBounds, off);
         }
         else Button(c, r, text);
     }

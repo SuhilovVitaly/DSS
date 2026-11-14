@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Client.UI.Screens.Tutorial;
 using DeepSpaceSaga.Contracts;
@@ -72,7 +73,13 @@ public sealed class TutorialCommsPanelTests
         session.Release();
         Assert.Null(session.Portrait);
         Draw(session);
-        Assert.NotNull(session.Portrait); // recomposed on the next draw after Release
+        Assert.Null(session.Portrait); // US-0006-TK-0004: a render frame never composes the portrait (placeholder instead)
+        session.Prepare();             // screen activation (a transition) composes it again
+        Assert.NotNull(session.Portrait);
+        var composed = session.Portrait;
+        session.Prepare();
+        Draw(session);
+        Assert.Same(composed, session.Portrait); // kept: no second composition
         session.Release();
     }
 
@@ -89,10 +96,55 @@ public sealed class TutorialCommsPanelTests
         var chip = layout.Rects["tutorial:chip"];
         Assert.Equal(new SKRect(TutorialCommsPanel.Left, TutorialCommsPanel.Bottom - 30, TutorialCommsPanel.Left + 190,
             TutorialCommsPanel.Bottom), chip);
-        Assert.Equal([chip], session.Bounds);
+        // US-0006-TK-0004: a small «Hints: off» button right of the chip; the chip area covers both.
+        var off = layout.Rects["tutorial:hints"];
+        Assert.True(off.Left > chip.Right && off.Top >= chip.Top && off.Bottom <= chip.Bottom, off.ToString());
+        Assert.Equal([SKRect.Union(chip, off)], session.Bounds);
         Assert.False(layout.Rects.ContainsKey("tutorial:panel"));
         Assert.Contains(ControlText.SafeSymbols(Localization.Get("Tutorial.Panel.Title") + " · " + Localization.Get("Tutorial.Panel.JournalHint")),
             layout.Texts.Select(t => t.Text));
+        Assert.Contains(Localization.Get("Tutorial.Panel.HintsOff"), layout.Texts.Select(t => t.Text));
+    }
+
+    /// <summary>
+    /// US-0006-TK-0004: only the left button acts on the comms areas; right/middle presses inside the panel, the chip or the
+    /// open journal are not captured, so the battle starts its right-drag camera pan there.
+    /// </summary>
+    [Fact]
+    public void NonLeftButtonsPassThroughPanelChipAndJournal()
+    {
+        using var locale = Localization.UseLocaleForTests("Russian");
+        var session = new TutorialSession(Script(null, Step("hello")));
+        session.Observe(Move());
+        var layout = Draw(session);
+        var panel = layout.Rects["tutorial:panel"];
+        var ack = layout.Rects["tutorial:ack"];
+        foreach (var button in new[] { MouseButton.Right, MouseButton.Middle })
+        {
+            Assert.False(session.OnMouseDown(Center(panel), button));
+            Assert.False(session.OnMouseDown(Center(ack), button));
+            Assert.False(session.OnMouseDown(Center(layout.Rects["tutorial:hints"]), button));
+        }
+        Assert.Equal("hello", session.Director.Current?.Step.Id); // nothing acted
+        Assert.True(session.Director.Enabled);
+
+        session.OnKeyDown(Key.H, KeyModifiers.None, false);
+        layout = Draw(session);
+        var journal = layout.Rects["tutorial:journal"];
+        var close = layout.Rects["tutorial:journal-close"];
+        Assert.False(session.OnMouseDown(Center(journal), MouseButton.Right));
+        Assert.False(session.OnMouseDown(Center(close), MouseButton.Middle));
+        Assert.True(session.Journal.IsOpen);
+        Assert.True(session.OnMouseDown(Center(close), MouseButton.Left)); // left still acts
+        Assert.False(session.Journal.IsOpen);
+
+        Assert.True(session.OnMouseDown(Center(ack), MouseButton.Left));
+        Assert.Equal(TutorialStepState.Completed, session.Director.StateOf("hello"));
+        layout = Draw(session);
+        var chip = layout.Rects["tutorial:chip"];
+        Assert.False(session.OnMouseDown(Center(chip), MouseButton.Right));
+        Assert.False(session.OnMouseDown(Center(layout.Rects["tutorial:hints"]), MouseButton.Right));
+        Assert.True(session.Director.Enabled);
     }
 
     [Fact]
@@ -143,7 +195,7 @@ public sealed class TutorialCommsPanelTests
         Assert.Contains(Localization.Get("Tutorial.Panel.HintsOn"), layout.Texts.Select(t => t.Text));
         Assert.Equal("hints-on", again.Panel.Hit(Center(chip)));
 
-        Assert.True(again.OnMouseDown(Center(chip), MouseButton.Right)); // captured, but only the left button acts
+        Assert.False(again.OnMouseDown(Center(chip), MouseButton.Right)); // passes through (camera pan); only the left button acts
         Assert.False(again.Director.Enabled);
         Assert.True(again.OnMouseDown(Center(chip), MouseButton.Left));
         Assert.True(again.Director.Enabled);
@@ -162,7 +214,7 @@ public sealed class TutorialCommsPanelTests
         var portrait = layout.Rects["tutorial:portrait"];
 
         Assert.True(session.OnMouseDown(Center(portrait), MouseButton.Left));
-        Assert.True(session.OnMouseDown(Center(panel), MouseButton.Right));
+        Assert.False(session.OnMouseDown(Center(panel), MouseButton.Right)); // passes through to the battle (camera pan)
         Assert.Equal("hello", session.Director.Current?.Step.Id); // a click on the body changes nothing
         Assert.False(session.OnMouseDown(new SKPoint(panel.Left - 1, panel.MidY), MouseButton.Left));
         Assert.False(session.OnMouseDown(new SKPoint(panel.MidX, panel.Top - 1), MouseButton.Left));

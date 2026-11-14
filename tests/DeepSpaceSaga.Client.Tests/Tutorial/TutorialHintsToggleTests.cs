@@ -34,7 +34,7 @@ public sealed class TutorialHintsToggleTests
 
         layout = Draw(session);
         var chip = layout.Rects["tutorial:chip"];
-        Assert.True(session.OnMouseDown(Center(chip), MouseButton.Right)); // captured, nothing saved
+        Assert.False(session.OnMouseDown(Center(chip), MouseButton.Right)); // passes through, nothing saved
         Assert.Equal(new[] { false }, saved);
         Assert.True(session.OnMouseDown(Center(chip), MouseButton.Left));
         Assert.True(session.HintsEnabled);
@@ -46,6 +46,62 @@ public sealed class TutorialHintsToggleTests
         if (layout.Rects.TryGetValue("tutorial:ack", out var ack)) session.OnMouseDown(Center(ack), MouseButton.Left);
         Assert.False(session.OnMouseDown(new SKPoint(1270, 10), MouseButton.Left));
         Assert.Equal(new[] { false, true }, saved);
+    }
+
+    /// <summary>
+    /// US-0006-TK-0004: with hints on but no line shown (nothing yet, or a line folded into the chip), the chip still offers
+    /// «Hints: off»; the switch is saved through the same PersistHints path as the panel button.
+    /// </summary>
+    [Theory]
+    [InlineData("Russian")]
+    [InlineData("English")]
+    public void ChipOffersHintsOffWhileNoLineIsShown(string language)
+    {
+        using var locale = Localization.UseLocaleForTests(language);
+        var saved = new List<bool>();
+        var session = new TutorialSession(Script(null, Step("later", phase: "Fire")))
+        {
+            PersistHints = value =>
+            {
+                saved.Add(value);
+                return true;
+            },
+        };
+        session.Observe(Move());
+        var layout = Draw(session);
+        Assert.Null(session.Director.Current);
+        var chip = layout.Rects["tutorial:chip"];
+        var off = layout.Rects["tutorial:hints"];
+        Assert.Contains(Localization.Get("Tutorial.Panel.HintsOff"), layout.Texts.Select(t => t.Text));
+        Assert.True(off.Right <= 1280 - 246, off.ToString()); // stays left of the right panel
+        Assert.Equal("hints-off", session.Panel.Hit(Center(off)));
+        Assert.Null(session.Panel.Hit(Center(chip)));
+
+        Assert.True(session.OnMouseDown(Center(off), MouseButton.Left));
+        Assert.False(session.HintsEnabled);
+        Assert.Equal(new[] { false }, saved);
+        layout = Draw(session);
+        Assert.False(layout.Rects.ContainsKey("tutorial:hints")); // off: the chip itself is «Hints: on»
+        Assert.Equal("hints-on", session.Panel.Hit(Center(layout.Rects["tutorial:chip"])));
+
+        // A collapsed line: the chip again offers «Hints: off», and the chip itself still unfolds the line.
+        var collapsed = new TutorialSession(Script(null, Step("only", complete: TutorialCompletion.PilotSelected)))
+        {
+            PersistHints = value =>
+            {
+                saved.Add(value);
+                return true;
+            },
+        };
+        collapsed.Observe(Move());
+        collapsed.Observe(Move(now: new TutorialLimits().AutoCollapseMs));
+        Assert.True(collapsed.Director.Collapsed);
+        layout = Draw(collapsed);
+        Assert.Contains(Localization.Get("Tutorial.Panel.HintsOff"), layout.Texts.Select(t => t.Text));
+        Assert.True(collapsed.OnMouseDown(Center(layout.Rects["tutorial:hints"]), MouseButton.Left));
+        Assert.False(collapsed.HintsEnabled);
+        Assert.Equal(TutorialStepState.Dismissed, collapsed.Director.StateOf("only"));
+        Assert.Equal(new[] { false, false }, saved);
     }
 
     [Fact]

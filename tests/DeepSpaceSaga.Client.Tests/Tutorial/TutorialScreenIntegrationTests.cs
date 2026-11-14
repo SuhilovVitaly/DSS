@@ -211,12 +211,17 @@ public sealed class TutorialScreenIntegrationTests
         var body = screen.Layout.Rects["tutorial:portrait"];
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(body.MidX, body.MidY, MouseButton.Left));
         screen.OnMouseUp(body.MidX, body.MidY, MouseButton.Left);
+        Render(screen);
+        Assert.Equal(view, screen.View); // a left press on the panel body does nothing to the battle
+        // US-0006-TK-0004: the right button passes through the panel, so a right-drag starting on it pans the camera.
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(body.MidX, body.MidY, MouseButton.Right));
-        screen.OnMouseMove(body.MidX + 200, body.MidY - 200);
+        Assert.True(screen.OnMouseMove(body.MidX + 200, body.MidY - 200));
+        Render(screen);
+        Assert.True(session.LastObservation!.Interacting); // panning keeps the officer quiet
         screen.OnMouseUp(body.MidX + 200, body.MidY - 200, MouseButton.Right);
         Render(screen);
         Assert.Equal(before, Json(screen.Movement)); // no path aiming under the panel
-        Assert.Equal(view, screen.View);            // no camera pan started on the panel
+        Assert.NotEqual(view, screen.View);         // the camera panned
         Assert.Equal("hello", session.Director.Current?.Step.Id);
 
         var ack = screen.Layout.Rects["tutorial:ack"];
@@ -225,7 +230,7 @@ public sealed class TutorialScreenIntegrationTests
         Render(screen);
         Assert.False(screen.Layout.Rects.ContainsKey("tutorial:panel"));
         var chip = screen.Layout.Rects["tutorial:chip"];
-        Assert.Contains(chip, screen.PanelRects);
+        Assert.Contains(SKRect.Union(chip, screen.Layout.Rects["tutorial:hints"]), screen.PanelRects); // chip + «Hints: off»
         Assert.DoesNotContain(panel, screen.PanelRects);
     }
 
@@ -298,6 +303,29 @@ public sealed class TutorialScreenIntegrationTests
         Assert.True(screen.Layout.Rects.ContainsKey("tutorial:panel"));
         Assert.True(screen.Layout.Rects.ContainsKey("tutorial:highlight"));
         Assert.Equal("move.select-pilot", session.Director.Current?.Step.Id);
+    }
+
+    /// <summary>US-0006-TK-0004: deactivation releases the portrait; activation (not a render frame) composes it again.</summary>
+    [Fact]
+    public async Task ScreenActivationRecomposesThePortraitOutsideRenderFrames()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var started = await StartF8(fixture);
+        using var skins = TutorialSkins();
+        var session = new TutorialSession(new TutorialScript(1, TutorialCommsPanelTests.Officer(), new TutorialLimits(),
+            [new TutorialStep("hello", "Tutorial.Journal.Empty", new TutorialCondition("Move", null, null, null, TutorialSignal.None),
+                TutorialCompletion.Acknowledged, null, 50)]));
+        var screen = new TacticalBattleScreen(started.Flow, 1, skins.GetOrClassic("tabletop"))
+        { ClockMilliseconds = started.ClockMilliseconds, Tutorial = session };
+        Render(screen);
+        Assert.NotNull(session.Portrait);
+        screen.OnDeactivated();
+        Assert.Null(session.Portrait);
+        Render(screen);
+        Assert.Null(session.Portrait); // no composition inside the frame
+        screen.OnActivated();
+        Assert.NotNull(session.Portrait);
+        session.Release();
     }
 
     private static TacticalBattleSkinCatalog TutorialSkins() => TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));

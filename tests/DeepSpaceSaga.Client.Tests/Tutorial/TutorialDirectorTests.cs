@@ -138,6 +138,35 @@ public sealed class TutorialDirectorTests
         Assert.Equal(TutorialStepState.Completed, director.StateOf("step"));
     }
 
+    /// <summary>
+    /// US-0006-TK-0004: evade (E) clears the drone's target and a decoy (D) keeps it — neither is a target choice. Cancelling
+    /// the evade leaves the target empty, which still is not «Hold fire». Only another real target (or an explicit hold) counts.
+    /// </summary>
+    [Fact]
+    public void EvadeOrDecoyDoesNotCompleteTargetChosen()
+    {
+        var director = Director(Step("target", "Fire", TutorialCompletion.TargetChosen));
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle), now: 10));
+        Assert.Equal(TutorialStepState.Shown, director.StateOf("target"));
+
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("vera", null), evade: "vera"), now: 20)); // E
+        Assert.Equal(TutorialStepState.Shown, director.StateOf("target"));
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("vera", null)), now: 30)); // E again: evade off
+        Assert.Equal(TutorialStepState.Shown, director.StateOf("target"));
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("vera", null), decoy: "yun"), now: 40)); // D
+        Assert.Equal(TutorialStepState.Shown, director.StateOf("target"));
+
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("vera", "tag-2")), now: 50)); // a real choice
+        Assert.Equal(TutorialStepState.Completed, director.StateOf("target"));
+
+        // A waiting (not yet shown) step is not completed by an evade either.
+        var waiting = Director(Step("first", "Fire", TutorialCompletion.Acknowledged, priority: 100),
+            Step("target", "Fire", TutorialCompletion.TargetChosen));
+        waiting.Observe(Fire(TutorialTestBattle.Plan(FireBattle), now: 10));
+        waiting.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("yun", null), evade: "yun"), now: 20));
+        Assert.Equal(TutorialStepState.Waiting, waiting.StateOf("target"));
+    }
+
     [Fact]
     public void PilotCycledNeedsAChangeBetweenTwoPilotsWithinThePhase()
     {
