@@ -216,6 +216,52 @@ public sealed class TutorialLessonFlowTests
         Assert.Equal(TutorialStepState.Expired, live.Director.StateOf("intro"));
     }
 
+    [Fact]
+    public async Task FirstFireAndSalvoAreTaughtThenGetOutOfTheWay()
+    {
+        await using var live = await LiveTutorial.Start();
+        await live.EnterUntil("Fire");
+        live.Pause();
+        Assert.Equal("fire.target", live.Director.Current?.Step.Id);
+        Assert.StartsWith("candidate:", live.HighlightKey());
+
+        // Pick a pilot and give it another target: another enemy on the field, otherwise «Hold fire» on its card.
+        await live.Press(Key.Tab);
+        var plan = live.Session.LastObservation!.FirePlan!;
+        var row = plan.Rows.First(r => r.Drone.Id == plan.SelectedDroneId);
+        var other = live.Screen.Layout.Rects.FirstOrDefault(r => r.Key.StartsWith("candidate:", StringComparison.Ordinal) &&
+            r.Key != "candidate:" + row.TargetId && row.Group.List.Any(c => "candidate:" + c.TargetId == r.Key));
+        var click = other.Key is not null ? other.Value : live.Screen.Layout.Rects["card-command:hold"];
+        live.Screen.OnMouseDown(click.MidX, click.MidY, MouseButton.Left);
+        live.Screen.OnMouseUp(click.MidX, click.MidY, MouseButton.Left);
+        live.Render();
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("fire.target"));
+
+        live.Pause();
+        Assert.Equal("fire.submit", live.Director.Current?.Step.Id);
+        Assert.Equal("button:primary", live.HighlightKey());
+
+        await live.Press(Key.Enter); // open fire: the salvo is in flight on the next frame
+        Assert.Equal("Salvo", live.Phase);
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("fire.submit"));
+        live.Pause();
+        Assert.Equal("Salvo", live.Phase);
+        Assert.Equal("salvo.watch", live.Director.Current?.Step.Id);
+        Assert.Equal("button:primary", live.HighlightKey());
+
+        await live.Press(Key.Enter); // skip the flight
+        Assert.Equal("Results", live.Phase);
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("salvo.watch"));
+        live.Pause();
+        Assert.Equal("results.read", live.Director.Current?.Step.Id);
+        Assert.Equal("button:replay", live.HighlightKey());
+
+        await live.Press(Key.Enter); // on to the next turn
+        Assert.Equal("Move", live.Phase);
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("results.read"));
+        Assert.Null(live.Director.Current); // nothing from the salvo lingers into the next Move
+    }
+
     private static int IndexOf(LiveTutorial live, string stepId)
     {
         int index = live.Director.Heard.ToList().IndexOf(stepId);

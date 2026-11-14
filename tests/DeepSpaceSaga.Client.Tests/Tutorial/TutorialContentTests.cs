@@ -148,6 +148,36 @@ public sealed class TutorialContentTests
     }
 
     [Fact]
+    public void FireAndSalvoLessonsMatchTheCatalog()
+    {
+        var script = Shipped();
+        // minTurn 1, not turn 1: the first turn may have no Fire phase when the sides are out of range.
+        AssertStep(script, "fire.target", "Tutorial.Line.FireTarget", "Fire", null, 1, null, TutorialSignal.None,
+            TutorialCompletion.TargetChosen, "candidate:{any}", 90);
+        AssertStep(script, "fire.submit", "Tutorial.Line.FireSubmit", "Fire", null, 1, "fire.target", TutorialSignal.None,
+            TutorialCompletion.PhaseLeft, "button:primary", 80);
+        AssertStep(script, "salvo.watch", "Tutorial.Line.SalvoWatch", "Salvo", null, 1, null, TutorialSignal.None,
+            TutorialCompletion.PhaseLeft, "button:primary", 90);
+        AssertStep(script, "results.read", "Tutorial.Line.ResultsRead", "Results", null, 1, null, TutorialSignal.None,
+            TutorialCompletion.PhaseLeft, "button:replay", 80);
+    }
+
+    [Theory]
+    [InlineData("Russian")]
+    [InlineData("English")]
+    public void QuotedUiLabelsMatchCurrentLocale(string language)
+    {
+        var script = Shipped();
+        using var locale = Localization.UseLocaleForTests(language);
+        string Line(string id) => Localization.Get(StepOf(script, id).LineKey);
+        Assert.Contains(Localization.Get("TacticalBattle.Ui.HoldFire"), Line("fire.target"), StringComparison.Ordinal);
+        string replay = Localization.Get("TacticalBattle.Ui.Replay").Replace("↺", "", StringComparison.Ordinal).Trim();
+        Assert.Contains(replay, Line("results.read"), StringComparison.Ordinal);
+        Assert.Contains("Enter", Line("fire.submit"), StringComparison.Ordinal);
+        Assert.Contains("Enter", Line("salvo.watch"), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void OfficerPortraitComposesDeterministicallyFromExistingHead()
     {
         var officer = Shipped().Officer!;

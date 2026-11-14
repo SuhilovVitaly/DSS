@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0003-officer-lessons
 ticket: EP-0028-US-0003-TK-0003-fire-lessons
 title: Уроки стрельбы и залпа
-stage: approved
+stage: implemented
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0003-TK-0002-move-lessons]
@@ -104,6 +104,30 @@ Process-tree cap 300000 ms.
 
 Каталог, тексты, источники управления и меток заданы с `path:line`.
 
+## Результат
+
+`src/DeepSpaceSaga.Client/Data/Tutorial/battle-tutorial.json`: добавлены 4 шага — `fire.target` (Fire, **minTurn 1**, `target-chosen`, `candidate:{any}`, 90), `fire.submit` (Fire, **minTurn 1**, after `fire.target`, `phase-left`, `button:primary`, 80), `salvo.watch` (Salvo, **minTurn 1**, `phase-left`, `button:primary`, 90), `results.read` (Results, **minTurn 1**, `phase-left`, `button:replay`, 80).
+
+| Key | RU | EN |
+|---|---|---|
+| `Tutorial.Line.FireTarget` | Цели назначены заранее. Сменить — щёлкните врага; «Не стрелять» — без выстрела. | Targets are preassigned. Click an enemy to switch, or “Hold fire” to skip the shot. |
+| `Tutorial.Line.FireSubmit` | Шанс попадания — на карточке пилота. Расклад устраивает? Огонь — Enter. | Hit chances are on the pilot's card. Like the odds? Press Enter to open fire. |
+| `Tutorial.Line.SalvoWatch` | Залп пошёл. Enter пропустит полёт — на итог это не влияет. | Salvo away. Enter skips the flight — the result stays the same. |
+| `Tutorial.Line.ResultsRead` | Итоги — справа и на карточках. «Повтор» покажет залп снова, Enter — новый ход. | Results are on the right and on the cards. “Replay” shows it again; Enter moves on. |
+
+Все реплики — 2 строки панели в RU и EN (`snap/lines.txt`); цитаты меток совпадают с Locale (`TacticalBattle.Ui.HoldFire`, `TacticalBattle.Ui.Replay` без «↺»).
+
+Тесты: `TutorialContentTests.FireAndSalvoLessonsMatchTheCatalog`, `QuotedUiLabelsMatchCurrentLocale` (RU, EN; плюс Enter в `fire.submit`/`salvo.watch`); `TutorialLessonFlowTests.FirstFireAndSalvoAreTaughtThenGetOutOfTheWay` (живой бой обучения: Enter до первой фазы Fire → `fire.target` с подсветкой `candidate:*` → Tab и клик по другому врагу (иначе «Не стрелять» на карточке) → Completed → `fire.submit` с подсветкой `button:primary` → Enter → фаза Salvo, Completed → `salvo.watch` в полёте залпа с подсветкой `button:primary` → Enter (пропуск) → Results, Completed → `results.read` с подсветкой `button:replay` → Enter → Move, Completed, реплик нет).
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0003-tk0003-20261114T192443/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт: `FireAndSalvoLessonsMatchTheCatalog`, `QuotedUiLabelsMatchCurrentLocale` ×2 (шагов нет), flow-тест (`fire.target` не показан) — 4 failed / 13 passed — `../us0003-tk0003-red/red.log`; после данных — 17/17 (`green.log`).
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~TutorialFlowTests"` — **165/165** — `fire.trx`, `fire.log`.
+- Растровые снимки панели RU/EN: `snap/panel-{ru,en}-<step>.png` (временный тест-дамп, не закоммичен).
+- Правок кода и `UI/Screens/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) **`turn: 1` каталога заменён на `minTurn: 1`** у всех четырёх шагов: в первом ходу фазы Fire может не быть (стороны вне дальности, см. US-0002-TK-0003), поэтому уроки звучат в первой фактической стрельбе/залпе; повторно не звучат (шаги одноразовые). (2) Тексты переписаны под ёмкость панели и тон пользователя. Пробел для пропуска залпа не упоминается: по коду (`TacticalBattleScreen.cs:186-192`) пробел пропускает полёт только в скинах со «slim»-колонкой пилотов; Enter работает всегда. Очередь инициативы не упоминается (видна только во время полёта); вместо неё — «зачем»: шанс попадания на карточке (`PilotCardFireBlock.cs:148`) и что пропуск полёта не меняет итог. (3) Во flow-тесте смена цели — клик по другому кандидату на поле, а если его нет — «Не стрелять» на карточке выбранного пилота; оба действия засчитываются `target-chosen`.

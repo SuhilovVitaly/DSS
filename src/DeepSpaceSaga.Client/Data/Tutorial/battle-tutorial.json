@@ -47,6 +47,38 @@
       "complete": "path-edited",
       "anchor": "reachable",
       "priority": 60
+    },
+    {
+      "id": "fire.target",
+      "lineKey": "Tutorial.Line.FireTarget",
+      "when": { "phase": "Fire", "minTurn": 1 },
+      "complete": "target-chosen",
+      "anchor": "candidate:{any}",
+      "priority": 90
+    },
+    {
+      "id": "fire.submit",
+      "lineKey": "Tutorial.Line.FireSubmit",
+      "when": { "phase": "Fire", "minTurn": 1, "after": "fire.target" },
+      "complete": "phase-left",
+      "anchor": "button:primary",
+      "priority": 80
+    },
+    {
+      "id": "salvo.watch",
+      "lineKey": "Tutorial.Line.SalvoWatch",
+      "when": { "phase": "Salvo", "minTurn": 1 },
+      "complete": "phase-left",
+      "anchor": "button:primary",
+      "priority": 90
+    },
+    {
+      "id": "results.read",
+      "lineKey": "Tutorial.Line.ResultsRead",
+      "when": { "phase": "Results", "minTurn": 1 },
+      "complete": "phase-left",
+      "anchor": "button:replay",
+      "priority": 80
     }
   ]
 }
