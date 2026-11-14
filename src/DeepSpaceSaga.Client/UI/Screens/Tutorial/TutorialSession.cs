@@ -33,12 +33,22 @@ internal sealed class TutorialSession
     /// <summary>Areas that capture input, in design coordinates (the panel or chip as last drawn).</summary>
     internal IEnumerable<SKRect> Bounds => Panel.Bounds.IsEmpty ? [] : [Panel.Bounds];
 
-    internal void Observe(TutorialObservation observation) => Director.Observe(observation);
+    /// <summary>The last frame observation (anchor templates are resolved against it).</summary>
+    internal TutorialObservation? LastObservation { get; private set; }
+
+    internal void Observe(TutorialObservation observation)
+    {
+        LastObservation = observation;
+        Director.Observe(observation);
+    }
 
     internal void Draw(SKCanvas canvas, BattleLayout layout, float designWidth, long nowMs)
     {
         if (Script.Steps.IsDefaultOrEmpty) return; // no lessons, no comms panel
         if (!_portraitComposed) ComposePortrait();
+        if (Director.Enabled && Director.Current is { Step.Anchor: { } anchor } line && LastObservation is { } observation &&
+            TutorialHighlight.Target(layout, TutorialHighlight.ResolveKey(anchor, layout, observation, line.SignalUnitId)) is { } target)
+            TutorialHighlight.Draw(canvas, layout, target, nowMs); // under the panel; not part of Bounds
         Panel.Draw(canvas, layout, designWidth, Director.Current, Director.Enabled, _portrait, Script.Officer);
     }
 

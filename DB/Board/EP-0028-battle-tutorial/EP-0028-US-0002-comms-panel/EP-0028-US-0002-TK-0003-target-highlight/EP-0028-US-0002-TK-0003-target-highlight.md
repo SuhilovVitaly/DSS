@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0002-comms-panel
 ticket: EP-0028-US-0002-TK-0003-target-highlight
 title: Подсветка цели и стрелка
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0002-TK-0002-comms-panel]
@@ -110,6 +110,19 @@ dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -
 
 Все ключи якорей указаны с источником `path:line`; правила шаблонов и визуальные параметры заданы.
 
+## Результат
+
+Новый `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialHighlight.cs`: `ResolveKey(anchor, layout, observation, signalUnitId)` — шаблоны `{own}` (выбранный свой дрон с ключом, иначе первый свой не `Destroyed` в порядке `Battle.Units`), `{selected}`, `{any}`, `{signal}`, литерал; возвращает только ключ, который есть в `layout.Rects` текущего кадра, иначе null (неизвестный шаблон — null). `Target(layout, key)`; `PulseAlpha(nowMs) = 0.55 + 0.45·sin(2π·(t mod 1200)/1200)`; `Draw` — рамка = цель + 4 (обводка 2, `BattleDesign.Yellow` с альфой пульса, мягкое свечение 6 px), стрелка 14×12 над целью остриём вниз, при `target.Top < 40` — под целью остриём вверх; ключи `tutorial:highlight`, `tutorial:arrow`. `TutorialSession`: `LastObservation`; в `Draw` при включённых подсказках и реплике с якорем — подсветка до панели (панель поверх); `Bounds` не меняются.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0002-tk0003-20261114T175257/`):
+
+- Красный старт: без реализации тесты не компилируются (`TutorialHighlight` нет, у `TutorialSession` нет `LastObservation`) — `../us0002-tk0003-red/build-red.log`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial" --results-directory "$RUN" --logger "trx;LogFileName=highlight.trx"` (`DSS_VALIDATION_ROOT` = папка прогона) — **119/119** — `highlight.trx`, `highlight.log`. Новые: `TutorialHighlightTests.ResolvesEachTemplateAgainstLiveTabletopLayout` (живой Tabletop: Move — `pilot:{own}` без выбора и с выбором, `endpoint:{selected}`, `reachable`, `button:primary`, `minimap`, `pilot:{signal}`; Fire — `candidate:{any}`, `card-command:hold`), `HighlightDoesNotCaptureClicks`, `MissingAnchorDrawsNothing`, `PulseDependsOnlyOnInjectedClock`.
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` — 0 предупреждений, 0 ошибок — `build.log`.
+- ForbiddenCalls не затрагивается: правок в `UI/Screens/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) резолвер возвращает только ключи, реально записанные в текущем кадре (иначе null) — так «нет якоря» и «элемент не нарисован» обрабатываются одинаково; (2) `Target` дополнительно отбрасывает пустые прямоугольники; (3) помимо обводки рисуется тонкое свечение той же альфы/4 — визуальная деталь в пределах «мягкой рамки»; (4) живой тест переходит к Fire циклом Enter, т.к. в бою F8 первый ход может не иметь фазы стрельбы (стороны вне дальности).
