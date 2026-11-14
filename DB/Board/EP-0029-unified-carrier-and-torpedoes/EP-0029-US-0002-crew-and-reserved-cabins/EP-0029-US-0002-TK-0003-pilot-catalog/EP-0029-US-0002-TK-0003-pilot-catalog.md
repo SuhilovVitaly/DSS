@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Имена и портреты стартовой четвёрки
@@ -104,4 +104,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Renamed the four diagnostic pilots' display names to Evelyn Ward / Audrey Bennett / Claire Morgan / Rachel Hayes (legacy keys vera/yun/marta/oleg kept as aliases), kept the skills matrix, set `female=true` for all four in the UI catalog and pointed yun/oleg at their W4 portraits (`CHR-20260915-102448-E2757F`, `CHR-20260915-102447-5F3DEF`).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0002Tk0003Tests"` — **3/3 passed** (`FourPilotsFemaleAndAssetsExist`, `SkillsUnchangedUnderNewNames`, `OfficerPortraitNotReused`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-007-us0002tk0003/US-0002-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (content-data layer); native/product acceptance remains OPEN.
