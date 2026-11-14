@@ -22,6 +22,8 @@ files_touched:
   - tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialJournalTests.cs
   - tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialScreenIntegrationTests.cs
   - tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialContentTests.cs
+  - src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFireOrders.cs
+  - tests/DeepSpaceSaga.Client.Tests/TacticalBattle/FirePlanningTests.cs
   - DB/Documentation/02-FirstRelease/Screens/Settings.md
   - DB/Documentation/02-FirstRelease/Screens/TacticalBattle.md
   - DB/Documentation/04-Engineering/TacticalBattle.md
@@ -113,3 +115,5 @@ DSS_VALIDATION_ROOT="$RUN" dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpac
 2026-11-14 — реализовано (TDD), `stage: implemented`. Коммиты: Board и записи журнала — 071b0d2c; код — 0f04fc3b; тексты — bef0f19c; документация — коммит документации (этот).
 
 Узкие решения исполнителя: (1) кнопка у значка использует существующий ключ `Tutorial.Panel.HintsOff` — новый ключ не нужен, паритет RU/EN уже проверен; (2) «Не стрелять» после отменённого уклонения не отличим по плану огня от отмены уклонения и шаг не закрывает (консервативно); (3) кисть журнала создаётся только при пересборке строк и сразу освобождается — кадр её не выделяет; (4) проброс правой кнопки сделан в `TacticalBattleScreen.cs` (файл в allowlist), без правки `TacticalBattleScreen.Overlay.cs`; (5) существующие проверки «правая кнопка захватывается» в `TutorialCommsPanelTests`, `TutorialHintsToggleTests`, `TutorialJournalTests`, `TutorialScreenIntegrationTests` и ожидание «значок = вся область захвата» заменены на новое требуемое поведение.
+
+2026-11-14 — исправлена находка ревью P2: «Не стрелять» после уклонения не закрывало шаг `fire.target` (узкое решение (2) выше нарушало пункт 4 тикета). Причина: `TutorialDirector` хранил дроны, уклонявшиеся в фазе (`_evaded`), и не отличал явное «Не стрелять» от цели, очищенной уклонением. Исправление: у `TacticalFirePlanRow` новый флаг `Hold` — его ставит только `Choose(null)` (команда «Не стрелять» / повторный клик по выбранной цели), а `ToggleEvade` и `ClearAll` сбрасывают; директор засчитывает `target-chosen` при `Hold` или при выборе другой цели, `_evaded` удалён. На запрос в Engine (`BuildTargets`) флаг не влияет. Тесты: `TutorialDirectorTests.ExplicitHoldAfterEvadeCompletesTargetChosen` (E → E → «Не стрелять» и E → «Не стрелять»), `FirePlanningTests.Explicit_hold_is_marked_and_distinguished_from_evade_clearing_the_target`; `EachCompletionPredicateClosesTheShownStep(TargetChosen)` приведён к реальному поведению (флаг `Hold`). Красный прогон: ошибка компиляции (нет `Hold`). Зелёный: целевой набор 248/248 (`D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/p2-hold-after-evade/targeted-green.trx`); `forbidden-scan.ps1`: 183 находки, как на базе, в `TacticalBattleFireOrders.cs` новых нет. Расширение allowlist по прямому запросу пользователя на исправление P2: `TacticalBattleFireOrders.cs`, `FirePlanningTests.cs`.

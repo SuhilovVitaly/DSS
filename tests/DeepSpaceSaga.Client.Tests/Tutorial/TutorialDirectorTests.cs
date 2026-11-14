@@ -110,7 +110,7 @@ public sealed class TutorialDirectorTests
                 Move(selected: "vera", movement: TutorialTestBattle.Movement(MoveBattle, "vera", "vera"))),
             TutorialCompletion.PhaseLeft => (Move(selected: "vera"), Fire(TutorialTestBattle.Plan(FireBattle))),
             TutorialCompletion.TargetChosen => (Fire(TutorialTestBattle.Plan(FireBattle)),
-                Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("vera", null)))),
+                Fire(TutorialTestBattle.Plan(FireBattle, hold: "vera"))),
             TutorialCompletion.PilotCycled => (Move(selected: "vera"), Move(selected: "yun")),
             TutorialCompletion.EvadeOrDecoy => (Fire(TutorialTestBattle.Plan(FireBattle)),
                 Fire(TutorialTestBattle.Plan(FireBattle, decoy: "yun"))),
@@ -165,6 +165,26 @@ public sealed class TutorialDirectorTests
         waiting.Observe(Fire(TutorialTestBattle.Plan(FireBattle), now: 10));
         waiting.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("yun", null), evade: "yun"), now: 20));
         Assert.Equal(TutorialStepState.Waiting, waiting.StateOf("target"));
+    }
+
+    [Fact]
+    public void ExplicitHoldAfterEvadeCompletesTargetChosen()
+    {
+        var director = Director(Step("target", "Fire", TutorialCompletion.TargetChosen));
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle), now: 10));
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("vera", null), evade: "vera"), now: 20)); // E
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("vera", null)), now: 30)); // E again: evade off
+        Assert.Equal(TutorialStepState.Shown, director.StateOf("target"));
+
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle, hold: "vera"), now: 40)); // explicit «Не стрелять»
+        Assert.Equal(TutorialStepState.Completed, director.StateOf("target"));
+
+        // Hold straight out of an active evade also counts.
+        var direct = Director(Step("target", "Fire", TutorialCompletion.TargetChosen));
+        direct.Observe(Fire(TutorialTestBattle.Plan(FireBattle), now: 10));
+        direct.Observe(Fire(TutorialTestBattle.Plan(FireBattle, retarget: ("yun", null), evade: "yun"), now: 20));
+        direct.Observe(Fire(TutorialTestBattle.Plan(FireBattle, hold: "yun"), now: 30));
+        Assert.Equal(TutorialStepState.Completed, direct.StateOf("target"));
     }
 
     [Fact]
@@ -528,13 +548,13 @@ internal static class TutorialTestBattle
                 10, 100, 30, 30, []))], selected, []);
 
     internal static TacticalFirePlan Plan(TacticalBattleSnapshot battle, (string Drone, string? Target)? retarget = null,
-        string? evade = null, string? decoy = null)
+        string? evade = null, string? decoy = null, string? hold = null)
     {
         var rows = battle.Units.Where(u => u.Side == battle.PlayerSide && u.Kind == TacticalUnitKind.Drone).Select(u =>
         {
             var group = new TacticalTargetGroupSnapshot(u.Id, [new("tag-1", 100, 0, false, 0, 0.5), new("tag-2", 120, 0, false, 0, 0.4)], "tag-1");
-            string? target = retarget is { } r && r.Drone == u.Id ? r.Target : group.DefaultTargetId;
-            return new TacticalFirePlanRow(u, group, target) { Evade = u.Id == evade, Decoy = u.Id == decoy };
+            string? target = u.Id == hold ? null : retarget is { } r && r.Drone == u.Id ? r.Target : group.DefaultTargetId;
+            return new TacticalFirePlanRow(u, group, target) { Evade = u.Id == evade, Decoy = u.Id == decoy, Hold = u.Id == hold };
         });
         return new([.. rows], "vera");
     }

@@ -67,6 +67,36 @@ public sealed class FirePlanningTests
     }
 
     [Fact]
+    public async Task Explicit_hold_is_marked_and_distinguished_from_evade_clearing_the_target()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var orders = new TacticalBattleFireOrders();
+        orders.Observe(screen.Flow.State!, null);
+        var row = orders.Capture().Selected!;
+        Assert.False(row.Hold);
+
+        Assert.True(orders.ToggleEvade(row.Drone.Id)); // E empties the target but is not a hold
+        Assert.False(orders.Capture().Selected!.Hold);
+        Assert.True(orders.ToggleEvade(row.Drone.Id)); // E again: evade off, target still empty, still not a hold
+        Assert.Null(orders.Capture().Selected!.TargetId);
+        Assert.False(orders.Capture().Selected!.Hold);
+
+        Assert.True(orders.Choose(null)); // explicit «Не стрелять» after a cancelled evade
+        Assert.True(orders.Capture().Selected!.Hold);
+        Assert.Null(orders.BuildTargets().Single(t => t.DroneId == row.Drone.Id).TargetId);
+
+        Assert.True(orders.ToggleEvade(row.Drone.Id)); // evade replaces the hold
+        Assert.False(orders.Capture().Selected!.Hold);
+        Assert.True(orders.Choose(null)); // hold straight out of an active evade
+        Assert.True(orders.Capture().Selected!.Hold);
+        Assert.False(orders.Capture().Selected!.Evade);
+
+        Assert.True(orders.Choose(row.TargetId)); // a real target clears the hold
+        Assert.False(orders.Capture().Selected!.Hold);
+    }
+
+    [Fact]
     public async Task Evade_toggle_reaches_request_and_choosing_target_clears_it()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

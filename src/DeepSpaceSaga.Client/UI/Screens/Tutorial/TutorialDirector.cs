@@ -33,7 +33,6 @@ internal sealed class TutorialDirector(TutorialScript script)
     private long? _lastClosedAtMs;
     private int _phaseLines;
     private long _collapseFromMs;
-    private readonly HashSet<string> _evaded = new(StringComparer.Ordinal); // drones seen evading in this (phase, turn)
 
     /// <summary>The shown line was folded into the comms chip by the auto-collapse timer; it still waits for the action.</summary>
     internal bool Collapsed { get; private set; }
@@ -67,10 +66,7 @@ internal sealed class TutorialDirector(TutorialScript script)
     internal void Observe(TutorialObservation observation)
     {
         bool newPhase = _last is null || _last.Phase != observation.Phase || _last.Turn != observation.Turn;
-        if (newPhase) { _lastPilot = null; _pilotCycled = false; _phaseLines = 0; _speechMoment = true; _evaded.Clear(); }
-        if (observation.FirePlan is { } fire)
-            foreach (var row in fire.Rows)
-                if (row.Evade) _evaded.Add(row.Drone.Id);
+        if (newPhase) { _lastPilot = null; _pilotCycled = false; _phaseLines = 0; _speechMoment = true; }
         if (observation.SelectedDroneId is { } pilot)
         {
             if (_lastPilot is not null && _lastPilot != pilot) _pilotCycled = true;
@@ -165,13 +161,11 @@ internal sealed class TutorialDirector(TutorialScript script)
     };
 
     /// <summary>
-    /// A real target choice: another enemy than the preassigned one, or «Hold fire» (an emptied target without evading).
-    /// Evade (E) also empties the target and a cancelled evade leaves it empty, so a drone seen evading in this phase counts
-    /// only once it picks an actual target; a decoy (D) never changes the target.
+    /// A real target choice: another enemy than the preassigned one, or an explicit «Hold fire» (<see cref="TacticalFirePlanRow.Hold"/>).
+    /// Evade (E) and a cancelled evade also leave the target empty but are not a hold; a decoy (D) never changes the target.
     /// </summary>
-    private bool TargetChosen(TacticalFirePlanRow row) =>
-        row.TargetId != row.Group.DefaultTargetId &&
-        (row.TargetId is not null || (!row.Evade && !_evaded.Contains(row.Drone.Id)));
+    private static bool TargetChosen(TacticalFirePlanRow row) =>
+        row.Hold || (row.TargetId is not null && row.TargetId != row.Group.DefaultTargetId);
 
     private void Close(TutorialStepState state)
     {
