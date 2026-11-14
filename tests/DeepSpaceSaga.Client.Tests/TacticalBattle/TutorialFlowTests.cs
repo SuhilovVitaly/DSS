@@ -221,6 +221,35 @@ public sealed class TutorialFlowTests
         Assert.True(File.Exists(Path.Combine(fixture.SaveDirectory, SaveSlotNaming.ToFileName(SaveSlots.Quicksave))));
     }
 
+    /// <summary>EP-0028-US-0001-TK-0004: only the tutorial battle gets a tutorial session, an F8 battle after it does not.</summary>
+    [Fact]
+    public async Task TutorialBattleCarriesTutorialSessionAndF8BattleDoesNot()
+    {
+        await using var fixture = new TutorialFixture();
+        await fixture.Route(ScreenEvent.NewGame);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.NotNull(battle.Tutorial);
+        for (int i = 0; battle.Flow.State!.Phase != TacticalBattlePhase.Over && i < 100; i++)
+        {
+            fixture.FinishPresentation();
+            await fixture.Route(battle.OnKeyDown(Key.Enter));
+        }
+        fixture.FinishPresentation();
+        Assert.Equal(TacticalBattlePhase.Over, battle.Flow.State!.Phase);
+        await fixture.PressKey(Key.Escape);
+        Assert.IsType<GameSessionScreen>(fixture.Screens.Current);
+
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+        await setup.Flow.OptionsTask!;
+        await fixture.Route(ScreenEvent.StartTacticalBattle);
+
+        var regular = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.False(regular.Flow.IsTutorial);
+        Assert.Null(regular.Tutorial);
+    }
+
     [Theory]
     [InlineData("Russian", "Выйти в главное меню? Прогресс обучения будет потерян.")]
     [InlineData("English", "Exit to the main menu? Tutorial progress will be lost.")]

@@ -20,6 +20,7 @@ using DeepSpaceSaga.Client.UI.Screens.Dialogue;
 using DeepSpaceSaga.Client.UI.Screens.Hire;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
+using DeepSpaceSaga.Client.UI.Screens.Tutorial;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
@@ -1206,7 +1207,11 @@ public sealed class SkiaWindow : IDisposable
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
         new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
     private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) =>
-        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, _battleSkin) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, _battleSkin)
+        {
+            LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel,
+            Tutorial = flow.IsTutorial ? new TutorialSession(TutorialScriptLoader.Load(AppContext.BaseDirectory, LogTutorialWarning)) : null,
+        };
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {
         await flow.OptionsTask!;
@@ -1393,6 +1398,14 @@ public sealed class SkiaWindow : IDisposable
     private static void LogSkinWarning(string message)
     {
         try { InterfaceLog.Write("TACTICAL SKIN: " + message); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    /// <summary>TutorialScriptLoader messages already start with "TUTORIAL: ".</summary>
+    private static void LogTutorialWarning(string message)
+    {
+        try { InterfaceLog.Write(message); }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
     }

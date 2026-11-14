@@ -30,6 +30,8 @@ public sealed partial class TacticalBattleScreen
             var rect = _pilotColumn.Rect(i);
             if (!rect.IsEmpty) yield return rect;
         }
+        if (Tutorial is { } tutorial)
+            foreach (var rect in tutorial.Bounds) yield return rect;
     }
     private bool OverlayHit(SKPoint p) => OverlayRects().Any(r => r.Contains(p));
     private void DrawOverlay(SKCanvas c, TacticalBattleFrame f)

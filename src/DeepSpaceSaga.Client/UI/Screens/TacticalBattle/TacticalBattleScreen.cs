@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Screens.Tutorial;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion.TacticalBattle;
 using Silk.NET.Input;
@@ -47,6 +48,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private string? _lastSelectedDroneId;
     internal string? HoverUnitId { get; set; }
     internal BattleLayout Layout { get; private set; } = new();
+    /// <summary>Battle-tutorial session; set only for the tutorial battle (EP-0028).</summary>
+    internal TutorialSession? Tutorial { get; init; }
     internal SKRect NewBattleBounds => Raw(_phasePanel.ButtonBounds("new"));
     internal (SKRect Forecast, SKRect Sectors, SKRect AllFire) OverlayControls =>
         (_enemyForecast.Bounds, _enemySectors.Bounds, _allFireSectors.Bounds);
@@ -142,6 +145,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _interactiveField = null;
         _paintedClouds?.Dispose();
         _paintedClouds = null;
+        Tutorial?.Release();
         base.OnDeactivated();
     }
 
@@ -172,6 +176,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context,
                 _pilotColumn.VisiblePanels, _minimap);
             DrawOverlay(canvas, frame);
+            if (Tutorial is { } tutorial)
+            {
+                tutorial.Observe(TutorialObservation.From(frame, _phasePanel.Phase, ClockMilliseconds(),
+                    interacting: frame.AimingMovement || _camera.Panning || _pilotColumn.SliderActive, busy: frame.Pending || ConfirmExit));
+                tutorial.Draw(canvas, Layout, _viewport.Wd, ClockMilliseconds());
+            }
         }
         finally { canvas.Restore(); BattleDesign.Recording = null; }
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
@@ -186,6 +196,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             return ScreenEvent.None;
         }
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
+        if (!ConfirmExit && Tutorial?.OnKeyDown(key, modifiers, repeat) == true) return ScreenEvent.None;
         if (TurnBusy) return ScreenEvent.None;
         if (key == Key.Escape && !repeat && OutcomeVisible) return ScreenEvent.CloseTacticalBattle;
         if (!ConfirmExit && modifiers == KeyModifiers.None && _logTab.OnKeyDown(key)) return ScreenEvent.None;
@@ -299,6 +310,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         if (ConfirmExit) return base.OnMouseDown(x, y, button);
         var p = DesignPoint(x, y);
+        if (Tutorial?.OnMouseDown(p, button) == true) return ScreenEvent.None;
         if (_logTab.OnMouseDown(p.X, p.Y, button)) return ScreenEvent.None;
         if (button == MouseButton.Left) _logTab.ResetInput();
         if (button == MouseButton.Left && CenterFromMinimap(p)) return ScreenEvent.None;
@@ -352,6 +364,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         var p = DesignPoint(x, y);
+        if (!ConfirmExit && Tutorial?.OnMouseWheel(p, delta) == true) return ScreenEvent.None;
         if (!ConfirmExit && _logTab.OnMouseWheel(p.X, p.Y, delta)) return ScreenEvent.None;
         if (!ConfirmExit && !TurnBusy && !HasSalvoPresentation && _pilotColumn.ScrollTargets(SelectedPlanningDrone, p, delta))
             return ScreenEvent.None;
