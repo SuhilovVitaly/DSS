@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0001-hint-framework
 ticket: EP-0028-US-0001-TK-0002-director-core
 title: Директор шагов обучения
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0001-TK-0001-script-format]
@@ -128,6 +128,18 @@ Process-tree cap 300000 ms.
 
 Все предикаты определены через поля, указанные с `path:line`; поведение граничных случаев зафиксировано в Assumptions.
 
+## Результат
+
+Реализованы `TutorialObservation` (+ `From(frame, phase, nowMs, interacting, busy)`) и `TutorialDirector` с `TutorialStepState`, `TutorialEvent`, `TutorialLine` по разделу Public API: порядок `Observe` (а) завершение/истечение текущей реплики, (б) молчаливое завершение ожидающих шагов, (в) показ шага с максимальным `Priority` (при равенстве — первый по файлу); `Busy` откладывает только показ; `Enabled = false` скрывает реплику и продолжает учёт завершений.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0001-tk0002-20261114T173134/`):
+
+- Красный старт: `TutorialDirectorTests` не компилировался (`TutorialDirector`, `TutorialObservation` отсутствовали) — `../us0001-tk0002-red/build-red.log`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial"` (`DSS_VALIDATION_ROOT` = папка прогона) — **84/84** (из них `TutorialDirectorTests` — 18: `ShowsHighestPriorityEligibleStepAndCompletesWhenPlayerSelectsPilot`, `ShowsOnlyWhenConditionHolds`, Theory `EachCompletionPredicateClosesTheShownStep` ×6, `EvadeAlsoCompletesEvadeOrDecoy`, `PilotCycledNeedsAChangeBetweenTwoPilotsWithinThePhase`, `AcknowledgeCompletesAcknowledgedStepAndDismissesOthers`, `StepAlreadyDoneBeforeShowIsCompletedSilently`, `UnfinishedStepExpiresWhenPhaseEnds`, `ShownStepExpiresWhenTurnChangesInTheSamePhaseName`, `DisabledDirectorShowsNothingButTracksCompletion`, `BusyObservationDefersNewLines`, `ObservationFromFrameCopiesFrameFacts`, `DirectorExposesNoInputBlockingDecision`) — `director.trx`, `test.log`.
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` — 0 предупреждений, 0 ошибок — `build.log`.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие допущения исполнителя: `pilot-cycled` — смена последнего непустого выбранного пилота на другой непустой в пределах пары «фаза+ход» (первый выбор циклом не считается); `Enabled = false` при показанной реплике переводит её в `Dismissed`; события получают фазу/ход/время последнего наблюдения (для `Acknowledge` и `Enabled` тоже); ожидающие шаги прошедших фаз остаются `Waiting` (истекают только показанные). Синтетические снимки для тестов — класс `TutorialTestBattle` внутри `TutorialDirectorTests.cs` (без нового файла).
