@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0005-reliable-first-battle
 ticket: EP-0028-US-0005-TK-0002-winnable-battle
 title: Выигрываемый первый бой
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0005-TK-0001-forced-tabletop]
@@ -100,6 +100,33 @@ dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -
 
 Политики, критерий победы, точка seed, API движка и порядок поиска заданы.
 
+## Результат
+
+Seed 1 проходит обе политики — поиск seed не понадобился, seed не менялся.
+
+- `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs`: `internal const long TutorialBattleSeed = 1;` (с комментарием о закрепляющем тесте); `StartTutorialAsync` создаёт `new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), TutorialBattleSeed)` вместо литерала `1`.
+- `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/TutorialFlowTests.cs:37`: `Assert.Equal(SkiaWindow.TutorialBattleSeed, battle.Flow.State.Seed)`.
+- `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialBattleWinnabilityTests.cs` (новый): движок из `Scenarios/Tutorial/scenario.json`, `StartTacticalBattleRequest(..., TutorialBattleSeed)` без сценария/комплектации (как в окне) → сценарий `initial`; приказы строят клиентские `TacticalBattleOrders` (`Observe(state, selectOnEntry: false)` — в Tabletop фаза Move начинается без пилота) и `TacticalBattleFireOrders`; лимит 60 ходов, иначе провал «нет исхода»; победа = `Outcome.Kind == A`. Каждая политика играется дважды — результаты равны (детерминизм).
+  - `EnterOnlyPlayerWinsTutorialBattle`: Move — `EditedOrders()` без правок; Fire — `BuildTargets()` без правок.
+  - `HintFollowingPlayerWinsTutorialBattle`: по одному разу — T1 Move `Cycle(false)` + `Adjust(0, 5)`; T2 Move `Cycle(false)` ×2; первый Fire — первому пилоту первая цель списка, отличная от цели по умолчанию (если есть); первый Fire с `Incoming` на своего дрона — `ToggleEvade` при `CanEvade`, иначе `ToggleDecoy`; остальное как Enter. Обязательны `steer` и `cycle`; прочие действия фиксируются в отчёте.
+
+Исходы seed 1 (`winnability.txt`):
+
+| Политика | Исход | Ход | Причина | Потери A / B | Действия подсказок |
+|---|---|---|---|---|---|
+| Только Enter | A (победа) | 21 | `CarrierDestroyed` (Логово) | 1 / 5 | — |
+| По подсказкам | A (победа) | 15 | `NoDrones` | 0 / 6 | steer, cycle, evade@T4 (перенацеливания нет: у первого пилота в первом Fire нет альтернативной цели) |
+
+Согласуется с живыми прогонами US-0003 (настоящий экран обучения, seed 1): по подсказкам — победа на 19-м ходу, только Enter — на 21-м (`TutorialLessonFlowTests.FollowingTheOfficerPlaysTheWholeTutorialInOrder`, `PureEnterNeverWaitsForTheOfficer`). Разница 15 vs 19 ходов «по подсказкам» — разные политики: живой тест выполняет действие каждой показанной реплики (включая контекстные), этот тест — только формализованную политику тикета.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0005-tk0002-20261114T194930/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Первый прогон (сигнал тикета на seed 1): Enter — победа; по подсказкам — победа, но упал мой собственный слишком строгий счётчик «≥ 4 действий» (перенацеливание недоступно) — `first.log`, `first-winnability.txt`; счётчик заменён проверкой обязательных `steer`/`cycle` и списком действий в отчёте.
+- `dotnet test … --filter "FullyQualifiedName~TutorialBattleWinnabilityTests|FullyQualifiedName~TutorialFlowTests"` — **19/19** — `winnability.trx`, `winnability.log`, `winnability.txt`.
+- `git diff --stat`: только `SkiaWindow.cs`, `TutorialFlowTests.cs` и новый тест; Engine, `scenarios.json`, правила не менялись. Правок в `src/**/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Выбранный seed: **1** (обе политики побеждают, поиск 1…200 не запускался, `seed-search.txt` не создавался). Узкие решения исполнителя: (1) действия политики «по подсказкам» выполняются по одному разу, как одноразовые уроки US-0003 (уклонение/ловушка — для первого дрона под прицелом в первом таком Fire); (2) перенацеливание и уклонение не обязательны — тикет требует их «если есть», обязательны только T1 и T2; (3) документация seed (`TacticalBattle.md:89`, `Screens/TacticalBattle.md:33`) не меняется — seed прежний, синхронизация описания константы — в US-0006-TK-0003.

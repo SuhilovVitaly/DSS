@@ -1105,7 +1105,7 @@ public sealed class SkiaWindow : IDisposable
             // Same order as a battle opened from the map: authoritative pause first, then the battle.
             session.ClearStationTravelPause();
             await session.SetSpeedAsync(SimulationSpeed.Speed0);
-            var started = await flow.StartAsync(new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), 1));
+            var started = await flow.StartAsync(new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), TutorialBattleSeed));
             if (started?.Accepted != true || flow.State is null)
                 throw new InvalidOperationException("Tutorial battle was rejected: " + (started?.Code.ToString() ?? "no response"));
             if (_closing)
@@ -1206,6 +1206,12 @@ public sealed class SkiaWindow : IDisposable
 
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
         new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+    /// <summary>
+    /// Seed of the tutorial battle (scenario «initial», default loadout). Pinned by <c>TutorialBattleWinnabilityTests</c>: on this seed the
+    /// player's side wins both by Enter only and by following the officer's lessons (EP-0028-US-0005-TK-0002).
+    /// </summary>
+    internal const long TutorialBattleSeed = 1;
+
     /// <summary>The tutorial battle's skin (D-03): its hints are laid out for Tabletop.</summary>
     internal const string TutorialSkinId = "tabletop";
 
