@@ -26,15 +26,27 @@ internal sealed class TutorialSession
     internal TutorialScript Script { get; }
     internal TutorialDirector Director { get; }
     internal TutorialCommsPanel Panel { get; } = new();
+    internal TutorialJournal Journal { get; } = new();
 
     /// <summary>Officer portrait (300x300) or null: no officer, no head asset, or released.</summary>
     internal SKBitmap? Portrait => _portrait;
 
-    /// <summary>Areas that capture input, in design coordinates (the panel or chip as last drawn).</summary>
-    internal IEnumerable<SKRect> Bounds => Panel.Bounds.IsEmpty ? [] : [Panel.Bounds];
+    /// <summary>Areas that capture input, in design coordinates (the panel or chip as last drawn, and the open journal).</summary>
+    internal IEnumerable<SKRect> Bounds
+    {
+        get
+        {
+            if (!Panel.Bounds.IsEmpty) yield return Panel.Bounds;
+            if (Journal.IsOpen) yield return Journal.Bounds;
+        }
+    }
 
     /// <summary>The last frame observation (anchor templates are resolved against it).</summary>
     internal TutorialObservation? LastObservation { get; private set; }
+
+    /// <summary>Steps heard in this battle, in spoken order (journal source).</summary>
+    internal IReadOnlyList<TutorialStep> HeardSteps =>
+        Director.Heard.Select(id => Script.Steps.First(s => s.Id == id)).ToArray();
 
     internal void Observe(TutorialObservation observation)
     {
@@ -51,10 +63,12 @@ internal sealed class TutorialSession
             TutorialHighlight.Target(layout, TutorialHighlight.ResolveKey(anchor, layout, observation, line.SignalUnitId)) is { } target)
             TutorialHighlight.Draw(canvas, layout, target, nowMs); // under the panel; not part of Bounds
         Panel.Draw(canvas, layout, designWidth, line, Director.Enabled, _portrait, Script.Officer);
+        Journal.Draw(canvas, layout, HeardSteps);
     }
 
     internal bool OnMouseDown(SKPoint designPoint, MouseButton button)
     {
+        if (Journal.OnMouseDown(designPoint)) return true;
         if (!Panel.Bounds.Contains(designPoint)) return false;
         if (button != MouseButton.Left) return true;
         switch (Panel.Hit(designPoint))
@@ -67,9 +81,16 @@ internal sealed class TutorialSession
         return true;
     }
 
-    internal bool OnKeyDown(Key key, KeyModifiers modifiers, bool repeat) => false;
+    /// <summary>H toggles the comms log (also with hints off); Esc closes an open log first. Everything else is the battle's.</summary>
+    internal bool OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
+    {
+        if (Script.Steps.IsDefaultOrEmpty || repeat || modifiers != KeyModifiers.None) return false;
+        if (key == Key.H) { Journal.Toggle(); return true; }
+        if (key == Key.Escape && Journal.IsOpen) { Journal.Close(); return true; }
+        return false;
+    }
 
-    internal bool OnMouseWheel(SKPoint designPoint, float delta) => false;
+    internal bool OnMouseWheel(SKPoint designPoint, float delta) => Journal.OnMouseWheel(designPoint, delta);
 
     /// <summary>Releases the portrait bitmap; the next <see cref="Draw"/> composes it again.</summary>
     internal void Release()

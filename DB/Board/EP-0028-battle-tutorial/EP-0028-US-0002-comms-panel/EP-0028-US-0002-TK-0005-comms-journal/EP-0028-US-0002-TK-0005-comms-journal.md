@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0002-comms-panel
 ticket: EP-0028-US-0002-TK-0005-comms-journal
 title: Журнал связи (H)
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0002-TK-0002-comms-panel]
@@ -111,6 +111,23 @@ Process-tree cap 300000 ms.
 
 Маршрут клавиш, геометрия, ключи текста и место добавления H указаны с `path:line`.
 
+## Результат
+
+Новый `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialJournal.cs`: панель 460×300 (левый край 206, низ = верх развёрнутой панели связи − 6 = 608; положение фиксированное), заголовок `Tutorial.Journal.Title`, кнопка `Tutorial.Journal.Close` (`tutorial:journal-close`), реплики `Director.Heard` по порядку (текст из Locale в момент отрисовки, перенос `TutorialCommsPanel.Wrap(text, TextWidth = 422)`), пустое состояние `Tutorial.Journal.Empty`, прокрутка колесом (вверх — к ранним, шаг 3 строки), открывается на последних репликах; ключ `tutorial:journal`. `TutorialSession`: `Journal`, `HeardSteps`; `OnKeyDown` — H без модификаторов и не repeat переключает журнал (и при выключенных подсказках), Esc при открытом журнале закрывает его (true), иначе false; `OnMouseDown`/`OnMouseWheel` в границах открытого журнала захватываются; `Bounds` включает журнал. Сценарий без шагов журнала не имеет (H → false). `KeyboardEdgeTracker.StandardKeys` += `Key.E, Key.D, Key.H`.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0002-tk0005-20261114T180230/`):
+
+- Красный старт: тесты журнала не компилируются (`TutorialJournal`, `TutorialSession.Journal` нет) — `../us0002-tk0005-red/build-red.log`; после реализации журнала, до правки `StandardKeys`, `KeyboardEdgeTrackerTests` — 3 красных (H, E, D без привязки манёвра) из 28 — `../us0002-tk0005-red/tracker-red.log`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~KeyboardEdgeTrackerTests|FullyQualifiedName~KeyboardRoutingTests|FullyQualifiedName~KeysDuringBattleTests|FullyQualifiedName~TutorialFlowTests" --results-directory "$RUN" --logger "trx;LogFileName=journal.trx"` (`DSS_VALIDATION_ROOT` = папка прогона) — **207/207** — `journal.trx`, `journal.log`. Новые: `TutorialJournalTests.HTogglesJournalWithLinesHeardInOrder` (RU, EN), `EmptyJournalSaysSoAndAScriptWithoutStepsHasNoJournal`, `JournalCapturesOnlyItsOwnClicksAndWheel`, `LongJournalScrollsAndOpensAtTheLatestLine`, `JournalWorksWithHintsDisabled`; `TutorialJournalScreenTests.EscClosesOpenJournalOnlyAndOtherwiseKeepsExitConfirmation` (живой Tabletop: H, Tab при открытом журнале, Esc закрывает журнал без подтверждения выхода, следующий Esc — подтверждение, H во время подтверждения игнорируется); `KeyboardEdgeTrackerTests.H_is_reported_on_press_edge`, `Battle_evade_and_decoy_keys_are_polled_regardless_of_maneuver_bindings` (E, D).
+- Регрессия клавиш: `--filter "FullyQualifiedName~Keyboard|FullyQualifiedName~Maneuver|FullyQualifiedName~Keys|FullyQualifiedName~ScreenEventTests|FullyQualifiedName~FirePanel|FullyQualifiedName~Evade|FullyQualifiedName~Decoy"` — **257/257** — `keys-regression.trx`, `keys-regression.log`.
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` — 0 предупреждений, 0 ошибок — `build.log`.
+- Растровая проверка (временный тест, не закоммичен): `snap/journal-1280x720.png` (RU: журнал над панелью, подсветка `pilot:{own}`); `snap/capacity.txt` — ёмкость строки панели (13 pt, 352 px): RU ≈ 41–47 символов, EN ≈ 49–54 символа.
+- ForbiddenCalls не затрагивается: правок в `UI/Screens/TacticalBattle/` нет (`KeyboardEdgeTracker.cs` вне `/TacticalBattle/`).
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) журнал стоит на фиксированной высоте над развёрнутой панелью (не прыгает при сворачивании в значок); (2) открывается прокрученным к последним репликам; (3) сценарий без шагов (нет `battle-tutorial.json`) журнала не имеет — H возвращает false, как и прежде (`EmptySessionCapturesNoInput` без изменений); (4) строка `Tutorial.Panel.JournalHint` остаётся в значке связи; в развёрнутую панель не добавлена — `TutorialCommsPanel.cs` не входит в `files_touched` этого тикета; (5) проверка Esc с открытым журналом — в отдельном классе `TutorialJournalScreenTests` (коллекция `InterfaceLog`) того же файла.
+
+2026-11-14 — Расширение объёма без остановки по указанию пользователя 2026-11-14 («сделай без остановок»), согласовано оркестратором по G-01: в `KeyboardEdgeTracker.StandardKeys` вместе с H добавлены `Key.E` и `Key.D` (экран боя обрабатывает E = уклонение и D = ловушка в фазе Fire, `TacticalBattleScreen.cs:231,236`, но E нативно не опрашивалась, а D приходила только через привязку `turnRight`). Проверено, что E/D/H не меняют поведение других экранов: в `src` их обрабатывает только `TacticalBattleScreen` (E/D в Fire) и сессия обучения (H); прочие экраны (`GameSessionScreen`, `Settings`, `Save` — ввод текста через KeyChar, `Trade`, `Dialogue`, меню и т. п.) эти клавиши не используют; D уже опрашивалась по умолчанию через `maneuver-input.json`. Тест — `KeyboardEdgeTrackerTests.Battle_evade_and_decoy_keys_are_polled_regardless_of_maneuver_bindings`. Файлы уже в `files_touched`. Gap G-01 в `Documentation.md` эпика не обновлён — файл вне `files_touched`; синхронизация — US-0006-TK-0003 (нативное подтверждение E/D — US-0006-TK-0002).
