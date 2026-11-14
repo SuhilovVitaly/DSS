@@ -12,7 +12,7 @@ public sealed class AllScenarioSystemContentTests
     public void AllEnabledStartsPublishV2Geography()
     {
         var config = EngineContentLoader.LoadSolarSystemGenerationConfig(DefaultSystemContentTests.Settings)!;
-        Assert.Equal(6, config.EnabledScenarios.Count);
+        Assert.Equal(7, config.EnabledScenarios.Count);
         foreach (string name in config.EnabledScenarios)
         {
             using var engine = SimulationEngine.CreateFromScenarioFile(DefaultSystemContentTests.Settings,
@@ -125,7 +125,9 @@ public sealed class AllScenarioSystemContentTests
     {
         var scenarios = ScenarioRepository.ListScenarios(Path.Combine(AppContext.BaseDirectory, "Scenarios"));
         var config = EngineContentLoader.LoadSolarSystemGenerationConfig(DefaultSystemContentTests.Settings)!;
-        Assert.All(config.EnabledScenarios, name => Assert.Contains(scenarios,
+        // The hidden Tutorial is enabled for generation but deliberately absent from the picker;
+        // TutorialScenarioTests covers its start.
+        Assert.All(config.EnabledScenarios.Where(name => name != "Tutorial"), name => Assert.Contains(scenarios,
             s => Path.GetFileName(Path.GetDirectoryName(s.ScenarioPath)) == name));
         foreach (var scenario in scenarios.Where(s => config.EnabledScenarios.Contains(
             Path.GetFileName(Path.GetDirectoryName(s.ScenarioPath)), StringComparer.Ordinal)))

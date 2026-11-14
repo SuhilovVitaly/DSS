@@ -14,7 +14,7 @@
   "orbitClearanceWorld": 100,
   "asteroidsPerBelt": 24,
   "decorationSamplesPerBelt": 2048,
-  "enabledScenarios": ["Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly"],
+  "enabledScenarios": ["Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly", "Tutorial"],
   "poiTemplates": [
     {
       "id": "abandoned-relay",

@@ -247,6 +247,7 @@
   "TacticalBattle.UnitState.Destroyed": "Destroyed",
   "TacticalBattle.UnitState.Alive": "Operational",
   "TacticalBattle.ConfirmExit": "Leave the battle and return to the map?",
+  "TacticalBattle.ConfirmExitToMenu": "Exit to the main menu? Tutorial progress will be lost.",
   "TacticalBattle.ExitBattle": "Leave battle",
   "TacticalBattle.Cancel": "Cancel",
   "TacticalBattle.NoOptions": "No options available",

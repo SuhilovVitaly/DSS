@@ -165,6 +165,6 @@ public sealed class ScenarioGroupTranslationTests
     {
         var found = Directory.GetFiles(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Scenarios"), "scenario.json", SearchOption.AllDirectories)
             .Select(p => new DirectoryInfo(Path.GetDirectoryName(p)!).Name).Order().ToArray();
-        Assert.Equal(new[] { "Default", "Default_500", "Docked", "MarketProfiles", "PlayerShipOnly", "Undocked" }, found);
+        Assert.Equal(new[] { "Default", "Default_500", "Docked", "MarketProfiles", "PlayerShipOnly", "Tutorial", "Undocked" }, found);
     }
 }

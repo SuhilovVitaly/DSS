@@ -247,6 +247,7 @@
   "TacticalBattle.UnitState.Destroyed": "Уничтожен",
   "TacticalBattle.UnitState.Alive": "В строю",
   "TacticalBattle.ConfirmExit": "Прервать бой и вернуться на карту?",
+  "TacticalBattle.ConfirmExitToMenu": "Выйти в главное меню? Прогресс обучения будет потерян.",
   "TacticalBattle.ExitBattle": "Выйти из боя",
   "TacticalBattle.Cancel": "Отмена",
   "TacticalBattle.NoOptions": "Нет доступных вариантов",

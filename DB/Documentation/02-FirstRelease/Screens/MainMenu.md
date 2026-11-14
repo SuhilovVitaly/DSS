@@ -2,6 +2,8 @@
 
 Запуск новой игры, выбор сценария, продолжение/загрузка и настройки. Доступность Continue зависит от наличия quicksave; меню не создаёт авторитетный мир само. Фабрика сессий находится в Program.
 
+«Новая игра» без единого сохранения сразу запускает скрытый сценарий Tutorial и открывает его [тактический бой](TacticalBattle.md#режим-обучения): выбор сценария, [подготовка боя](TacticalBattleSetup.md) и карта мира пропускаются. Пока бой запускается, на экране остаётся главное меню. Если запуск не удался, сессия закрывается, ошибка пишется в InterfaceLog и меню остаётся текущим экраном. При наличии хотя бы одного сохранения «Новая игра» открывает [выбор сценария](ScenarioSelect.md).
+
 См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
 
-Источники: [MainMenuScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/MainMenu/MainMenuScreen.cs).
+Источники: [MainMenuScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/MainMenu/MainMenuScreen.cs), [SkiaWindow.cs](../../../../src/DeepSpaceSaga.Client/UI/SkiaWindow.cs).

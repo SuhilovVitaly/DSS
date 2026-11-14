@@ -15,6 +15,12 @@ public interface IGameSessionFactory
     /// <summary>List every playable scenario found under the scenarios root, ordered by scenarioId.</summary>
     ScenarioInfo[] ListScenarios();
 
+    /// <summary>
+    /// Full path of the hidden Tutorial scenario file (passed to <see cref="CreateSessionFromScenario"/>),
+    /// or null when this factory has no tutorial. Default null keeps factories without tutorial support unchanged.
+    /// </summary>
+    string? GetTutorialScenarioPath() => null;
+
     /// <summary>Whether a quicksave file currently exists on disk.</summary>
     bool HasQuickSave();
 

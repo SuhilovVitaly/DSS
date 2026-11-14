@@ -36,6 +36,7 @@ public sealed partial class TacticalBattleScreen
     {
         _hoverFrame = f;
         _minimapProjection = TacticalBattleMinimap.Draw(c, f, _minimap);
+        _phasePanel.Tutorial = Flow.IsTutorial;
         _phasePanel.Draw(c, f, Layout);
         _pilotColumn.Draw(c, _portraits);
         _hoverCard.Draw(c, f, _portraits);

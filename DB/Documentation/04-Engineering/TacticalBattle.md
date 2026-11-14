@@ -1,6 +1,6 @@
 # Тактический бой носителей
 
-Бой — временная сессия, запущенная с карты мира через [подготовку](../02-FirstRelease/Screens/TacticalBattleSetup.md). Engine принимает запуск только на паузе (Speed0). Состояние сражения, приказы, потери и журнал не входят в Save20. Возврат восстанавливает карту и скорость мира, включая случай проигрыша. [Сохранения](SaveFormat.md) описывают границу персистентности.
+Бой — временная сессия, запущенная с карты мира через [подготовку](../02-FirstRelease/Screens/TacticalBattleSetup.md) либо из главного меню как [бой обучения](#запуск-обучения). Engine принимает запуск только на паузе (Speed0). Состояние сражения, приказы, потери и журнал не входят в Save20. Возврат восстанавливает карту и скорость мира, включая случай проигрыша. [Сохранения](SaveFormat.md) описывают границу персистентности.
 
 | Слой | Ответственность |
 |---|---|
@@ -81,6 +81,14 @@ Move и Fire проверяют идентификатор боя и ожида�
 Client разрешает [скин боя](TacticalBattleSkins.md) при создании активного окна. Каталог и предпочтение относятся к клиенту, отрисовка читает готовые ресурсы под синхронной областью стиля. Save20 хранит состояние мира.
 
 Границы кода: [Contracts](../../../src/DeepSpaceSaga.Contracts/TacticalBattleRequests.cs), [SimulationEngine](../../../src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs), [TacticalBattleSession](../../../src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSession.cs), [Motion](../../../src/DeepSpaceSaga.Motion/TacticalBattle/), [Client](../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/). Методика сверки — [источники и проверки V4](../06-Tooling/CarrierWingSim.md).
+
+## Запуск обучения
+
+Второй путь входа — бой обучения. `ScenarioMetadata.Hidden` (`hidden`, не пишется при null) исключает сценарий из `ScenarioRepository.ListScenarios`; `ScenarioRepository.FindTutorialScenarioPath` находит файл со `scenarioId: "tutorial"`, а `IGameSessionFactory.GetTutorialScenarioPath()` (член по умолчанию возвращает null) отдаёт его окну. `Tutorial` входит в `enabledScenarios` [карты солнечной системы](../../../src/DeepSpaceSaga.Client/Data/Maps/solar-system.json), поэтому мир генерируется как у Default.
+
+`SkiaWindow` при NewGame без сессии и без сохранений (`ListSaveSlots().Length == 0`) вызывает `StartTutorialAsync` под общим замком переходов. Порядок: сессия из Tutorial, `TacticalBattleFlow { IsTutorial = true }`, Speed0, `StartAsync` с `StartTacticalBattleRequest(NewIdentity("start"), 1)` без экрана подготовки. Только после принятого старта карта ставится под модальный бой; сохранённая скорость мира — Speed0. Любая ошибка или отказ пишется в InterfaceLog, сессия закрывается, текущим экраном остаётся главное меню.
+
+`IsTutorial` — чисто клиентский признак, Engine и Save20 его не видят. До фазы Over подтверждение выхода отправляет `ScreenEvent.MainMenu` с текстом `TacticalBattle.ConfirmExitToMenu`; шлюз событий активного боя пропускает MainMenu только для такого потока. Сохранение блокируется тем же шлюзом и отказом Engine во время боя. На Over кнопки нового боя нет, единственная кнопка и Esc отправляют `CloseTacticalBattle`, после чего мир работает как после обычного боя. Бой по F8 создаёт поток без признака и не меняется.
 
 ## Клиентская презентация
 

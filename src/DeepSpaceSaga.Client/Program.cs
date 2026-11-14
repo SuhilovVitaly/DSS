@@ -38,7 +38,7 @@ public static class Program
     internal static void WriteDebugTuningDefaults(string settingsPath, string directory) =>
         DebugTuningFileWriter.WriteDefaults(directory, LocalGameSessionConnection.LoadDebugTuningDefaults(settingsPath));
 
-    private sealed class LocalGameSessionFactory : IGameSessionFactory
+    internal sealed class LocalGameSessionFactory : IGameSessionFactory
     {
         // The only place that knows about Saves/ on disk (mirrors Settings.json).
         private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
@@ -61,6 +61,11 @@ public static class Program
         public ScenarioInfo[] ListScenarios()
         {
             return ScenarioRepository.ListScenarios(ScenariosDirectory);
+        }
+
+        public string? GetTutorialScenarioPath()
+        {
+            return ScenarioRepository.FindTutorialScenarioPath(ScenariosDirectory);
         }
 
         public IGameSessionConnection CreateSessionFromSave(string slotId)

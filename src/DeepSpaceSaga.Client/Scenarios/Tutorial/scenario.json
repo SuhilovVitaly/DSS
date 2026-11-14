@@ -1,0 +1,341 @@
+{
+  "scenarioMetadata": {
+    "scenarioId": "tutorial",
+    "name": "Tutorial",
+    "description": "Hidden tutorial start: the default starter ship and procedural solar system, opened directly into the tutorial tactical battle.",
+    "hidden": true
+  },
+  "gameState": {
+    "gameTimeMs": 0,
+    "currentSpeed": "Speed0",
+    "playerShipObjectId": "SPC-0001",
+    "playerTokens": 2000,
+    "focus": {
+      "mode": "Attached",
+      "objectId": "SPC-0001"
+    },
+    "spaceObjects": [
+        {
+            "objectId": "SPC-0001",
+            "objectType": "PlayerShip",
+            "shipClassId": "ship.tetrarch",
+            "persistenceType": "Permanent",
+            "name": "Player Ship",
+            "positionX": 10000.0,
+            "positionY": 10000.0,
+            "speedMps": 700,
+            "directionDegrees": 0,
+            "movementType": "Linear",
+            "isKnown": true,
+            "hullLayout": {
+              "width": 9,
+              "height": 9,
+              "cells": [
+                {
+                  "x": 4,
+                  "y": 0
+                },
+                {
+                  "x": 3,
+                  "y": 1
+                },
+                {
+                  "x": 4,
+                  "y": 1
+                },
+                {
+                  "x": 5,
+                  "y": 1
+                },
+                {
+                  "x": 4,
+                  "y": 2
+                },
+                {
+                  "x": 4,
+                  "y": 3
+                },
+                {
+                  "x": 4,
+                  "y": 4
+                },
+                {
+                  "x": 3,
+                  "y": 5
+                },
+                {
+                  "x": 4,
+                  "y": 5
+                },
+                {
+                  "x": 5,
+                  "y": 5
+                },
+                {
+                  "x": 3,
+                  "y": 2
+                },
+                {
+                  "y": 2,
+                  "x": 5
+                }
+              ]
+            },
+            "modules": [
+              {
+                "moduleId": "MOD-PLAYER-BRIDGE-01",
+                "moduleTypeId": "module.bridge.navigation.computer.basic",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 0
+                  }
+                ],
+                "structurePoints": 80,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": []
+              },
+              {
+                "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
+                "moduleTypeId": "living.quarters.mk1",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 1
+                  }
+                ],
+                "structurePoints": 60,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": []
+              },
+              {
+                "moduleId": "MOD-PLAYER-CARGO-01",
+                "moduleTypeId": "module.container.basic",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 2
+                  }
+                ],
+                "structurePoints": 150,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": [
+                  {
+                    "itemTypeId": "item.energy-cells",
+                    "quantity": 1000
+                  },
+                  {
+                    "itemTypeId": "item.food-rations",
+                    "quantity": 200
+                  }
+                ]
+              },
+              {
+                "moduleId": "MOD-PLAYER-SCANNER-01",
+                "moduleTypeId": "module.scanner.mk1",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 3
+                  }
+                ],
+                "structurePoints": 60,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": []
+              },
+              {
+                "moduleId": "MOD-PLAYER-GENERATOR-01",
+                "moduleTypeId": "module.generator.basic",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 4
+                  }
+                ],
+                "structurePoints": 150,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": []
+              },
+              {
+                "moduleId": "MOD-PLAYER-ENGINE-01",
+                "moduleTypeId": "module.engine.basic",
+                "occupiedCells": [
+                  {
+                    "x": 4,
+                    "y": 5
+                  }
+                ],
+                "structurePoints": 100,
+                "powerState": "On",
+                "operationalState": "Ready",
+                "activeCycle": null,
+                "cargo": [],
+                "fuelAmountKg": 750
+              }
+            ],
+            "crew": [
+              {
+                "crewId": "CHR-0001",
+                "displayName": "Dunkan Su",
+                "accuracySkill": 0,
+                "maneuverabilitySkill": 0
+              },
+              {
+                "crewId": "CHR-PLAYER-DEFENSE",
+                "maneuverabilitySkill": 0,
+                "accuracySkill": 0,
+                "displayName": "Defense operator"
+              }
+            ]
+          },
+      {
+        "objectId": "SPC-0002",
+        "stationCrew": [{ "crewId": "CHR-0003", "role": "Dock Operator", "displayName": "Mari Lefeber" }],
+        "objectType": "Station",
+        "portFeeCreditsPerDay": 100,
+        "securityZoneRadiusKm": 200,
+        "piracyWarningGracePeriodMs": 60000,
+        "persistenceType": "Permanent",
+        "name": "Start Station",
+        "positionX": 11000.0,
+        "positionY": 11000.0,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "isKnown": true,
+        "stationSize": "Large",
+        "marketProfileId": "market.transit",
+        "explicitInventoryItemTypeIds": [
+          "item.energy-cells", "item.food-rations", "item.fuel", "item.ice",
+          "item.iron-ore", "item.magnesium-ore", "item.silicon"
+        ],
+        "inventory": [
+          { "itemTypeId": "item.food-rations", "quantity": 500 },
+          { "itemTypeId": "item.energy-cells", "quantity": 350 },
+          { "itemTypeId": "item.fuel", "quantity": 700 },
+          { "itemTypeId": "item.ice", "quantity": 320 },
+          { "itemTypeId": "item.iron-ore", "quantity": 410 },
+          { "itemTypeId": "item.silicon", "quantity": 70 },
+          { "itemTypeId": "item.magnesium-ore", "quantity": 120 }
+        ]
+      },
+      {
+        "objectId": "SPC-0003",
+        "objectType": "Asteroid",
+        "persistenceType": "Temporary",
+        "positionX": 10400.0,
+        "positionY": 10000.0,
+        "speedMps": 600,
+        "directionDegrees": 256,
+        "movementType": "Linear",
+        "massKg": 1000000,
+        "compositionType": "Silicate",
+        "isKnown": true
+      },
+      {
+        "objectId": "SPC-0004",
+        "objectType": "Asteroid",
+        "persistenceType": "Temporary",
+        "positionX": 10000.0,
+        "positionY": 10450.0,
+        "speedMps": 1200,
+        "directionDegrees": 22,
+        "movementType": "Linear",
+        "massKg": 1000000,
+        "compositionType": "Ice",
+        "isKnown": false
+      }
+    ],
+    "tradingMapGeneration": {
+      "schemaVersion": 1,
+      "startStationObjectId": "SPC-0002",
+      "referenceSpeedMps": 700,
+      "shortMaxGameTimeMs": 21600000,
+      "mediumMaxGameTimeMs": 64800000,
+      "maxTravelGameTimeMs": 129600000,
+      "minStationDistanceKm": 5,
+      "clearanceKm": 2,
+      "stations": [
+        { "objectId": "SPC-0002", "marketProfileId": "market.transit", "name": "Transit", "stationSize": "Large" },
+        { "objectId": "SPC-0005", "marketProfileId": "market.mining", "name": "Mining", "stationSize": "Medium" },
+        { "objectId": "SPC-0006", "marketProfileId": "market.industrial", "name": "Industrial", "stationSize": "Medium" },
+        { "objectId": "SPC-0007", "marketProfileId": "market.hydroponic", "name": "Hydroponic", "stationSize": "Medium" },
+        { "objectId": "SPC-0008", "marketProfileId": "market.scientific-military", "name": "Scientific/Military", "stationSize": "Medium" }
+      ],
+      "templates": [
+        {
+          "templateId": "cross-current",
+          "links": [
+            { "fromStationObjectId": "SPC-0002", "toStationObjectId": "SPC-0005", "riskProfileId": "risk.safe" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0006", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0007", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0007", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0008", "toStationObjectId": "SPC-0002", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" }
+          ],
+          "offsets": [
+            { "stationObjectId": "SPC-0002", "x": 0, "y": 0 },
+            { "stationObjectId": "SPC-0005", "x": 150, "y": 0 },
+            { "stationObjectId": "SPC-0006", "x": 0, "y": 800 },
+            { "stationObjectId": "SPC-0007", "x": -800, "y": 0 },
+            { "stationObjectId": "SPC-0008", "x": 0, "y": 1800 }
+          ]
+        },
+        {
+          "templateId": "ring-a",
+          "links": [
+            { "fromStationObjectId": "SPC-0002", "toStationObjectId": "SPC-0005", "riskProfileId": "risk.safe" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0006", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0007", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0007", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0008", "toStationObjectId": "SPC-0002", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" }
+          ],
+          "offsets": [
+            { "stationObjectId": "SPC-0002", "x": 0, "y": 0 },
+            { "stationObjectId": "SPC-0005", "x": 100, "y": 0 },
+            { "stationObjectId": "SPC-0006", "x": 0, "y": 1000 },
+            { "stationObjectId": "SPC-0007", "x": -1000, "y": 0 },
+            { "stationObjectId": "SPC-0008", "x": 0, "y": 1500 }
+          ]
+        },
+        {
+          "templateId": "wide-loop",
+          "links": [
+            { "fromStationObjectId": "SPC-0002", "toStationObjectId": "SPC-0005", "riskProfileId": "risk.safe" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0006", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0007", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0006", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0007", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" },
+            { "fromStationObjectId": "SPC-0008", "toStationObjectId": "SPC-0002", "riskProfileId": "risk.elevated" },
+            { "fromStationObjectId": "SPC-0005", "toStationObjectId": "SPC-0008", "riskProfileId": "risk.normal" }
+          ],
+          "offsets": [
+            { "stationObjectId": "SPC-0002", "x": 0, "y": 0 },
+            { "stationObjectId": "SPC-0005", "x": 200, "y": 0 },
+            { "stationObjectId": "SPC-0006", "x": 0, "y": 1200 },
+            { "stationObjectId": "SPC-0007", "x": -1200, "y": 0 },
+            { "stationObjectId": "SPC-0008", "x": 0, "y": 2200 }
+          ]
+        }
+      ],
+      "riskProfiles": [
+        { "riskProfileId": "risk.elevated", "fuelMultiplierPermille": 1300 },
+        { "riskProfileId": "risk.normal", "fuelMultiplierPermille": 1100 },
+        { "riskProfileId": "risk.safe", "fuelMultiplierPermille": 1000 }
+      ]
+    }
+  }
+}

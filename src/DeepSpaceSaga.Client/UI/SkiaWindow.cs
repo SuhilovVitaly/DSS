@@ -809,7 +809,8 @@ public sealed class SkiaWindow : IDisposable
                 ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
                 (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
-                ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle))
+                ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle) &&
+                !(evt == ScreenEvent.MainMenu && activeBattle.Flow.IsTutorial))
             {
                 activeBattle.NotifyWorldActionBlocked();
                 return;
@@ -864,7 +865,10 @@ public sealed class SkiaWindow : IDisposable
                     }
                     break;
                 case ScreenEvent.NewGame:
-                    OpenScenarioSelect();
+                    if (_session is null && _sessionFactory.ListSaveSlots().Length == 0)
+                        await StartTutorialAsync();
+                    else
+                        OpenScenarioSelect();
                     break;
                 case ScreenEvent.ScenarioSelected:
                     if (payload is not null)
@@ -1063,6 +1067,74 @@ public sealed class SkiaWindow : IDisposable
         {
             await session.DisposeAsync().ConfigureAwait(false);
             throw;
+        }
+    }
+
+    /// <summary>
+    /// NEW GAME without any save: start the hidden Tutorial scenario and go straight into its
+    /// tactical battle (default request, seed 1, no setup screen). The whole sequence runs under
+    /// <see cref="_transitionLock"/> while the main menu stays on screen; the world map is only
+    /// placed under the battle modal once the battle has been accepted, so it never becomes the
+    /// current screen or receives input. Any failure disposes the session and returns to the main menu.
+    /// </summary>
+    private async Task StartTutorialAsync()
+    {
+        if (_session is not null)
+            return;
+
+        await _lastSessionDisposal;
+        if (_closing) return;
+
+        GameSessionHandle? session = null;
+        try
+        {
+            string scenarioPath = _sessionFactory.GetTutorialScenarioPath()
+                ?? throw new FileNotFoundException("Tutorial scenario is not available.");
+            var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
+            if (!_connectionLoader.TryAdopt(connection)) return;
+
+            session = new GameSessionHandle(connection, deferDebugTuningWrites: true);
+            var gameScreen = new GameSessionScreen(session.Buffer, new LinearMotionPredictor(), session,
+                showTrajectoryPrediction: GetShowTrajectoryPrediction(),
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")),
+                tacticalBattleInputs: _tacticalInputs, maneuverInputs: _maneuverInputs);
+            Localization.ApplyLanguage(Localization.ReadLanguageSetting(SettingsFilePath));
+            var flow = new TacticalBattleFlow(session) { IsTutorial = true };
+
+            // Same order as a battle opened from the map: authoritative pause first, then the battle.
+            session.ClearStationTravelPause();
+            await session.SetSpeedAsync(SimulationSpeed.Speed0);
+            var started = await flow.StartAsync(new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), 1));
+            if (started?.Accepted != true || flow.State is null)
+                throw new InvalidOperationException("Tutorial battle was rejected: " + (started?.Code.ToString() ?? "no response"));
+            if (_closing)
+            {
+                await session.DisposeAsync();
+                return;
+            }
+
+            _session = session;
+            _gameSessionScreen = gameScreen;
+            // The tutorial world starts paused, so leaving the finished battle shows a paused map like a fresh New Game.
+            _savedSpeed = SimulationSpeed.Speed0;
+            _screens.ReplaceAll(gameScreen);
+            _screens.Push(CreateTacticalBattleView(flow));
+            _modalDepth = 1;
+            session.DebugTuningFiles.Activate();
+        }
+        catch (Exception ex)
+        {
+            InterfaceLog.Write($"Tutorial start failed: {ex.Message}");
+            _session = null;
+            _gameSessionScreen = null;
+            _modalDepth = 0;
+            _savedSpeed = SimulationSpeed.Speed1;
+            if (!_closing) _screens.ReplaceAll(new MainMenuScreen());
+            if (session is not null)
+            {
+                _lastSessionDisposal = session.DisposeAsync().AsTask();
+                await _lastSessionDisposal;
+            }
         }
     }
 

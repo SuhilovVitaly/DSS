@@ -23,6 +23,8 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public bool Pending => Volatile.Read(ref _pending) != 0;
     public Task? OptionsTask { get; private set; }
     public StartTacticalBattleRequest? LastStart { get; private set; }
+    /// <summary>Client-only tutorial mode: mid-battle exit leads to the main menu and a finished battle only returns to the map.</summary>
+    public bool IsTutorial { get; init; }
     public void BeginLoadOptions() => OptionsTask ??= LoadOptionsAsync();
     private async Task LoadOptionsAsync()
     {
@@ -170,9 +172,13 @@ public class TacticalBattleModalScreen : IScreen
         _action.Clicked += () => _queued = ActionEvent;
         _close.Clicked += () => { if (IsSetup) _queued = ScreenEvent.CloseTacticalBattle; else ConfirmExit = true; };
         _new.Clicked += () => _queued = ScreenEvent.NewTacticalBattle;
-        _confirm.Clicked += () => _queued = ScreenEvent.CloseTacticalBattle;
+        _confirm.Clicked += () => _queued = ConfirmEvent;
         _cancel.Clicked += () => ConfirmExit = false;
     }
+    /// <summary>Before a tutorial battle is over its only exit is the main menu; every other confirmed exit returns to the map.</summary>
+    private bool ExitsToMainMenu => Flow.IsTutorial && !IsSetup && Flow.State?.Phase != TacticalBattlePhase.Over;
+    protected ScreenEvent ConfirmEvent => ExitsToMainMenu ? ScreenEvent.MainMenu : ScreenEvent.CloseTacticalBattle;
+    internal string ExitConfirmationText => L(ExitsToMainMenu ? "ConfirmExitToMenu" : "ConfirmExit");
     internal virtual bool CanStart => IsSetup && !Flow.Pending && Flow.Options is { Availability.Available: true, Scenarios.IsEmpty: false };
     protected ScreenEvent ActionEvent => Flow.Pending ? ScreenEvent.None : IsSetup
         ? CanStart ? ScreenEvent.StartTacticalBattle : ScreenEvent.None
@@ -233,10 +239,10 @@ public class TacticalBattleModalScreen : IScreen
         _close.Label = L("ToMap"); _close.KeyHint = "Esc"; _close.Enabled = !Flow.Pending;
         _close.Bounds = SKRect.Create(width - 254 * s, height - 64 * s, 230 * s, 40 * s);
         _new.Label = L("NewBattle"); _new.Enabled = !Flow.Pending && Flow.State?.Phase == TacticalBattlePhase.Over;
-        _new.Bounds = !IsSetup && Flow.State?.Phase == TacticalBattlePhase.Over ? SKRect.Create(270 * s, height - 64 * s, 230 * s, 40 * s) : SKRect.Empty;
+        _new.Bounds = !IsSetup && !Flow.IsTutorial && Flow.State?.Phase == TacticalBattlePhase.Over ? SKRect.Create(270 * s, height - 64 * s, 230 * s, 40 * s) : SKRect.Empty;
         if (showAction) _action.Draw(canvas, s);
         _close.Draw(canvas, s);
-        if (!IsSetup && Flow.State?.Phase == TacticalBattlePhase.Over) _new.Draw(canvas, s);
+        if (!IsSetup && !Flow.IsTutorial && Flow.State?.Phase == TacticalBattlePhase.Over) _new.Draw(canvas, s);
         if (Flow.Pending) ControlVisuals.Label(canvas, L("Waiting"), new(24 * s, height - 100 * s, width - 24 * s, height - 70 * s), true, s, role: "modal.background.waiting");
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
         if (BlockedNotice is { Length: > 0 } notice)
@@ -250,7 +256,7 @@ public class TacticalBattleModalScreen : IScreen
             var box = SKRect.Create(width * .5f - 260 * scale, height * .5f - 90 * scale, 520 * scale, 180 * scale);
             BattleDesign.Round(canvas, SKRect.Create(width, height), new(0, 0, 0, 180), radius: 0, role: "modal.exit.dim");
             BattleDesign.PanelBox(canvas, box, radius: 6 * scale, role: "modal.exit");
-            BattleDesign.T(canvas, L("ConfirmExit"), box.Left + 24 * scale, box.Top + 44 * scale, 16 * scale, BattleDesign.Text, true);
+            BattleDesign.T(canvas, ExitConfirmationText, box.Left + 24 * scale, box.Top + 44 * scale, 16 * scale, BattleDesign.Text, true);
             _confirm.Bounds = SKRect.Create(box.Left + 24 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
             _cancel.Bounds = SKRect.Create(box.Right - 244 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
             _confirm.Enabled = !Flow.Pending;
@@ -268,7 +274,7 @@ public class TacticalBattleModalScreen : IScreen
             TacticalBattleSkinRenderScope.Box(canvas, "modal.exit", rect, new(2, 12, 22), XenonStyle.Cyan, s);
         else
             GenericWindowTypeA.DrawOpaque(canvas, rect);
-        ControlVisuals.Label(canvas, L("ConfirmExit"), new(rect.Left + 24 * s, rect.Top + 24 * s, rect.Right - 24 * s, rect.Top + 72 * s),
+        ControlVisuals.Label(canvas, ExitConfirmationText, new(rect.Left + 24 * s, rect.Top + 24 * s, rect.Right - 24 * s, rect.Top + 72 * s),
             true, s, role: "modal.exit.title");
         _confirm.Label = L("ExitBattle"); _confirm.Enabled = !Flow.Pending;
         _cancel.Label = L("Cancel");
@@ -285,7 +291,7 @@ public class TacticalBattleModalScreen : IScreen
         _queued = ScreenEvent.None;
         if (ConfirmExit) { _confirm.OnMouseDown(x, y, button); _cancel.OnMouseDown(x, y, button); return _queued; }
         _action.OnMouseDown(x, y, button); _close.OnMouseDown(x, y, button);
-        if (!IsSetup && Flow.State?.Phase == TacticalBattlePhase.Over) _new.OnMouseDown(x, y, button);
+        if (!IsSetup && !Flow.IsTutorial && Flow.State?.Phase == TacticalBattlePhase.Over) _new.OnMouseDown(x, y, button);
         if (IsSetup) _error.OnMouseDown(x, y, button);
         return _queued;
     }
@@ -305,7 +311,7 @@ public class TacticalBattleModalScreen : IScreen
             else if (IsSetup) return ScreenEvent.CloseTacticalBattle;
             else ConfirmExit = true;
         }
-        if (key is Key.Enter or Key.KeypadEnter && !repeat) return ConfirmExit ? ScreenEvent.CloseTacticalBattle : ActionEvent;
+        if (key is Key.Enter or Key.KeypadEnter && !repeat) return ConfirmExit ? ConfirmEvent : ActionEvent;
         return ScreenEvent.None;
     }
     public virtual void OnInputReset()
