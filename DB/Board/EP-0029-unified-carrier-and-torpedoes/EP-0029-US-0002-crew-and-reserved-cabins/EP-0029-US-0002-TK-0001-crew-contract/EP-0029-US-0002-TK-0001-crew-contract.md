@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Общий контракт персонажа и жилья
@@ -103,4 +103,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `CrewMemberSnapshot`(Id/DisplayName/Gender/PortraitAssetId/Role/Accuracy/Maneuver/Initiative), `CrewGender`/`CrewRole` enums, `Crew` array + `CabinReservationSnapshot` in `CarrierOperations` (renamed the TK-0001 `HabitationSnapshot`→`CabinReservationSnapshot`, property `Habitation`→`CabinReservation`; updated the single engine projection reference). `TacticalBuildSnapshot` gained `PilotGender`/`PilotPortraitAssetId`/`PilotRole` so the tactical build carries the shared CrewId display fields.
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests --filter "FullyQualifiedName~Ep0029Us0002Tk0001Tests"` — **2/2 passed** (`CrewIdentityRoundTrip`, `ReservationIsNotOccupant`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-005-us0002tk0001/US-0002-TK-0001/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors (contracts rename + engine reference).
+- `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (contracts layer); native/product acceptance remains OPEN.

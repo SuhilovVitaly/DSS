@@ -39,7 +39,7 @@ public partial class SimulationEngine
             IsDestroyed: ship.IsDestroyed,
             AppearanceId: shipClass.AppearanceId,
             Hangars: BuildHangarSlots(ship),
-            Habitation: null); // US-0002 fills this
+            CabinReservation: null); // US-0002 fills this
     }
 
     private ImmutableArray<HangarSlotSnapshot> BuildHangarSlots(SpaceObjectRuntime ship)
