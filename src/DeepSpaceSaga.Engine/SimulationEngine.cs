@@ -809,6 +809,7 @@ public sealed partial class SimulationEngine : IDisposable
                 CommandResults: commandResults,
                 ShipEvents: shipEvents,
                 InstalledModules: installedModules,
+                CarrierOperations: BuildCarrierOperationsProjection(),
                 ActiveObjectId: ActiveObjectId,
                 SelectedObjectId: SelectedObjectId,
                 PlayerCredits: PlayerCredits,
@@ -1418,11 +1419,14 @@ public sealed partial class SimulationEngine : IDisposable
         ModuleTypeDefinition moduleType,
         HashSet<(int X, int Y)> occupiedHullCells)
     {
-        if (module.OccupiedCells.Count != moduleType.SlotSize)
+        int expectedCells = moduleType.FootprintWidth is { } fw && moduleType.FootprintHeight is { } fh
+            ? fw * fh
+            : moduleType.SlotSize;
+        if (module.OccupiedCells.Count != expectedCells)
         {
             throw new ScenarioException(
                 $"Module '{module.ModuleId}' on '{objectId}' occupies {module.OccupiedCells.Count} cells, " +
-                $"but module type '{moduleType.TypeId}' requires {moduleType.SlotSize}.");
+                $"but module type '{moduleType.TypeId}' requires {expectedCells}.");
         }
 
         if (hullLayout is null)

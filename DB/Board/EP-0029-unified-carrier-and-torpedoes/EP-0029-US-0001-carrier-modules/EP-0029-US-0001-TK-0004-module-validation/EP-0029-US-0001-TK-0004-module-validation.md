@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Проверка размещения и доступности
@@ -105,4 +105,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implemented footprint-aware placement (`SimulationEngine.ValidateModulePlacement` uses `FootprintWidth×FootprintHeight` for drone-bay modules, else `SlotSize`), carrier surface projection (`SimulationEngine.Carrier.cs`: `BuildCarrierOperationsProjection`, `IsHangarReady`, hull-current test seam), and wired `CarrierOperations` into the world snapshot. `ScenarioLoader.cs` from the allowlist needed no change — footprint/placement validation lives in `SimulationEngine` (the only layer with registry access); noted here, not implemented.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0001Tk0004Tests"` — **3/3 passed** (`OverlapAndOutsideHullRejected`, `OfflineBayKeepsInventoryButBlocksLaunch`, `IndependentHullProjection`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-004-tk0004/US-0001-TK-0004/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+- Full Engine suite regression (`run-004-tk0004/US-0001-TK-0004/full/full.trx`, 2957 tests): **2344 passed, 613 failed** — the failures are pre-existing solar-system corpus/config failures (`invalid distance scale` from `LegacyConfig(){GeneratorVersion=1}` + real `distanceScale=32.6`, and `MasterSeedTests`/`CatalogCompatibilityTests` solar-system object-count/config assertions). None are in carrier/hangar code and none are introduced by EP-0029; a null-ship-class NRE introduced by TK-0002 and a passive-type count from TK-0003 were found during this run and fixed in a separate regression-fix commit (`72aeb67a`).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
