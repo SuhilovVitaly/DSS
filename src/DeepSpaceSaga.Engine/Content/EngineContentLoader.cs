@@ -220,6 +220,8 @@ public static class EngineContentLoader
                 throw new ContentException("shipClasses must contain at least one class.");
             foreach (var shipClass in file.ShipClasses)
             {
+                if (shipClass is null)
+                    continue; // null elements are rejected by CreateShipClassRegistry below
                 if (shipClass.HullMax is { } hullMax && hullMax <= 0)
                     throw new ContentException($"Ship class '{shipClass.TypeId}': hullMax must be positive.");
                 if (shipClass.TacticalManeuver is { } maneuver && maneuver <= 0)

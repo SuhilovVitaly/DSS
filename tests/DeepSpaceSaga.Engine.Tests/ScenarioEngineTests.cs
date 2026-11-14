@@ -547,7 +547,7 @@ public class ScenarioEngineTests
 
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(6, passiveTypes); // Includes the separate two-, three- and four-cabin living variants.
+        Assert.Equal(8, passiveTypes); // Living variants + the two drone-bay sizes (small/medium).
     }
 
     [Theory]
