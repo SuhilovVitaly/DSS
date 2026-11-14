@@ -120,6 +120,34 @@ public sealed class TutorialContentTests
             TutorialCompletion.PilotSelected, "pilot:{own}", 100);
 
     [Fact]
+    public void MoveLessonsMatchTheCatalog()
+    {
+        var script = Shipped();
+        AssertStep(script, "move.steer", "Tutorial.Line.MoveSteer", "Move", 1, null, "intro", TutorialSignal.None,
+            TutorialCompletion.PathEdited, "endpoint:{selected}", 90);
+        AssertStep(script, "move.submit", "Tutorial.Line.MoveSubmit", "Move", 1, null, "move.steer", TutorialSignal.None,
+            TutorialCompletion.PhaseLeft, "button:primary", 80);
+        AssertStep(script, "move.cycle", "Tutorial.Line.MoveCycle", "Move", 2, null, null, TutorialSignal.None,
+            TutorialCompletion.PilotCycled, "pilot:{own}", 70);
+        AssertStep(script, "move.reachable", "Tutorial.Line.MoveReachable", "Move", null, 2, "move.cycle", TutorialSignal.None,
+            TutorialCompletion.PathEdited, "reachable", 60);
+        // The first Move teaches three things (pick a pilot, steer, submit), each after the player's own action.
+        Assert.True(script.Limits.MaxLinesPerPhase >= 3);
+    }
+
+    [Fact]
+    public void MoveLessonsNameTheirControls()
+    {
+        var script = Shipped();
+        foreach (string language in Languages)
+        {
+            using var locale = Localization.UseLocaleForTests(language);
+            Assert.Contains("Enter", Localization.Get(StepOf(script, "move.submit").LineKey), StringComparison.Ordinal);
+            Assert.Contains("Tab", Localization.Get(StepOf(script, "move.cycle").LineKey), StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void OfficerPortraitComposesDeterministicallyFromExistingHead()
     {
         var officer = Shipped().Officer!;

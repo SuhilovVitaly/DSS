@@ -6,7 +6,7 @@
     "portrait": "Images/Persons/W4/Portraits/CHR-20260915-104309-12BAB0.png",
     "portraitKey": "tutorial.officer"
   },
-  "limits": { "minGapMs": 2500, "autoCollapseMs": 15000, "maxLinesPerPhase": 2 },
+  "limits": { "minGapMs": 2500, "autoCollapseMs": 15000, "maxLinesPerPhase": 3 },
   "steps": [
     {
       "id": "intro",
@@ -15,6 +15,38 @@
       "complete": "pilot-selected",
       "anchor": "pilot:{own}",
       "priority": 100
+    },
+    {
+      "id": "move.steer",
+      "lineKey": "Tutorial.Line.MoveSteer",
+      "when": { "phase": "Move", "turn": 1, "after": "intro" },
+      "complete": "path-edited",
+      "anchor": "endpoint:{selected}",
+      "priority": 90
+    },
+    {
+      "id": "move.submit",
+      "lineKey": "Tutorial.Line.MoveSubmit",
+      "when": { "phase": "Move", "turn": 1, "after": "move.steer" },
+      "complete": "phase-left",
+      "anchor": "button:primary",
+      "priority": 80
+    },
+    {
+      "id": "move.cycle",
+      "lineKey": "Tutorial.Line.MoveCycle",
+      "when": { "phase": "Move", "turn": 2 },
+      "complete": "pilot-cycled",
+      "anchor": "pilot:{own}",
+      "priority": 70
+    },
+    {
+      "id": "move.reachable",
+      "lineKey": "Tutorial.Line.MoveReachable",
+      "when": { "phase": "Move", "minTurn": 2, "after": "move.cycle" },
+      "complete": "path-edited",
+      "anchor": "reachable",
+      "priority": 60
     }
   ]
 }

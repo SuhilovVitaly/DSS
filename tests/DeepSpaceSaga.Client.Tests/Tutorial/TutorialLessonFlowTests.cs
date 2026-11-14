@@ -85,6 +85,36 @@ public sealed class TutorialLessonFlowTests
 
         internal IEnumerable<string> Texts => Screen.Layout.Texts.Select(t => t.Text);
 
+        internal int Turn => Session.LastObservation?.Turn ?? 0;
+
+        /// <summary>Presses a key on the battle screen, routes the resulting event and renders the next frame.</summary>
+        internal async Task Press(Key key)
+        {
+            var evt = Screen.OnKeyDown(key);
+            if (evt != ScreenEvent.None) await Fixture.Route(evt);
+            Render();
+        }
+
+        /// <summary>
+        /// One pure-Enter step with a rendered frame right after it (so the officer observes every presentation phase), then
+        /// lets the movement animation finish and renders again.
+        /// </summary>
+        internal async Task Enter()
+        {
+            await Press(Key.Enter);
+            Fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
+            Render();
+        }
+
+        /// <summary>Pure Enter until the given phase (and turn, if any) is on screen.</summary>
+        internal async Task EnterUntil(string phase, int? turn = null, int limit = 100)
+        {
+            Render();
+            for (int i = 0; i < limit && !(Phase == phase && (turn is null || Turn == turn)); i++) await Enter();
+            Assert.Equal(phase, Phase);
+            if (turn is not null) Assert.Equal(turn, Turn);
+        }
+
         public async ValueTask DisposeAsync()
         {
             _skins.Dispose();
@@ -115,5 +145,81 @@ public sealed class TutorialLessonFlowTests
         Assert.Equal(ScreenEvent.None, live.Screen.OnKeyDown(Key.Tab));
         live.Render();
         Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("intro"));
+    }
+
+    [Fact]
+    public async Task FirstTwoTurnsTeachMovementByPlayerActions()
+    {
+        await using var live = await LiveTutorial.Start();
+        live.Render();
+        Assert.Equal("intro", live.Director.Current?.Step.Id);
+
+        // T1: select a pilot → steer → submit.
+        await live.Press(Key.Tab);
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("intro"));
+        Assert.Null(live.Director.Current); // the minimum gap after the player's action
+        live.Pause();
+        Assert.Equal("move.steer", live.Director.Current?.Step.Id);
+        Assert.Equal("endpoint:" + live.Screen.Movement.Selected, live.HighlightKey());
+
+        await live.Press(Key.Right);
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("move.steer"));
+        live.Pause();
+        Assert.Equal("move.submit", live.Director.Current?.Step.Id);
+        Assert.Equal("button:primary", live.HighlightKey());
+
+        await live.Enter(); // submit; the movement animation plays, then the next phase is on screen
+        Assert.NotEqual(("Move", 1), (live.Phase, live.Turn));
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("move.submit"));
+
+        // T2: Tab cycles pilots → the reachable zone.
+        await live.EnterUntil("Move", 2);
+        live.Pause();
+        Assert.Equal("move.cycle", live.Director.Current?.Step.Id);
+        Assert.StartsWith("pilot:", live.HighlightKey());
+        await live.Press(Key.Tab);
+        Assert.Equal(TutorialStepState.Shown, live.Director.StateOf("move.cycle")); // the first pick is not a cycle yet
+        await live.Press(Key.Tab);
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("move.cycle"));
+        live.Pause();
+        Assert.Equal("move.reachable", live.Director.Current?.Step.Id);
+        Assert.Equal("reachable", live.HighlightKey());
+        await live.Press(Key.Up);
+        Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("move.reachable"));
+
+        int intro = IndexOf(live, "intro"), steer = IndexOf(live, "move.steer"), submit = IndexOf(live, "move.submit");
+        int cycle = IndexOf(live, "move.cycle"), reachable = IndexOf(live, "move.reachable");
+        Assert.True(intro < steer && steer < submit && submit < cycle && cycle < reachable, string.Join(", ", live.Director.Heard));
+    }
+
+    [Fact]
+    public async Task PureEnterNeverWaitsForTheOfficer()
+    {
+        await using var live = await LiveTutorial.Start();
+        var stuck = new List<string>();
+        live.Render();
+        for (int i = 0; i < 100 && live.Screen.Flow.State!.Phase != TacticalBattlePhase.Over; i++)
+        {
+            string phase = live.Phase;
+            int turn = live.Turn;
+            await live.Enter();
+            // Enter always moves the battle on: a shown line never holds the phase, and it never outlives its phase.
+            if (live.Director.Current is { } line && (line.Step.When.Phase != live.Phase))
+                stuck.Add($"{line.Step.Id} shown in {live.Phase}");
+            if (phase == live.Phase && turn == live.Turn && live.Phase != "Outcome")
+                stuck.Add($"Enter did not leave {phase} T{turn}");
+        }
+        await live.EnterUntil("Outcome");
+        Assert.Equal(TacticalBattlePhase.Over, live.Screen.Flow.State!.Phase);
+        Assert.Empty(stuck);
+        Assert.Contains("intro", live.Director.Heard); // spoken, then left behind by Enter
+        Assert.Equal(TutorialStepState.Expired, live.Director.StateOf("intro"));
+    }
+
+    private static int IndexOf(LiveTutorial live, string stepId)
+    {
+        int index = live.Director.Heard.ToList().IndexOf(stepId);
+        Assert.True(index >= 0, stepId + " not heard: " + string.Join(", ", live.Director.Heard));
+        return index;
     }
 }

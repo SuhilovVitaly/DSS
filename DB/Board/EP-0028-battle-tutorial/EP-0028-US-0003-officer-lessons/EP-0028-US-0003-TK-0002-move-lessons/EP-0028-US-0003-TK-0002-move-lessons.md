@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0003-officer-lessons
 ticket: EP-0028-US-0003-TK-0002-move-lessons
 title: Уроки движения
-stage: approved
+stage: implemented
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0003-TK-0001-officer, EP-0028-US-0002-TK-0003-target-highlight, EP-0028-US-0002-TK-0004-quiet-rules]
@@ -109,6 +109,30 @@ Process-tree cap 300000 ms.
 
 Каталог, тексты, источники управления и сценарий теста заданы.
 
+## Результат
+
+`src/DeepSpaceSaga.Client/Data/Tutorial/battle-tutorial.json`: добавлены 4 шага по [каталогу](../EP-0028-US-0003-officer-lessons.md#каталог-уроков) без изменений полей — `move.steer` (Move, turn 1, after `intro`, `path-edited`, `endpoint:{selected}`, 90), `move.submit` (Move, turn 1, after `move.steer`, `phase-left`, `button:primary`, 80), `move.cycle` (Move, turn 2, `pilot-cycled`, `pilot:{own}`, 70), `move.reachable` (Move, minTurn 2, after `move.cycle`, `path-edited`, `reachable`, 60); `limits.maxLinesPerPhase` 2 → **3** (см. «Журнал»).
+
+| Key | RU | EN |
+|---|---|---|
+| `Tutorial.Line.MoveSteer` | Дрон закончит ход там, где кончается путь. Тяните его конец или жмите стрелки. | A drone ends its turn where its path ends. Drag that end, or steer with the arrow keys. |
+| `Tutorial.Line.MoveSubmit` | Остальных поведёт тактика крыла — они своё дело знают. Готовы? Жмите Enter. | The rest will fly the wing's tactic — they know their job. Ready? Press Enter. |
+| `Tutorial.Line.MoveCycle` | Tab переключает пилотов по кругу — так быстрее проверить курс каждого. | Tab cycles through your pilots — a quick way to check everyone's course. |
+| `Tutorial.Line.MoveReachable` | Пунктирная зона — всё, куда этот дрон долетит за ход. Точку выбирайте внутри. | The dashed zone is everywhere this drone can reach this turn. Pick your point inside it. |
+
+Все реплики — 2 строки панели в RU и EN (`snap/lines.txt`).
+
+Тесты: `TutorialContentTests.MoveLessonsMatchTheCatalog` (поля 4 шагов и `maxLinesPerPhase ≥ 3`), `MoveLessonsNameTheirControls` (Enter, Tab в RU/EN); `TutorialLessonFlowTests.FirstTwoTurnsTeachMovementByPlayerActions` (живой бой обучения: T1 — `intro` → Tab → после `minGapMs` `move.steer` с подсветкой `endpoint:<выбранный>` → стрелка вправо → `move.submit` с подсветкой `button:primary` → Enter → фаза ушла, шаг Completed; T2 Move — `move.cycle` (подсветка `pilot:*`), Tab, Tab → Completed → `move.reachable` с подсветкой `reachable` → стрелка вверх → Completed; порядок в `Heard` intro < steer < submit < cycle < reachable), `PureEnterNeverWaitsForTheOfficer` (только Enter до Over: каждый Enter уводит из фазы/хода, показанная реплика не переживает свою фазу, `intro` прозвучал и истёк). Помощники `LiveTutorial.Press/Enter/EnterUntil/Pause`.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0003-tk0002-20261114T192142/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт: `MoveLessonsMatchTheCatalog`, `MoveLessonsNameTheirControls` (шагов нет) и `FirstTwoTurnsTeachMovementByPlayerActions` (`move.steer` не показан) — `../us0003-tk0002-red/red.log`; с шагами и пределом 2 — `move.submit` не показан (`cap2.log`); с пределом 3 — зелёные (`cap3b.log`).
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~TutorialFlowTests"` — **161/161** — `move.trx`, `move.log`.
+- Растровые снимки панели RU/EN: `snap/panel-{ru,en}-<step>.png`; строки — `snap/lines.txt` (временный тест-дамп, не закоммичен).
+- Правок кода и `UI/Screens/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) **`limits.maxLinesPerPhase` в поставляемом сценарии поднят с 2 до 3.** Первый ход Move учит три действия (выбор пилота → курс → отправка), каждое звучит только после действия игрока; при пределе 2 на пару (фаза, ход) `move.submit` подавлялся (доказано прогоном `us0003-tk0002-red/cap2.log`). Значение — в данных (`limits`), код и умолчание `TutorialLimits` не менялись; интервал 2500 мс и сворачивание 15000 мс прежние. Фазы, где шаг закрывается сменой фазы (`phase-left`), всё равно держат одну реплику до конца фазы, поэтому лишнего шума предел 3 не добавляет. Epic `Documentation.md` (D-*/A-*) вне `files_touched` — не правился; синхронизация — US-0006-TK-0003. (2) Тексты переписаны под ёмкость панели (≤ 2 строк в RU и EN) и тон пользователя: «зачем» + конкретный элемент управления (конец пути/стрелки, Enter, Tab, пунктирная зона). Утверждение о «шире разворот» из предложения не использовано (не проверено по `TacticalMovementLimits`); вместо него — факт отрисовки: зона досягаемости рисуется пунктиром (`BattleMapRenderer.Templates.cs:15-23`). (3) Во flow-тесте отправка хода — через `Enter()` с продвижением часов анимации движения: во время анимации кадр ещё показывает Move T1.
