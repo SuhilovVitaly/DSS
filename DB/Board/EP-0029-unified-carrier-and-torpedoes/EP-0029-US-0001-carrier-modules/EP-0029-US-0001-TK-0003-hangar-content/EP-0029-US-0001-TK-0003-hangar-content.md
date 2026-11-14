@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Каталог S/M и Tetrarch
@@ -104,4 +104,12 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implemented `module.drone-bay` category (`module-types.json`), `Data/Modules/DroneBay/modules-dronebay.json` (S 1×2/cap1/mass2500/SP150, M 2×2/cap2/mass4500/SP250), and Tetrarch class profile `hullMax=400, tacticalManeuver=35, appearanceId="carrier"` in `ship-classes.json`.
+
+**Allowlist expansion (recorded before implementation):** adding the drone-bay category and the Tetrarch hull profile changes two shared content invariants asserted by existing Client.Tests — `TetrarchClassContentTests.Ship_classes_have_no_hull_hp` (each class had exactly `typeId`) and `ModuleStructureCatalogTests.All_modules_structure_150` (every module had SP 150). Both were updated to the new contract (Tetrarch carries hullMax/tacticalManeuver/appearanceId; drone-bay S=150/M=250 SP). No assertion was weakened — the independent hull/SP facts are still verified.
+
+- `dotnet test tests/DeepSpaceSaga.Client.Tests --filter "FullyQualifiedName~Ep0029Us0001Tk0003Tests|FullyQualifiedName~TetrarchClassContentTests|FullyQualifiedName~ModuleStructureCatalogTests"` — **9/9 passed** — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-003-tk0003/US-0001-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors.
+- `dotnet format --verify-no-changes --include <3 test files>` — clean; `git diff --check` — clean.
+
+Status: automated PASS (content-data layer); native/product acceptance remains OPEN.
