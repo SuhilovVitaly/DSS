@@ -55,11 +55,11 @@ Workflow approval автоматический по поручению созд�
 
 ## Completion evidence
 
-- AC-01: тикеты TK-0001, TK-0002, TK-0003, TK-0004; named tests и наблюдаемый результат внутри тикетов.
-- AC-02: тикеты TK-0001, TK-0002, TK-0003, TK-0004; named tests и наблюдаемый результат внутри тикетов.
-- AC-03: тикеты TK-0002, TK-0003, TK-0004; named tests и наблюдаемый результат внутри тикетов.
-- Future evidence: уникальный run под D:/DeepSpaceSaga/artifacts/validation/ep-0029/; после реализации сюда записать результаты и ссылки.
-- Сейчас implementation/automated/native/product: **NOT RUN / OPEN**.
+- AC-01: TK-0001/0002/0003/0004 — `Ep0029Us0001Tk0001Tests.CapacityAndIdentityRoundTrip`, `Ep0029Us0001Tk0003Tests.TwoMediumBaysHaveFourPlaces`, `Ep0029Us0001Tk0004Tests.OverlapAndOutsideHullRejected` — PASS.
+- AC-02: TK-0001/0002/0003/0004 — `Ep0029Us0001Tk0002Tests.HousingDoesNotChangeHullMax`, `Ep0029Us0001Tk0003Tests.ClassProfileHasIndependentHull`, `Ep0029Us0001Tk0004Tests.IndependentHullProjection` + `OfflineBayKeepsInventoryButBlocksLaunch` — PASS.
+- AC-03: TK-0002/0003/0004 — `Ep0029Us0001Tk0002Tests.RejectsInvalidCapacityAndFootprint` + content parse — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-001..004-*`.
+- Implementation/automated: **PASS** (contracts+engine+content, focused tests green; full Engine suite's 613 failures are pre-existing solar-system corpus/config, not EP-0029). Native/product: **OPEN**.
 
 ## Decisions and review log
 
