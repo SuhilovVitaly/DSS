@@ -1,4 +1,6 @@
+using DeepSpaceSaga.Client.UI.Portraits;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -7,26 +9,68 @@ namespace DeepSpaceSaga.Client.UI.Screens.Tutorial;
 /// <summary>
 /// Battle-tutorial companion of <see cref="TacticalBattleScreen"/>: fed with every rendered frame, draws on top of the overlay
 /// and gets the first look at input that targets its own areas. Exists only in the tutorial battle. It never calls the Engine
-/// and never touches battle orders; input hooks return true only for its own areas (none yet: panel arrives in US-0002).
+/// and never touches battle orders; input hooks return true only for its own areas (the comms panel).
 /// </summary>
-internal sealed class TutorialSession(TutorialScript script)
+internal sealed class TutorialSession
 {
-    internal TutorialScript Script { get; } = script;
-    internal TutorialDirector Director { get; } = new(script);
+    private bool _portraitComposed;
+    private SKBitmap? _portrait;
 
-    /// <summary>Areas that capture input, in design coordinates.</summary>
-    internal IEnumerable<SKRect> Bounds => [];
+    internal TutorialSession(TutorialScript script)
+    {
+        Script = script;
+        Director = new(script);
+        ComposePortrait(); // window transition, not a render frame
+    }
+
+    internal TutorialScript Script { get; }
+    internal TutorialDirector Director { get; }
+    internal TutorialCommsPanel Panel { get; } = new();
+
+    /// <summary>Officer portrait (300x300) or null: no officer, no head asset, or released.</summary>
+    internal SKBitmap? Portrait => _portrait;
+
+    /// <summary>Areas that capture input, in design coordinates (the panel or chip as last drawn).</summary>
+    internal IEnumerable<SKRect> Bounds => Panel.Bounds.IsEmpty ? [] : [Panel.Bounds];
 
     internal void Observe(TutorialObservation observation) => Director.Observe(observation);
 
-    internal void Draw(SKCanvas canvas, BattleLayout layout, float designWidth, long nowMs) { }
+    internal void Draw(SKCanvas canvas, BattleLayout layout, float designWidth, long nowMs)
+    {
+        if (Script.Steps.IsDefaultOrEmpty) return; // no lessons, no comms panel
+        if (!_portraitComposed) ComposePortrait();
+        Panel.Draw(canvas, layout, designWidth, Director.Current, Director.Enabled, _portrait, Script.Officer);
+    }
 
-    internal bool OnMouseDown(SKPoint designPoint, MouseButton button) => false;
+    internal bool OnMouseDown(SKPoint designPoint, MouseButton button)
+    {
+        if (!Panel.Bounds.Contains(designPoint)) return false;
+        if (button != MouseButton.Left) return true;
+        switch (Panel.Hit(designPoint))
+        {
+            case "ack": Director.Acknowledge(); break;
+            case "hints-off": Director.Enabled = false; break;
+            case "hints-on": Director.Enabled = true; break;
+        }
+        return true;
+    }
 
     internal bool OnKeyDown(Key key, KeyModifiers modifiers, bool repeat) => false;
 
     internal bool OnMouseWheel(SKPoint designPoint, float delta) => false;
 
-    /// <summary>Releases drawing resources (portrait — US-0002).</summary>
-    internal void Release() { }
+    /// <summary>Releases the portrait bitmap; the next <see cref="Draw"/> composes it again.</summary>
+    internal void Release()
+    {
+        _portrait?.Dispose();
+        _portrait = null;
+        _portraitComposed = false;
+    }
+
+    private void ComposePortrait()
+    {
+        _portraitComposed = true;
+        if (Script.Officer is { } officer)
+            _portrait = DialoguePortraitComposer.Compose(officer.Portrait, PersonSex.Female, officer.PortraitKey);
+    }
 }

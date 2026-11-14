@@ -74,9 +74,10 @@ public sealed class TutorialScreenIntegrationTests
         { ClockMilliseconds = started.ClockMilliseconds, Tutorial = new TutorialSession(SelectPilotScript()) };
         Render(plain);
         Render(tutored);
-        Assert.Equal(plain.PanelRects, tutored.PanelRects);
+        // The comms panel (US-0002) only adds its own capture area and tutorial:* layout keys.
+        Assert.Equal(plain.PanelRects.Concat(tutored.Tutorial!.Bounds), tutored.PanelRects);
         Assert.Equal(plain.Layout.Rects.OrderBy(r => r.Key, StringComparer.Ordinal),
-            tutored.Layout.Rects.OrderBy(r => r.Key, StringComparer.Ordinal));
+            tutored.Layout.Rects.Where(r => !r.Key.StartsWith("tutorial:", StringComparison.Ordinal)).OrderBy(r => r.Key, StringComparer.Ordinal));
 
         Key[] keys = [Key.Tab, Key.Right, Key.Up, Key.Tab, Key.Left, Key.Down, Key.Down];
         foreach (var key in keys)
@@ -91,6 +92,7 @@ public sealed class TutorialScreenIntegrationTests
         var endpoint = plain.Layout.Rects.FirstOrDefault(r => r.Key.StartsWith("endpoint:", StringComparison.Ordinal)).Value;
         foreach (var point in new[] { new SKPoint(card.MidX, card.MidY), new SKPoint(640, 400), new SKPoint(endpoint.MidX, endpoint.MidY) })
         {
+            Assert.DoesNotContain(tutored.Tutorial!.Bounds, b => b.Contains(point)); // clicks outside the panel behave as without a session
             Assert.Equal(plain.OnMouseDown(point.X, point.Y, MouseButton.Left), tutored.OnMouseDown(point.X, point.Y, MouseButton.Left));
             plain.OnMouseUp(point.X, point.Y, MouseButton.Left);
             tutored.OnMouseUp(point.X, point.Y, MouseButton.Left);
@@ -117,6 +119,113 @@ public sealed class TutorialScreenIntegrationTests
         Assert.False(session.OnKeyDown(Key.H, KeyModifiers.None, false));
         Assert.False(session.OnMouseWheel(new SKPoint(10, 10), 1));
         session.Release();
+    }
+
+
+    private static TutorialScript EveryPhaseScript() => new(1, null, new TutorialLimits(),
+    [
+        .. new[] { "Move", "Fire", "Salvo", "Results", "Outcome" }.Select(phase => new TutorialStep("say." + phase,
+            "Tutorial.Journal.Empty", new TutorialCondition(phase, null, null, null, TutorialSignal.None),
+            TutorialCompletion.PhaseLeft, null, 50))
+    ]);
+
+    private static readonly string[] Protected = ["pilot:", "pilot-panel:", "phase", "minimap", "hover", "action", "salvo-report", "queue"];
+
+    private static void AssertPanelClear(TacticalBattleScreen screen, ISet<string> phases, int width, int height)
+    {
+        using var bitmap = new SKBitmap(width, height);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, width, height);
+        var tutorial = screen.Tutorial!;
+        var bounds = Assert.Single(tutorial.Bounds);
+        if (tutorial.Director.Current is { } line) phases.Add(line.Step.When.Phase);
+        foreach (var (key, rect) in screen.Layout.Rects)
+        {
+            if (!Protected.Any(p => key == p || (p.EndsWith(':') && key.StartsWith(p, StringComparison.Ordinal)))) continue;
+            Assert.False(SKRect.Intersect(bounds, rect) is { IsEmpty: false },
+                $"{width}x{height} {tutorial.Director.Current?.Step.When.Phase}: tutorial panel {bounds} overlaps {key} {rect}");
+        }
+    }
+
+    [Fact]
+    public async Task PanelNeverOverlapsPilotCardsPhasePanelOrMinimap()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var started = await StartF8(fixture);
+        using var skins = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var screen = new TacticalBattleScreen(started.Flow, 1, skins.GetOrClassic("tabletop"))
+        { ClockMilliseconds = started.ClockMilliseconds, Tutorial = new TutorialSession(EveryPhaseScript()) };
+        fixture.Screens.Replace(screen);
+        var phases = new HashSet<string>(StringComparer.Ordinal);
+
+        void Check(bool wide = true)
+        {
+            AssertPanelClear(screen, phases, 1280, 720);
+            if (wide) AssertPanelClear(screen, phases, 2560, 1080); // design width ~1707
+        }
+
+        Check();
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Tab)); // a selected pilot opens its card panel
+        Check();
+        for (int i = 0; screen.Flow.State!.Phase != TacticalBattlePhase.Over && i < 100; i++)
+        {
+            bool wide = i < 4;
+            await fixture.Route(screen.OnKeyDown(Key.Enter));
+            Check(wide);
+            if (screen.HasSalvoPresentation)
+            {
+                fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
+                Check(wide); // salvo in flight
+                screen.OnKeyDown(Key.Enter);
+                Check(wide); // salvo results
+            }
+            fixture.FinishPresentation();
+            Check(wide);
+            if (screen.Flow.State!.Phase == TacticalBattlePhase.Fire) { screen.OnKeyDown(Key.Tab); Check(wide); }
+        }
+        Assert.Equal(TacticalBattlePhase.Over, screen.Flow.State!.Phase);
+        Check();
+        Assert.Superset(new HashSet<string> { "Move", "Fire", "Salvo", "Results", "Outcome" }, phases);
+    }
+
+    [Fact]
+    public async Task ClicksInsideLivePanelAreCapturedOutsideAreNot()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var started = await StartF8(fixture);
+        using var skins = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var session = new TutorialSession(new TutorialScript(1, null, new TutorialLimits(),
+            [new TutorialStep("hello", "Tutorial.Journal.Empty", new TutorialCondition("Move", null, null, null, TutorialSignal.None),
+                TutorialCompletion.Acknowledged, null, 50)]));
+        var screen = new TacticalBattleScreen(started.Flow, 1, skins.GetOrClassic("tabletop"))
+        { ClockMilliseconds = started.ClockMilliseconds, Tutorial = session };
+        Render(screen);
+        screen.OnKeyDown(Key.Tab);
+        Render(screen);
+        var panel = screen.Layout.Rects["tutorial:panel"];
+        Assert.Contains(panel, screen.PanelRects);
+        string before = Json(screen.Movement);
+        var view = screen.View;
+
+        var body = screen.Layout.Rects["tutorial:portrait"];
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(body.MidX, body.MidY, MouseButton.Left));
+        screen.OnMouseUp(body.MidX, body.MidY, MouseButton.Left);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(body.MidX, body.MidY, MouseButton.Right));
+        screen.OnMouseMove(body.MidX + 200, body.MidY - 200);
+        screen.OnMouseUp(body.MidX + 200, body.MidY - 200, MouseButton.Right);
+        Render(screen);
+        Assert.Equal(before, Json(screen.Movement)); // no path aiming under the panel
+        Assert.Equal(view, screen.View);            // no camera pan started on the panel
+        Assert.Equal("hello", session.Director.Current?.Step.Id);
+
+        var ack = screen.Layout.Rects["tutorial:ack"];
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(ack.MidX, ack.MidY, MouseButton.Left));
+        Assert.Equal(TutorialStepState.Completed, session.Director.StateOf("hello"));
+        Render(screen);
+        Assert.False(screen.Layout.Rects.ContainsKey("tutorial:panel"));
+        var chip = screen.Layout.Rects["tutorial:chip"];
+        Assert.Contains(chip, screen.PanelRects);
+        Assert.DoesNotContain(panel, screen.PanelRects);
     }
 
     private static string Json<T>(T value) => JsonSerializer.Serialize(value);

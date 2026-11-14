@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0002-comms-panel
 ticket: EP-0028-US-0002-TK-0002-comms-panel
 title: Панель связи
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0001-TK-0004-screen-integration, EP-0028-US-0002-TK-0001-ui-texts]
@@ -116,6 +116,22 @@ dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -
 
 Геометрия, шрифт, перенос, источник портрета, ключи текста и ключи `Layout.Rects` заданы явно.
 
+## Результат
+
+Новый `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialCommsPanel.cs`: развёрнутая панель 460×100 (левый нижний угол 206, 714; ширина `min(460, designWidth − 246 − 206)`), портрет 72×72 (или заглушка: рамка `PortraitBg` + первая буква локализованного имени), заголовок «имя · должность» (`officer.NameKey/RoleKey`; без офицера — `Tutorial.Panel.Title`), реплика `Localization.Get(step.LineKey)` шрифтом `BattleTypography.TextPaint(13)` в `TextWidth = 352`, не больше 2 строк (`Rows`: вторая строка — `ControlText.Ellipsize`), кнопки «Подсказки: выкл» и «Понял» (основная). Без реплики или при выключенных подсказках — значок 190×30: «СВЯЗЬ · H — журнал связи» либо кнопка «Подсказки: вкл». Ключи `Layout.Rects`: `tutorial:panel`, `tutorial:portrait`, `tutorial:ack`, `tutorial:hints`, `tutorial:chip`. `Hit` → `ack` | `hints-off` | `hints-on` | null.
+
+`TutorialSession`: портрет `DialoguePortraitComposer.Compose(officer.Portrait, PersonSex.Female, officer.PortraitKey)` в конструкторе; `Release()` освобождает bitmap, следующий `Draw` компонует заново; `Bounds` — прямоугольник панели/значка из последней отрисовки; `OnMouseDown` — true при любом клике в границах, действие только левой кнопкой (`Acknowledge()` / `Enabled = false` / `Enabled = true`); сценарий без шагов ничего не рисует и не захватывает ввод.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0002-tk0002-20261114T174859/`):
+
+- Красный старт: тесты без реализации не компилируются (`TutorialCommsPanel` отсутствует, у `TutorialSession` нет `Panel`/`Portrait`) — `../us0002-tk0002-red/build-red.log`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~TutorialFlowTests" --results-directory "$RUN" --logger "trx;LogFileName=panel.trx"` (`DSS_VALIDATION_ROOT` = папка прогона) — **129/129** — `panel.trx`, `panel.log`. Новые: `TutorialCommsPanelTests.ExpandedPanelShowsOfficerLineAndButtonsInCurrentLanguage` (RU, EN), `WithoutLineThePanelCollapsesToTheCommsChip` (RU, EN), `WrapKeepsLinesInsideTheTextWidthAndTheDrawnLineIsAtMostTwoRows`, `AcknowledgeAndHintsButtonsDriveTheDirector`, `ClicksInsidePanelAreCapturedOutsideAreNot`, `MissingPortraitDrawsPlaceholder`, `NarrowWindowShrinksThePanelBetweenPilotColumnAndRightPanel`; `TutorialScreenIntegrationTests.PanelNeverOverlapsPilotCardsPhasePanelOrMinimap` (живой Tabletop-бой до Over; фазы Move, Fire, Salvo, Results, Outcome; 1280×720 и 2560×1080; ключи `pilot:*`, `pilot-panel:*`, `phase`, `minimap`, `hover`, `action`, `salvo-report`, `queue`), `ClicksInsideLivePanelAreCapturedOutsideAreNot`.
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` — 0 предупреждений, 0 ошибок — `build.log`.
+- Растровая проверка (временный тест, не закоммичен): `snap/panel-1280x720.png`, `snap/panel-2560x1080.png` — RU, Tabletop, панель между колонкой пилотов и правой панелью.
+- ForbiddenCalls не затрагивается: правок в `UI/Screens/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) сценарий без шагов (`TutorialScript.Empty`, пока нет `battle-tutorial.json`) не рисует панель и не захватывает ввод — иначе в бою обучения висел бы пустой значок связи; `EmptySessionCapturesNoInput` без изменений. (2) Добавлен ключ `tutorial:portrait` (для тестов и подсветки), публичный API дополнен `TutorialCommsPanel.Rows/FontSize/ChipBounds/Expanded` и `TutorialSession.Panel/Portrait`. (3) Клик в панели любой кнопкой мыши захватывается (правая кнопка не начинает панораму под панелью), действует только левая. (4) В `SessionDoesNotChangeBattleInputOutcome` сравнение `PanelRects`/`Layout.Rects` учитывает новую область панели и ключи `tutorial:*`, а точки кликов проверяются вне панели — ожидаемое следствие появления панели, а не ослабление проверки ввода. (5) Тест кликов в живом бою назван `ClicksInsideLivePanelAreCapturedOutsideAreNot` и лежит в `TutorialScreenIntegrationTests` (коллекция `InterfaceLog`); одноимённый сигналу `ClicksInsidePanelAreCapturedOutsideAreNot` — уровень сессии в `TutorialCommsPanelTests` (коллекция `"Battle localization"`).
