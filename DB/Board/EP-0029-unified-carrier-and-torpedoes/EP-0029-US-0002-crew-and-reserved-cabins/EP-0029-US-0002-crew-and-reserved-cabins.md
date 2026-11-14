@@ -54,11 +54,11 @@ Workflow approval автоматический по поручению созд�
 
 ## Completion evidence
 
-- AC-01: тикеты TK-0001, TK-0002, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-02: тикеты TK-0001, TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- AC-03: тикеты TK-0001, TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- Future evidence: уникальный run под D:/DeepSpaceSaga/artifacts/validation/ep-0029/; после реализации сюда записать результаты и ссылки.
-- Сейчас implementation/automated/native/product: **NOT RUN / OPEN**.
+- AC-01: TK-0001/0002/0003 — `Ep0029Us0002Tk0001Tests.CrewIdentityRoundTrip`, `Ep0029Us0002Tk0003Tests.FourPilotsFemaleAndAssetsExist` + `SkillsUnchangedUnderNewNames` — PASS.
+- AC-02: TK-0001/0002 — `Ep0029Us0002Tk0001Tests.ReservationIsNotOccupant`, `Ep0029Us0002Tk0002Tests.EightCabinsSixPeopleTwoReserved` — PASS (8 total / 6 occupied / 2 reserved / 0 free).
+- AC-03: TK-0001/0002 — `CrewIdentityRoundTrip` (single source, CrewId stable) + `HousingDamagePreservesCrew` (all 6 IDs survive) — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-005..007-*`.
+- Implementation/automated: **PASS**. Native/product: **OPEN**.
 
 ## Decisions and review log
 
