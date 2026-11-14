@@ -218,6 +218,15 @@ public static class EngineContentLoader
             var file = ReadJson<ShipClassesFile>(path, "ship classes");
             if (file.ShipClasses is null || file.ShipClasses.Count == 0)
                 throw new ContentException("shipClasses must contain at least one class.");
+            foreach (var shipClass in file.ShipClasses)
+            {
+                if (shipClass.HullMax is { } hullMax && hullMax <= 0)
+                    throw new ContentException($"Ship class '{shipClass.TypeId}': hullMax must be positive.");
+                if (shipClass.TacticalManeuver is { } maneuver && maneuver <= 0)
+                    throw new ContentException($"Ship class '{shipClass.TypeId}': tacticalManeuver must be positive.");
+                if (shipClass.AppearanceId is { } appearance && string.IsNullOrWhiteSpace(appearance))
+                    throw new ContentException($"Ship class '{shipClass.TypeId}': appearanceId must be non-empty.");
+            }
             _ = GameDataRegistry.CreateShipClassRegistry(file.ShipClasses);
             return file.ShipClasses;
         }
@@ -438,6 +447,13 @@ public static class EngineContentLoader
             if (dto.FuelEfficiencyKmPerKg is { } efficiency && (efficiency <= 0 || category.TypeId != "module.engine"))
                 throw new ContentException($"Module '{dto.TypeId}': fuelEfficiencyKmPerKg must be positive and owned by module.engine.");
 
+            if (dto.DroneCapacity is { } droneCapacity && droneCapacity < 0)
+                throw new ContentException($"Module '{dto.TypeId}': droneCapacity must be non-negative.");
+            if (dto.FootprintWidth is { } width && width <= 0)
+                throw new ContentException($"Module '{dto.TypeId}': footprintWidth must be positive.");
+            if (dto.FootprintHeight is { } height && height <= 0)
+                throw new ContentException($"Module '{dto.TypeId}': footprintHeight must be positive.");
+
             // A missing/null baseSuccessChancePercent normalizes to 100 (§56.5).
             int baseSuccessChancePercent = dto.BaseSuccessChancePercent ?? 100;
             if (baseSuccessChancePercent is < 0 or > 100)
@@ -476,7 +492,10 @@ public static class EngineContentLoader
                 dto.CabinesCount,
                 dto.BasePriceCredits,
                 category.TypeId,
-                dto.FuelEfficiencyKmPerKg);
+                dto.FuelEfficiencyKmPerKg,
+                dto.DroneCapacity,
+                dto.FootprintWidth,
+                dto.FootprintHeight);
             return definition;
         });
     }
@@ -902,7 +921,10 @@ public static class EngineContentLoader
         [property: JsonPropertyName("baseSuccessChancePercent")] int? BaseSuccessChancePercent,
         [property: JsonPropertyName("cabines")] int? CabinesCount,
         [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null,
-        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
+        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null,
+        [property: JsonPropertyName("droneCapacity")] int? DroneCapacity = null,
+        [property: JsonPropertyName("footprintWidth")] int? FootprintWidth = null,
+        [property: JsonPropertyName("footprintHeight")] int? FootprintHeight = null);
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,
         [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,

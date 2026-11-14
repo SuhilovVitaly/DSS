@@ -34,4 +34,14 @@ internal sealed record ModuleTypeDefinition(
     /// </summary>
     long? BasePriceCredits = null,
     string? CategoryTypeId = null,
-    long? FuelEfficiencyKmPerKg = null) : ITypeDefinition;
+    long? FuelEfficiencyKmPerKg = null,
+    /// <summary>
+    /// Number of drones this module can house when its owning category is a hangar bay
+    /// (module.drone-bay). Null for module types that are not hangar bays. Non-negative
+    /// when present.
+    /// </summary>
+    int? DroneCapacity = null,
+    /// <summary>Rectangular hangar footprint width in hull cells (positive when present).</summary>
+    int? FootprintWidth = null,
+    /// <summary>Rectangular hangar footprint height in hull cells (positive when present).</summary>
+    int? FootprintHeight = null) : ITypeDefinition;

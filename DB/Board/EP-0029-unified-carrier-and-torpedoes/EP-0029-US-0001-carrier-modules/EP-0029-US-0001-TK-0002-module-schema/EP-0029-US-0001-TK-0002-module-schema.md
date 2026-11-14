@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Схема ангаров и общего корпуса
@@ -105,4 +105,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implemented `ModuleTypeDefinition.DroneCapacity`/`FootprintWidth`/`FootprintHeight` (optional, validated), `ShipClassDefinition.HullMax`/`TacticalManeuver`/`AppearanceId` (optional, validated), `EngineContentLoader` DTO+validation, and new `Scenario/CarrierStateData` (schemaVersion=1, revision, hullCurrent).
+
+- `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0001Tk0002Tests"` — **2/2 passed** (`RejectsInvalidCapacityAndFootprint`, `HousingDoesNotChangeHullMax`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-002-tk0002/US-0001-TK-0002/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors.
+- `dotnet format --verify-no-changes --include <5 files>` — clean; `git diff --check` — clean.
+
+Status: automated PASS (engine content layer); native/product acceptance remains OPEN.
