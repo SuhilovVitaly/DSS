@@ -79,6 +79,46 @@
       "complete": "phase-left",
       "anchor": "button:replay",
       "priority": 80
+    },
+    {
+      "id": "ctx.under-fire",
+      "lineKey": "Tutorial.Line.CtxUnderFire",
+      "when": { "phase": "Fire", "minTurn": 2, "signal": "under-fire" },
+      "complete": "evade-or-decoy",
+      "anchor": "pilot:{signal}",
+      "priority": 79
+    },
+    {
+      "id": "ctx.damage",
+      "lineKey": "Tutorial.Line.CtxDamage",
+      "when": { "phase": "Results", "minTurn": 1, "signal": "own-damaged" },
+      "complete": "acknowledged",
+      "anchor": "pilot:{signal}",
+      "priority": 70
+    },
+    {
+      "id": "ctx.low-mind",
+      "lineKey": "Tutorial.Line.CtxLowMind",
+      "when": { "phase": "Fire", "minTurn": 2, "signal": "low-consciousness" },
+      "complete": "acknowledged",
+      "anchor": "pilot:{signal}",
+      "priority": 75
+    },
+    {
+      "id": "ctx.anomaly",
+      "lineKey": "Tutorial.Line.CtxAnomaly",
+      "when": { "phase": "Move", "minTurn": 3, "signal": "anomaly-present" },
+      "complete": "acknowledged",
+      "anchor": "pilot:{signal}",
+      "priority": 65
+    },
+    {
+      "id": "ctx.drone-lost",
+      "lineKey": "Tutorial.Line.CtxDroneLost",
+      "when": { "phase": "Results", "minTurn": 1, "signal": "drone-lost" },
+      "complete": "acknowledged",
+      "anchor": "pilot:{signal}",
+      "priority": 95
     }
   ]
 }

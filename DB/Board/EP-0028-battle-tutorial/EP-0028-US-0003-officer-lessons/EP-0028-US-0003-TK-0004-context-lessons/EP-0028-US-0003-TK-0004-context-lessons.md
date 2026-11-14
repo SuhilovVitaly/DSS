@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0003-officer-lessons
 ticket: EP-0028-US-0003-TK-0004-context-lessons
 title: Контекстные уроки
-stage: approved
+stage: implemented
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0003-TK-0003-fire-lessons]
@@ -107,6 +107,33 @@ Process-tree cap 300000 ms.
 
 Каталог, тексты, источники фактов и способ проверки редких сигналов заданы.
 
+## Результат
+
+`src/DeepSpaceSaga.Client/Data/Tutorial/battle-tutorial.json`: добавлены 5 шагов — `ctx.under-fire` (Fire, minTurn 2, `under-fire`, `evade-or-decoy`, `pilot:{signal}`, **79**), `ctx.damage` (Results, minTurn 1, `own-damaged`, `acknowledged`, `pilot:{signal}`, 70), `ctx.low-mind` (Fire, minTurn 2, `low-consciousness`, `acknowledged`, `pilot:{signal}`, 75), `ctx.anomaly` (Move, **minTurn 3**, `anomaly-present`, `acknowledged`, `pilot:{signal}`, 65), `ctx.drone-lost` (Results, minTurn 1, `drone-lost`, `acknowledged`, `pilot:{signal}`, 95).
+
+| Key | RU | EN |
+|---|---|---|
+| `Tutorial.Line.CtxUnderFire` | Нашего взяли на прицел. Выберите его: E — уклониться ценой сознания, D — ловушка. | One of ours is targeted. Select them: E evades at a cost in consciousness, D drops a decoy. |
+| `Tutorial.Line.CtxDamage` | Есть попадание. Броня и корпус — на карточке; подбитых держите подальше от огня. | We took a hit. Armor and hull are on the card — keep damaged drones out of the line of fire. |
+| `Tutorial.Line.CtxLowMind` | Пилот выдохся: на уклонение не хватит сознания. Оно возвращается с каждым ходом. | That pilot's running on empty — not enough consciousness to evade. It recovers each turn. |
+| `Tutorial.Line.CtxAnomaly` | Облака на поле — не декорация: из пыли дрон не стреляет, а жар гасит выстрелы. | Those clouds aren't scenery: a drone in dust can't fire, and heat zones swallow shots. |
+| `Tutorial.Line.CtxDroneLost` | Потеряли дрон. Без паники: прикройте подбитых и добивайте ослабленных врагов. | We've lost a drone. Steady now — cover the damaged and finish off weakened enemies. |
+
+Все реплики — 2 строки панели в RU и EN (`snap/lines.txt`). Факты сверены: уклонение тратит сознание и недоступно ниже порога, сознание восстанавливается каждый ход (`04-Engineering/TacticalBattle.md:29,31`, `TacticalBattle.MindRecovery`); дрон в пыли не стреляет, температурная зона поглощает снаряды (`TacticalBattle.Anomaly.DustLines/HeatLines`, `TacticalBattle.md:23,55`); клавиши E/D совпадают с надписями карточки `TacticalBattle.Evade` «Уклониться [E]» / `TacticalBattle.Decoy` «Ловушка [D]». Числа баланса в тексты не попали.
+
+Тесты: `TutorialContentTests.ContextLessonsMatchTheCatalog` (включая `ctx.under-fire` ниже `fire.submit` по приоритету), `HotkeysNamedInLinesAreTheBattleKeys` (RU, EN — вместо `NoLineMentionsUnverifiedHotkeys`, см. «Журнал»); `TutorialLessonFlowTests.ContextLessonsAppearOnceWhenTheirSituationArises`: (а) живой бой обучения seed 1, «терпеливый» игрок только с Enter (перед каждым Enter — паузы `minGapMs`) до Outcome — каждый `ctx.*` услышан не более одного раза и только в своей фазе; (б) синтетические наблюдения через `TutorialSession` с поставляемыми `ctx.*` шагами (снимки как в `TutorialSignalsTests`) для всех пяти сигналов: в чужой фазе — тишина, в своей — показ с верным `SignalUnitId`, после ухода из фазы и повторения ситуации — не повторяется.
+
+Живой прогон (временный дамп, не закоммичен; `snap/live-patient.txt`, `snap/live-enter.txt`): бой обучения seed 1 только по Enter — победа (`A`) на 21-м ходу; «терпеливый» порядок реплик: `intro` (T1) → `move.cycle` (T2) → `ctx.anomaly` (T3) → `move.reachable` (T4) → `fire.target` (первая стрельба T4) → `salvo.watch` → `results.read` → `fire.submit` (T5) → `ctx.damage` → `ctx.under-fire` (T6) → `ctx.drone-lost` (T21). `ctx.low-mind` в этом бою не возникает (без уклонений сознание не падает) — покрыт синтетикой.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0003-tk0004-20261114T192910/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт: `ContextLessonsMatchTheCatalog`, `HotkeysNamedInLinesAreTheBattleKeys(English)`, `ContextLessonsAppearOnceWhenTheirSituationArises` (0 из 5 `ctx.*` шагов) — `../us0003-tk0004-red/red.log`; с приоритетом 85 из каталога — падал `FirstFireAndSalvoAreTaughtThenGetOutOfTheWay` (`ctx.under-fire` перебивал `fire.submit`, первая стрельба seed 1 — на 4-м ходу) — `green.log`; после приоритета 79 — 21/21 (`green2.log`).
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~TutorialFlowTests"` — **169/169** — `context.trx`, `context.log`.
+- Растровые снимки панели RU/EN: `snap/panel-{ru,en}-<step>.png`.
+- Правок кода и `UI/Screens/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) **Клавиши E/D упоминаются** в `ctx.under-fire` — по указанию пользователя 2026-11-14 (E/D опрашиваются нативно с US-0002-TK-0005); проверка `NoLineMentionsUnverifiedHotkeys` из шага 2 заменена на `HotkeysNamedInLinesAreTheBattleKeys`: E/D допустимы только в `ctx.under-fire` и должны совпадать с надписями карточки «[E]»/«[D]», в остальных репликах однобуквенных клавиш нет (кроме H). Нативное подтверждение E/D по-прежнему — US-0006-TK-0002. (2) **Приоритет `ctx.under-fire` 85 → 79**: в seed 1 первая стрельба на 4-м ходу, и угроза перебивала `fire.submit` (80) — в первой стрельбе сначала основы (цель → огонь), угроза — со следующей. Вариант `after: fire.submit` отвергнут: при никогда не показанном `fire.submit` урок угрозы заблокировался бы навсегда. (3) **`ctx.anomaly` minTurn 2 → 3**: аномалии есть в каждом бою, и во 2-м ходу урок аномалий (65) вставал между `move.cycle` и `move.reachable` (60); 2-й ход оставлен за Tab и зоной досягаемости (одна механика за ход). (4) Тексты переписаны под ёмкость панели и тон; «броня держит первые удары» из предложения не использовано (порядок применения брони/корпуса — деталь движка), вместо этого — где смотреть (карточка) и что делать. Epic `Documentation.md` (G-01) и документ истории вне `files_touched` — синхронизация в US-0006-TK-0003.

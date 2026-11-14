@@ -178,6 +178,49 @@ public sealed class TutorialContentTests
     }
 
     [Fact]
+    public void ContextLessonsMatchTheCatalog()
+    {
+        var script = Shipped();
+        // Priority 79, not 85: in the first Fire phase the basics (target 90, open fire 80) come first, the threat after them.
+        AssertStep(script, "ctx.under-fire", "Tutorial.Line.CtxUnderFire", "Fire", null, 2, null, TutorialSignal.UnderFire,
+            TutorialCompletion.EvadeOrDecoy, "pilot:{signal}", 79);
+        Assert.True(StepOf(script, "ctx.under-fire").Priority < StepOf(script, "fire.submit").Priority);
+        AssertStep(script, "ctx.damage", "Tutorial.Line.CtxDamage", "Results", null, 1, null, TutorialSignal.OwnDamaged,
+            TutorialCompletion.Acknowledged, "pilot:{signal}", 70);
+        AssertStep(script, "ctx.low-mind", "Tutorial.Line.CtxLowMind", "Fire", null, 2, null, TutorialSignal.LowConsciousness,
+            TutorialCompletion.Acknowledged, "pilot:{signal}", 75);
+        // minTurn 3, not 2: the second Move belongs to Tab and the reachable zone (one mechanic per turn).
+        AssertStep(script, "ctx.anomaly", "Tutorial.Line.CtxAnomaly", "Move", null, 3, null, TutorialSignal.AnomalyPresent,
+            TutorialCompletion.Acknowledged, "pilot:{signal}", 65);
+        AssertStep(script, "ctx.drone-lost", "Tutorial.Line.CtxDroneLost", "Results", null, 1, null, TutorialSignal.DroneLost,
+            TutorialCompletion.Acknowledged, "pilot:{signal}", 95);
+    }
+
+    /// <summary>
+    /// E and D are polled natively since US-0002-TK-0005, so the under-fire lesson names them; they must be the keys the pilot card
+    /// itself shows («Уклониться [E]», «Ловушка [D]»). No other line names a single-letter key except H (the comms log);
+    /// the English words "A" and "I" are not keys.
+    /// </summary>
+    [Theory]
+    [InlineData("Russian")]
+    [InlineData("English")]
+    public void HotkeysNamedInLinesAreTheBattleKeys(string language)
+    {
+        var script = Shipped();
+        using var locale = Localization.UseLocaleForTests(language);
+        Assert.Contains("[E]", Localization.Get("TacticalBattle.Evade"), StringComparison.Ordinal);
+        Assert.Contains("[D]", Localization.Get("TacticalBattle.Decoy"), StringComparison.Ordinal);
+        foreach (var step in script.Steps)
+        {
+            var keys = System.Text.RegularExpressions.Regex.Matches(Localization.Get(step.LineKey), @"(?<![\p{L}\d'])[B-HJ-Z](?![\p{L}\d'])")
+                .Select(m => m.Value).ToArray();
+            string[] allowed = step.Id == "ctx.under-fire" ? ["E", "D"] : ["H"];
+            Assert.All(keys, key => Assert.Contains(key, allowed));
+            if (step.Id == "ctx.under-fire") Assert.Equal(["D", "E"], keys.Order(StringComparer.Ordinal).ToArray());
+        }
+    }
+
+    [Fact]
     public void OfficerPortraitComposesDeterministicallyFromExistingHead()
     {
         var officer = Shipped().Officer!;

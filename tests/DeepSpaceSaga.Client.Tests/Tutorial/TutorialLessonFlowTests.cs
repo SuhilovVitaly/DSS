@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.Tests.TacticalBattle;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
@@ -260,6 +261,84 @@ public sealed class TutorialLessonFlowTests
         Assert.Equal("Move", live.Phase);
         Assert.Equal(TutorialStepState.Completed, live.Director.StateOf("results.read"));
         Assert.Null(live.Director.Current); // nothing from the salvo lingers into the next Move
+    }
+
+    /// <summary>A patient player: lets the officer speak (minimum gap) before every Enter, records every shown line with its phase.</summary>
+    private static async Task<List<(string Step, string Phase, int Turn)>> PlayPatiently(LiveTutorial live, int limit = 120)
+    {
+        var shown = new List<(string, string, int)>();
+        void Record()
+        {
+            if (live.Director.Current is { } line) shown.Add((line.Step.Id, live.Phase, live.Turn));
+        }
+        live.Render();
+        for (int i = 0; i < limit && live.Phase != "Outcome"; i++)
+        {
+            live.Pause();
+            Record();
+            live.Pause();
+            Record();
+            await live.Press(Key.Enter);
+            Record();
+            live.Fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
+            live.Render();
+            Record();
+        }
+        live.Pause();
+        Record();
+        return shown;
+    }
+
+    [Fact]
+    public async Task ContextLessonsAppearOnceWhenTheirSituationArises()
+    {
+        // Live: the seed-1 tutorial battle played patiently with Enter only.
+        await using (var live = await LiveTutorial.Start())
+        {
+            var shown = await PlayPatiently(live);
+            Assert.Equal("Outcome", live.Phase);
+            foreach (var step in live.Session.Script.Steps.Where(s => s.Id.StartsWith("ctx.", StringComparison.Ordinal)))
+            {
+                Assert.True(live.Director.Heard.Count(id => id == step.Id) <= 1, step.Id + " heard twice");
+                Assert.All(shown.Where(s => s.Step == step.Id), s => Assert.Equal(step.When.Phase, s.Phase));
+            }
+        }
+
+        // Synthetic: every signal, observed through a session with the shipped contextual steps (snapshots as in TutorialSignalsTests).
+        var shipped = TutorialContentTests.Shipped();
+        var context = shipped with { Steps = [.. shipped.Steps.Where(s => s.Id.StartsWith("ctx.", StringComparison.Ordinal))] };
+        Assert.Equal(5, context.Steps.Length);
+        var units = TutorialTestBattle.DefaultUnits;
+        ImmutableArray<TacticalUnitSnapshot> With(params TacticalUnitSnapshot[] replaced) =>
+            [.. units.Select(u => replaced.FirstOrDefault(r => r.Id == u.Id) ?? u)];
+        var fire = TutorialTestBattle.Battle(TacticalBattlePhase.Fire, 2);
+        var move = TutorialTestBattle.Battle(TacticalBattlePhase.Move, 3);
+        (string Step, TutorialObservation Observation, string Unit)[] cases =
+        [
+            ("ctx.under-fire", new("Fire", 2, fire with { Incoming = [new("tag-1", "yun", 0.5, 100, 0, false, 0)] }, null, null, null, 0), "yun"),
+            ("ctx.damage", new("Results", 1, fire with { Turn = 1, Units = With(TutorialTestBattle.Unit("yun", armor: 49)) }, null, null, null, 0), "yun"),
+            ("ctx.low-mind", new("Fire", 2, fire with { Units = With(TutorialTestBattle.Unit("yun", consciousness: 9)) }, null, null, null, 0), "yun"),
+            ("ctx.anomaly", new("Move", 3, move with { Anomalies = [new("dust-1", TacticalAnomalyKindCode.Dust, [])],
+                Units = With(TutorialTestBattle.Unit("yun", inDust: true)) }, null, null, null, 0), "yun"),
+            ("ctx.drone-lost", new("Results", 1, fire with { Turn = 1, Units = With(TutorialTestBattle.Unit("vera", state: TacticalUnitState.Destroyed)) },
+                null, null, null, 0), "vera"),
+        ];
+        foreach (var (stepId, observation, unit) in cases)
+        {
+            var session = new TutorialSession(context);
+            string otherPhase = observation.Phase == "Move" ? "Fire" : "Move";
+            session.Observe(observation with { Phase = otherPhase, NowMs = 0 }); // the situation, but not its phase: silence
+            Assert.Null(session.Director.Current);
+            session.Observe(observation with { NowMs = 10_000 });
+            Assert.Equal(stepId, session.Director.Current?.Step.Id);
+            Assert.Equal(unit, session.Director.Current!.SignalUnitId);
+            session.Observe(observation with { Phase = otherPhase, Turn = observation.Turn + 1, NowMs = 20_000 }); // phase left
+            Assert.Null(session.Director.Current);
+            session.Observe(observation with { Turn = observation.Turn + 2, NowMs = 40_000 }); // the same situation again: no repeat
+            Assert.NotEqual(stepId, session.Director.Current?.Step.Id);
+            Assert.Equal(1, session.Director.Heard.Count(id => id == stepId));
+            session.Release();
+        }
     }
 
     private static int IndexOf(LiveTutorial live, string stepId)
