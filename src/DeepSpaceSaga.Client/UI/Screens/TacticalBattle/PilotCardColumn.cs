@@ -80,6 +80,7 @@ internal sealed class PilotCardColumn
     }
 
     public void EndSlider() => _slider = null;
+    internal bool SliderActive => _slider is not null;
 
     internal static void ApplySlider(TacticalBattleOrders orders, bool speed, float x, float start, float end)
     {
