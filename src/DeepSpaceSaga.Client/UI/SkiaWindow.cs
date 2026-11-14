@@ -1210,7 +1210,15 @@ public sealed class SkiaWindow : IDisposable
         new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, _battleSkin)
         {
             LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel,
-            Tutorial = flow.IsTutorial ? new TutorialSession(TutorialScriptLoader.Load(AppContext.BaseDirectory, LogTutorialWarning)) : null,
+            Tutorial = flow.IsTutorial ? CreateTutorialSession() : null,
+        };
+
+    /// <summary>The tutorial battle's session: hints start from <c>gameSettings.tutorialHints</c>; in-battle switches are saved there.</summary>
+    private TutorialSession CreateTutorialSession() =>
+        new(TutorialScriptLoader.Load(AppContext.BaseDirectory, LogTutorialWarning))
+        {
+            HintsEnabled = TutorialHintsPreference.Read(SettingsFilePath, LogTutorialHintsWarning),
+            PersistHints = TrySetTutorialHints,
         };
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {

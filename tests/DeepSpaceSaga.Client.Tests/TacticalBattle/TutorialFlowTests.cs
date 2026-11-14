@@ -7,6 +7,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Client.UI.Screens.Tutorial;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
@@ -250,6 +251,64 @@ public sealed class TutorialFlowTests
         Assert.Null(regular.Tutorial);
     }
 
+    /// <summary>
+    /// EP-0028-US-0004-TK-0003: «Подсказки: выкл» in the tutorial battle saves <c>tutorialHints: false</c> (other keys kept), the next
+    /// tutorial starts silent with the «Подсказки: вкл» chip, and the chip saves <c>true</c> again.
+    /// </summary>
+    [Fact]
+    public async Task HintsDisabledInBattleStayDisabledForNextTutorialStart()
+    {
+        await using var fixture = new TutorialFixture();
+        await fixture.Route(ScreenEvent.NewGame);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        var session = battle.Tutorial!;
+        Assert.True(session.HintsEnabled);
+        for (int i = 0; session.Director.Current is null && i < 20; i++)
+        {
+            fixture.Advance(session.Script.Limits.MinGapMs);
+            Render(battle);
+        }
+        Assert.NotNull(session.Director.Current);
+        var off = battle.Layout.Rects["tutorial:hints"];
+        Assert.Equal(ScreenEvent.None, battle.OnMouseDown(off.MidX, off.MidY, MouseButton.Left));
+        Assert.False(session.HintsEnabled);
+        Assert.False(TutorialHintsPreference.Read(fixture.SettingsPath));
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+
+        Assert.Equal(ScreenEvent.None, battle.OnKeyDown(Key.Escape));
+        Assert.True(battle.ConfirmExit);
+        await fixture.PressKey(Key.Enter);
+        Assert.IsType<MainMenuScreen>(fixture.Screens.Current);
+        await fixture.LastSessionDisposal.WaitAsync(TimeSpan.FromSeconds(10));
+
+        await fixture.Route(ScreenEvent.NewGame);
+        var next = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.NotSame(battle, next);
+        var silent = next.Tutorial!;
+        Assert.False(silent.HintsEnabled);
+        Assert.False(silent.Director.Enabled);
+        for (int i = 0; i < 5; i++)
+        {
+            fixture.Advance(silent.Script.Limits.MinGapMs);
+            Render(next);
+        }
+        Assert.Null(silent.Director.Current);
+        Assert.Empty(silent.Director.Heard);
+        var chip = next.Layout.Rects["tutorial:chip"];
+        Assert.Equal("hints-on", silent.Panel.Hit(new SKPoint(chip.MidX, chip.MidY)));
+        Assert.Equal(ScreenEvent.None, next.OnMouseDown(chip.MidX, chip.MidY, MouseButton.Left));
+        Assert.True(silent.HintsEnabled);
+        Assert.True(TutorialHintsPreference.Read(fixture.SettingsPath));
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+
+        static void Render(TacticalBattleScreen screen)
+        {
+            using var bitmap = new SKBitmap(1280, 720);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, 1280, 720);
+        }
+    }
+
     [Theory]
     [InlineData("Russian", "Выйти в главное меню? Прогресс обучения будет потерян.")]
     [InlineData("English", "Exit to the main menu? Tutorial progress will be lost.")]
@@ -306,7 +365,7 @@ public sealed class TutorialFlowTests
         internal GameSessionHandle? Session => Field<GameSessionHandle?>(Window, "_session");
         internal Task LastSessionDisposal => Field<Task>(Window, "_lastSessionDisposal");
 
-        internal TutorialFixture(SaveSlotInfo[]? saves = null, StartFailure failure = StartFailure.None)
+        internal TutorialFixture(SaveSlotInfo[]? saves = null, StartFailure failure = StartFailure.None, bool? tutorialHints = null)
         {
             _saves = saves ?? [];
             _failure = failure;
@@ -314,10 +373,15 @@ public sealed class TutorialFlowTests
             _directory = Path.Combine(validationRoot, $"tutorial-flow-{Guid.NewGuid():N}");
             SaveDirectory = Path.Combine(_directory, "Saves");
             Directory.CreateDirectory(SaveDirectory);
-            string settingsPath = Path.Combine(_directory, "Settings.json");
-            File.WriteAllText(settingsPath, """{"gameSettings":{"tacticalBattleSkinId":"classic"}}""");
-            Window = new SkiaWindow(new MainMenuScreen(), this, null, createNativeWindow: false, settingsPath);
+            SettingsPath = Path.Combine(_directory, "Settings.json");
+            string hints = tutorialHints is { } value ? $",\"tutorialHints\":{(value ? "true" : "false")}" : "";
+            File.WriteAllText(SettingsPath, "{\"gameSettings\":{\"tacticalBattleSkinId\":\"classic\"" + hints + "}}");
+            Window = new SkiaWindow(new MainMenuScreen(), this, null, createNativeWindow: false, SettingsPath);
         }
+
+        internal string SettingsPath { get; }
+
+        internal void Advance(long ms) => Interlocked.Add(ref _clockMilliseconds, ms);
 
         internal void FinishPresentation()
         {

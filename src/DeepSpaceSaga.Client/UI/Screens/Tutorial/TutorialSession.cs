@@ -28,6 +28,19 @@ internal sealed class TutorialSession
     internal TutorialCommsPanel Panel { get; } = new();
     internal TutorialJournal Journal { get; } = new();
 
+    /// <summary>
+    /// Hints on/off for this battle: initialised from <c>gameSettings.tutorialHints</c> (default on) and switched by the panel's
+    /// «Hints: off» button and «Hints: on» chip. Mirrors <see cref="TutorialDirector.Enabled"/>.
+    /// </summary>
+    internal bool HintsEnabled
+    {
+        get => Director.Enabled;
+        init => Director.Enabled = value;
+    }
+
+    /// <summary>Saves a hints switch made in battle; false or an I/O error leaves the switch in effect for this battle.</summary>
+    internal Func<bool, bool>? PersistHints { get; init; }
+
     /// <summary>Officer portrait (300x300) or null: no officer, no head asset, or released.</summary>
     internal SKBitmap? Portrait => _portrait;
 
@@ -74,11 +87,18 @@ internal sealed class TutorialSession
         switch (Panel.Hit(designPoint))
         {
             case "ack": Director.Acknowledge(); break;
-            case "hints-off": Director.Enabled = false; break;
-            case "hints-on": Director.Enabled = true; break;
+            case "hints-off": SwitchHints(false); break;
+            case "hints-on": SwitchHints(true); break;
             case null when Director.Collapsed && Panel.ChipBounds.Contains(designPoint): Director.Expand(); break;
         }
         return true;
+    }
+
+    private void SwitchHints(bool enabled)
+    {
+        Director.Enabled = enabled; // applies now, whether or not the save below succeeds
+        try { PersistHints?.Invoke(enabled); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // the battle goes on
     }
 
     /// <summary>H toggles the comms log (also with hints off); Esc closes an open log first. Everything else is the battle's.</summary>

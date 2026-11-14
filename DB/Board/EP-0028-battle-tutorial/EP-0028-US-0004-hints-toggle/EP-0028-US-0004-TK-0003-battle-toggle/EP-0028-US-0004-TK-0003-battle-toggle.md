@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0004-hints-toggle
 ticket: EP-0028-US-0004-TK-0003-battle-toggle
 title: Переключатель подсказок в бою
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0004-TK-0001-hints-preference, EP-0028-US-0002-TK-0002-comms-panel]
@@ -102,6 +102,23 @@ Process-tree cap 300000 ms.
 
 Точки подключения, API и поведение при ошибке заданы.
 
+## Результат
+
+- `TutorialSession.cs`: `internal bool HintsEnabled { get; init; }` — зеркало `Director.Enabled` (init при создании задаёт начальное состояние директора, по умолчанию `true`); `internal Func<bool, bool>? PersistHints { get; init; }`; клики `hints-off`/`hints-on` идут через `SwitchHints(value)`: состояние меняется сразу, затем вызывается `PersistHints(value)`; `false` или `IOException`/`UnauthorizedAccessException` не отменяют переключение и не ломают бой.
+- `SkiaWindow.cs`: сессия обучения создаётся в `CreateTutorialSession()` (из `CreateTacticalBattleView`) с `HintsEnabled = TutorialHintsPreference.Read(SettingsFilePath, …)` и `PersistHints = TrySetTutorialHints` (тот же колбэк, что у строки Настроек из TK-0002; ошибки — в InterfaceLog с префиксом `TUTORIAL: `). Настройки читают значение при каждом открытии, бой — при каждом старте, поэтому изменение в одном месте видно в другом.
+- `TutorialCommsPanel.cs` не менялся: при `Director.Enabled == false` с первого кадра панель уже рисует значок «Подсказки: вкл» (US-0002-TK-0002).
+
+Тесты: `Tutorial/TutorialHintsToggleTests` — `ToggleInBattleCallsPersistWithNewValue` (выкл → `false`, значок вкл → `true`; правая кнопка, «Понял» и клик вне панели не сохраняют), `StartsSilentWhenPreferenceIsOff` (без реплик, `Heard` пуст, значок `hints-on`, журнал по H работает; по умолчанию вкл), `PersistFailureKeepsBattleRunning` (`false` и исключение ввода-вывода — переключение действует, отрисовка продолжается); `TacticalBattle/TutorialFlowTests.HintsDisabledInBattleStayDisabledForNextTutorialStart` (настоящий старт обучения через `SkiaWindow`: дождаться реплики, клик `tutorial:hints` → в профиле `tutorialHints: false`, `tacticalBattleSkinId: classic` сохранён; выход в главное меню, новый старт — без реплик, `Heard` пуст, значок «Подсказки: вкл»; клик → `true`). Фикстура `TutorialFixture` получила необязательный `tutorialHints` (по умолчанию профиль прежний), `SettingsPath` и `Advance(ms)`.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0004-tk0003-20261114T194341/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт: компиляция тестов падает на отсутствующих `TutorialSession.HintsEnabled`/`PersistHints` — `red/red.log`.
+- `dotnet test … --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~TutorialFlowTests"` — **182/182** — `toggle.trx`, `toggle.log` (все EP-0027-тесты `TutorialFlowTests` зелёные без ослабления).
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-incremental` — 0 warnings, 0 errors.
+- Правок в `UI/Screens/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) `HintsEnabled` — не отдельное поле, а зеркало `Director.Enabled` (одно состояние без рассинхронизации); (2) сессия перехватывает только `IOException`/`UnauthorizedAccessException` из колбэка — штатный колбэк (`TutorialHintsPreference.TryWrite`) сам не бросает и логирует; (3) `TutorialCommsPanel.cs` не потребовал правок.
