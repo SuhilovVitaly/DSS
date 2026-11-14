@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0002-comms-panel
 ticket: EP-0028-US-0002-TK-0001-ui-texts
 title: Тексты интерфейса обучения RU/EN
-stage: approved
+stage: implemented
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: []
@@ -112,6 +112,17 @@ Process-tree cap 300000 ms.
 
 Полный список ключей и значений приведён; тестовые API указаны с `path:line`.
 
+## Результат
+
+Добавлены 12 ключей из таблицы в `Data/Locale/Russian.json` и `English.json` (после `Settings.Exit`, значения — как в таблице, существующие ключи не менялись; 801 → 813 ключей в каждой локали). Новый тест `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialLocaleParityTests.cs`: `RequiredUiKeysExist`, `TutorialKeysMatchInBothLocales`, `TutorialValuesAreNonBlankLocalizedAndFormatCompatible` — охватывает все ключи с префиксами `Tutorial.` и `Settings.TutorialHints`, поэтому будущие ключи US-0003 без пары или с другим числом аргументов формата ловятся автоматически.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0002-tk0001-20261114T174121/`):
+
+- Красный старт: до добавления ключей `RequiredUiKeysExist` и `TutorialKeysMatchInBothLocales` падали (`Russian: missing Tutorial.Panel.Title`; второй — пустое множество), 1 passed / 2 failed.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~TutorialLocaleParityTests|FullyQualifiedName~LocalizationTests|FullyQualifiedName~LocalizationCoverageTests" --results-directory "$RUN" --logger "trx;LogFileName=locale.trx"` (`DSS_VALIDATION_ROOT` = папка прогона) — **31/31** — `locale.trx`.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Ключи вставлены одним блоком после `Settings.Exit` (обе группы рядом с `Settings.*`); тест паритета без коллекции `"Battle localization"` — он читает файлы локалей напрямую (`Localization.LoadLocaleFile`) и не переключает язык.
