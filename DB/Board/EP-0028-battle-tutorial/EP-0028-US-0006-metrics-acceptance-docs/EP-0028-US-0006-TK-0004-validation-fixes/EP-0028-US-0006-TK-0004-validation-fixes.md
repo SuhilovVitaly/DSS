@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0006-metrics-acceptance-docs
 ticket: EP-0028-US-0006-TK-0004-validation-fixes
 title: Исправления по итогам валидации (Phase 4)
-stage: in-progress
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0006-TK-0003-project-docs]
@@ -66,7 +66,7 @@ TDD по каждому поведенческому исправлению (с�
 - `TutorialCommsPanelTests.NonLeftButtonsPassThroughPanelChipAndJournal`; `TutorialScreenIntegrationTests.ClicksInsideLivePanelAreCapturedOutsideAreNot` — правый drag над панелью панорамирует;
 - `TutorialDirectorTests.EvadeOrDecoyDoesNotCompleteTargetChosen`;
 - `TutorialContentTests.AnomalyAndFireSubmitLinesAreAccurate` и существующий `EveryLineFitsTwoPanelLinesInBothLanguages`;
-- `TutorialSession`/`TutorialJournal` — тесты кэша (`HeardStepsIsCachedUntilHeardChanges`, `JournalRowsAreCachedUntilLanguageOrContentChanges`, `DrawDoesNotRecomposeThePortraitAfterRelease`).
+- `TutorialSession`/`TutorialJournal` — тесты кэша (`HeardStepsIsCachedUntilHeardChanges`, `JournalRowsAreCachedUntilLanguageOrContentChanges`; портрет — `TutorialCommsPanelTests.ExpandedPanelShowsOfficerLineAndButtonsInCurrentLanguage` и `TutorialScreenIntegrationTests.ScreenActivationRecomposesThePortraitOutsideRenderFrames`).
 
 ## Tests
 
@@ -88,6 +88,28 @@ DSS_VALIDATION_ROOT="$RUN" dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpac
 - Все 7 исправлений выполнены; целевые тесты зелёные; полный прогон Client.Tests без новых падений относительно базы.
 - Коммиты группами (Board, код, тексты, документация), после каждого — `git push`.
 
+## Результат
+
+- **Записи Board** (071b0d2c): инцидент `git reset --hard` записан в «Журнал» US-0006-TK-0001; три расширения объёма — в «Статус исполнения» `Documentation.md` эпика, все «ожидает принятия пользователем».
+- **Переключатель у значка**: `TutorialCommsPanel.DrawChip` при включённых подсказках рисует справа от значка кнопку «Подсказки: выкл» (`tutorial:hints`, `Tutorial.Panel.HintsOff` — существующий ключ RU/EN, паритет сохранён), `Bounds` — объединение значка и кнопки; `Hit` → `hints-off` → `SwitchHints(false)` → `PersistHints`. Свёрнутая реплика при этом закрывается как `dismissed`.
+- **Правая/средняя кнопка**: `TutorialSession.OnMouseDown` возвращает `false` для не-левой кнопки (панель, значок, журнал); `TacticalBattleScreen.BlocksPan` исключает области обучения из проверки перед `BeginPan` — правый drag с панели панорамирует камеру (наблюдение получает `Interacting`).
+- **`fire.target`**: `TutorialDirector.TargetChosen` — другой не-null `TargetId` либо «Не стрелять» без уклонения; дроны, замеченные в уклонении в текущей паре (фаза, ход), засчитываются только при выборе цели.
+- **Тексты** (bef0f19c): `Tutorial.Line.CtxAnomaly` RU «Облака на поле — не декорация: из пыли дрон не стреляет, а жар может поглотить залп.», EN "Those clouds aren't scenery: a drone in dust can't fire, and heat zones can swallow shots."; `Tutorial.Line.FireSubmit` RU «Шанс попадания — на карточке выбранного пилота. Расклад устраивает? Огонь — Enter.», EN "Hit chance is on the selected pilot's card. Like the odds? Press Enter to open fire." Обе — не более 2 строк панели (`EveryLineFitsTwoPanelLinesInBothLanguages`).
+- **Производительность**: `HeardSteps` кэшируется до роста `Heard`; `TutorialJournal.Entries` — кэш перенесённых строк, пересборка (с одной кистью) только при новой реплике или смене текста/языка; `Draw` не собирает портрет — `TutorialSession.Prepare()` вызывается из `TacticalBattleScreen.OnActivated`. Запись метрик не менялась.
+- **Документация**: `Screens/Settings.md` (Y строк 216/278/340/402, выход 455, зазор 4 px), `Screens/TacticalBattle.md` и `04-Engineering/TacticalBattle.md` (кнопка у значка, проброс правой кнопки, правило `target-chosen`, кэши и портрет).
+
+Проверки 2026-11-14 (`D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0006-tk0004/`):
+
+- Красный: `red/compile-red.log` (нет `Prepare`/`Entries`), затем `red/red.log` — 18 падений новых/изменённых тестов по причине поведения; `red/green2.log` — после кода остались только 2 теста текстов; `red/content.log` — 30/30 после правки текстов.
+- Целевой набор (фильтр тикета) — **263/263** (`targeted.log`, `targeted/targeted.trx`).
+- Полный `DeepSpaceSaga.Client.Tests` (один раз): 2658 / прошло 2650 / упало 8 (`client-full.log`, `client-full/client-full.trx`); все 8 — базовые из `us0006-tk0001-base/failed-base.txt` (карта/камера), `client-new-failures.txt` — **0 новых**.
+- `ForbiddenCallsTests`: `forbidden-scan.ps1` (US-0001-TK-0004) по рабочему дереву — 183 находки, как на базе (`validate/forbidden-base-sorted.txt`); `forbidden/forbidden-diff.txt` пуст — правка `TacticalBattleScreen.cs` находок не добавила.
+- Нативный запуск игры не выполнялся (по условию).
+
 ## Журнал
 
 2026-11-14T18:46:13Z — тикет создан по итогам валидации эпика (Phase 4), исполнение без остановок по указанию пользователя.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Коммиты: Board и записи журнала — 071b0d2c; код — 0f04fc3b; тексты — bef0f19c; документация — коммит документации (этот).
+
+Узкие решения исполнителя: (1) кнопка у значка использует существующий ключ `Tutorial.Panel.HintsOff` — новый ключ не нужен, паритет RU/EN уже проверен; (2) «Не стрелять» после отменённого уклонения не отличим по плану огня от отмены уклонения и шаг не закрывает (консервативно); (3) кисть журнала создаётся только при пересборке строк и сразу освобождается — кадр её не выделяет; (4) проброс правой кнопки сделан в `TacticalBattleScreen.cs` (файл в allowlist), без правки `TacticalBattleScreen.Overlay.cs`; (5) существующие проверки «правая кнопка захватывается» в `TutorialCommsPanelTests`, `TutorialHintsToggleTests`, `TutorialJournalTests`, `TutorialScreenIntegrationTests` и ожидание «значок = вся область захвата» заменены на новое требуемое поведение.
