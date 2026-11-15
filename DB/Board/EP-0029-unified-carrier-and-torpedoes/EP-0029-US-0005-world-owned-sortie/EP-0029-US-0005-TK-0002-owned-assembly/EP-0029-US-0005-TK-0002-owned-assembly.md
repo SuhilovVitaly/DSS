@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-02]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Адаптер постоянного крыла в бой
@@ -107,4 +107,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `OwnedBattleAssembly.Create(catalog, shipId, hullCurrent, maneuver, wing, crew, encounter, seed, playerSide)`: builds the player carrier from the world hull/profile and the player drones from the persistent wing (stable DroneId order, destroyed drones skipped, hull/armor/ammo/decoy/jam restored, pilot skills from crew), while the enemy side is assembled from the encounter scenario with finite ammo and unchanged RNG discipline (fixed player crew never draws the combat RNG stream).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0005Tk0002Tests"` — **4/4 passed** (`TwoSurvivorsStartAsTwo`, `DamagedShipAndAmmoPersistIntoBattle`, `RenameDoesNotReassignDeployment`, `EnemyGenerationKeepsSeedDiscipline`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-017-us0005tk0002/US-0005-TK-0002/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
