@@ -69,7 +69,8 @@ public partial class SimulationEngine
             HullCurrent: hull.HullCurrent,
             ReservedCabins: ReservedPrisonerCabins,
             OwnedDrones: wing.IsDefaultOrEmpty ? null : wing.ToArray(),
-            LastSettlement: _carrierSettlement.TryGetValue(shipId, out var settlement) ? settlement : null);
+            LastSettlement: _carrierSettlement.TryGetValue(shipId, out var settlement) ? settlement : null,
+            LastRearm: _lastRearm);
     }
 
     private ImmutableArray<HangarSlotSnapshot> BuildHangarSlots(SpaceObjectRuntime ship)
@@ -243,6 +244,8 @@ public partial class SimulationEngine
         _carrierHull.Clear();
         _ownedWing.Clear();
         _carrierSettlement.Clear();
+        _rearmReceipts.Clear();
+        _lastRearm = null;
 
         var data = gs.SpaceObjects.FirstOrDefault(o =>
             string.Equals(o.ObjectId, gs.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase));
@@ -255,6 +258,12 @@ public partial class SimulationEngine
             _ownedWing[shipId] = drones.ToImmutableArray();
         if (carrier.LastSettlement is { } settlement)
             _carrierSettlement[shipId] = settlement;
+        if (carrier.LastRearm is { } lastRearm)
+        {
+            _lastRearm = lastRearm;
+            _rearmReceipts[lastRearm.CommandId] = new RearmDroneRequest(
+                lastRearm.CommandId, lastRearm.ShipId, lastRearm.DroneId, lastRearm.Quantity, lastRearm.ExpectedRevision);
+        }
     }
 
     private int ShipHullMax(SpaceObjectRuntime ship)

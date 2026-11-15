@@ -14,10 +14,21 @@ public sealed record CarrierStateData(
     [property: JsonPropertyName("hullCurrent")] int HullCurrent,
     [property: JsonPropertyName("reservedCabins")] int ReservedCabins = 2,
     [property: JsonPropertyName("ownedDrones")] IReadOnlyList<OwnedDroneData>? OwnedDrones = null,
-    [property: JsonPropertyName("lastSettlement")] SortieSettlementData? LastSettlement = null)
+    [property: JsonPropertyName("lastSettlement")] SortieSettlementData? LastSettlement = null,
+    [property: JsonPropertyName("lastRearm")] RearmReceiptData? LastRearm = null)
 {
     public const int CurrentSchemaVersion = 1;
 }
+
+/// <summary>Durable receipt of the last committed rearm (US-0008); a reload never re-spends it.</summary>
+public sealed record RearmReceiptData(
+    [property: JsonPropertyName("commandId")] string CommandId,
+    [property: JsonPropertyName("shipId")] string ShipId,
+    [property: JsonPropertyName("droneId")] string DroneId,
+    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("expectedRevision")] int ExpectedRevision,
+    [property: JsonPropertyName("revision")] int Revision,
+    [property: JsonPropertyName("transferred")] int Transferred);
 
 /// <summary>
 /// Durable receipt of the last committed sortie settlement (EP-0029 US-0006/0007). Persisted so a

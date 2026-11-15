@@ -8,11 +8,11 @@ approval_kind: workflow-only
 layer: engine
 test_project: DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0029-US-0008-TK-0001-rearm-contract]
-files_touched: 5
+files_touched: 4
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Транзакция переноса торпед
@@ -108,4 +108,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`SimulationEngine.RearmDrone` реализует атомарный перенос торпед: ownership/живой carrier/idle battle/stale revision/размещённый не-destroyed дрон/исправный ангар/quantity>0, затем проверки `q<=capacity-current` и `q<=cargo`, списание cargo по ordinal moduleId FIFO с сохранением basis (`RemoveCargoCost`), прибавление в magazine, `revision+1`. CommandId идемпотентен (repeat → `duplicate_command`, conflict payload → `identity_conflict`); последний receipt персистится в `CarrierStateData.LastRearm` и восстанавливается после Load — повтор не списывает повторно. `SimulationEngine.cs` не потребовался (4 файла вместо 5).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0008Tk0002Tests"` — **5/5 passed** (`FortyTwoRefillsThirtySixLeavesSix`, `InsufficientCargoIsAtomic`, `DuplicateIdentityNoDoubleTransfer`, `BattleAndDestroyedReject`, `PartialReloadAndBasisConserved`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-026-us0008tk0002/US-0008-TK-0002/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+- Регрессия (SaveFixtures/SaveMigration20 + US-0007/US-0008): 34/34 passed.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
