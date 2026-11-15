@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0019-sheet-frame-count
 title: Лист спрайтов с числом кадров не 32 проходит проверку
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Лист спрайтов с числом кадров не 32 проходит проверку
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -55,4 +56,11 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `ShipSheet` принимал любое число кадров, кратное числу колонок, а `Draw` брал `Frame(course) % Frames` от 32 направлений — лист из 16 кадров при курсе 180 показывал кадр 8.
+
+- Выбран вариант «отклонять лист с числом кадров не 32» (UiSpec EP-0024 §2.1). `TacticalShipSprites.Directions = 32`; `TacticalBattleSkinRenderScope.ShipSheet` требует `frames == Directions`, иначе юнит рисуется без спрайта. Все поставляемые листы (корабли и торпеды) уже содержат 32 кадра.
+- Отклонение молчаливое, как у прочих ошибок геометрии листа: проверка выполняется при отрисовке, а не при загрузке пакета, и запись в лог на каждом кадре была бы шумом. Предупреждение при загрузке скина потребовало бы новой проверки в загрузчике — не делалось.
+
+Тесты: `SkinManifestTests.Invalid_sheet_geometry_is_ignored` — новые случаи 16 и 64 кадра.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
