@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Тексты сохранения, ошибок и гибели
@@ -104,4 +104,22 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implemented 2026-11-15. Создание planning-документа не является implementation, build, test или game launch.
+
+## Execution evidence 2026-11-15
+
+Implementation status: **implemented**. Automated tests are **NOT RUN** in this batch по прямому указанию пользователя (no `dotnet test`, no TDD red/green, no validation agent); named tests written and deferred to the final suite run. Единственная проверка батча — компиляция:
+
+```powershell
+dotnet build DeepSpaceSaga.sln --no-restore
+# -> Build succeeded. 0 Warning(s), 0 Error(s).
+```
+
+Изменено (allowlist):
+- `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` и `English.json` — lifecycle keys: `TacticalBattle.ResultUnsaved`/`ResultSaved` (различают «бой завершён» и «результат сохранён»), `CheckpointSaveFailed`, `CheckpointRetry`, `CheckpointRetryHelp` (честно предупреждает о потере результата при закрытии до записи; без обещания защиты от kill), `RealLosses`, `ContinuationSaved`, `NoReadyWing`, `UnsupportedWing`, `ManualLoadHint` (Load разрешён, но не описан как бесплатный ремонт), `ShipDestroyed.Defeat`, а также refusal-keys `NoReadyDrones`/`CarrierNotReady`/`StaleCarrierState`/`WrongShip`. Ключевые наборы RU/EN совпадают.
+- `tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0012Tk0004Tests.cs` — `LifecycleLocaleParity`, `SaveFailureIsNotSuccess`, `TerminalActionsHaveTranslations`.
+
+Named-test focus: полный key parity RU/EN и наличие всех lifecycle keys; failure/success тексты различны и не подменяют друг друга; Retry-hint содержит риск потери, без «гарантирован»/«will not be lost»; manual Load не «бесплатный» и явно не чинит корабль; terminal actions Retry/Menu/Load переведены и различаются между языками.
+
+Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; native RU/EN UI gate **OPEN**; product/human acceptance **OPEN**.
+
