@@ -16,7 +16,7 @@ public sealed class TetrarchClassContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Ship_classes_have_no_hull_hp(bool output)
+    public void Ship_classes_carry_independent_hull_profile(bool output)
     {
         string root = output ? AppContext.BaseDirectory : ClientRoot;
         string settingsPath = Path.Combine(root, "Settings.json");
@@ -24,6 +24,7 @@ public sealed class TetrarchClassContentTests
         Assert.Equal(ClassPath, settings.TypeData.ShipClasses);
         Assert.Equal(3, registry.ShipClasses.Count);
         Assert.Equal(ClassId, Tetrarch(registry).TypeId);
+        Assert.Equal(400, Tetrarch(registry).HullMax);
         Assert.True(registry.ShipClasses.Contains("ship.mukha"));
         Assert.True(registry.ShipClasses.Contains("ship.shmel"));
         Assert.False(registry.ShipClasses.Contains("Tetrarch"));
@@ -34,7 +35,12 @@ public sealed class TetrarchClassContentTests
         var json = JsonNode.Parse(File.ReadAllText(classFile))!;
         var classes = json["shipClasses"]!.AsArray();
         Assert.Equal(new[] { ClassId, "ship.mukha", "ship.shmel" }, classes.Select(c => c!["typeId"]!.GetValue<string>()));
-        Assert.All(classes, definition => Assert.Equal(new[] { "typeId" }, definition!.AsObject().Select(p => p.Key)));
+        var keysByTypeId = classes.ToDictionary(
+            c => c!["typeId"]!.GetValue<string>(),
+            c => c!.AsObject().Select(p => p.Key).OrderBy(k => k, StringComparer.Ordinal).ToArray());
+        Assert.Equal(new[] { "typeId" }, keysByTypeId["ship.mukha"]);
+        Assert.Equal(new[] { "typeId" }, keysByTypeId["ship.shmel"]);
+        Assert.Equal(new[] { "appearanceId", "hullMax", "tacticalManeuver", "typeId" }, keysByTypeId[ClassId]);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(Path.Combine(ClientRoot, ClassPath))), json));
 
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);

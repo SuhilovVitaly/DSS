@@ -4,21 +4,24 @@ namespace DeepSpaceSaga.Engine.Scenario;
 internal static class SaveMigration20
 {
     internal const int PreviousVersion = 19;
+    internal const int TargetVersion = 20;
 
     internal static ScenarioFile Upgrade(ScenarioFile scenario, bool allowNonZeroGameTime = true, HashSet<string>? archivedActors = null)
     {
         ScenarioLoader.RequireSupportedSaveVersion(scenario.SaveFormatVersion);
         if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
-        if (scenario.SaveFormatVersion == SaveFormat.CurrentSaveFormatVersion)
+        if (scenario.SaveFormatVersion == TargetVersion)
         {
             RequireWorldOnly(scenario.GameState);
             return scenario;
         }
+        if (scenario.SaveFormatVersion is not (18 or PreviousVersion))
+            throw new ScenarioException($"SaveMigration20 cannot upgrade version {scenario.SaveFormatVersion}.");
 
         var validated = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime);
         return validated with
         {
-            SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion,
+            SaveFormatVersion = TargetVersion,
             GameState = ProjectWorld(validated.GameState, removeLegacyHostiles: true, archivedActors)
         };
     }

@@ -17,17 +17,15 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 /// </summary>
 public sealed class ShipScreen : IScreen
 {
+    private readonly ShipViewModel _model;
     private int _screenWidth;
     private int _screenHeight;
     private bool _isCloseHovered;
 
-    private static readonly string[] PlaceholderLines =
-    {
-        "Ship (Tetrarch Class) overview: not available yet",
-        "Crew and cabin occupancy: not available yet",
-        "Character Communication access: not available yet",
-        "Drilling Unit installed: not available yet",
-    };
+    /// <summary>Legacy open path: no carrier surface yet — renders the explicit unsupported state.</summary>
+    public ShipScreen() : this(ShipViewModel.From(null)) { }
+
+    public ShipScreen(ShipViewModel model) => _model = model;
 
     public void OnActivated() => _isCloseHovered = false;
 
@@ -78,10 +76,35 @@ public sealed class ShipScreen : IScreen
         canvas.DrawText("SHIP", cx, pt + ShipLayout.TitleY, MenuStyle.TextTitle);
 
         float textY = pt + ShipLayout.BodyStartY;
-        foreach (var line in PlaceholderLines)
+        if (_model.Unsupported)
         {
-            canvas.DrawText(line, cx, textY, MenuStyle.TextStatus);
+            canvas.DrawText("Ship overview: not available for this ship", cx, textY, MenuStyle.TextStatus);
             textY += ShipLayout.BodyLineHeight;
+        }
+        else
+        {
+            canvas.DrawText($"{_model.Name} ({_model.ShipClassId}) — hull {_model.HullCurrent}/{_model.HullMax}",
+                cx, pt + ShipLayout.BodyStartY, MenuStyle.TextStatus);
+
+            // Wing panel (left half): one line per owned drone, destroyed/disabled never shown ready.
+            var (wl, wt, _, _) = ShipLayout.WingPanelLocalRect();
+            float wingY = pt + wt;
+            foreach (var drone in _model.Drones)
+            {
+                string state = ShipWingPanel.DroneStateLabel(drone.Destroyed);
+                canvas.DrawText($"{drone.Id} — ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
+                    pl + wl, wingY, MenuStyle.TextStatus);
+                wingY += ShipLayout.BodyLineHeight;
+            }
+
+            // Crew panel (right half): one line per crew member.
+            var (cl, ct, _, _) = ShipLayout.CrewPanelLocalRect();
+            float crewY = pt + ct;
+            foreach (var member in _model.Crew)
+            {
+                canvas.DrawText($"{member.DisplayName} ({member.Role})", pl + cl, crewY, MenuStyle.TextStatus);
+                crewY += ShipLayout.BodyLineHeight;
+            }
         }
 
         DrawCloseButton(canvas, pl, pt);

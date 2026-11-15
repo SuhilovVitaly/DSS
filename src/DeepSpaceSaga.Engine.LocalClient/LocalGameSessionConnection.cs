@@ -127,6 +127,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         TacticalCall(() => _engine.FireTacticalBattle(request), cancellationToken);
     public ValueTask<TacticalBattleResponse> ExitTacticalBattleAsync(ExitTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
         TacticalCall(() => _engine.ExitTacticalBattle(request), cancellationToken);
+    public ValueTask<CarrierCommandResponse> RearmDroneAsync(RearmDroneRequest request, CancellationToken cancellationToken = default) =>
+        TacticalCall(() => _engine.RearmDrone(request), cancellationToken);
 
     private ValueTask<T> TacticalCall<T>(Func<T> action, CancellationToken token)
     {

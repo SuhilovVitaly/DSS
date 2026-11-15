@@ -58,6 +58,13 @@ public sealed record InstalledModuleSnapshot(
     int StructureMax = 0,
     bool IsDestroyed = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    EngineMotionLimitsSnapshot? EngineMotion = null);
+    EngineMotionLimitsSnapshot? EngineMotion = null,
+    /// <summary>
+    /// Number of drones this module can house when it is a hangar bay (module.drone-bay).
+    /// A static module-type attribute (direct pass-through of
+    /// <c>ModuleTypeDefinition.DroneCapacity</c>, like <see cref="CabinesCount"/>). Null for
+    /// module types that are not hangar bays.
+    /// </summary>
+    int? DroneCapacity = null);
 
 public sealed record EngineMotionLimitsSnapshot(double MaxSpeedKmS, double AccelerationKmS2, double TurnRateDegPerSec);

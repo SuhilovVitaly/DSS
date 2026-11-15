@@ -27,6 +27,16 @@ public interface IGameSessionConnection : IAsyncDisposable
         token.IsCancellationRequested ? ValueTask.FromCanceled<TacticalBattleResponse>(token)
         : ValueTask.FromResult(new TacticalBattleResponse(id ?? "", false, TacticalBattleRejectionCode.Unsupported, null, null, []));
 
+    /// <summary>
+    /// Transfer torpedoes from the ship's cargo hold into one drone's magazine. The default rejects
+    /// explicitly (a pre-rearm transport must never invent a successful transfer).
+    /// </summary>
+    ValueTask<CarrierCommandResponse> RearmDroneAsync(RearmDroneRequest request, CancellationToken cancellationToken = default) =>
+        UnsupportedCarrier(request?.CommandId, cancellationToken);
+    private static ValueTask<CarrierCommandResponse> UnsupportedCarrier(string? id, CancellationToken token) =>
+        token.IsCancellationRequested ? ValueTask.FromCanceled<CarrierCommandResponse>(token)
+        : ValueTask.FromResult(new CarrierCommandResponse(false, Reason: "unsupported"));
+
     ValueTask<StationTravelResult> TravelStationAsync(StationTravelCommand command,
         CancellationToken cancellationToken = default) =>
         ValueTask.FromException<StationTravelResult>(new NotSupportedException("Station travel is unavailable."));

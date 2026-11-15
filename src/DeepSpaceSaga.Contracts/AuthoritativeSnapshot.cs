@@ -68,7 +68,13 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     DebugTuningSnapshot? DebugTuning = null,
     /// <summary>Transient sandbox battle; false for legacy producers. Battle state is never part of a world save.</summary>
-    bool IsTacticalBattleActive = false)
+    bool IsTacticalBattleActive = false,
+    /// <summary>
+    /// Player ship carrier surface (hull, hangar slots, habitation). Null for legacy
+    /// producers and for snapshots where there is no player ship — the absence means
+    /// "carrier surface unsupported", never "player owns a free ship".
+    /// </summary>
+    CarrierOperationsSnapshot? CarrierOperations = null)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]

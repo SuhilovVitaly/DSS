@@ -1,0 +1,72 @@
+---
+epic: EP-0029-unified-carrier-and-torpedoes
+story: EP-0029-US-0006-battle-consequences
+title: Необратимые последствия завершённого боя
+stage: draft
+dependencies: [US-0005]
+created: 2026-11-14T19:42:24Z
+source_request: "Создай подробный эпик со всеми сторисами и тикетами."
+current_review: complete
+revision: 1
+---
+
+# Необратимые последствия завершённого боя
+
+## Входное техническое задание
+
+Часть [EP-0029](../Documentation.md). Утверждены единый корабль, 2 двухместных ангара, 2 жилых модуля по4 места (6 людей+2 резерва), четыре женщины-пилота, реальные потери обучения, магазины6/12 и42 торпеды в трюме. Захват пленных исключён.
+
+## User story
+
+Уцелевший корабль возвращается в систему с фактическим ущербом и остатком боезапаса. Уничтоженный носитель завершает текущую кампанию; дроны и корабль не восстанавливаются при закрытии экрана. История принимается по наблюдаемому состоянию и критериям ниже; существование DTO или документа не означает готовности пользовательского пути.
+
+## Grounding
+
+Текущая реализация и source pointers находятся в [Grounding эпика](../Documentation.md#grounding--текущая-реализация). Изменяемые файлы перечислены в Code context тикетов. Новые классы/API явно проектируемые.
+
+## Acceptance criteria
+
+- **AC-01**: Итог применяется к связанному кораблю ровно один раз: hull, drone status, ammo, charges, jam/engine damage. Нет бесплатных торпед, награды или нового крыла.
+- **AC-02**: При потере всех дронов и живом носителе мир продолжается с нулём боеготовых дронов и прежними шестью людьми. При Hull=0 корабль destroyed, недоступны торговля, полёт, rearm и новый бой.
+- **AC-03**: Завершение, Timeout, stalemate и подтверждённый досрочный выход сохраняют уже понесённые потери. Ошибка до успешного старта не меняет мир.
+- **AC-04**: UI replay, повтор Exit/Fire, stale reply и повторное чтение outcome не применяют потери второй раз.
+
+## Non-goals
+
+Захват/обмен пленных, найм, верфь, рыночное пополнение, ремонт, новый тип оружия, realtime бой, Ironman и сохранение посреди боя исключены. История не расширяет scope соседних тикетов.
+
+## Dependencies
+
+- [US-0005 — Бой из реального корабля и его крыла](../EP-0029-US-0005-world-owned-sortie/EP-0029-US-0005-world-owned-sortie.md): завершённая prerequisite поверхность. Наличие Board файла не равно выполнению.
+
+## Invariants
+
+Engine владеет ресурсами и итогами; Client показывает immutable snapshots. Один ShipId/DroneId/CrewId сохраняется между поверхностями. Расходы идемпотентны, пакетные отказы атомарны. Реальное обучение не имеет бесплатного reset. Два reserved места не создают пленных. На Load имущество не выдаётся.
+
+## Approved ticket map
+
+Workflow approval автоматический по поручению создать весь пакет; human approval подробной новой карты не заявляется.
+
+| ID / Title | Layer | Depends on | Served criteria |
+|---|---|---|---|
+| [TK-0001 — Квитанция последствий и исход кампании](EP-0029-US-0006-TK-0001-settlement-contract/EP-0029-US-0006-TK-0001-settlement-contract.md) | contracts | [US-0005-TK-0003](../EP-0029-US-0005-world-owned-sortie/EP-0029-US-0005-TK-0003-owned-entry/EP-0029-US-0005-TK-0003-owned-entry.md) | AC-01, AC-02, AC-03, AC-04 |
+| [TK-0002 — Единоразовая фиксация повреждений](EP-0029-US-0006-TK-0002-settlement-engine/EP-0029-US-0006-TK-0002-settlement-engine.md) | engine | [US-0006-TK-0001](EP-0029-US-0006-TK-0001-settlement-contract/EP-0029-US-0006-TK-0001-settlement-contract.md) | AC-01, AC-02, AC-03, AC-04 |
+| [TK-0003 — Согласованная проекция после боя](EP-0029-US-0006-TK-0003-post-battle-state/EP-0029-US-0006-TK-0003-post-battle-state.md) | engine | [US-0006-TK-0002](EP-0029-US-0006-TK-0002-settlement-engine/EP-0029-US-0006-TK-0002-settlement-engine.md) | AC-01, AC-02 |
+
+## Completion evidence
+
+- AC-01: TK-0001/0002/0003 — `SettlementReceiptRoundTrip`, `FinishThenExitSettlesOnce` (settled once, revision+1) — PASS.
+- AC-02: TK-0001/0002/0003 — `DestroyedIsNotNoDrones`, `HullZeroMarksWorldDestroyed`, `WorldCoordinatesUnchangedAfterSortie` — PASS.
+- AC-03: TK-0001/0002 — `DisabledReturnsDamaged`, `WorldSnapshotMatchesTacticalFinal` (hull/ammo/crew preserved) — PASS.
+- AC-04: TK-0001/0002/0003 — `LostDroneAmmoNotRecovered`, `AbortPreservesSpentAmmo`, `DestroyedShipCannotResumeCommands` — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-019..021-*`.
+- Implementation/automated: **PASS**. Native/product: **OPEN**.
+
+## Decisions and review log
+
+2026-11-14T19:42:24Z — время записи, не отправки. Пользователь: «Пока только резервируем два места, захват пилотов сделаем позже. По торпедам согласен: один выстрел — одна торпеда, перезарядка из трюма между боями. Создай подробный эпик со всеми сторисами и тикетами.»
+Концепция согласована. Assumptions A-01..A-06 берутся из эпика. Story draft отличает новую детализацию от human approval; ticket approved означает workflow-only. Поручения реализовать/публиковать нет.
+
+## Gaps and backlog
+
+Блокирующих вопросов для planning нет. Native проверка, баланс и совместимость должны быть доказаны исполнением. Если исходники изменились, перечитать owning files и обновить конкретный тикет до правок, сохранив лимит5 файлов; не расширять allowlist молча.

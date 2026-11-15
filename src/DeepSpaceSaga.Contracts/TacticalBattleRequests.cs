@@ -7,7 +7,13 @@ namespace DeepSpaceSaga.Contracts;
 public sealed record TacticalLoadoutChoice(string DroneId, string GunId, string PlateId, string? ShieldId, int ShieldCount);
 public sealed record StartTacticalBattleRequest(string CommandId, long Seed, string? ScenarioId = null,
     string? OwnTacticId = null, string? EnemyTacticId = null,
-    [property: JsonConverter(typeof(TacticalArrayJsonConverter<TacticalLoadoutChoice>))] ImmutableArray<TacticalLoadoutChoice> Loadout = default);
+    [property: JsonConverter(typeof(TacticalArrayJsonConverter<TacticalLoadoutChoice>))] ImmutableArray<TacticalLoadoutChoice> Loadout = default)
+{
+    /// <summary>World ship id the owned sortie launches from; required for an owned entry.</summary>
+    public string? SourceShipId { get; init; }
+    /// <summary>Expected carrier revision for optimistic concurrency; 0 is not a wildcard.</summary>
+    public int ExpectedCarrierRevision { get; init; }
+}
 public sealed record MoveTacticalBattleRequest(string CommandId, string BattleId, ulong ExpectedRevision,
     [property: JsonConverter(typeof(TacticalArrayJsonConverter<TacticalDroneOrder>))] ImmutableArray<TacticalDroneOrder> Orders = default);
 public sealed record TacticalFireTarget(string DroneId, string? TargetId, bool Evade = false, bool Decoy = false);
@@ -20,12 +26,17 @@ public enum TacticalBattleRejectionCode
     StaleRevision = 6, InvalidIdentity = 7, IdentityConflict = 8, UnknownScenario = 9, UnknownTactic = 10,
     InvalidDrone = 11, DuplicateDrone = 12, InvalidNumber = 13, UnknownWeapon = 14, UnknownArmor = 15,
     UnknownShield = 16, InvalidShieldCount = 17, InvalidTarget = 18, InvalidRequest = 19, Unsupported = 20,
-    WorldNotPaused = 21, ReceiptExpired = 22, EvasionUnavailable = 23, DecoyUnavailable = 24, InDust = 25
+    WorldNotPaused = 21, ReceiptExpired = 22, EvasionUnavailable = 23, DecoyUnavailable = 24, InDust = 25,
+    NoAmmo = 26, WrongShip = 27, NoReadyDrones = 28, CarrierNotReady = 29, StaleCarrierState = 30
 }
 /// <summary>NewEvents is a delta for this command. State.Log, when present, is the full journal.</summary>
 public sealed record TacticalBattleResponse(string CommandId, bool Accepted, TacticalBattleRejectionCode Code,
     TacticalBattlePhase? CurrentPhase, TacticalBattleSnapshot? State, ImmutableArray<TacticalBattleLogEvent> NewEvents,
-    TacticalContentIssue? ContentError = null);
+    TacticalContentIssue? ContentError = null)
+{
+    /// <summary>Applied consequences of an owned sortie (US-0006); null for a diagnostic battle.</summary>
+    public SortieSettlementSnapshot? Settlement { get; init; }
+}
 
 /// <summary>Default arrays write as empty; explicit malformed/null arrays and null elements fail instead of becoming commands.</summary>
 public sealed class TacticalArrayJsonConverter<T> : JsonConverter<ImmutableArray<T>>

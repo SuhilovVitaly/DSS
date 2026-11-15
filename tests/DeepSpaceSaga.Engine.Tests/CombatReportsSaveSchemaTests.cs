@@ -14,7 +14,7 @@ public sealed class CombatReportsSaveSchemaTests
         root["gameState"]!["combatReportsState"] = JsonNode.Parse(
             """{"version":1,"sequence":17,"reportedRangeTargetIds":["no-longer-in-world"]}""");
         var world = ScenarioLoader.LoadFromJson(root.ToJsonString(), allowNonZeroGameTime: true, isSave: true);
-        Assert.Equal(20, world.SaveFormatVersion);
+        Assert.Equal(21, world.SaveFormatVersion);
         Assert.DoesNotContain("\"combatReportsState\"", ScenarioLoader.Serialize(world), StringComparison.Ordinal);
     }
 

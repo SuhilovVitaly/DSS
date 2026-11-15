@@ -1,24 +1,24 @@
 {
   "vera": {
-    "name": "Вера",
+    "name": "Evelyn Ward",
     "accuracy": 55,
     "maneuver": 52,
     "initiative": 55
   },
   "yun": {
-    "name": "Юн",
+    "name": "Audrey Bennett",
     "accuracy": 53,
     "maneuver": 55,
     "initiative": 53
   },
   "marta": {
-    "name": "Марта",
+    "name": "Claire Morgan",
     "accuracy": 59,
     "maneuver": 54,
     "initiative": 59
   },
   "oleg": {
-    "name": "Олег",
+    "name": "Rachel Hayes",
     "accuracy": 50,
     "maneuver": 51,
     "initiative": 50

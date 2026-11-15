@@ -1,0 +1,16 @@
+{
+  "itemTypes": [
+    {
+      "typeId": "item.drone-torpedo.t1",
+      "displayName": "Drone Torpedo T1",
+      "unitMassKg": 1,
+      "basePriceCredits": 60,
+      "tradeCategory": "Good",
+      "catalogCode": "ITM-3101",
+      "tradeUnit": "Piece",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
+    }
+  ]
+}

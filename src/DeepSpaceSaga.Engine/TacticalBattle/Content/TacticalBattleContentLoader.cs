@@ -255,6 +255,7 @@ internal static class TacticalBattleContentLoader
             Require(frame.FrameMassKg > 0 && frame.ReferenceMassKg > 0, file, "$.frameMassKg/referenceMassKg", "Masses must be positive.");
             Require(frame.MinSpeed >= 0 && frame.MaxSpeedCap >= frame.MinSpeed && frame.TurnCapDeg > 0, file, "$.minSpeed/maxSpeedCap/turnCapDeg", "Invalid movement limits.");
             Require(frame.EngineSlots > 0 && frame.ShieldSlots >= 0, file, "$.engineSlots/shieldSlots", "Invalid slots.");
+            Require(frame.AmmoCapacity > 0, file, "$.ammoCapacity", "Armed frames must have a positive ammo capacity.");
         }
         foreach (var (id, w) in c.Weapons.Entries)
         {
