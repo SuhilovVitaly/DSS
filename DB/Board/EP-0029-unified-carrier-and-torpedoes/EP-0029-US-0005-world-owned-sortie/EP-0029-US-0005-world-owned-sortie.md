@@ -58,12 +58,12 @@ Workflow approval автоматический по поручению созд�
 
 ## Completion evidence
 
-- AC-01: тикеты TK-0001, TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- AC-02: тикеты TK-0002, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-03: тикеты TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-04: тикеты TK-0001, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- Future evidence: уникальный run под D:/DeepSpaceSaga/artifacts/validation/ep-0029/; после реализации сюда записать результаты и ссылки.
-- Сейчас implementation/automated/native/product: **NOT RUN / OPEN**.
+- AC-01: TK-0001/0002 — `OwnedStartSerializesIdentity`, `TwoSurvivorsStartAsTwo` (same carrier/wing on the map and in battle) — PASS.
+- AC-02: TK-0002/0003 — `DamagedShipAndAmmoPersistIntoBattle`, `OwnedLoadoutOverrideRejects` (scenario provides enemy only, no free assets) — PASS.
+- AC-03: TK-0003 — `WrongShipAndStaleRevisionReject`, `NoReadyDronesNoFallback` — PASS.
+- AC-04: TK-0001/0003 — `OldRequestsStillDeserialize`, `DuplicateStartReturnsReceipt` — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-016..018-*`.
+- Implementation/automated: **PASS**. Native/product: **OPEN**.
 
 ## Decisions and review log
 
