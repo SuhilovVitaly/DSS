@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-02]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Единый учёт массы оснащения и торпед
@@ -105,4 +105,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `AmmoCurrent`/`AmmoCapacity`/`AmmoUnitMassKg` runtime fields to `TacticalDrone` (zero defaults — no free magazine) and included `AmmoCurrent×AmmoUnitMassKg` in `TacticalDrone.Limits` moduleMass. Added `SimulationEngine.ComputeOwnedDroneMassKg` (layout-resolved catalogue components + loaded torpedoes, `TorpedoUnitMassKg=1.0` A-02; unknown components contribute nothing, never fabricating tonnage). Ammo mass affects only future `Limits` — current pose/speed are untouched.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0003Tk0003Tests"` — **3/3 passed** (`RearmTransfersMassWithoutDuplication`, `ShotReducesDroneMassByOne`, `MovementDoesNotJumpAfterShot`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-010-us0003tk0003/US-0003-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+- TacticalBattle regression — **582 passed, 41 failed**; the 41 are pre-existing calibration/statistical tests (e.g. `EvasionCalibrationTests.Report_expected_damage_ratio_for_penalties`), none in carrier/ammo/mass code. My `Limits` change is additive (`AmmoCurrent`/`AmmoUnitMassKg` default to 0, so existing drones' mass is unchanged) and introduces no new failures.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

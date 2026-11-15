@@ -55,6 +55,10 @@ internal sealed class TacticalDrone(string id, string side, TacticalPose pose, i
     public double PreviousTurn { get; set; }
     public TacticalDroneStatus Status { get; set; } = TacticalDroneStatus.Air;
     public bool Jammed { get; set; }
+    /// <summary>Remaining torpedoes. Zero means fire is unavailable; movement/E/D remain usable.</summary>
+    public int AmmoCurrent { get; internal set; }
+    public int AmmoCapacity { get; internal set; }
+    public double AmmoUnitMassKg { get; internal set; }
     public string Role { get; set; } = TacticalBattleConstants.InitialRole;
     public int RoleSince { get; set; }
     public string StrikeMode { get; set; } = TacticalBattleConstants.InitialStrikeMode;
@@ -65,7 +69,7 @@ internal sealed class TacticalDrone(string id, string side, TacticalPose pose, i
     public override bool IsActive => Status == TacticalDroneStatus.Air;
     public TacticalLimits Limits => TacticalLimits.Of(new(Frame.FrameMassKg, Frame.ReferenceMassKg, Frame.MinSpeed,
         Frame.MaxSpeedCap, Frame.TurnCapDeg), Plates.MassKg, Weapon.MassKg, Shield?.MassKg ?? 0, ShieldCount,
-        Engines.Select(e => e.Motion).ToArray(), moduleMass: Decoy?.MassKg ?? 0);
+        Engines.Select(e => e.Motion).ToArray(), moduleMass: (Decoy?.MassKg ?? 0) + AmmoCurrent * AmmoUnitMassKg);
 }
 
 internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, string scenarioId, long seed,

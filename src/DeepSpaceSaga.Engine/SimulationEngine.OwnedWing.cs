@@ -12,6 +12,37 @@ public partial class SimulationEngine
     private ImmutableArray<OwnedDroneData> GetOwnedWing(string shipId) =>
         _ownedWing.TryGetValue(shipId, out var wing) ? wing : ImmutableArray<OwnedDroneData>.Empty;
 
+    /// <summary>Torpedo unit mass (kg) — A-02 technical catalog value, not an approved balance promise.</summary>
+    internal const double TorpedoUnitMassKg = 1.0;
+
+    /// <summary>
+    /// Mass of one owned drone: catalogue components resolved from its layout plus loaded
+    /// torpedoes (AmmoCurrent × <see cref="TorpedoUnitMassKg"/>). Unknown components contribute
+    /// nothing — the engine never fabricates a full tonnage.
+    /// </summary>
+    internal double ComputeOwnedDroneMassKg(OwnedDroneData drone)
+    {
+        double mass = drone.AmmoCurrent * TorpedoUnitMassKg;
+        if (_registry.TacticalBattle.Catalog is not { } catalog || !catalog.Layouts.Contains(drone.FrameId))
+            return mass;
+
+        var layout = catalog.Layouts[drone.FrameId];
+        if (catalog.Frames.Contains(layout.Class))
+            mass += catalog.Frames[layout.Class].FrameMassKg;
+        if (catalog.Armor.Contains(layout.Armor))
+            mass += catalog.Armor[layout.Armor].MassKg;
+        if (layout.Weapon is { } weaponId && catalog.Weapons.Contains(weaponId))
+            mass += catalog.Weapons[weaponId].MassKg;
+        if (layout.Shield is { } shieldId && catalog.Shields.Contains(shieldId))
+            mass += catalog.Shields[shieldId].MassKg * drone.ShieldCount;
+        foreach (string engineId in layout.Engines)
+            if (catalog.Engines.Contains(engineId))
+                mass += catalog.Engines[engineId].MassKg;
+        if (layout.Module is { } decoyId && catalog.Decoys.Contains(decoyId))
+            mass += catalog.Decoys[decoyId].MassKg;
+        return mass;
+    }
+
     /// <summary>Test seam: replace a ship's persistent wing after validating it against the world.</summary>
     internal void SetOwnedWingForTests(string shipId, IReadOnlyList<OwnedDroneData> drones)
     {
