@@ -62,7 +62,7 @@ internal sealed class TutorialSession
     {
         get
         {
-            if (!Panel.Bounds.IsEmpty) yield return Panel.Bounds;
+            foreach (var area in Panel.Areas) yield return area;
             if (Journal.IsOpen) yield return Journal.Bounds;
         }
     }
@@ -122,7 +122,7 @@ internal sealed class TutorialSession
     {
         if (button != MouseButton.Left) return false; // right/middle pass through: the battle pans the camera from here too
         if (Journal.OnMouseDown(designPoint)) return true;
-        if (!Panel.Bounds.Contains(designPoint)) return false;
+        if (!Panel.Contains(designPoint)) return false;
         switch (Panel.Hit(designPoint))
         {
             case "ack": Director.Acknowledge(); break;

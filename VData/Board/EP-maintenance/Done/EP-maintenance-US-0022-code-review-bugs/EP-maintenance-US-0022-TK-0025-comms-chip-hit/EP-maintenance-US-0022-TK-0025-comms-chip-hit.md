@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0025-comms-chip-hit
 title: Свёрнутая панель связи ловит клики шире кнопок
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Свёрнутая панель связи ловит клики шире кнопок
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -37,6 +38,7 @@ revision: 1
 |---|---|
 | `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialCommsPanel.cs:117-123` | `Bounds` как объединение. |
 | `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialSession.cs:126-134` | `OnMouseDown`. |
+| `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialScreenIntegrationTests.cs` | Добавлено при исполнении: `AssertPanelClear` проверяет каждую область панели вместо единственного объединённого прямоугольника. |
 
 ## Implementation steps
 
@@ -55,4 +57,11 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `DrawChip` задавал `Bounds = SKRect.Union(chip, HintsBounds)`, и `TutorialSession.OnMouseDown` перехватывал любой клик в этом прямоугольнике, в том числе в зазоре и полосах над и под кнопкой; та же область блокировала наведение.
+
+- `TutorialCommsPanel`: в свёрнутом виде `Bounds` — только значок; новые `Areas` (развёрнутая панель либо значок и кнопка «Подсказки») и `Contains`.
+- `TutorialSession.Bounds` отдаёт `Panel.Areas`, `OnMouseDown` проверяет `Panel.Contains`. Наведение и панорамирование (`BlocksPan`, `OverlayRects`) получают раздельные области без изменений в экране боя.
+
+Тесты: новый `TutorialCommsPanelTests.CollapsedChipCapturesOnlyChipAndHintsButtonNotTheGapAround`; `TutorialCommsPanelTests.WithoutLineThePanelCollapsesToTheCommsChip` ожидает `[chip, hints]` вместо объединения; `TutorialScreenIntegrationTests.AssertPanelClear` проверяет каждую область.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.

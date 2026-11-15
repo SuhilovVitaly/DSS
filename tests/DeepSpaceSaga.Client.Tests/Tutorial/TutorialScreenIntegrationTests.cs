@@ -138,8 +138,12 @@ public sealed class TutorialScreenIntegrationTests
         using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, width, height);
         var tutorial = screen.Tutorial!;
-        var bounds = Assert.Single(tutorial.Bounds);
+        // The panel, or the chip and its separate «Hints: off» button (US-0022-TK-0025); the journal stays closed here.
+        var areas = tutorial.Bounds.ToArray();
+        Assert.Equal(tutorial.Panel.Areas, areas);
+        Assert.NotEmpty(areas);
         if (tutorial.Director.Current is { } line) phases.Add(line.Step.When.Phase);
+        foreach (var bounds in areas)
         foreach (var (key, rect) in screen.Layout.Rects)
         {
             if (!Protected.Any(p => key == p || (p.EndsWith(':') && key.StartsWith(p, StringComparison.Ordinal)))) continue;
