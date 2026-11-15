@@ -75,3 +75,8 @@ Workflow approval автоматический по поручению созд�
 ## Gaps and backlog
 
 Блокирующих вопросов для planning нет. Native проверка, баланс и совместимость должны быть доказаны исполнением. Если исходники изменились, перечитать owning files и обновить конкретный тикет до правок, сохранив лимит5 файлов; не расширять allowlist молча.
+
+## Evidence corrections (2026-11-15, remediation)
+
+- The Completion evidence sentence above records `TetrarchLoadoutTests` as 4 expected starter-shape reds. The verified count is **5 failing test cases across 3 test methods** (the original sentence is kept as written; this appended note is authoritative). The US-0011-TK-0002 remediation subsection records the same correction with the boundary-run arithmetic (7 client failures = 5 `TetrarchLoadoutTests` + 2 pre-existing `ScenarioModuleCleanupTests`).
+- Pilot skills: the starter manifest now carries the Board table (Evelyn 55/52, Audrey 53/55, Claire 59/54, Rachel 50/51; initiative 55/53/59/50; Dunkan/Irina 0/0), the world crew cap is 0..100 (`ScenarioLoader`), and owned drones read identity/skills from the persistent `CrewId` (US-0005 TK-0002 remediation). See the TK-0001/TK-0002 remediation subsections and `Ep0029Us0011Tk0002Tests.PilotSkillsMatchBoardTable`.

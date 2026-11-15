@@ -123,3 +123,26 @@ Implementation status: **implemented** (automated PASS; native/product OPEN).
   `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~ScenarioEngineTests|FullyQualifiedName~ModuleHealthBootstrapTests"` → 5 failed / 70 passed (`run-039-us0011tk0002/engine-boundary.stdout.txt`).
   `dotnet test tests/DeepSpaceSaga.Client.Tests --filter "FullyQualifiedName~TutorialScenarioTests|FullyQualifiedName~TetrarchLoadoutTests|FullyQualifiedName~ScenarioModuleCleanupTests"` → 7 failed / 28 passed (`run-039-us0011tk0002/client-boundary.stdout.txt`).
 - Serves AC-01…AC-04 (partially; full story coverage across TK-0001…TK-0003). Native/UI and product acceptance: **OPEN** — no native run was performed for this content ticket.
+
+## Remediation 2026-11-15
+
+Verified finding (remediation review P1, item 4, content half): the four starter pilots carried `accuracySkill: 0` / `maneuverabilitySkill: 0` in `Data/Ships/starter-carrier.json`. The tactical battle showed the `pilots.json` alias values, but the persistent crew record — now the single source of owned pilot identity and skills (US-0005 TK-0002) — had no real values to project.
+
+Fix: the four pilots carry the Board table values; initiative stays as approved and Dunkan/Irina stay 0/0:
+| CrewId | accuracySkill | maneuverabilitySkill | initiative |
+|---|---|---|---|
+| CHR-PLAYER-EVELYN | 55 | 52 | 55 |
+| CHR-PLAYER-AUDREY | 53 | 55 | 53 |
+| CHR-PLAYER-CLAIRE | 59 | 54 | 59 |
+| CHR-PLAYER-RACHEL | 50 | 51 | 50 |
+
+Named test (`Ep0029Us0011Tk0002Tests.PilotSkillsMatchBoardTable`) asserts the literal table on the shipped JSON, keeps the captain/officer at 0/0, and reloads both New Game stubs through `ScenarioLoader.LoadFromFile` to prove the production loader (widened to 0..100 in TK-0001) accepts and preserves the values.
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Client.Tests --filter "FullyQualifiedName~Ep0029Us0011Tk0002Tests"` → 1 failed / 4 passed (skills were 0) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-046-us0011tk0002/red.stdout.txt`.
+- Green: same filter → 5/5 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-046-us0011tk0002/US-0011-TK-0002/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` → 0 warnings, 0 errors (`.../client-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+
+**P3 evidence-count correction (added 2026-11-15, previous evidence left intact):** this ticket's Execution evidence and the US-0011 story recorded `TetrarchLoadoutTests` as **4** reds. The actual baseline is **5 failing test cases across 3 test methods**. The boundary run above stays consistent: its 7 client failures = 5 `TetrarchLoadoutTests` cases + 2 pre-existing `ScenarioModuleCleanupTests` cases. The US-0011 story is corrected with an appended evidence-corrections note; the original sentence is not rewritten.
+
+Status: automated PASS (content-data layer); native/product acceptance remains OPEN.

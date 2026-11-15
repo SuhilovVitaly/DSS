@@ -152,6 +152,49 @@ public sealed class Ep0029Us0011Tk0002Tests
     }
 
     [Fact]
+    public void PilotSkillsMatchBoardTable()
+    {
+        using var manifest = JsonDocument.Parse(File.ReadAllText(ManifestPath));
+        var crew = manifest.RootElement.GetProperty("crew").EnumerateArray()
+            .ToDictionary(c => c.GetProperty("crewId").GetString()!, StringComparer.Ordinal);
+
+        // Literal Board table: accuracy / maneuver / initiative per pilot.
+        var board = new Dictionary<string, (int Accuracy, int Maneuver, int Initiative)>(StringComparer.Ordinal)
+        {
+            ["CHR-PLAYER-EVELYN"] = (55, 52, 55),
+            ["CHR-PLAYER-AUDREY"] = (53, 55, 53),
+            ["CHR-PLAYER-CLAIRE"] = (59, 54, 59),
+            ["CHR-PLAYER-RACHEL"] = (50, 51, 50),
+        };
+        foreach (var (id, expected) in board)
+        {
+            Assert.Equal(expected.Accuracy, crew[id].GetProperty("accuracySkill").GetInt32());
+            Assert.Equal(expected.Maneuver, crew[id].GetProperty("maneuverabilitySkill").GetInt32());
+            Assert.Equal(expected.Initiative, crew[id].GetProperty("initiative").GetInt32());
+        }
+
+        // The captain and the officer keep their non-tactical zero skills.
+        foreach (string id in new[] { "CHR-0001", "CHR-PLAYER-DEFENSE" })
+        {
+            Assert.Equal(0, crew[id].GetProperty("accuracySkill").GetInt32());
+            Assert.Equal(0, crew[id].GetProperty("maneuverabilitySkill").GetInt32());
+        }
+
+        // The production loader (world crew cap 0..100) materializes the same values into both stubs.
+        foreach (string scenarioPath in new[] { TutorialScenarioPath, DefaultScenarioPath })
+        {
+            var ship = PlayerShip(ScenarioLoader.LoadFromFile(scenarioPath));
+            foreach (var (id, expected) in board)
+            {
+                var member = ship.Crew!.Single(c => c.CrewId == id);
+                Assert.Equal(expected.Accuracy, member.AccuracySkill);
+                Assert.Equal(expected.Maneuver, member.ManeuverabilitySkill);
+                Assert.Equal(expected.Initiative, member.Initiative);
+            }
+        }
+    }
+
+    [Fact]
     public void SameCrewPortraitsAsApproved()
     {
         using var manifest = JsonDocument.Parse(File.ReadAllText(ManifestPath));

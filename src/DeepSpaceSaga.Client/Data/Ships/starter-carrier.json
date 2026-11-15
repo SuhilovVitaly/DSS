@@ -151,8 +151,8 @@
     {
       "crewId": "CHR-PLAYER-EVELYN",
       "displayName": "Evelyn Ward",
-      "accuracySkill": 0,
-      "maneuverabilitySkill": 0,
+      "accuracySkill": 55,
+      "maneuverabilitySkill": 52,
       "gender": "Female",
       "portraitAssetId": "Images/Persons/W4/Portraits/CHR-20260915-102445-3C5C5D.png",
       "role": "Pilot",
@@ -161,8 +161,8 @@
     {
       "crewId": "CHR-PLAYER-AUDREY",
       "displayName": "Audrey Bennett",
-      "accuracySkill": 0,
-      "maneuverabilitySkill": 0,
+      "accuracySkill": 53,
+      "maneuverabilitySkill": 55,
       "gender": "Female",
       "portraitAssetId": "Images/Persons/W4/Portraits/CHR-20260915-102448-E2757F.png",
       "role": "Pilot",
@@ -171,8 +171,8 @@
     {
       "crewId": "CHR-PLAYER-CLAIRE",
       "displayName": "Claire Morgan",
-      "accuracySkill": 0,
-      "maneuverabilitySkill": 0,
+      "accuracySkill": 59,
+      "maneuverabilitySkill": 54,
       "gender": "Female",
       "portraitAssetId": "Images/Persons/W4/Portraits/CHR-20260915-104315-4DF131.png",
       "role": "Pilot",
@@ -181,8 +181,8 @@
     {
       "crewId": "CHR-PLAYER-RACHEL",
       "displayName": "Rachel Hayes",
-      "accuracySkill": 0,
-      "maneuverabilitySkill": 0,
+      "accuracySkill": 50,
+      "maneuverabilitySkill": 51,
       "gender": "Female",
       "portraitAssetId": "Images/Persons/W4/Portraits/CHR-20260915-102447-5F3DEF.png",
       "role": "Pilot",
