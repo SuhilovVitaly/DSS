@@ -137,13 +137,15 @@ internal static partial class TacticalBattleMapRenderer
             {
                 if (inside.Contains(p))
                 {
-                    if (!TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course, unitScale: v.UnitScale)) Hex(c, p, 15 * v.UnitScale, color);
+                    if (!TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course, unitScale: v.UnitScale,
+                        carrierAppearance: f.CarrierAppearanceId)) Hex(c, p, 15 * v.UnitScale, color);
                 }
                 else Edge(c, f, u, p, inside, occupied, color);
             }
             else
             {
-                bool sprite = TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course, unitScale: v.UnitScale);
+                bool sprite = TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course, unitScale: v.UnitScale,
+                    carrierAppearance: f.CarrierAppearanceId);
                 if (!sprite && DroneSilhouette(u.FrameId) is { } hull)
                 {
                     c.Save();
@@ -188,7 +190,8 @@ internal static partial class TacticalBattleMapRenderer
             var point = v.Project(wreck.Pose);
             bool drawn = wreck.Kind == TacticalUnitKind.Drone
                 ? TacticalShipSprites.DrawWreck(c, point, wreck.Pose.Course, (Skin.Tabletop ? 58 : 14) * v.UnitScale)
-                : TacticalShipSprites.Draw(c, wreck, point, wreck.Side == f.Battle.PlayerSide, wreck.Pose.Course, 170, shadow: false, unitScale: v.UnitScale);
+                : TacticalShipSprites.Draw(c, wreck, point, wreck.Side == f.Battle.PlayerSide, wreck.Pose.Course, 170,
+                    shadow: false, unitScale: v.UnitScale, carrierAppearance: f.CarrierAppearanceId);
             if (!drawn)
             {
                 Stroke(c, point + new SKPoint(-6, -6), point + new SKPoint(6, 6), Muted, 1.5f);

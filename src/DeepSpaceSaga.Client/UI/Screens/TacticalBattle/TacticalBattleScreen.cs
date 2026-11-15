@@ -15,6 +15,8 @@ public sealed record TacticalBattleFrame(TacticalBattleSnapshot Battle, Tactical
     TacticalFirePlan? FirePlan = null, TacticalSalvoFrame? Salvo = null, bool AllFireSectors = true, string? HoverUnitId = null, SKPoint? HoverPoint = null, string? LastSelectedDroneId = null)
 {
     public bool AimingMovement { get; init; }
+    /// <summary>World carrier appearance id projected from the authoritative carrier surface.</summary>
+    public string? CarrierAppearanceId { get; init; }
 }
 
 public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
@@ -132,7 +134,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             LastSelectedDroneId: _lastSelectedDroneId,
             HoverPoint: _lastPointer is { } pointer && !OverlayHit(pointer) ? pointer : null)
         {
-            AimingMovement = _orderDrag && !_camera.Panning && !ConfirmExit && !Flow.Pending
+            AimingMovement = _orderDrag && !_camera.Panning && !ConfirmExit && !Flow.Pending,
+            CarrierAppearanceId = Flow.Session.CarrierOperations?.AppearanceId
         };
     }
 
