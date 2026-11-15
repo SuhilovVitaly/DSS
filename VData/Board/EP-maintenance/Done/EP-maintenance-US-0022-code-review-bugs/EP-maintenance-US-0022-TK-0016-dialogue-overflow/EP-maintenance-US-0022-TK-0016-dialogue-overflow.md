@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0016-dialogue-overflow
 title: Длинная реплика диалога обрезается без признака
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Длинная реплика диалога обрезается без признака
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -54,4 +55,11 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `DrawWrapped` останавливался на нижней границе поля без прокрутки и без признака, колесо прокручивало только варианты ответа.
+
+- `DialogueScreen`: поле реплики прокручивается — колесо над полем (над вариантами по-прежнему прокручивает варианты), клавиши Up/Down, PageUp/PageDown, Home/End. Рисуются только строки, помещающиеся целиком вместе с выносными элементами.
+- При скрытом тексте сверху или снизу в отступе поля справа рисуется треугольный маркер. Прокрутка сбрасывается при смене ревизии диалога. Выбрана прокрутка, а не уменьшение шрифта.
+
+Тесты (`DialogueScreenTests`): `Long_speech_shows_overflow_and_its_last_word_is_reachable_by_wheel_and_keys`, `Short_speech_fits_without_overflow_marker`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
