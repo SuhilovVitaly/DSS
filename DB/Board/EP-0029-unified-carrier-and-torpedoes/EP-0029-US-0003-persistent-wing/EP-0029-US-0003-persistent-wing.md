@@ -55,11 +55,11 @@ Workflow approval автоматический по поручению созд�
 
 ## Completion evidence
 
-- AC-01: тикеты TK-0001, TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- AC-02: тикеты TK-0001, TK-0002, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-03: тикеты TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- Future evidence: уникальный run под D:/DeepSpaceSaga/artifacts/validation/ep-0029/; после реализации сюда записать результаты и ссылки.
-- Сейчас implementation/automated/native/product: **NOT RUN / OPEN**.
+- AC-01: TK-0001/0002 — `Ep0029Us0003Tk0001Tests.DroneIdentitySurvivesProjection`, `Ep0029Us0003Tk0002Tests.FifthDroneRejectedWithFourSlots` + `DuplicatePilotOrSlotRejected` — PASS (unique DroneId/Slot/CrewId, 4 slots reject a 5th drone).
+- AC-02: TK-0001/0002/0003 — `ImmutableEquipmentArraysRoundTrip` + `Ep0029Us0003Tk0003Tests` (mass) — PASS (frame/weapon/armor/shield/engines/decoy in persistent state).
+- AC-03: TK-0002 — `DestroyedDroneRetainsCrew` (6 crew after drone loss) — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-008..010-*`.
+- Implementation/automated: **PASS**. Native/product: **OPEN**.
 
 ## Decisions and review log
 
