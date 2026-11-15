@@ -127,3 +127,15 @@ Status: automated PASS (client layer); native/product acceptance remains OPEN.
 **Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-052-us0009tk0003/US-0009-TK-0003/focused.trx` (22/22 focused+guards), `guards.trx` (12/12), `client-build.log` (0 warnings/0 errors), `format.log` (clean). Native gate (мышь/клавиатура, 1280×720/1920×1080, RU/EN) остаётся OPEN — headless не закрывает.
 
 Status: automated PASS (client layer); native/product acceptance remains OPEN.
+
+### Validation follow-up 2026-11-15 (P2)
+
+**Finding:** `ShipScreen.SubmitAsync` присваивал `_revision` только при accept. Реальный stale-revision reject приходит без `Snapshot` и несёт текущую ревизию (`SimulationEngine.Rearm.cs` `RejectRearm` → `new(Accepted:false, Reason, Revision)`); экран сохранял устаревшую ревизию и повторял заведомо stale-запрос. Тестовая заглушка reject ошибочно содержала `Snapshot`, маскируя дефект.
+
+**Fix:** `_revision = response.Revision` на каждом авторитетном ответе (accept и reject); `Rebuild` — только при `Snapshot != null`. Транспортное исключение перехватывается: статус заменяется на явную ошибку, pending-барьер освобождается в `finally`; локальный магазин/трюм не меняются.
+
+**Tests:** `Ep0029Us0009Tk0003Tests` — 12/12 passed. `RejectedRearmDoesNotSpendLocally` переведён на снапшот-лесс reject из движка; добавлены `StaleRevisionRejectionAdoptsRevisionWithoutSnapshot` (первый ExpectedRevision 7 → reject Revision 9 без Snapshot → retry ExpectedRevision 9, без локального расхода) и `TransportExceptionShowsErrorAndClearsPending`.
+
+**Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-054-us0009tk0003-followup/US-0009-TK-0003/{red.trx,green.trx,client-build.log,format.log}`; build 0 warnings/0 errors, format clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.

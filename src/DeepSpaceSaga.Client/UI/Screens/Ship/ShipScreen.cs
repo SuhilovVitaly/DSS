@@ -190,9 +190,11 @@ public sealed class ShipScreen : IScreen
             var request = new RearmDroneRequest(_commandId(), _model.ShipId, droneId, quantity, revision);
             var response = await _rearm!(request, CancellationToken.None).ConfigureAwait(true);
             if (response.Snapshot is { } snapshot) Rebuild(snapshot);
+            // Every authoritative response — accepted or rejected — carries the current revision, so a
+            // stale-revision retry uses it even when the engine sends no Snapshot with the rejection.
+            _revision = response.Revision;
             if (response.Accepted)
             {
-                _revision = response.Revision;
                 if (response.Snapshot is null) ApplyTransfer(droneId, response.Transferred);
                 else _torpedoStock = Math.Max(0, _torpedoStock - response.Transferred);
                 _status = $"rearmed {response.Transferred} torpedo(es)";
@@ -204,6 +206,12 @@ public sealed class ShipScreen : IScreen
                 _status = response.Reason ?? "rearm rejected";
                 if (_selectedRow >= 0) _quantity = ShipWingPanel.ClampQuantity(_quantity, MaxQuantity(_selectedRow));
             }
+        }
+        catch (Exception error)
+        {
+            // Transport failure: keep the last authoritative magazine and replace the in-flight status
+            // with an explicit error so the player can retry; the pending barrier is released below.
+            _status = "rearm failed: " + error.Message;
         }
         finally
         {

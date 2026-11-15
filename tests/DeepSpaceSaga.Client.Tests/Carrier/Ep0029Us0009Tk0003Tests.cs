@@ -98,8 +98,9 @@ public sealed class Ep0029Us0009Tk0003Tests
     [Fact]
     public async Task RejectedRearmDoesNotSpendLocally()
     {
+        // The engine's rearm rejection shape: no Snapshot, only the current authoritative revision.
         var screen = Screen((_, _) => new ValueTask<CarrierCommandResponse>(new CarrierCommandResponse(
-            Accepted: false, Reason: "stale revision", Revision: 9, Transferred: 0, Snapshot: Carrier(revision: 9))));
+            Accepted: false, Reason: "stale revision", Revision: 9)));
         Render(screen);
         ClickRow(screen, 0);
         ClickConfirm(screen, 4);
@@ -109,9 +110,56 @@ public sealed class Ep0029Us0009Tk0003Tests
         // A rejection transfers nothing: magazine and hold stay exactly where they were.
         Assert.Equal(2, screen.Drones.Single(d => d.Id == "DRN-1").AmmoCurrent);
         Assert.Equal(42, screen.TorpedoStock);
-        // The stale carrier surface is refreshed from the authoritative snapshot, not recomputed.
+        // The rejection still carries the current revision, so the next retry is not stale.
         Assert.Equal(9, screen.Revision);
         Assert.Contains("stale revision", screen.Status);
+    }
+
+    [Fact]
+    public async Task StaleRevisionRejectionAdoptsRevisionWithoutSnapshot()
+    {
+        var requests = new List<RearmDroneRequest>();
+        var screen = Screen((request, _) =>
+        {
+            requests.Add(request);
+            return new ValueTask<CarrierCommandResponse>(requests.Count == 1
+                ? new CarrierCommandResponse(Accepted: false, Reason: "stale revision", Revision: 9)
+                : new CarrierCommandResponse(Accepted: true, Revision: 10, Transferred: 4));
+        });
+        Render(screen);
+        ClickRow(screen, 0);
+        ClickConfirm(screen, 4);
+        Assert.Equal(7, Assert.Single(requests).ExpectedRevision);
+        await screen.PendingRearm!;
+
+        // No Snapshot on the rejection: the revision must still be adopted, and nothing is spent.
+        Assert.Equal(9, screen.Revision);
+        Assert.Equal(2, screen.Drones.Single(d => d.Id == "DRN-1").AmmoCurrent);
+        Assert.Equal(42, screen.TorpedoStock);
+
+        ClickConfirm(screen, 4);
+        await screen.PendingRearm!;
+        Assert.Equal(2, requests.Count);
+        Assert.Equal(9, requests[1].ExpectedRevision); // retry uses the engine revision, not the stale 7
+        Assert.Equal(6, screen.Drones.Single(d => d.Id == "DRN-1").AmmoCurrent);
+        Assert.Equal(38, screen.TorpedoStock);
+    }
+
+    [Fact]
+    public async Task TransportExceptionShowsErrorAndClearsPending()
+    {
+        var screen = Screen((_, _) => throw new InvalidOperationException("engine offline"));
+        Render(screen);
+        ClickRow(screen, 0);
+        ClickConfirm(screen, 4);
+        Assert.NotNull(screen.PendingRearm);
+
+        await screen.PendingRearm!; // handled by the screen: the task does not fault
+
+        Assert.False(screen.IsPending);
+        Assert.Contains("engine offline", screen.Status);
+        Assert.Equal(2, screen.Drones.Single(d => d.Id == "DRN-1").AmmoCurrent);
+        Assert.Equal(42, screen.TorpedoStock);
     }
 
     [Fact]
