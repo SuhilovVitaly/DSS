@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-02, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Автосохранение результата без потери сессии
@@ -110,4 +110,40 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implemented (2026-11-15) — see the execution subsection below. Создание planning-документа не является implementation, build, test или game launch.
+
+## Remediation/Execution 2026-11-15
+
+Implementation status: **implemented** (automated). Human/product acceptance remains **OPEN**; no native UI gate applies to this ticket (no UI change).
+
+Scope actually changed (4 allowlisted production/test files + this Board ticket):
+- `src/DeepSpaceSaga.Engine.LocalClient/SaveSlotNaming.cs` — reserved `ContinuationSlotId = "campaign-continuation"` and `ContinuationDisplayName = "Campaign Continuation"`; the file name stays `campaign-continuation.json`.
+- `src/DeepSpaceSaga.Engine.LocalClient/SaveSlotRepository.cs` — `ListSlots` maps the continuation slot id to the fixed display name; all other slots keep the file-stem display name.
+- `src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs` — `ExitTacticalBattleAsync` now owns the storage phase: accepted owned-exit receipts (Settlement != null) are cached by BattleId plus a checkpointed set; the post-commit world is written through the existing atomic `SaveAsync(ContinuationSlotId, ct)`; a cached BattleId retries only the write and never re-calls the engine; storage failures (`IOException`, `UnauthorizedAccessException`, post-commit cancellation, disposed connection) are wrapped as `IOException("campaign checkpoint failed: ...")` after caching so the Client's `SendTactical` maps them to `Unavailable`; no save directory skips the write and marks the receipt checkpointed; diagnostic exits and rejections pass through unchanged.
+- `tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0012Tk0001Tests.cs` — new named tests (real ClientRoot `Settings.json` + Tutorial scenario through `LocalGameSessionConnection`, temp save directory, CarrierOperations snapshots): `ExitWritesContinuationCheckpoint`, `CheckpointFailureKeepsRetryWithoutResettlement`, `RetryAfterSuccessReturnsCachedSettlement`, `ManualSaveDuringBattleRejected`, `ContinuationSlotIsListedAndLoadable`, `DuplicateExitAfterReloadIsNoBattle`.
+
+Actual commands and results (artifacts in `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-057-us0012tk0001/`):
+
+```powershell
+# TDD red before production changes: 6 failed / 0 passed — checkpoint absent, no IOException, no cached receipt.
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~Ep0029Us0012Tk0001Tests" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-057-us0012tk0001" --logger "trx;LogFileName=focused-red.trx"
+# -> Failed: 6, Passed: 0 (focused-red.trx / focused-red.log)
+
+# Focused named tests after implementation: 6 passed / 0 failed.
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~Ep0029Us0012Tk0001Tests" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-057-us0012tk0001" --logger "trx;LogFileName=focused.trx"
+# -> Passed: 6, Failed: 0 (focused.trx / focused.log)
+
+# Guards: SaveSlotRepositoryTests, SaveSlotsTests, LocalSessionIntegrationTests save/load subset (28 tests).
+# -> Passed: 26, Failed: 2 — exactly the known baseline reds
+#    Economic_session_save_and_create_from_save_preserve_full_continuation(inFlight: true/false),
+#    Assert.Equal expected 20 actual 21; both already Failed in baseline-20261115/client-baseline.trx. (guards.trx / guards.log)
+
+dotnet build src/DeepSpaceSaga.Engine.LocalClient/DeepSpaceSaga.Engine.LocalClient.csproj --no-restore
+# -> Build succeeded. 0 Warning(s), 0 Error(s). (build-localclient.log)
+
+dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs src/DeepSpaceSaga.Engine.LocalClient/SaveSlotRepository.cs src/DeepSpaceSaga.Engine.LocalClient/SaveSlotNaming.cs tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0012Tk0001Tests.cs
+# -> exit 0, no changes required. (format.log)
+```
+
+Evidence mapping: checkpoint exists + display name + expanded carrier state after exit (`focused.trx`, `ExitWritesContinuationCheckpoint`); failed write keeps the cached accepted receipt, one carrier revision increment and a retry without re-settlement (`CheckpointFailureKeepsRetryWithoutResettlement`); repeated exit returns the same receipt and revision (`RetryAfterSuccessReturnsCachedSettlement`); manual save during battle still rejected and no manual file (`ManualSaveDuringBattleRejected`); continuation slot listable and loadable through `CreateFromSaveFile` without re-granting the manifest (`ContinuationSlotIsListedAndLoadable`); old BattleId on a reloaded session is `NoBattle` and the file is byte/timestamp unchanged (`DuplicateExitAfterReloadIsNoBattle`). No full-suite claim; known baseline reds and other EP-0019-era Client.Tests failures are unchanged. Native/human acceptance: OPEN.
+
