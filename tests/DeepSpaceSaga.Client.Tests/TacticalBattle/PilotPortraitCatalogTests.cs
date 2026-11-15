@@ -1,4 +1,6 @@
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Client.UI.Portraits;
+using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
@@ -9,8 +11,20 @@ public sealed class PilotPortraitCatalogTests
     public void Loads_reference_pilots()
     {
         using var c = PilotPortraitCatalog.Load(AppContext.BaseDirectory);
-        foreach (string id in new[] { "vera", "yun", "marta", "oleg" }) { Assert.True(c.TryGet(id, out var image)); Assert.Equal(1024, image.Width); }
-        Assert.True(c.IsFemale("vera")); Assert.False(c.IsFemale("oleg")); Assert.False(c.TryGet("unknown", out _));
+        foreach (var (id, head, suit) in new[] { ("vera", "violet", "eva"),
+                     ("yun", "crew-f12", "pilot"), ("marta", "crew-f05", "engineer") })
+        {
+            Assert.True(c.TryGet(id, out var image));
+            Assert.Equal(new SKRect(33, 0, 267, 234), c.SourceRect(id));
+            using var expected = ModularCrewPortraits.Compose(AppContext.BaseDirectory, head, suit);
+            Assert.NotNull(expected);
+            Assert.Equal(expected.Bytes, image.Bytes);
+        }
+        Assert.True(c.TryGet("oleg", out var legacy));
+        Assert.Equal(1024, legacy.Width);
+        Assert.Equal(new SKRect(170, 70, 854, 754), c.SourceRect("oleg"));
+        Assert.True(c.IsFemale("vera"));
+        Assert.False(c.TryGet("unknown", out _));
     }
     [Fact]
     public void Missing_or_broken_file_falls_back()

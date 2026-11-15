@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0006-decoy-resolution
 ticket: EP-0020-US-0006-TK-0004-session-decoy
 title: Сессия: приказ ловушки и скрытие до результатов
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0006-TK-0003-salvo-decoy]
@@ -90,4 +90,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. LocalSessionBattleTests и Session complete-run oracle получают тот же контроль: player explicit без auto-decoy, enemy auto-decoy. Нельзя сравнивать с полностью автономным Run обеих сторон, когда игрок не дал D. Outcome/Units/RNG assertions сохраняются. Scope уточнён на этот прямой oracle и существующую enum-count совместимость Contracts (добавлен15, старые0…14 сохранены).
+
+Завершено: Session/Journal/Local/Connection142/142PASS,Contracts27/27PASS; build/scoped format/diff-checkPASS. Проверены late atomic rejection без списания предыдущего приказа, no-module/empty, EV+Decoy InvalidRequest, jam/no-target launch, exactly-once replay и IdentityConflict, enemy hidden→resolved, player no-auto, clearing next Move, immutable previous DTO. DecoyLaunched15 записывается после freeze до шагов, старые IDs0…14 сохранены; событий пуска нет в step.Events, журнал шагов прежний. Самопроверка command identity/charges/RNG/order выполнена. US6-AC1/4/5 сессионная часть покрыта. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us6-tk4/focused/tests.trx,contracts/tests.trx,format-*.log. UI новых enum/пусков запланирован US7; полная механическая suite/отчёт следующимTK5.

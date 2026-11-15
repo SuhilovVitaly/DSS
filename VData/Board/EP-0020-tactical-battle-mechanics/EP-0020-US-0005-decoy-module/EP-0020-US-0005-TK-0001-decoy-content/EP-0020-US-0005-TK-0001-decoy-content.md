@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0005-decoy-module
 ticket: EP-0020-US-0005-TK-0001-decoy-content
 title: Модуль ловушек, слот рамы и порог ИИ в данных
-stage: draft
+stage: done
 layer: content-data
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0001-TK-0001-rules-content]
@@ -93,4 +93,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope уточнён: TacticalBattleCatalog.cs владеет списком каталогов, добавлен Decoys; это необходимая часть заявленного Public API. Значения JSON получены только экспортёром.
+
+Завершено: Content/Definitions131/131PASS, Export-Content -Check30JSONPASS, Engine build/scoped format и test format/diff-check PASS. US5-AC1/AC2 покрыты загрузкой всех поставляемых значений, 12 отказами и nullable module compatibility. Самопроверка: carrier запрет независимо от slot count, отсутствие модуля допускается, ModuleSlots неотрицателен; исходные значения других категорий не изменены. JSON сгенерирован экспортёром. Первые прогоны выявили ошибку разделителя таблицы и требуемое расширение списка nullable defaults в независимом sync-тесте; исправлены, финал131PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us5-tk1/sync-final/tests.trx, format/, export-check.log.

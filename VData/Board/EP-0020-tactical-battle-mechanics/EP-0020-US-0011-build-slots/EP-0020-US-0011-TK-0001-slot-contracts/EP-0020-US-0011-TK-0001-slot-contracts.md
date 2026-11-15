@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0011-build-slots
 ticket: EP-0020-US-0011-TK-0001-slot-contracts
 title: Контракт слотов
-stage: draft
+stage: done
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0020-US-0009-TK-0005-anomaly-regression]
@@ -82,4 +82,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+Завершено. Slots/EngineSlots/ModuleSlots добавлены init defaults[]/0/0, SlotKind0..4 иSlotState0..2 отдельнымиenum; ModuleId/Namenullable, Factor1поумолчанию. Contracts32/32PASS, build/scopedformat/diffcheckPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us11-tk1/contracts/tests.trx`. AC1 выполнен; старые нагрузки читаются. Самопроверка совместимости пройдена, заполнение вTK2, Save20не меняется.

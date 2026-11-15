@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0008-anomaly-field
 ticket: EP-0020-US-0008-TK-0002-anomaly-math
 title: Математика поля аномалий
-stage: draft
+stage: done
 layer: motion
 test_project: tests/DeepSpaceSaga.Motion.Tests
 depends_on: [EP-0020-US-0008-TK-0001-anomaly-rules-content]
@@ -85,4 +85,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. API чистых static функций получает ImmutableArray аномалий и captured background/zoneEdge/samples явно; скрытого глобального поля или чисел100/170/200 в math нет. Rotation — радианы по A-25 U[0,π). Segments возвращает TacticalAnomalySegment(T0,T1); Absorption считает целое число midpoint hits/samples, не суммирует округлённые длины интервалов. Нулевая длина использует ту же midpoint принадлежность.
+
+Завершено: Motion20/20PASS включая8AnomalyMath и12Limits/Chance. Hand values центр/1sigma/90°, суммирование/разделениеkind, ≥граница, целиком/вне/половина/reverse/zero-length, слияние/дваинтервала, градиент hand+finite difference, empty иinvalid inputs проверены. Самопроверка устранила underflow/overflow промежуточного sigma²: нормированные координаты до возведения в квадрат; тестыsigma1e−200/1e200PASS. Pure functions без mutable state/RNG. Build/scoped-format/diff-checkPASS. US8-AC2 покрыт. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us8-tk2/final/tests.trx,format-motion.log,format-tests.log.

@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0013-command-panel
 ticket: EP-0024-US-0013-TK-0003-panel-fire
 title: Стрельба в панели
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0013-TK-0001-panel-frame]
@@ -89,3 +89,14 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+## Уточнение scope до реализации
+
+Добавлены PilotCardColumn.cs (выбор вычисленной FireHeight) и PilotCardFireBlock.Slim.cs (изолированная компактная раскладка с единым путём измерения/отрисовки). Исходный Classic путь сохранён. Высота без целей не меньше 106 по явной пробе UiSpec; длинные тексты увеличивают её.
+
+
+### Результат us13-tk3
+
+Стрельба: единый путь измерения/отрисовки, цели со спрайтами, броня/угрозы, ловушка/уклон/отказ, перенос текста. 14/14: Юн 129, Вера без целей 106, dust/evade, target click, прокрутка >3 целей и Classic. Визуально проверены fire-panel-2-fire-column-x2.png и fire-panel-2-no-target-column-x2.png; геометрия соответствует Reference/panels/1-fire, выбран Таг-5 после проверочного клика (эталон Таг-6); шрифт/портреты A-16. Самопроверка source/input пройдена.
+
+Проверки: 14/14 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us13-tk3/client.trx`, `us13-tk3-test.log`, `us13-tk3-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

@@ -27,6 +27,8 @@ public static class DialoguePortraitComposer
         try
         {
             string root = Path.GetFullPath(contentRoot ?? AppContext.BaseDirectory);
+            if (sex == PersonSex.Female && ModularCrewPortraits.Dialogue(root, portraitPath) is { } modular)
+                return modular;
             string pack = sex == PersonSex.Male ? "M4" : "W4";
             var assets = new PortraitAssetRepository(Path.Combine(root, "Images", "Persons", pack), validateTextures: false);
             int seed = BinaryPrimitives.ReadInt32LittleEndian(SHA256.HashData(Encoding.UTF8.GetBytes(personKey)));

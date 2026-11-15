@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0001-consciousness
 ticket: EP-0020-US-0001-TK-0001-rules-content
 title: Правила сознания и уклонения в данных
-stage: draft
+stage: done
 layer: content-data
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: []
@@ -90,4 +90,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: реализованы оба обязательных блока, records и диапазоны; 12 отрицательных случаев и проверка поставленных значений. US1-AC1 покрыт. Экспортёр 29/29 JSON PASS, ContentLoaderTests/ContentSyncTests/DefinitionsTests 118/118 PASS (build включён). Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us1-tk1/engine.trx и tests.log. Scoped format: после нормализации CRLF исправлена существовавшая whitespace-строка loader (без смены поведения). Self-review выполнен: неизменённые числа/каталог, обязательность/типизация полей, атомарный отказ загрузки; Save20/RNG не затронуты. git diff --check PASS. Публикация сверяется по Git после commit.

@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0004-evasion-ui
 ticket: EP-0020-US-0004-TK-0003-results-evasion-reveal
 title: Раскрытие уклонения в залпе и результатах
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0004-TK-0002-fire-panel-evasion]
@@ -34,7 +34,7 @@ revision: 1
 | File | Current state | Allowed change |
 |---|---|---|
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleResults.cs` | :58-82 Project, :84-100 Capture | Множество уклонившихся текущего залпа. |
-| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMapRenderer.cs` | кольцо из TK-0002 | Рисовать для уклонившихся в полёте залпа и результатах. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs` | кольцо из TK-0002 | Рисовать для уклонившихся в полёте залпа и результатах. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/HoverCard.cs` | EP-0019: карточка наведения | Значок «Уклонение» UiSpec §5 вместо состояния. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleLogFormatter.cs` | :19, :47 SkipText | `TacticalBattle.Skip.Evading`. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardModel.cs` | проекция результатов | Значок «уклонение» для своего уклонившегося (UiSpec §4). |
@@ -87,4 +87,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: Evading множество берётся из шагов текущего залпа, в Fire нет будущих отметок противника; в полёте/результатах кольца и hover, свой результат — «уклонение». При продолжении отметки исчезают, повтор/skip не вызывают Fire. Нулевой залп с Evading имеет мгновенные Results без снарядов и ложного промаха; номер завершённого хода из events. Results/SidesAndLog/FirePanel 21/21 PASS; Client build/scoped format/diff-check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us4-tk3/final/tests.trx. Начальный fail нового теста касался ошибочной формы заголовка «Ход3», исправлен literal на существующее «ХОД3 •» без изменения production. Self-review по скрытию, frame projection, zero-shot, replay/identity и продолжению выполнен. US4-AC3 покрыт. Финальные Ep0019 ожидания/снимки проходят следующим TK-0004; известных изменений вне разрешённой области не заявляется.
+
+## Scope и технический gap до реализации
+
+После выбора уклонения возможен залп без фактических выстрелов. Прежний Create отбрасывал такую презентацию: невозможно показать результат уклонения. Сохраняем мгновенную Results-проекцию, если есть Evading шаги; снарядов/задержки/RNG нет. Добавлены PhasePanel.cs/PhasePanel.Salvo.cs для правильного номера завершённого хода и текста «огонь не ведётся» вместо фиктивного промаха. Legacy zero-shot без Evading прежний. Финальные Ep0019 snapshots/ожидания меняются только следующим TK-0004; здесь owning Results/Sides/Log/FirePanel tests, полная приёмка вида — gate истории.

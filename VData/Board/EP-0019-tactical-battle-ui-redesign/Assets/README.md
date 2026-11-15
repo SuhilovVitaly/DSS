@@ -12,3 +12,13 @@
 690243adfefe0ce154b547db6205794bd30ac4277275179517a90994f4980648  fonts/DejaVuSans.ttf
 d1c3ff99f1e1ce1827a33efd4dad81f40babda06bff9e43bd7591c86662a287b  fonts/DejaVuSans-Bold.ttf
 ```
+
+## Восстановление входных файлов 2026-11-08
+
+В исходном коммите f9fcbd45 три файла fonts отсутствовали. Точные TTF восстановлены из [официального пакета Ubuntu 2.37-2build1](https://archive.ubuntu.com/ubuntu/pool/main/f/fonts-dejavu/fonts-dejavu-core_2.37-2build1_all.deb); оба хеша выше совпадают побайтно. LICENSE-DejaVu.txt содержит font stanza copyright этого пакета, без секции упаковки debian/*.
+
+При начальной попытке battle-data-seed1.txt отсутствовал. При возобновлении восстановлен версионированный baseline до изменения UI с независимыми literal assertions нормативных значений; происхождение и ограничения описаны ниже. Это не найденный оригинал. См. ExecutionStatus.md эпика.
+
+### Recovered reference 2026-11-08
+
+battle-data-seed1.txt восстановлен на Windows до изменения UI через реальную сессию. Engine/Contracts/TacticalBattle content совпадают с 8c6f4e2a (git diff пуст). JSON содержит Move1, Fire3, после залпа3 и Outcome20; нормализован только BattleId. Независимые literal assertions DesignSpec (77.5/+5.5, Марта/56%/108.1, 3 выстрела/1 попадание/39 брони, победа20/30/18) прошли до фиксации. Это новый recovered baseline, не исходный утраченный файл. Проверки вида остаются независимыми формулами и строками DesignSpec.

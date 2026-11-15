@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0008-camera
 title: Камера по фазам
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0001]
 created: 2026-11-12T13:00:00Z
 source_request: "В режиме кадрировать камеру по фазам: своя группа в движении, бой в стрельбе и залпе."
@@ -49,3 +49,8 @@ D-04, D-08, D-09, A-08, A-11. Сейчас — `TacticalBattleCamera.cs:31-73` (
 | ID | Название | Слой | Зависимости | Критерии |
 |---|---|---|---|---|
 | [EP-0024-US-0008-TK-0001-camera](EP-0024-US-0008-TK-0001-camera/EP-0024-US-0008-TK-0001-camera.md) | Кадрирование по фазам | client-ui | `EP-0024-US-0001-TK-0002-tabletop-mode` | US8-AC1 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

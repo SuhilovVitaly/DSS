@@ -3,11 +3,11 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0006-skins
 ticket: EP-0023-US-0006-TK-0002-skin-scenes
 title: Сцены скинов с новой карточкой
-stage: draft
+stage: done
 layer: client-tests
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0006-TK-0001-skin-roles]
-files_touched: 2
+files_touched: 3
 serves: [US6-AC2]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -35,6 +35,8 @@ A-12.
 |---|---|---|
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/Ep0022SkinScenesTests.cs` | :11-20 список сцен (`1-move-no-hover`, `2-fire-hover-own`, `2-evasion-plan`, `2-decoy-empty`, `3-salvo-flight` …) | Пробы новой карточки и сжатой панели в каждом скине; проверка контраста значений над шкалами. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/RasterProbe.cs` | пробы | Расширить при необходимости. |
+
+AnomalySceneSearch.cs получает масштаб растрового вывода, чтобы рендерить те же игровые кадры в 1280×720 и 1920×1080.
 
 ## Public API after the change
 
@@ -81,4 +83,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US6-AC2: 12 сцен проверены в Classic, Contrast и установленном Xenon Star при 1280×720 и 1920×1080. Сравнены координаты, тексты, отличия цветов, контраст значений и отрезание текстуры. Покрыт запасной вид частичного пользовательского пака. Build, 28/28 тестов, scoped format и diff check: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us6-tk2/ и D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us6-tk2-format/. Самопроверка diff выполнена.

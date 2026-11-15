@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0009-view-regression
 title: Эталонные снимки нового поля и неизменность Classic
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0004, EP-0024-US-0005, EP-0024-US-0006, EP-0024-US-0007, EP-0024-US-0008, EP-0024-US-0011, EP-0024-US-0013]
 created: 2026-11-12T13:00:00Z
 source_request: "Завести эталонные снимки скина `tabletop` и проверить, что 15 снимков Classic не изменились."
@@ -52,3 +52,8 @@ A-13. Снимки — `View/Ep0019Snapshots.cs` (`DSS_EP0019_ACCEPT_SNAPSHOTS=1
 |---|---|---|---|---|
 | [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | Снимки `tabletop` и проверка Classic | client-tests | `EP-0024-US-0007-TK-0002-torpedo-fx`, `EP-0024-US-0007-TK-0001-salvo`, `EP-0024-US-0008-TK-0001-camera`, `EP-0024-US-0004-TK-0002-clouds-cache`, `EP-0024-US-0005-TK-0001-templates` | US9-AC1, US9-AC2 |
 | [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | Снимки и пробы панелей `tabletop` | client-tests | `EP-0024-US-0009-TK-0001-snapshots`, `EP-0024-US-0011-TK-0003-role-colours`, `EP-0024-US-0013-TK-0002-panel-move`, `EP-0024-US-0013-TK-0003-panel-fire`, `EP-0024-US-0013-TK-0004-panel-salvo` | US9-AC3 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

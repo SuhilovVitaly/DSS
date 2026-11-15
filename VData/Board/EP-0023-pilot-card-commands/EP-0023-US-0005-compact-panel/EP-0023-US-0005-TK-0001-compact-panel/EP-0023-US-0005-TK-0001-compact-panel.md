@@ -3,11 +3,11 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0005-compact-panel
 ticket: EP-0023-US-0005-TK-0001-compact-panel
 title: Сжатая правая панель движения и стрельбы
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0002-TK-0001-move-block, EP-0023-US-0003-TK-0002-fire-block-input]
-files_touched: 6
+files_touched: 8
 serves: [US5-AC1, US5-AC2]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -39,6 +39,8 @@ A-11.
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/OverlayShellTests.cs` | границы панели по фазам | Новые границы UiSpec §8. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/BuildCardRenderTests.cs` | положение «Пилот и сборка» | Новые координаты (`158…458`). |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/HoverCardTests.Anomalies.cs` | положение карточек наведения | Новые координаты. |
+
+Дополнительно: TacticalBattleScreen.cs получает нижнюю границу из общей PhasePanel.Bottom; PhasePanelTests.cs и OverlayBoundaryTests.cs проверяют высоту и сдвиг при wide viewport. В OverlayClick убирается запуск скрытого старого ползунка, поскольку его зона пересекает новую кнопку Выполнить.
 
 ## Public API after the change
 
@@ -88,4 +90,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US5-AC1/AC2: единая геометрия нижней границы 152 для движения/стрельбы, 382/366/358 для остальных фаз. Сборка и hover начинаются на 158. Кнопка Выполнить в новых координатах возвращает действие, прежняя невидимая зона ползунка её не перехватывает. Build, 29/29 тестов, scoped format, diff check и самопроверка: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us5-tk1/. Перевод прежних растровых проб запланирован в следующих тикетах.

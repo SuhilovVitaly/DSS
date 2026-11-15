@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0013-project-documentation
 ticket: EP-0020-US-0013-TK-0003-anomaly-documentation
 title: Документация аномалий
-stage: draft
+stage: done
 layer: documentation
 test_project: —
 depends_on: [EP-0020-US-0013-TK-0002-decoy-documentation, EP-0020-US-0009-TK-0005-anomaly-regression, EP-0020-US-0010-TK-0004-anomaly-view-regression]
@@ -81,4 +81,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+Завершено. US13-AC4: описаны все 15anomalies keys, named RNG, placement/Box–Muller, сумма Gaussian/граница/midpoints, absorption порядок, no-extra-RNG при 0, InDust/AI и визуальные правила. Scope расширен на GameSessionScreenUI/FirstReleaseRequirements по inventory. ОтчётM3 с denominator/ограничениями уже в ExecutionStatus и US9/TK5. Self-review отличает clearance anchor от Gaussian хвостов и альтернативу ИИ от гарантии безопасного хода. Content/link/diffPASS; evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us13-tk3/content-links.json`. Markdown-only, runtime tests не повторялись.

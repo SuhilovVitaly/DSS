@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0007-salvo-results
 ticket: EP-0024-US-0007-TK-0002-torpedo-fx
 title: Пиксельная торпеда, шлейф и анимация взрыва
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0007-TK-0001-salvo, EP-0024-US-0002-TK-0001-sprite-renderer]
@@ -90,3 +90,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us7-tk2
+
+Пиксельные торпеды, trail и эффекты удара/уничтожения/puff подключены; взрывы рисуются поверх моделей и плашек, маркеры ждут конца эффекта, skip не запускает FX. Проверены кадры 0/100/450/880/1000 ms, опциональность скина и Classic snapshots. Build: 0 ошибок/предупреждений. Сверены kill-100.png и kill-450.png с Reference/salvo/kill-sequence.png; kill-*.png — синтетический killed-shot для тайминга, не outcome реального боя.
+
+Проверки: 58/58 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us7-tk2/client.trx`, `us7-tk2-test.log`, `us7-tk2-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

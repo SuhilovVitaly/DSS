@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0010-anomaly-ui
 title: Аномалии в интерфейсе боя
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0009-anomaly-resolution, EP-0020-US-0007-decoy-ui]
 created: 2026-11-08T11:46:28Z
 source_request: "Нарисовать аномалии как малиново-розовые и фиолетовые пятна EP-0010 (без контуров) и показать их правила: участок линии огня внутри зоны, долю поглощения, итоговый шанс, «в пыли», поглощённые выстрелы и карточку наведения аномалии — точно по [UiSpec](../UiSpec.md) §15–§21."
@@ -57,3 +57,7 @@ D-25–D-29, D-33. Вид задаёт только [UiSpec](../UiSpec.md) §15�
 | [EP-0020-US-0010-TK-0002-anomaly-move-fire](EP-0020-US-0010-TK-0002-anomaly-move-fire/EP-0020-US-0010-TK-0002-anomaly-move-fire.md) | Аномалии в движении и стрельбе | client | `EP-0020-US-0010-TK-0001-anomaly-field-layer` | US10-AC2 |
 | [EP-0020-US-0010-TK-0003-anomaly-salvo-results](EP-0020-US-0010-TK-0003-anomaly-salvo-results/EP-0020-US-0010-TK-0003-anomaly-salvo-results.md) | Аномалии в залпе, результатах и карточке наведения | client | `EP-0020-US-0010-TK-0002-anomaly-move-fire` | US10-AC3 |
 | [EP-0020-US-0010-TK-0004-anomaly-view-regression](EP-0020-US-0010-TK-0004-anomaly-view-regression/EP-0020-US-0010-TK-0004-anomaly-view-regression.md) | Проверки вида EP-0019 после аномалий | tests | `EP-0020-US-0010-TK-0003-anomaly-salvo-results` | US10-AC4 |
+
+## Исполнение
+
+US10 завершена. AC1:32independent scalar pixels/5fieldtests/полныерастры exact до-послеоптимизации; AC2:31UI/localePASS, реальные seed1/6 сцены, guards доDraw, только capturedChance/InDust; AC3:28results/hover/logPASS, actual absorbedMarta seed1Turn11, cursor priority/privacy/нетраннегораскрытия; AC4:Client2230uniquePASS,29Ep0019+5новыхstrictsnapshot+5productionhandlerchecksPASS,12снимковdifferent0/maxTile0. Растер проверен визуально, native/human/art/independentreview отдельно. Evidence и измеренные уточнения UiSpec — в тикетах.
