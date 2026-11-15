@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0009-reticle-colours
 title: Карта: прицел выбора и прицел наведения почти одного цвета
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Карта: прицел выбора и прицел наведения почти одного цвета
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -54,4 +55,10 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: прицел выбора `TabletopStyle.Gold` (оттенок ~45°) и прицел наведения `TacticalMapPalette.Target` (~36°) различались примерно на 9°, тест проверял только R > G > B.
+
+- `TacticalMapDepthRenderer.DrawActiveObjectReticle` рисует отдельным оранжевым `ActiveReticleColor = (255, 128, 32, 230)`, оттенок ~26°. Прицел выбора и `TacticalMapPalette.Target` (используется в `GameSessionScreen.MapView`) не изменены.
+
+Тесты (`TacticalMapSelectionReticleTests`): `Active_object_reticle_uses_orange_tint` проверяет оттенок 15–32°; новый `Selected_and_active_reticles_differ_in_hue_on_a_still_frame` требует разницу оттенков не меньше 15° на неподвижном кадре.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.

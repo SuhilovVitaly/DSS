@@ -16,6 +16,9 @@ internal sealed class TacticalMapDepthRenderer
     private const float TrajectoryShadowOffset = 1.25f;
     private const long ActiveReticleRotationPeriodMs = 3_500;
     private const long SelectedReticleRotationPeriodMs = 9_000;
+    // Clearly orange (hue ~26 deg) so the hover reticle reads apart from the
+    // selection gold (hue ~45 deg) on a still frame, not only by rotation.
+    private static readonly SKColor ActiveReticleColor = new(255, 128, 32, 230);
     private const long FlamePulsePeriodMs = 180;
     private const float FocusIndicatorHalfSpan = 22f;
 
@@ -285,7 +288,7 @@ internal sealed class TacticalMapDepthRenderer
         float markerRadius,
         long uiTimeMs = 0)
     {
-        DrawObjectReticle(canvas, centerX, centerY, markerRadius, TacticalMapPalette.Target, GetActiveReticleRotationDegrees(uiTimeMs), _activeGlow);
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, ActiveReticleColor, GetActiveReticleRotationDegrees(uiTimeMs), _activeGlow);
     }
 
     private void DrawObjectReticle(
