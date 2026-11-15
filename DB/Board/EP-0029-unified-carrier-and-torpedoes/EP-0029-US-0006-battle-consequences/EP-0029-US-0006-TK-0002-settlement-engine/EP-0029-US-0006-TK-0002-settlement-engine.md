@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Единоразовая фиксация повреждений
@@ -108,4 +108,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `SimulationEngine.CommitSortieOutcome(session, exitKind)` (atomic, under the world lock): updates the persistent wing from the battle state (survivors keep actual hull/armor/ammo/jam/decoy, destroyed drones become tombstones whose remaining ammo is lost with the magazine, never cargo), records the settlement receipt, increments the carrier revision once, and marks the world ship destroyed when the carrier hull reaches 0. `ExitTacticalBattle` settles owned battles (Completed/Timeout/Stalemate from the result, Aborted when no result) and returns `Settlement` on the response.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0006Tk0002Tests"` — **5/5 passed** (`FinishThenExitSettlesOnce`, `LostDroneAmmoNotRecovered`, `DisabledReturnsDamaged`, `AbortPreservesSpentAmmo`, `HullZeroMarksWorldDestroyed`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-020-us0006tk0002/US-0006-TK-0002/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

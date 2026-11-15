@@ -134,8 +134,18 @@ public sealed partial class SimulationEngine
         {
             if (_tacticalBattleSession is null) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoBattle);
             if (_tacticalBattleSession.Id != request.BattleId) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongBattle);
-            var response = _tacticalBattleSession.Exit(request.CommandId);
+            var session = _tacticalBattleSession;
+            SortieSettlementSnapshot? settlement = null;
+            if (_tacticalBattleSourceShipId is not null)
+            {
+                var kind = session.Battle.Result is { } result
+                    ? MapSortieExitKind(result.Kind, result.Reasons)
+                    : SortieExitKind.Aborted;
+                settlement = CommitSortieOutcome(session, kind);
+            }
+            var response = session.Exit(request.CommandId) with { Settlement = settlement };
             _tacticalBattleSession = null;
+            _tacticalBattleSourceShipId = null;
             SetTacticalBattleCommandBlock(false);
             _tacticalResponses.Clear();
             _tacticalResponseOrder.Clear();
