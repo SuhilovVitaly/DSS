@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Запрос и результат перезарядки
@@ -103,4 +103,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Добавлены `RearmDroneRequest(CommandId, ShipId, DroneId, Quantity, ExpectedRevision)` и `CarrierCommandResponse(Accepted, Reason, Revision, Transferred, Snapshot)`; `IGameSessionConnection.RearmDroneAsync` имеет default, который явно отклоняет (`Accepted=false`, reason `unsupported`) — старый transport не выдумывает успех.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0008Tk0001Tests"` — **2/2 passed** (`RequestAndReceiptRoundTrip`, `UnsupportedConnectionDoesNotInventSuccess`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-025-us0008tk0001/US-0008-TK-0001/focused.trx`.
+- `dotnet build DeepSpaceSaga.sln --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; полный Contracts suite 213/213 passed.
+
+Status: automated PASS (contracts layer); native/product acceptance remains OPEN.

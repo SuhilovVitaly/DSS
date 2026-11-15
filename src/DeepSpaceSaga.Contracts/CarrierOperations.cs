@@ -126,3 +126,30 @@ public sealed record SortieSettlementSnapshot(
     ImmutableArray<string> LostDroneIds,
     int ConsumedTorpedoes,
     SortieExitKind ExitKind);
+
+/// <summary>
+/// Request to transfer torpedoes from the ship's cargo hold into one drone's magazine (US-0008).
+/// The caller names the single drone to rearm; refill-all is intentionally not offered.
+/// <see cref="Quantity"/> must be a positive integer; <see cref="ExpectedRevision"/> is the
+/// carrier revision the caller last observed (0 is not a wildcard).
+/// </summary>
+public sealed record RearmDroneRequest(
+    string CommandId,
+    string ShipId,
+    string DroneId,
+    int Quantity,
+    int ExpectedRevision);
+
+/// <summary>
+/// Authoritative result of a rearm command. A rejection (<see cref="Accepted"/> = false) transfers
+/// nothing; a success carries the authoritative carrier revision, the exact transferred count and the
+/// updated carrier surface so the client never recomputes ammo or cargo locally. A connection that
+/// predates rearm relies on the interface default, which returns an explicit rejection — it never
+/// fabricates a success.
+/// </summary>
+public sealed record CarrierCommandResponse(
+    bool Accepted,
+    string? Reason = null,
+    int Revision = 0,
+    int Transferred = 0,
+    CarrierOperationsSnapshot? Snapshot = null);
