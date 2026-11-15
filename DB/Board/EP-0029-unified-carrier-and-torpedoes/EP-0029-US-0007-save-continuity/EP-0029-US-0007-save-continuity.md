@@ -55,12 +55,12 @@ Workflow approval автоматический по поручению созд�
 
 ## Completion evidence
 
-- AC-01: тикеты TK-0001, TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- AC-02: тикеты TK-0001, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-03: тикеты TK-0001, TK-0002, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-04: тикеты TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- Future evidence: уникальный run под D:/DeepSpaceSaga/artifacts/validation/ep-0029/; после реализации сюда записать результаты и ссылки.
-- Сейчас implementation/automated/native/product: **NOT RUN / OPEN**.
+- AC-01: TK-0001/0002 — `NewTorpedoesSurviveSave21`, `RoundTripAfterLossAndFiveShots` (hull/revision/wing/tombstone/ammo/cargo + settlement receipt roundtrip), `TerminalDestroyedRoundTrip` — PASS.
+- AC-02: TK-0001/0003 — `Save20UpgradesWithoutGrant`, `Save18And19StillRemoveLegacyProjectiles`, `KnownPreCarrierCatalogAccepted` — PASS.
+- AC-03: TK-0001/0002/0003 — `FutureVersionAndInvalidRefsReject`, carrier-state validation, `UnknownFingerprintRejected`, `ChangedExistingCommodityNotWhitelisted` — PASS.
+- AC-04: TK-0002 — `DuringBattleSaveStillRejected`, `SettlementReplayAfterLoadNoOp` — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-022..024-*`.
+- Implementation/automated: **PASS**. Native/product: **OPEN**.
 
 ## Decisions and review log
 
