@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0015-tabletop-navigation-tests
 title: Навигационные тесты боя не проходят по скину Tabletop
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Навигационные тесты боя не проходят по скину Tabletop
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -54,4 +55,12 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Пробел на текущем main подтверждён: фикстура `BattleNavigationTests` без пути настроек всегда записывала `tacticalBattleSkinId: classic`.
+
+- Фикстура: параметр `newProfile` — отдельный каталог с `Settings.json` без скина и копией `Skins/tabletop`, так что выбирается скин по умолчанию нового профиля (Tabletop); каталог удаляется при освобождении. По умолчанию фикстура по-прежнему Classic, остальные тесты не затронуты.
+- Маршруты настройки, старта, движения, залпа, итога, нового боя, отмены и выхода выполняются для `classic` и для нового профиля; каждый тест проверяет `TacticalBattleScreen.SkinId`. Тайм-аут 60 с на тест, чтобы зависание стало падением.
+- Причина прежнего зависания полного прогона (EP-0026-US-0007-TK-0001) чтением кода не найдена.
+
+Тесты (`BattleNavigationTests`, `[Theory]` × {classic, новый профиль}): `RealBattleAndNewBattleReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed`, `ActiveEscapeRequiresConfirmationAndActualExitPrecedesResume`, `ClosingWhileOptionsArePendingCancelsQueryAndRestoresSpeed`, новый `SalvoSkipReplayAndContinueSendOneShotAndExitReturnsToTheWorld`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок; `git diff --check` чист. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
