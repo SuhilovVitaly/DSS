@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Одинаковый облик носителя в мире и бою
@@ -106,4 +106,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`CarrierAppearance` (Ship namespace) — единый стабильный resource key из world `AppearanceId` (`ResourceKey`), fallback `FallbackKey` без потери имени, и общий 32-кадровый `Frame(course)` для ротации (совпадает с `TacticalShipSprites.Frame`).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0010Tk0002Tests"` — **3/3 passed** (`SameAppearanceKeyAcrossWorldAndBattle`, `CarrierRotationAndHitboxStayAligned`, `MissingAssetFallbackKeepsName`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-034-us0010tk0002/US-0010-TK-0002/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
