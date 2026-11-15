@@ -17,9 +17,15 @@ internal static class TacticalBattleSnapshotBuilder
     public static TacticalShotSnapshot Shot(TacticalShot shot, int turn) => new(turn, shot.Shooter.Id, shot.Target.Id,
         Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
     {
-        Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact,
-        TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy,
-        HitRoll = shot.HitRoll, AbsorptionRoll = shot.AbsorptionRoll, Factors = shot.Factors
+        Absorption = shot.Absorption,
+        Absorbed = shot.Absorbed,
+        LethalImpact = shot.LethalImpact,
+        TargetEvading = shot.TargetEvading,
+        Decoyed = shot.Decoyed,
+        ChanceWithoutDecoy = shot.ChanceWithoutDecoy,
+        HitRoll = shot.HitRoll,
+        AbsorptionRoll = shot.AbsorptionRoll,
+        Factors = shot.Factors
     };
 
     internal static TacticalHitFactors HitFactors(TacticalCandidate candidate, double conditionalChance)
@@ -55,11 +61,23 @@ internal static class TacticalBattleSnapshotBuilder
         foreach (var d in battle.Drones)
         {
             var w = d.Weapon;
-            var build = new TacticalBuildSnapshot(d.Frame.Name, d.PilotId, battle.Catalog.Pilots[d.PilotId].Name, w.Id, w.Name,
+            // An owned drone carries the persistent crew display name; scenario/diagnostic drones
+            // keep resolving the catalog alias named by PilotId.
+            var build = new TacticalBuildSnapshot(d.Frame.Name, d.PilotId,
+                d.PilotName ?? battle.Catalog.Pilots[d.PilotId].Name, w.Id, w.Name,
                 w.DamageMin, w.DamageMax, w.Piercing, w.HitBonus, w.Range, w.ArcDeg, w.RangeBonus, w.RearKillChance,
                 d.Plates.Id, d.Plates.Name, d.Shield?.Id, d.Shield?.Name, d.Shield?.Defense ?? 0, d.ShieldCount, d.Frame.ShieldSlots,
                 d.Frame.FrameMassKg, d.Frame.ReferenceMassKg, w.MassKg, d.Plates.MassKg, d.Shield?.MassKg ?? 0)
-            { EngineSlots = d.Frame.EngineSlots, ModuleSlots = d.Frame.ModuleSlots, DecoyId = d.Decoy?.Id, DecoyName = d.Decoy?.Name, DecoyMaxCharges = d.Decoy?.Charges ?? 0 };
+            {
+                EngineSlots = d.Frame.EngineSlots,
+                ModuleSlots = d.Frame.ModuleSlots,
+                DecoyId = d.Decoy?.Id,
+                DecoyName = d.Decoy?.Name,
+                DecoyMaxCharges = d.Decoy?.Charges ?? 0,
+                PilotGender = d.PilotGender,
+                PilotPortraitAssetId = d.PilotPortraitAssetId,
+                PilotRole = d.PilotRole,
+            };
             var limits = d.Limits;
             units.Add(new(d.Id, d.Side, TacticalUnitKind.Drone, d.Frame.Id, Pose(d.Pose), d.Speed, d.Hull, d.MaxHull, d.Armor, d.MaxArmor,
                 d.Status switch { TacticalDroneStatus.Air => TacticalUnitState.Air, TacticalDroneStatus.Disabled => TacticalUnitState.Disabled, _ => TacticalUnitState.Destroyed },
