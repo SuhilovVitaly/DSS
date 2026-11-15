@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0013-battle-metrics-export
 title: Метрики боя копятся в профиле пользователя, тест ничего не проверяет
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Метрики боя копятся в профиле пользователя, тест ничего не проверяет
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -38,6 +39,7 @@ revision: 1
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMetrics.cs:17-20` | Путь экспорта. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFlow.cs:94, 101, 109` | Вызовы экспорта. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/BattleMetricsTests.cs:18, 40-61` | Тест без утверждений. |
+| `tests/DeepSpaceSaga.Client.Tests/TestAssemblySetup.cs` | Добавлено при исполнении: без `DSS_VALIDATION_ROOT` тесты Client пишут метрики во временный каталог, который удаляется по завершении процесса. |
 
 ## Implementation steps
 
@@ -56,4 +58,13 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: без `DSS_VALIDATION_ROOT` отчёты писались в `%LOCALAPPDATA%/DeepSpaceSaga/BattleMetrics` без ограничения, тест 24 боёв ничего не проверял.
+
+- Выбрано ограничение с ротацией, а не отключение экспорта по умолчанию: журналы обучения EP-0028 используют тот же каталог.
+- `TacticalBattleMetrics`: после записи в каталоге остаются 50 новейших отчётов (`MaxReports`); удаляются только файлы `<64 hex>.json` вместе с их `.tutorial.json`, текущий отчёт не удаляется, ошибки удаления пропускаются. Тестовый хук `DirectoryOverride`.
+- `TestAssemblySetup`: без `DSS_VALIDATION_ROOT` тесты Client пишут во временный каталог (`%TEMP%/DeepSpaceSaga.Client.Tests/BattleMetrics-<guid>`), который удаляется по завершении процесса; `Interface.log` не переносится.
+- Ротация действует и в каталоге `DSS_VALIDATION_ROOT`; в профиле игрока накопленные файлы сократятся до 50 при следующей записи.
+
+Тесты (`BattleMetricsTests`): `ClientTestsExportBattleMetricsOutsideTheUserProfile`, `ExportKeepsOnlyTheNewestReportsAndTheirTutorialJournals`; `HeadlessDefaultTargetBattlesProduceComparableAccuracyReports` проверяет содержимое каждого из 24 отчётов.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
