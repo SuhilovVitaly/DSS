@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01, AC-02]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Согласованная проекция после боя
@@ -105,4 +105,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+No production API change — this ticket verifies the post-settlement projection is consistent. `CarrierOperations` already projects the settled hull/wing/crew; settlement never touches world coordinates, and a destroyed ship keeps blocking new sorties (`CarrierNotReady`) and world commands via the existing `IsDestroyed` guards.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0006Tk0003Tests"` — **3/3 passed** (`WorldCoordinatesUnchangedAfterSortie`, `WorldSnapshotMatchesTacticalFinal`, `DestroyedShipCannotResumeCommands`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-021-us0006tk0003/US-0006-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
