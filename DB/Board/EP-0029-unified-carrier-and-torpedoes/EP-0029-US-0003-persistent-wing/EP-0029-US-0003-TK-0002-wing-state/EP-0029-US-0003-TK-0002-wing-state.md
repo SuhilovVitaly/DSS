@@ -131,3 +131,18 @@ Evidence (real content through `EngineContentLoader.CreateEngineFromScenarioFile
 
 Status: automated PASS (engine layer); native/product acceptance remains OPEN.
 
+## Remediation 2026-11-15 (follow-up: null/blank equipment ids)
+
+Verified finding (validation P3 after Batch R-A): a null `hangarModuleId`, `frameId`, `weaponId`, `armorId` or engine id reached a `Dictionary`/`ImmutableDictionary` probe and threw `ArgumentNullException` instead of the validator's `ScenarioException` contract. A malformed save or scenario therefore failed with an infrastructure exception rather than a clean carrier-state rejection.
+
+Fix (narrow): `OwnedWingValidator.Validate` rejects a null/blank `hangarModuleId` before the capacity probe; `ValidateCatalogReferences` rejects null/blank `frameId`, `weaponId`, `armorId`, blank `shieldId`/`decoyId` and empty engine ids before any catalogue lookup. Null `shieldId`/`decoyId` keep their documented meaning ("no shield"/"no decoy") and stay valid.
+
+Named test: `Ep0029Us0003Tk0002Tests.NullOrBlankEquipmentIdsRejectCleanly` — null hangar/frame/weapon/armor and a null engine entry now throw `ScenarioException`; blank hangar/frame/shield/decoy ids are rejected the same way; a first drone with `shieldId`/`decoyId` null and zero counts is still accepted.
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0003Tk0002Tests"` → 1 failed / 6 passed; the new test hit `System.ArgumentNullException` (Parameter 'key') — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-050-us0003tk0002-followup/red.stdout.txt`.
+- Green: same filter → 7/7 passed — `.../run-050-us0003tk0002-followup/US-0003-TK-0002/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
+

@@ -158,6 +158,10 @@ internal static class OwnedWingValidator
                 throw new ScenarioException("Owned drone has empty droneId.");
             if (!droneIds.Add(drone.DroneId))
                 throw new ScenarioException($"Duplicate droneId '{drone.DroneId}'.");
+            // A null/blank hangar id would otherwise surface as ArgumentNullException from the
+            // capacity dictionary probe instead of a clean scenario rejection.
+            if (string.IsNullOrWhiteSpace(drone.HangarModuleId))
+                throw new ScenarioException($"Drone '{drone.DroneId}' has empty hangarModuleId.");
             if (!slots.Add((drone.HangarModuleId, drone.SlotIndex)))
                 throw new ScenarioException($"Duplicate hangar slot '{drone.HangarModuleId}/{drone.SlotIndex}'.");
             if (!hangarCapacity.TryGetValue(drone.HangarModuleId, out int capacity))
@@ -190,6 +194,24 @@ internal static class OwnedWingValidator
 
     private static void ValidateCatalogReferences(OwnedDroneData drone, TacticalBattleCatalog catalog)
     {
+        // Guard every id before a catalogue lookup: ImmutableDictionary.ContainsKey(null) throws
+        // ArgumentNullException, so a malformed save/scenario must be rejected as ScenarioException.
+        if (string.IsNullOrWhiteSpace(drone.FrameId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' has empty frameId.");
+        if (string.IsNullOrWhiteSpace(drone.WeaponId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' has empty weaponId.");
+        if (string.IsNullOrWhiteSpace(drone.ArmorId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' has empty armorId.");
+        if (drone.ShieldId is not null && string.IsNullOrWhiteSpace(drone.ShieldId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' has blank shieldId.");
+        if (drone.DecoyId is not null && string.IsNullOrWhiteSpace(drone.DecoyId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' has blank decoyId.");
+
+        var engineIds = drone.EngineIds ?? [];
+        foreach (string engineId in engineIds)
+            if (string.IsNullOrWhiteSpace(engineId))
+                throw new ScenarioException($"Drone '{drone.DroneId}' references an empty engine id.");
+
         if (!catalog.Layouts.Contains(drone.FrameId))
             throw new ScenarioException($"Drone '{drone.DroneId}' references unknown layout '{drone.FrameId}'.");
         var layout = catalog.Layouts[drone.FrameId];
@@ -207,7 +229,6 @@ internal static class OwnedWingValidator
         if (drone.DecoyId is { } decoyId && !catalog.Decoys.Contains(decoyId))
             throw new ScenarioException($"Drone '{drone.DroneId}' references unknown decoy '{decoyId}'.");
 
-        var engineIds = drone.EngineIds ?? [];
         foreach (string engineId in engineIds)
             if (!catalog.Engines.Contains(engineId))
                 throw new ScenarioException($"Drone '{drone.DroneId}' references unknown engine '{engineId}'.");

@@ -268,4 +268,39 @@ public sealed class Ep0029Us0003Tk0002Tests : IDisposable
         Assert.Equal(4, wing.Length);
         Assert.All(wing, d => Assert.Empty(d.ReadinessReasons));
     }
+
+    [Fact]
+    public void NullOrBlankEquipmentIdsRejectCleanly()
+    {
+        using var engine = LoadRealContent();
+        var wing = StarterShapedWing();
+        engine.SetOwnedWingForTests("SPC-0001", wing);
+
+        // Null ids must be a domain rejection, never an ArgumentNullException from a dictionary probe.
+        AssertRejected(engine, wing, d => d with { HangarModuleId = null! });
+        AssertRejected(engine, wing, d => d with { FrameId = null! });
+        AssertRejected(engine, wing, d => d with { WeaponId = null! });
+        AssertRejected(engine, wing, d => d with { ArmorId = null! });
+        AssertRejected(engine, wing, d => d with { EngineIds = ["drive.standard", null!] });
+
+        // Blank ids are unknown references under the same ScenarioException contract.
+        AssertRejected(engine, wing, d => d with { HangarModuleId = "  " });
+        AssertRejected(engine, wing, d => d with { FrameId = "  " });
+        AssertRejected(engine, wing, d => d with { ShieldId = "  " });
+        AssertRejected(engine, wing, d => d with { DecoyId = "  " });
+
+        // Null optional equipment means "none" and stays valid (no over-rejection).
+        engine.SetOwnedWingForTests("SPC-0001",
+            wing.Select((d, i) => i == 0
+                ? d with
+                {
+                    ShieldId = null,
+                    ShieldCount = 0,
+                    ShieldSlots = 0,
+                    DecoyId = null,
+                    DecoyMaxCharges = 0,
+                    DecoyCharges = 0,
+                }
+                : d).ToArray());
+    }
 }
