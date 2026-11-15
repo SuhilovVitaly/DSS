@@ -37,9 +37,11 @@ public sealed class ScrollTextPanel
         if (!float.IsFinite(uiScale) || uiScale <= 0) throw new ArgumentOutOfRangeException(nameof(uiScale));
         if (Bounds == bounds && _scale == uiScale) return;
         bool follow = AutoScroll && AtBottom;
-        ResetInput();
+        // Wrapping depends only on width and scale; a height or position change keeps the lines and an active drag.
+        bool rewrap = Bounds.Width != bounds.Width || _scale != uiScale;
         Bounds = bounds; _scale = uiScale;
-        Reflow(follow);
+        if (rewrap) { ResetInput(); Reflow(follow); }
+        else ScrollOffset = follow ? MaximumScroll : Math.Clamp(ScrollOffset, 0, MaximumScroll);
     }
     private bool AtBottom => ScrollOffset >= MaximumScroll - 0.5f;
     public void SetText(string text)

@@ -292,6 +292,28 @@ public sealed class WidgetsListsTests
     }
 
     [Fact]
+    public void HeightOnlyLayoutKeepsDragAndWrappedLinesButWidthChangeResetsThem()
+    {
+        var panel = new ScrollTextPanel { AutoScroll = false };
+        panel.Layout(new(0, 0, 300, 180));
+        panel.SetText(string.Join('\n', Enumerable.Range(0, 100)));
+        var lines = panel.Lines;
+        var thumb = panel.ScrollThumb;
+        Assert.True(panel.OnMouseDown(thumb.MidX, thumb.MidY, MouseButton.Left));
+        Assert.True(panel.IsDragging);
+
+        panel.Layout(new(0, 16, 300, 180));
+        Assert.True(panel.IsDragging);
+        Assert.True(lines == panel.Lines);
+        panel.OnMouseMove(thumb.MidX, 100000);
+        Assert.Equal(panel.MaximumScroll, panel.ScrollOffset);
+
+        panel.Layout(new(0, 16, 280, 180));
+        Assert.False(panel.IsDragging);
+        Assert.False(lines == panel.Lines);
+    }
+
+    [Fact]
     public void OptionalTextFilterKeepsOldInputBehaviorAndAcceptsSeedMinusCharacters()
     {
         var ordinary = new TextInputBox(); Assert.True(ordinary.TryAppendChar('Ж'));
