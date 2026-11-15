@@ -8,11 +8,11 @@ approval_kind: workflow-only
 layer: content-data
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0029-US-0013-TK-0002-client-acceptance]
-files_touched: 1
+files_touched: 3
 serves: [AC-01, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Проверка starter assets и балансного бюджета
@@ -36,6 +36,8 @@ implementation_status: not-started
 | File | Current state | Allowed change |
 |---|---|---|
 | [tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0013Tk0003Tests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0013Tk0003Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0013Tk0003Tests ниже с независимым oracle. |
+| [tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs) | Ожидает старый 12-cell/6-module Default; starter manifest и pilot skills 0..100 делают его red. | Process-only amendment (1→3 files): starter branch для Default/Tutorial (24 cells/9 modules/8 beds/6 crew/cargo 3 stacks), старые сценарии Default_500/Docked/Undocked/PlayerShipOnly/MarketProfiles остаются без изменения ожиданий. |
+| [tests/DeepSpaceSaga.Client.Tests/TacticalBattle/ScenarioModuleCleanupTests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/TacticalBattle/ScenarioModuleCleanupTests.cs) | `CurrentContentHasOnlyWorldShipIdentityAndNoLegacyDefinitions` требует ровно одно свойство в каждой ship-class row; pre-existing red US-0001-TK-0003 (tetrarch hullMax/tacticalManeuver/appearanceId). | Process-only amendment (1→3 files): assert трёх typeIds, разрешить tetrarch profile-поля; legacy module cleanup assertions сохраняются. |
 
 ## Public API after the change
 
@@ -89,7 +91,7 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Definition of Done
 
-- Шаги выполнены в 1 разрешённых файлах, один production layer.
+- Шаги выполнены в 3 разрешённых файлах (allowlist amendment 1→3, process-only), один production layer.
 - Named tests подтверждают часть AC-01, AC-03; полное покрытие story сверено по карте.
 - Focused tests и owning build/format выполнены; исходные падения записаны отдельно.
 - API/schema, identity, atomic rejection и остатки ресурсов соответствуют эпику.
@@ -103,3 +105,17 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 ## Execution evidence
 
 NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+
+## Execution evidence 2026-11-15
+
+Implementation status: **implemented**. Automated tests are **NOT RUN** in this batch по прямому указанию пользователя (no `dotnet test`, no TDD red/green); named tests written and deferred to the final full-suite run. PASS не заявляется; A-01/A-02 balance values не менялись.
+
+Изменено (allowlist expansion 1→3, process-only; production-код не менялся):
+- `tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0013Tk0003Tests.cs` — новый content acceptance class:
+  - `ManifestAndPortraitAssetsResolve` — оба New Game stub ссылаются на `Data/Ships/starter-carrier.json` без inline carrier; manifest schemaVersion1/ship.tetrarch; все W4 crew portraits + captain portrait существуют и декодируются в source tree и shipped output; tactical pilot aliases используют те же портреты; RU/EN locale содержат tutorial intro/outcome тексты.
+  - `StarterTotalsIndependentOracle` — literal 24 cells/15 occupied/8 beds (2×four-cabins)/6 crew/2 reserved/4 drones/12+12+6+6 loaded + 42 hold = 78; production loader материализует те же totals для Default и Tutorial.
+  - `FiniteAmmoSeedMatrixProducesReport` (`Category=Balance`) — seeds1..100, одинаковая Enter-only policy; outcomes/losses/stalemate/consumption пишутся в temp/validation artifact (`US-0013-TK-0003/seed-matrix-1-100.txt`), win probability не утверждается; проверяется только завершение каждого боя и consumed в 0..loaded.
+- `tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs` — starter branch для Default/Tutorial: 24 cells, 9 modules (quarters (3,1)/(5,1), bays (1,2)/(6,2) 2×2, bridge/cargo/scanner/generator/engine), 15 occupied, cargo 3 stacks incl. 42 torpedoes, 6 crew, pilot skills 0..100, bay SP250; Default_500/Docked/Undocked/PlayerShipOnly/MarketProfiles ожидания не изменены.
+- `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/ScenarioModuleCleanupTests.cs` — `CurrentContentHasOnlyWorldShipIdentityAndNoLegacyDefinitions`: три typeId + разрешённые tetrarch hullMax400/tacticalManeuver35/appearanceId carrier; legacy cleanup assertions сохранены.
+
+Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; native/product acceptance **OPEN**.

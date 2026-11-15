@@ -61,13 +61,15 @@ public sealed class ScenarioModuleCleanupTests
             foreach (string retired in new[] { "TorpedoLauncher", "CountermeasureLauncher", "CombatLaser" })
                 Assert.Empty(ContentFiles(Path.Combine(root, "Data", area, retired)));
         using var classes = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "Data", "Ships", "ship-classes.json")));
+        var classRows = classes.RootElement.GetProperty("shipClasses").EnumerateArray().ToArray();
         Assert.Equal(new[] { "ship.tetrarch", "ship.mukha", "ship.shmel" },
-            classes.RootElement.GetProperty("shipClasses").EnumerateArray().Select(row =>
-            {
-                var field = Assert.Single(row.EnumerateObject());
-                Assert.Equal("typeId", field.Name);
-                return field.Value.GetString();
-            }));
+            classRows.Select(row => row.GetProperty("typeId").GetString()));
+        // The tetrarch carries the world carrier profile (EP-0029 US-0001); the other rows stay
+        // world-identity-only. Asserting one property on every row was the stale pre-carrier check.
+        var tetrarch = classRows.Single(row => row.GetProperty("typeId").GetString() == "ship.tetrarch");
+        Assert.Equal(400, tetrarch.GetProperty("hullMax").GetInt32());
+        Assert.Equal(35, tetrarch.GetProperty("tacticalManeuver").GetInt32());
+        Assert.Equal("carrier", tetrarch.GetProperty("appearanceId").GetString());
     }
 
     private static IEnumerable<string> ContentFiles(string directory) => Directory.Exists(directory)
