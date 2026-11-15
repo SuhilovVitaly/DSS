@@ -170,7 +170,8 @@ public sealed class DropDown<T>
         var role = SkinStyle.Control("control.dropdown", !Enabled ? "disabled" : HasFocus ? "focused" : "normal");
         canvas.Save();
         canvas.ClipRect(Bounds);
-        if (SkinStyle.Current is null || SkinStyle.HasBoxStyle(role))
+        bool fallback = UsesComboBoxFallback(role);
+        if (!fallback)
         {
             ControlVisuals.Frame(canvas, Bounds, HasFocus, Enabled, _scale, role);
             DrawChevron(canvas, role);
@@ -179,13 +180,34 @@ public sealed class DropDown<T>
         {
             canvas.Translate(Bounds.Left, Bounds.Top);
             canvas.Scale(_scale);
-            XenonComboBox.DrawClosed(canvas, SKRect.Create(0, 0, Bounds.Width / _scale, Bounds.Height / _scale), "", "", HasFocus && Enabled);
+            XenonComboBox.DrawClosed(canvas, LocalField, "", "", HasFocus && Enabled);
         }
         canvas.Restore();
         using var paint = ControlText.Paint(_scale, role, SelectedLabel, Enabled);
-        string caption = ControlText.Ellipsize(SelectedLabel, Math.Max(0, Bounds.Width - 56 * _scale), paint);
-        ControlVisuals.DrawLabel(canvas, caption, new(Bounds.Left + 44 * _scale, Bounds.Top, Bounds.Right - 12 * _scale, Bounds.Bottom), paint);
+        var captionRect = CaptionBounds(fallback);
+        float captionWidth = fallback ? captionRect.Width : Bounds.Width - 56 * _scale;
+        string caption = ControlText.Ellipsize(SelectedLabel, Math.Max(0, captionWidth), paint);
+        ControlVisuals.DrawLabel(canvas, caption, captionRect, paint);
     }
+
+    private static bool UsesComboBoxFallback(SkinStyle.Role role) => SkinStyle.Current is not null && !SkinStyle.HasBoxStyle(role);
+    private SKRect LocalField => SKRect.Create(0, 0, Bounds.Width / _scale, Bounds.Height / _scale);
+    private SKRect ToScreen(SKRect local) => new(Bounds.Left + local.Left * _scale, Bounds.Top + local.Top * _scale,
+        Bounds.Left + local.Right * _scale, Bounds.Top + local.Bottom * _scale);
+
+    /// <summary>
+    /// Caption area for the active skin scope. A battle skin without a <c>control.dropdown</c> style falls back
+    /// to the combo-box field, whose caption must stay clear of the chevron on the right.
+    /// </summary>
+    internal SKRect CaptionBounds() =>
+        CaptionBounds(UsesComboBoxFallback(SkinStyle.Control("control.dropdown", !Enabled ? "disabled" : HasFocus ? "focused" : "normal")));
+
+    private SKRect CaptionBounds(bool fallback) => fallback
+        ? ToScreen(XenonComboBox.ValueBounds(LocalField))
+        : new(Bounds.Left + 44 * _scale, Bounds.Top, Bounds.Right - 12 * _scale, Bounds.Bottom);
+
+    /// <summary>Chevron area of the combo-box fallback in screen coordinates.</summary>
+    internal SKRect FallbackChevronBounds() => ToScreen(XenonComboBox.ChevronBounds(LocalField));
 
     private void DrawChevron(SKCanvas canvas, SkinStyle.Role role)
     {

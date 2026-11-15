@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0010-dropdown-skin-fallback
 title: Выпадающий список в боевых скинах Classic и Xenon Star
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Выпадающий список в боевых скинах Classic и Xenon Star
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -56,4 +57,12 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: в боевом скине без роли `control.dropdown` (Classic, Xenon Star) поле рисует `XenonComboBox.DrawClosed` с шевроном у `Right-14`, а подпись шла от `Left+44·s` до `Right-12·s` и заходила под шеврон.
+
+- Из двух вариантов шага 2 выбран более узкий — резерв справа 28 px под шеврон. В запасном пути подпись размещается в области значения поля (`Left+10`…`Right-28` в единицах поля с масштабом) и обрезается по ней; отрисовка поля не изменена.
+- `XenonComboBox`: `ValueBounds` и `ChevronBounds` вынесены как internal-помощники (геометрия прежняя).
+- Остаток: фон поля в Classic и Xenon Star остаётся в стиле Tabletop; полностью «родное» для скина поле — отдельное решение по оформлению.
+
+Тест: `WidgetsListsTests.DropDownCaptionStaysClearOfChevronInBattleSkinWithoutDropdownRole` (масштаб 1 и 1,5, с фокусом и без).
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
