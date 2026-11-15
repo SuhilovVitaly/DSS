@@ -157,4 +157,6 @@ public sealed record TacticalBattleSnapshot(string BattleId, ulong Revision, Tac
     public ImmutableArray<string> DecoysLaunched { get; init; } = [];
     public ImmutableArray<TacticalFireQueueEntry> FireQueue { get; init; } = [];
     public ImmutableArray<TacticalFireStepSnapshot> FireSteps { get; init; } = [];
+    /// <summary>World ship id this owned sortie launched from (null for diagnostic/legacy battles).</summary>
+    public string? SourceShipId { get; init; }
 }

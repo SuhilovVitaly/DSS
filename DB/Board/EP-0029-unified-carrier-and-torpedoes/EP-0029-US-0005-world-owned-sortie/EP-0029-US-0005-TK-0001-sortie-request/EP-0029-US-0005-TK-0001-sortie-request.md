@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Запрос вылета и identity мира
@@ -106,4 +106,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added optional `StartTacticalBattleRequest.SourceShipId`/`ExpectedCarrierRevision` (owned entry requires both; revision 0 is not a wildcard), `TacticalBattleSnapshot.SourceShipId`, and appended rejection codes `WrongShip=27`/`NoReadyDrones=28`/`CarrierNotReady=29`/`StaleCarrierState=30` (append-only).
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests --filter "FullyQualifiedName~Ep0029Us0005Tk0001Tests"` — **2/2 passed** (`OwnedStartSerializesIdentity`, `OldRequestsStillDeserialize`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-016-us0005tk0001/US-0005-TK-0001/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `git diff --check` clean.
+
+Status: automated PASS (contracts layer); native/product acceptance remains OPEN.
