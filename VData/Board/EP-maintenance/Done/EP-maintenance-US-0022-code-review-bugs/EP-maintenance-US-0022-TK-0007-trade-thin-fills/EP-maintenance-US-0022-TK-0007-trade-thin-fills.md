@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0007-trade-thin-fills
 title: Торговля: тонкие полосы и полоска выбора теряют цвет
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Торговля: тонкие полосы и полоска выбора теряют цвет
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -56,4 +57,12 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `TradePainter.Box` всегда рисовал через `TabletopStyle.Draw`, который дважды сжимает прямоугольник, и у полос толщиной 3–5 px цвет почти пропадал.
+
+- `TabletopStyle.Fill`: плоская заливка без кромки и фаски (общая кисть `_fillPaint`).
+- `TradePainter.Box`: прямоугольник с меньшей стороной меньше 8 px заливается плоско, крупные рисуются как раньше. `Bar` рисует дорожку и сегменты (до, рост, убыль) плоской заливкой с прежними цветами.
+- Другие экраны не затронуты: `TabletopStyle.Draw` не изменён.
+
+Тесты (`TradeUxTests`): `Selected_row_strip_is_drawn_in_gold`, `Thin_bar_fills_full_height_and_shows_a_small_preview_change`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.

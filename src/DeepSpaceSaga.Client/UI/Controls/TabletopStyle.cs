@@ -63,6 +63,17 @@ internal static class TabletopStyle
         canvas.DrawRect(rect, paint);
     }
 
+    /// <summary>Flat fill without edge or bevel, for strips too thin to keep colour after the double inset of <see cref="Draw"/>.</summary>
+    internal static void Fill(SKCanvas canvas, SKRect rect, SKColor fill)
+    {
+        if (rect.IsEmpty)
+            return;
+
+        var paint = _fillPaint ??= new SKPaint();
+        paint.Color = fill;
+        canvas.DrawRect(rect, paint);
+    }
+
     internal static void Label(SKCanvas canvas, SKRect rect, string text, SKPaint paint)
     {
         if (rect.IsEmpty)

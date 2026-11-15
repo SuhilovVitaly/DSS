@@ -16,9 +16,14 @@ internal sealed class TradePainter(SKCanvas canvas) : IDisposable
         Red = TabletopStyle.Danger, Selected = TabletopStyle.Steel;
     private readonly SKPaint _line = new() { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
     private readonly SKPaint _text = new() { IsAntialias = true, Typeface = MenuStyle.TypefaceRegular };
-    internal void Box(SKRect rect, SKColor? color = null, SKColor? border = null) =>
+    /// <summary>Below this short side the edge and bevel of <see cref="TabletopStyle.Draw"/> would eat the colour.</summary>
+    private const float ThinSide = 8;
+    internal void Box(SKRect rect, SKColor? color = null, SKColor? border = null)
+    {
+        if (Math.Min(rect.Width, rect.Height) < ThinSide) { TabletopStyle.Fill(canvas, rect, color ?? Surface); return; }
         TabletopStyle.Draw(canvas, rect, color ?? Surface,
             recessed: color is null, highlighted: border is not null && border != Border);
+    }
 
     internal void Line(float x, float y, float right, SKColor? color = null)
     { _line.Color = color ?? Border; canvas.DrawLine(x, y, right, y, _line); }
@@ -70,12 +75,13 @@ internal sealed class TradePainter(SKCanvas canvas) : IDisposable
     }
     internal void Bar(SKRect rect, double before, double after)
     {
-        Box(rect, Border);
+        // Track and segments are flat fills so short changes stay visible at full height.
+        TabletopStyle.Fill(canvas, rect, Border);
         float first = rect.Left + rect.Width * (float)Math.Clamp(before, 0, 1);
         float last = rect.Left + rect.Width * (float)Math.Clamp(after, 0, 1);
-        if (first > rect.Left) Box(new(rect.Left, rect.Top, first, rect.Bottom), Accent);
-        if (last > first) Box(new(first, rect.Top, last, rect.Bottom), Green);
-        if (last < first) Box(new(last, rect.Top, first, rect.Bottom), Amber.WithAlpha(180));
+        if (first > rect.Left) TabletopStyle.Fill(canvas, new(rect.Left, rect.Top, first, rect.Bottom), Accent);
+        if (last > first) TabletopStyle.Fill(canvas, new(first, rect.Top, last, rect.Bottom), Green);
+        if (last < first) TabletopStyle.Fill(canvas, new(last, rect.Top, first, rect.Bottom), Amber.WithAlpha(180));
     }
     internal void Icon(string itemId, SKRect rect)
     {
