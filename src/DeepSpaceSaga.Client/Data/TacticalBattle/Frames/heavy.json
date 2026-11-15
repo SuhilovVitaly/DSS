@@ -9,5 +9,6 @@
   "turnCapDeg": 70,
   "engineSlots": 2,
   "shieldSlots": 2,
-  "moduleSlots": 1
+  "moduleSlots": 1,
+  "ammoCapacity": 12
 }

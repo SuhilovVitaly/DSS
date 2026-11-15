@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Товар торпеды и ёмкость рам
@@ -106,4 +106,11 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `item.drone-torpedo.t1` (Cargo/Piece/1kg/60 credits/step1, SKU `ITM-3101`, no legacy `item.ammo.torpedo` prefix) and `ammoCapacity` 6/12/6 on the light/heavy/thug frames.
+
+**Allowlist expansion (recorded before implementation):** the frame JSON is deserialized by the engine loader with `UnmappedMemberHandling.Disallow` + camelCase, so a new `ammoCapacity` JSON field requires a matching `BattleFrame.AmmoCapacity` engine field (default 0) or the engine refuses to boot. Added `TacticalBattleDefinitions.cs` to scope for that one optional field; no other engine behavior changed.
+
+- `dotnet test tests/DeepSpaceSaga.Client.Tests --filter "FullyQualifiedName~Ep0029Us0004Tk0002Tests|FullyQualifiedName~TetrarchClassContentTests"` — **8/8 passed** (3 new + content-load regression) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-012-us0004tk0002/US-0004-TK-0002/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (content-data layer); native/product acceptance remains OPEN.

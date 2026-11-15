@@ -24,7 +24,7 @@ internal sealed record SystemEffect(string Effect, int Weight);
 
 internal sealed record BattleFrame(string Id, string Name, int Hull, double FrameMassKg = 0,
     double ReferenceMassKg = 0, double MinSpeed = 0, double MaxSpeedCap = 0, double TurnCapDeg = 0,
-    int EngineSlots = 0, int ShieldSlots = 1, int? Maneuver = null, int ModuleSlots = 0);
+    int EngineSlots = 0, int ShieldSlots = 1, int? Maneuver = null, int ModuleSlots = 0, int AmmoCapacity = 0);
 internal sealed record BattleWeapon(string Id, string Name, int Tier, double ArcDeg, double Range,
     int DamageMin, int DamageMax, int Piercing, int HitBonus, double RearKillChance, double MassKg,
     double? RangeBonus = null);
