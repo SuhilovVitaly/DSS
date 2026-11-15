@@ -95,12 +95,19 @@ internal sealed class PilotCardColumn
 
     public bool Scroll(SKPoint point, float delta)
     {
-        if (!float.IsFinite(delta) || delta == 0 || Layout.MaxScroll == 0 ||
-            !PilotColumnLayout.Viewport.Contains(point) && !ContainsPanel(point))
+        if (!float.IsFinite(delta) || delta == 0 || Layout.MaxScroll == 0 || !ContainsColumn(point))
             return false;
         _scroll = Math.Clamp(_scroll - 40 * Math.Sign(delta), 0, Layout.MaxScroll);
         return true;
     }
+
+    // The slim column only owns its visible cards and panels; the map shows between and beside them.
+    private bool ContainsColumn(SKPoint point) => ContainsPanel(point) || (Layout.Slim
+        ? Hit(point) is not null
+        : PilotColumnLayout.Viewport.Contains(point));
+
+    internal SKRect ScrollTrack => SKRect.Create(Layout.Slim ? 158 : 198, PilotColumnLayout.Viewport.Top, 2,
+        PilotColumnLayout.Viewport.Height);
 
     public void Arrange(TacticalBattleFrame frame, IReadOnlyList<PilotCard> cards)
     {
@@ -186,15 +193,22 @@ internal sealed class PilotCardColumn
         finally { c.Restore(); }
 
         if (Layout.MaxScroll == 0) return;
-        var track = SKRect.Create(198, PilotColumnLayout.Viewport.Top, 2, PilotColumnLayout.Viewport.Height);
+        var track = ScrollTrack;
         float thumbHeight = Math.Max(24, track.Height * track.Height / Layout.ContentHeight);
         float thumbTop = track.Top + (track.Height - thumbHeight) * Layout.Scroll / Layout.MaxScroll;
         const string scrollRole = "ui.pilot-card.scroll";
         var role = new Skin.Role(scrollRole, ScopeRoot: scrollRole);
         using var paint = new SKPaint { IsAntialias = true, Color = Skin.Color(role, "fill", Track) };
-        c.DrawRoundRect(track, 1, 1, paint);
-        paint.Color = Skin.Color(role, "stroke", Muted);
-        c.DrawRoundRect(SKRect.Create(track.Left, thumbTop, track.Width, thumbHeight), 1, 1, paint);
+        c.Save();
+        try
+        {
+            // In the slim column the track runs beside the cards and passes under the command panels.
+            foreach (var panel in VisiblePanels) c.ClipRect(panel, SKClipOperation.Difference);
+            c.DrawRoundRect(track, 1, 1, paint);
+            paint.Color = Skin.Color(role, "stroke", Muted);
+            c.DrawRoundRect(SKRect.Create(track.Left, thumbTop, track.Width, thumbHeight), 1, 1, paint);
+        }
+        finally { c.Restore(); }
     }
 
     private void DrawCards(SKCanvas c, PilotPortraitCatalog portraits)

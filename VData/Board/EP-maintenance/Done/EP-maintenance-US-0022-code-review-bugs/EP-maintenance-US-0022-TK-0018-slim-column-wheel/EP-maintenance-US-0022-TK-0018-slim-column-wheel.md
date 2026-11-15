@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0018-slim-column-wheel
 title: Колесо мыши над картой у узкой колонки прокручивает колонку
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Колесо мыши над картой у узкой колонки прокручивает колонку
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -56,4 +57,11 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `PilotCardColumn.Scroll` в узком режиме принимал любую точку `Viewport` (x до 196), хотя карточки занимают x 6…156, поэтому колесо над картой правее карточек прокручивало колонку; полоса прокрутки рисовалась на x 198…200 поверх правого края панели.
+
+- `PilotCardColumn.Scroll`: в узком режиме колонка принимает колесо только над видимыми карточками и панелью; в классическом режиме поведение прежнее. Зазоры между карточками и панелью теперь масштабируют карту, как и клики.
+- Полоса прокрутки в узком режиме у правого края карточек (x 158, `ScrollTrack`); видимые панели вырезаются из области её отрисовки, поэтому за высокой панелью ползунок может быть частично скрыт.
+
+Тест: `TabletopColumnLayoutTests.Slim_overflowing_column_scrolls_only_over_cards_and_panels_and_keeps_track_off_the_panel` (проверка на уровне колонки, точки (175, 600) и (195, 600) вне панели).
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
