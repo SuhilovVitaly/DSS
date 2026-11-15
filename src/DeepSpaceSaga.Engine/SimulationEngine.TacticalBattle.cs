@@ -101,19 +101,22 @@ public sealed partial class SimulationEngine
 
         // Ready wing: a destroyed/tombstoned or disabled drone is never deployed, and a drone whose
         // hangar is not structurally intact, powered on and operationally ready cannot launch. The
-        // approved filter keeps DroneId order; an empty ready wing refuses entry (never a fallback).
-        var readyWing = GetOwnedWing(sourceShipId)
+        // assembly receives the FULL wing in stable DroneId order plus the deployable set, so an
+        // unavailable drone leaves its encounter slot unused instead of shifting survivors onto
+        // another pilot's alias. An empty deployable set refuses entry (never a fallback).
+        var wing = GetOwnedWing(sourceShipId).OrderBy(d => d.DroneId, StringComparer.Ordinal).ToImmutableArray();
+        var deployable = wing
             .Where(d => !d.Destroyed && !d.Disabled && IsHangarReady(d.HangarModuleId))
-            .OrderBy(d => d.DroneId, StringComparer.Ordinal)
-            .ToImmutableArray();
-        if (readyWing.IsEmpty)
+            .Select(d => d.DroneId)
+            .ToImmutableHashSet(StringComparer.Ordinal);
+        if (deployable.IsEmpty)
             return RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoReadyDrones);
 
         int hullMax = GetCarrierHullMax(sourceShipId);
         int hullCurrent = GetCarrierHullCurrent(sourceShipId, hullMax);
         int maneuver = GetShipManeuver(sourceShipId);
-        var battle = OwnedBattleAssembly.Create(catalog, sourceShipId, hullCurrent, maneuver, readyWing,
-            ship.Crew, scenario, scenarioId, request.Seed, playerSide);
+        var battle = OwnedBattleAssembly.Create(catalog, sourceShipId, hullCurrent, maneuver, wing,
+            ship.Crew, scenario, scenarioId, request.Seed, playerSide, deployable);
         var session = TacticalBattleSession.Create(battle, request.CommandId, playerSide);
         _tacticalBattleSession = session;
         _tacticalBattleSourceShipId = sourceShipId;

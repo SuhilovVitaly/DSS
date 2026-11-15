@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.TacticalBattle;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -46,18 +47,19 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
         };
     }
 
-    private static JsonObject Crew(string id, string role) => new()
+    private static JsonObject Crew(string id, string role, int accuracy = 10, int maneuver = 10, int initiative = 55) => new()
     {
         ["crewId"] = id,
         ["displayName"] = id,
         ["role"] = role,
-        ["accuracySkill"] = 10,
-        ["maneuverabilitySkill"] = 10,
-        ["initiative"] = 55,
+        ["accuracySkill"] = accuracy,
+        ["maneuverabilitySkill"] = maneuver,
+        ["initiative"] = initiative,
     };
 
-    private void WriteScenario(string bay1Power = "On", string bay2Power = "On")
+    private void WriteScenario(string bay1Power = "On", string bay2Power = "On", bool legacyCrew = false)
     {
+        int accuracy = legacyCrew ? 0 : 10;
         var ship = new JsonObject
         {
             ["objectId"] = "SPC-0001",
@@ -74,9 +76,12 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
             ["hullLayout"] = HullLayout(),
             ["modules"] = new JsonArray(Bay("BAY-01", 0, bay1Power), Bay("BAY-02", 2, bay2Power)),
             ["crew"] = new JsonArray(
-                Crew("CHR-0001", "Captain"), Crew("CHR-PLAYER-DEFENSE", "Officer"),
-                Crew("CHR-PILOT-1", "Pilot"), Crew("CHR-PILOT-2", "Pilot"),
-                Crew("CHR-PILOT-3", "Pilot"), Crew("CHR-PILOT-4", "Pilot")),
+                Crew("CHR-0001", "Captain", accuracy, accuracy),
+                Crew("CHR-PLAYER-DEFENSE", "Officer", accuracy, accuracy),
+                Crew("CHR-PILOT-1", "Pilot", accuracy, accuracy),
+                Crew("CHR-PILOT-2", "Pilot", accuracy, accuracy),
+                Crew("CHR-PILOT-3", "Pilot", accuracy, accuracy),
+                Crew("CHR-PILOT-4", "Pilot", accuracy, accuracy)),
         };
         var scenario = new JsonObject
         {
@@ -93,9 +98,9 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
         File.WriteAllText(ScenarioPath, scenario.ToJsonString());
     }
 
-    private SimulationEngine Load(string bay1Power = "On", string bay2Power = "On")
+    private SimulationEngine Load(string bay1Power = "On", string bay2Power = "On", bool legacyCrew = false)
     {
-        WriteScenario(bay1Power, bay2Power);
+        WriteScenario(bay1Power, bay2Power, legacyCrew);
         return EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, ScenarioPath);
     }
 
@@ -207,5 +212,46 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
         var response = engine.StartTacticalBattle(Owned("c1"));
         Assert.True(response.Accepted);
         Assert.Equal(new[] { "DRN-PLAYER-01", "DRN-PLAYER-03", "DRN-PLAYER-04" }, PlayerDroneIds(engine));
+    }
+
+    [Fact]
+    public void LegacyWingKeepsEncounterSlotAfterLoss()
+    {
+        // Legacy zero-skill crew: tactical values come from the encounter alias bound to the slot.
+        using var engine = Load(legacyCrew: true);
+        engine.SetOwnedWingForTests("SPC-0001", FourWing());
+
+        var first = engine.StartTacticalBattle(Owned("sortie-1"));
+        Assert.True(first.Accepted);
+        engine.TacticalBattleSessionForTests!.Battle.Drones
+            .First(d => d.Side == "A" && d.Id == "DRN-PLAYER-01").Status = TacticalDroneStatus.Destroyed;
+        engine.ExitTacticalBattle(new("exit-1", first.State!.BattleId));
+
+        var second = engine.StartTacticalBattle(Owned("sortie-2", revision: engine.GetCarrierRevision("SPC-0001")));
+        Assert.True(second.Accepted);
+        var units = second.State!.Units
+            .Where(u => u.Kind == TacticalUnitKind.Drone && u.Side == "A")
+            .ToDictionary(u => u.Id, StringComparer.Ordinal);
+
+        Assert.DoesNotContain("DRN-PLAYER-01", units.Keys);
+
+        // Slot 1 is yun (53/55, start 145/275); a compacted wing would give vera (55/52, 145/228).
+        var audrey = units["DRN-PLAYER-02"];
+        Assert.Equal("CHR-PILOT-2", audrey.Build!.PilotId);
+        Assert.Equal(53, audrey.Accuracy);
+        Assert.Equal(55, audrey.Maneuver);
+        Assert.InRange(audrey.Pose.X, 145 - 12, 145 + 12);
+        Assert.InRange(audrey.Pose.Y, 275 - 12, 275 + 12);
+
+        // Slot 2 is marta (59/54, start 138/212); slot 3 is oleg (50/51, start 135/288).
+        Assert.Equal(59, units["DRN-PLAYER-03"].Accuracy);
+        Assert.Equal(54, units["DRN-PLAYER-03"].Maneuver);
+        Assert.InRange(units["DRN-PLAYER-03"].Pose.X, 138 - 12, 138 + 12);
+        Assert.InRange(units["DRN-PLAYER-03"].Pose.Y, 212 - 12, 212 + 12);
+
+        Assert.Equal(50, units["DRN-PLAYER-04"].Accuracy);
+        Assert.Equal(51, units["DRN-PLAYER-04"].Maneuver);
+        Assert.InRange(units["DRN-PLAYER-04"].Pose.X, 135 - 12, 135 + 12);
+        Assert.InRange(units["DRN-PLAYER-04"].Pose.Y, 288 - 12, 288 + 12);
     }
 }
