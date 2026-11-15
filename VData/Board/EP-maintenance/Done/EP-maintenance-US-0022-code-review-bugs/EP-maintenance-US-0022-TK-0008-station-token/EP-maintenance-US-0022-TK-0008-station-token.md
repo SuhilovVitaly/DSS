@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0008-station-token
 title: Карта мира: жетон станции стал мелким и почти без цвета
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Карта мира: жетон станции стал мелким и почти без цвета
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -55,4 +56,10 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `DrawStationToken` строил плашку со стороной `2·r·0,68`, после кромки и фаски `TabletopStyle.Draw` при r = 5 оставалось около 2×2 px цвета станции.
+
+- `TacticalMapDepthRenderer.DrawStationToken`: плашка занимает весь маркер `2r` (10 px при r = 5) и совпадает с областью наведения; цветная грань 6×6 px. Оформление с фаской сохранено.
+
+Тесты (новый `TacticalMapStationTokenTests`): `Station_token_keeps_readable_area_of_station_colour`, `Station_token_spans_full_marker_diameter_like_hover_area`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.

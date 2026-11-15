@@ -181,7 +181,9 @@ internal sealed class TacticalMapDepthRenderer
 
     public void DrawStationToken(SKCanvas canvas, float x, float y, float radius, SKColor color)
     {
-        float halfSide = radius * 0.68f;
+        // The plate spans the full 2r marker, matching the hover area; a smaller plate
+        // loses almost all station colour to the edge and bevel insets of TabletopStyle.Draw.
+        float halfSide = radius;
         var plate = new SKRect(x - halfSide, y - halfSide, x + halfSide, y + halfSide);
         _markerShadowPaint.Color = TabletopStyle.Edge;
         canvas.DrawRect(plate.Left + 1, plate.Top + 2, plate.Width, plate.Height, _markerShadowPaint);
