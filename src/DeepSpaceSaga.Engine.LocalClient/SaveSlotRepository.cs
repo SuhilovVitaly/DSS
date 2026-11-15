@@ -33,6 +33,14 @@ public static class SaveSlotRepository
     }
 
     /// <summary>
+    /// Whether at least one save slot file exists in saveDirectory. Answered from the file list alone — no slot file is
+    /// opened or parsed — so it stays cheap however large the saves are. False when the directory doesn't exist yet.
+    /// File-system errors (IOException, UnauthorizedAccessException) propagate to the caller.
+    /// </summary>
+    public static bool HasAnySlot(string saveDirectory) =>
+        Directory.Exists(saveDirectory) && Directory.EnumerateFiles(saveDirectory, "*.json").Any();
+
+    /// <summary>
     /// Display name for a slot id: ordinary slots show their id, while the reserved automatic
     /// continuation checkpoint gets its fixed, localized-neutral campaign label.
     /// </summary>

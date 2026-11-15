@@ -28,6 +28,12 @@ public interface IGameSessionFactory
     /// <summary>List every save slot currently on disk, most recently saved first.</summary>
     SaveSlotInfo[] ListSaveSlots();
 
+    /// <summary>
+    /// Whether any save slot exists (New Game's «no saves → tutorial» check). Implementations should answer from the file
+    /// list without reading slot contents; may throw IOException/UnauthorizedAccessException on file-system errors.
+    /// </summary>
+    bool HasAnySaveSlot() => ListSaveSlots().Length > 0;
+
     /// <summary>Delete a save slot's file, if present. No-op if the slot doesn't exist.</summary>
     void DeleteSaveSlot(string slotId);
 }

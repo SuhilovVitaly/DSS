@@ -893,7 +893,7 @@ public sealed class SkiaWindow : IDisposable
                     }
                     break;
                 case ScreenEvent.NewGame:
-                    if (_session is null && _sessionFactory.ListSaveSlots().Length == 0)
+                    if (_session is null && !HasAnySaveSlotForNewGame())
                         await StartTutorialAsync();
                     else
                         OpenScenarioSelect();
@@ -1103,6 +1103,23 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
+    /// New Game's «is there any save?» check: asks the factory for the file list only (no slot is parsed). A file-system
+    /// error is logged and treated as «no saves», so the button still starts a game instead of doing nothing.
+    /// </summary>
+    private bool HasAnySaveSlotForNewGame()
+    {
+        try
+        {
+            return _sessionFactory.HasAnySaveSlot();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            InterfaceLog.Write($"New Game: save list unavailable, treating as no saves: {error.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// NEW GAME without any save: start the hidden Tutorial scenario and go straight into its
     /// tactical battle (default request, seed 1, no setup screen). The whole sequence runs under
     /// <see cref="_transitionLock"/> while the main menu stays on screen; the world map is only
@@ -1124,13 +1141,18 @@ public sealed class SkiaWindow : IDisposable
         bool fallBackToScenarioSelect = false;
         try
         {
-            string? scenarioPath = _sessionFactory.GetTutorialScenarioPath();
-            if (scenarioPath is null)
+            // The tutorial lookup scans the scenarios on disk, so it runs on the loader's background task together with
+            // the session creation instead of on the window thread.
+            var connection = await _connectionLoader.CreateAsync(() =>
             {
-                fallBackToScenarioSelect = true;
-                throw new FileNotFoundException("Tutorial scenario is not available.");
-            }
-            var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
+                string? scenarioPath = _sessionFactory.GetTutorialScenarioPath();
+                if (scenarioPath is null)
+                {
+                    fallBackToScenarioSelect = true;
+                    throw new FileNotFoundException("Tutorial scenario is not available.");
+                }
+                return _sessionFactory.CreateSessionFromScenario(scenarioPath);
+            });
             if (!_connectionLoader.TryAdopt(connection)) return;
 
             session = new GameSessionHandle(connection, deferDebugTuningWrites: true);

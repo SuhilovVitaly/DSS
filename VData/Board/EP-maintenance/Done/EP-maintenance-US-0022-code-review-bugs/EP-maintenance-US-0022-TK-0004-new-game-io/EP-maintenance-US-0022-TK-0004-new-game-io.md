@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0004-new-game-io
 title: Синхронное чтение сохранений и сценариев при нажатии «Новая игра»
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Синхронное чтение сохранений и сценариев при нажатии «Новая игра»
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -38,6 +39,8 @@ revision: 1
 | `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs:869, 1092` | `ListSaveSlots().Length == 0` и `GetTutorialScenarioPath()` в потоке окна. |
 | `src/DeepSpaceSaga.Engine.LocalClient/SaveSlotRepository.cs:17-44` | `ListSlots` читает и парсит каждый файл. |
 | `src/DeepSpaceSaga.Engine.LocalClient/ScenarioRepository.cs:57-77` | `FindTutorialScenarioPath` загружает все сценарии. |
+| `src/DeepSpaceSaga.Client/IGameSessionFactory.cs` | Добавлено при исполнении: член `HasAnySaveSlot()` с реализацией по умолчанию. |
+| `src/DeepSpaceSaga.Client/Program.cs` | Добавлено при исполнении: `LocalGameSessionFactory.HasAnySaveSlot()` через `SaveSlotRepository.HasAnySlot`. |
 
 ## Implementation steps
 
@@ -56,4 +59,12 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `ListSaveSlots()` разбирал каждое сохранение в потоке окна без обработки ошибок, `GetTutorialScenarioPath()` загружал сценарии до `CreateAsync`.
+
+- `SaveSlotRepository.HasAnySlot`: наличие сохранения по списку `*.json`, без открытия файлов; `IGameSessionFactory.HasAnySaveSlot()` и реализация в `Program.LocalGameSessionFactory`.
+- `SkiaWindow`: «Новая игра» использует `HasAnySaveSlot`; `IOException`/`UnauthorizedAccessException` пишутся в InterfaceLog и считаются отсутствием сохранений. Поиск пути обучения перенесён внутрь фоновой задачи `CreateAsync`; запасной путь TK-0002 сохранён.
+- Порядок поиска обучения («первое совпадение по порядку») не изменён.
+
+Тесты: `SaveSlotRepositoryTests.HasAnySlot_is_false_for_a_missing_directory_or_one_without_json_files`, `SaveSlotRepositoryTests.HasAnySlot_answers_from_the_file_list_without_reading_slot_contents`, `TutorialFlowTests.NewGameChecksSavesWithoutParsingAndLooksUpTutorialOffTheWindowThread`, `TutorialFlowTests.NewGameTreatsSaveCheckIoErrorAsNoSavesAndStartsTutorial`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
