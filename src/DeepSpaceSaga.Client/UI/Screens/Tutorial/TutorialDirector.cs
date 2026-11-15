@@ -77,13 +77,14 @@ internal sealed class TutorialDirector(TutorialScript script)
         if (Current is { } line)
         {
             bool left = observation.Phase != _shownPhase || observation.Turn != _shownTurn;
-            if (Done(line.Step.Complete, observation, left)) Close(TutorialStepState.Completed);
+            if (Done(line.Step.Complete, observation, left, line.SignalUnitId)) Close(TutorialStepState.Completed);
             else if (left) Close(TutorialStepState.Expired);
         }
 
         foreach (var step in script.Steps)
         {
-            if (_states[step.Id] == TutorialStepState.Waiting && Eligible(step, observation) && Done(step.Complete, observation, false))
+            if (_states[step.Id] == TutorialStepState.Waiting && Eligible(step, observation) &&
+                Done(step.Complete, observation, false, SignalUnit(step, observation)))
             {
                 Record(step.Id, TutorialStepState.Completed);
                 _speechMoment = true; // the player's own action is a natural pause
@@ -108,9 +109,7 @@ internal sealed class TutorialDirector(TutorialScript script)
                 next = step;
         }
         if (next is null) return;
-        string? signalUnit = next.When.Signal == TutorialSignal.None ? null
-            : TutorialSignals.Find(observation.Battle, next.When.Signal, observation.Phase).UnitId;
-        Current = new TutorialLine(next, observation.NowMs, signalUnit);
+        Current = new TutorialLine(next, observation.NowMs, SignalUnit(next, observation));
         _shownPhase = observation.Phase;
         _shownTurn = observation.Turn;
         _speechMoment = false;
@@ -149,16 +148,27 @@ internal sealed class TutorialDirector(TutorialScript script)
             TutorialSignals.Find(observation.Battle, when.Signal, observation.Phase).Signal != TutorialSignal.None;
     }
 
-    private bool Done(TutorialCompletion completion, TutorialObservation observation, bool phaseLeft) => completion switch
-    {
-        TutorialCompletion.PilotSelected => observation.Phase == "Move" && observation.SelectedDroneId is not null,
-        TutorialCompletion.PathEdited => observation.Movement?.Orders.Any(o => o.Touched) == true,
-        TutorialCompletion.PhaseLeft => phaseLeft,
-        TutorialCompletion.TargetChosen => observation.FirePlan?.Rows.Any(TargetChosen) == true,
-        TutorialCompletion.PilotCycled => _pilotCycled,
-        TutorialCompletion.EvadeOrDecoy => observation.FirePlan?.Rows.Any(r => r.Evade || r.Decoy) == true,
-        _ => false,
-    };
+    /// <summary>The unit the step's signal concerns now (target of the {signal} anchor); null for a step without a signal.</summary>
+    private static string? SignalUnit(TutorialStep step, TutorialObservation observation) =>
+        step.When.Signal == TutorialSignal.None ? null
+            : TutorialSignals.Find(observation.Battle, step.When.Signal, observation.Phase).UnitId;
+
+    /// <summary>
+    /// Completion predicates. When <paramref name="signalUnitId"/> is set (the drone the line points at), evade (E) or decoy (D)
+    /// counts only on that drone's row: protecting another drone does not close «under fire» (US-0022-TK-0023, AC23).
+    /// </summary>
+    private bool Done(TutorialCompletion completion, TutorialObservation observation, bool phaseLeft, string? signalUnitId) =>
+        completion switch
+        {
+            TutorialCompletion.PilotSelected => observation.Phase == "Move" && observation.SelectedDroneId is not null,
+            TutorialCompletion.PathEdited => observation.Movement?.Orders.Any(o => o.Touched) == true,
+            TutorialCompletion.PhaseLeft => phaseLeft,
+            TutorialCompletion.TargetChosen => observation.FirePlan?.Rows.Any(TargetChosen) == true,
+            TutorialCompletion.PilotCycled => _pilotCycled,
+            TutorialCompletion.EvadeOrDecoy => observation.FirePlan?.Rows.Any(r =>
+                (r.Evade || r.Decoy) && (signalUnitId is null || r.Drone.Id == signalUnitId)) == true,
+            _ => false,
+        };
 
     /// <summary>
     /// A real target choice: another enemy than the preassigned one, or an explicit «Hold fire» (<see cref="TacticalFirePlanRow.Hold"/>).
