@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.TacticalBattle;
 using DeepSpaceSaga.Engine.TacticalBattle.Content;
 
 namespace DeepSpaceSaga.Engine;
@@ -65,6 +66,7 @@ public partial class SimulationEngine
         var result = ImmutableArray.CreateBuilder<OwnedDroneSnapshot>(wing.Length);
         foreach (var drone in wing)
         {
+            var engineIds = (drone.EngineIds ?? []).ToImmutableArray();
             result.Add(new OwnedDroneSnapshot(
                 Id: drone.DroneId,
                 ShipId: ship.InitialMotion.ObjectId,
@@ -87,18 +89,47 @@ public partial class SimulationEngine
                 AmmoCurrent: drone.AmmoCurrent,
                 AmmoCapacity: drone.AmmoCapacity,
                 Jammed: drone.Jammed,
-                EngineIds: (drone.EngineIds ?? []).ToImmutableArray(),
-                ReadinessReasons: drone.Destroyed
-                    ? ImmutableArray.Create(OwnedWingReadiness.Destroyed)
-                    : ImmutableArray<string>.Empty));
+                EngineIds: engineIds,
+                EngineDamage: BuildEngineDamage(engineIds, drone.EngineFactors),
+                ReadinessReasons: BuildReadinessReasons(drone)));
         }
         return result.ToImmutable();
     }
+
+    private static ImmutableArray<DroneEngineStateSnapshot> BuildEngineDamage(ImmutableArray<string> engineIds,
+        IReadOnlyList<double>? factors)
+    {
+        if (factors is not { Count: > 0 } || engineIds.IsDefaultOrEmpty)
+            return ImmutableArray<DroneEngineStateSnapshot>.Empty;
+
+        var damage = ImmutableArray.CreateBuilder<DroneEngineStateSnapshot>(engineIds.Length);
+        for (int i = 0; i < engineIds.Length; i++)
+        {
+            double factor = i < factors.Count ? factors[i] : TacticalBattleConstants.IntactEngineFactor;
+            damage.Add(new DroneEngineStateSnapshot(i, engineIds[i],
+                factor >= TacticalBattleConstants.IntactEngineFactor
+                    ? OwnedWingEngineState.Ok
+                    : OwnedWingEngineState.Damaged));
+        }
+        return damage.ToImmutable();
+    }
+
+    private static ImmutableArray<string> BuildReadinessReasons(OwnedDroneData drone) =>
+        drone.Destroyed ? ImmutableArray.Create(OwnedWingReadiness.Destroyed)
+        : drone.Disabled ? ImmutableArray.Create(OwnedWingReadiness.Disabled)
+        : ImmutableArray<string>.Empty;
 }
 
 internal static class OwnedWingReadiness
 {
     internal const string Destroyed = "destroyed";
+    internal const string Disabled = "disabled";
+}
+
+internal static class OwnedWingEngineState
+{
+    internal const string Ok = "Ok";
+    internal const string Damaged = "Damaged";
 }
 
 internal static class OwnedWingValidator
@@ -195,5 +226,17 @@ internal static class OwnedWingValidator
         if (drone.AmmoCapacity > frame.AmmoCapacity)
             throw new ScenarioException(
                 $"Drone '{drone.DroneId}' magazine {drone.AmmoCapacity} exceeds frame '{frame.Id}' capacity {frame.AmmoCapacity}.");
+
+        // Persisted engine damage (US-0006): one factor per installed engine, each in (0, 1].
+        if (drone.EngineFactors is { } factors)
+        {
+            if (factors.Count > engineIds.Count)
+                throw new ScenarioException(
+                    $"Drone '{drone.DroneId}' has {factors.Count} engine factors but {engineIds.Count} engines.");
+            foreach (double factor in factors)
+                if (!(factor > 0 && factor <= 1))
+                    throw new ScenarioException(
+                        $"Drone '{drone.DroneId}' engine factor {factor} must be in (0,1].");
+        }
     }
 }

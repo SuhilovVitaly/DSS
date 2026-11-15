@@ -46,6 +46,10 @@ public sealed partial class SimulationEngine
                         AmmoCurrent = drone.AmmoCurrent,
                         Jammed = drone.Jammed,
                         DecoyCharges = drone.DecoyCharges,
+                        // A disabled survivor is not repaired by closing the screen (A-05); engine
+                        // damage is captured per engine so the next sortie restores it (US-0006).
+                        Disabled = drone.Status == TacticalDroneStatus.Disabled,
+                        EngineFactors = drone.Engines.Select(e => e.Factor).ToArray(),
                     });
                 }
             }
