@@ -118,4 +118,4 @@ Implementation status: **implemented**. Automated tests are **NOT RUN** in this 
 - `tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs` — starter branch для Default/Tutorial: 24 cells, 9 modules (quarters (3,1)/(5,1), bays (1,2)/(6,2) 2×2, bridge/cargo/scanner/generator/engine), 15 occupied, cargo 3 stacks incl. 42 torpedoes, 6 crew, pilot skills 0..100, bay SP250; Default_500/Docked/Undocked/PlayerShipOnly/MarketProfiles ожидания не изменены.
 - `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/ScenarioModuleCleanupTests.cs` — `CurrentContentHasOnlyWorldShipIdentityAndNoLegacyDefinitions`: три typeId + разрешённые tetrarch hullMax400/tacticalManeuver35/appearanceId carrier; legacy cleanup assertions сохранены.
 
-Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; native/product acceptance **OPEN**.
+Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; single batch compile `dotnet build DeepSpaceSaga.sln --no-restore` -> **Build succeeded, 0 warnings, 0 errors** (после fix-коммита); native/product acceptance **OPEN**.

@@ -19,10 +19,10 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
     private string? _contentFixture;
     private string[] _ownedIds = [];
     private bool _manualDamage;
-    private string Own(string alias)
+    private static string Own(IReadOnlyList<string> ownedIds, string alias)
     {
         int index = Array.IndexOf(OwnAliases, alias);
-        return index >= 0 && index < _ownedIds.Length ? _ownedIds[index] : alias;
+        return index >= 0 && index < ownedIds.Count ? ownedIds[index] : alias;
     }
     internal TacticalBattleFrame Frame
     {
@@ -30,7 +30,7 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
         {
             var f = Screen.CaptureFrame(1920, 1080)!;
             if (!_manualDamage) return f;
-            var u = f.Battle.Units.Single(u => u.Id == Own("Марта"));
+            var u = f.Battle.Units.Single(u => u.Id == Own(_ownedIds, "Марта"));
             var changed = u with
             {
                 Jammed = true,
@@ -74,7 +74,8 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
             await f.Route(setup.OnKeyDown(Key.Enter));
             Assert.Equal(seed, result.Screen.Flow.State!.Seed);
             if (scene == "2-decoy-empty")
-                f.Engine.TacticalBattleSessionForTests!.Battle.Drones.Single(d => d.Id == Own(withoutModules || withoutAnomalies ? "Марта" : "Юн")).DecoyCharges = 0;
+                f.Engine.TacticalBattleSessionForTests!.Battle.Drones.Single(d =>
+                    d.Id == Own(result._ownedIds, withoutModules || withoutAnomalies ? "Марта" : "Юн")).DecoyCharges = 0;
             if (!scene.StartsWith("1-", StringComparison.Ordinal))
             {
                 while (result.Screen.Flow.State!.Phase != TacticalBattlePhase.Fire)
@@ -90,7 +91,7 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
                     result.Screen.OnKeyDown(Key.Tab);
                 if (scene == "2-evasion-plan") result.Screen.OnKeyDown(Key.E);
                 if (scene == "2-no-target")
-                    while (result.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected!.Drone.Id != Own("Вера"))
+                    while (result.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected!.Drone.Id != Own(result._ownedIds, "Вера"))
                         result.Screen.OnKeyDown(Key.Tab);
                 if (scene is "2-decoy-plan" or "3-decoy-flight" or "4-decoy-results") result.Screen.OnKeyDown(Key.D);
                 if (scene is "3-salvo-flight" or "4-salvo-results" or "3-decoy-flight" or "4-decoy-results")
@@ -113,7 +114,7 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
             }
             if (scene == "2-anomaly-absorption")
             {
-                SelectDrone(Own("Олег")); using (var initial = result.Render()) { }
+                SelectDrone(Own(result._ownedIds, "Олег")); using (var initial = result.Render()) { }
                 var frame = result.Screen.CaptureFrame(1920, 1080)!; var point = frame.View.Project(frame.Battle.Units.Single(u => u.Id == "Таг-1").Pose);
                 result.Screen.OnMouseDown(point.X * 1.5f, point.Y * 1.5f, MouseButton.Left);
                 Assert.Equal(.355, result.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected!.Target!.Absorption, 12);
@@ -134,7 +135,7 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
                 Assert.True(result.Screen.HasSalvoPresentation);
                 if (result.Screen.CaptureFrame(1920, 1080)!.Salvo!.InFlight) result.Screen.OnKeyDown(Key.Enter);
             }
-            var hoverName = scene.Contains("anomaly", StringComparison.Ordinal) || scene is "1-move-no-hover" or "5-outcome" ? null : scene == "2-fire-hover-own" ? Own("Олег") : "Таг-6";
+            var hoverName = scene.Contains("anomaly", StringComparison.Ordinal) || scene is "1-move-no-hover" or "5-outcome" ? null : scene == "2-fire-hover-own" ? Own(result._ownedIds, "Олег") : "Таг-6";
             result.Screen.HoverUnitId = result.Screen.Flow.State!.Units.FirstOrDefault(u =>
                 (u.Build?.PilotName ?? u.Id) == hoverName)?.Id;
             if (scene == "1-anomaly-hover")
@@ -149,11 +150,11 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
             }
             if (scene.StartsWith("2-build-", StringComparison.Ordinal))
             {
-                SelectDrone(Own("Марта")); result.Screen.HoverUnitId = null;
+                SelectDrone(Own(result._ownedIds, "Марта")); result.Screen.HoverUnitId = null;
                 if (scene == "2-build-hover")
                 {
                     using (var first = result.Render()) { }
-                    var f2 = result.Screen.CaptureFrame(1920, 1080)!; var point = f2.View.Project(f2.Battle.Units.Single(u => u.Id == Own("Вера")).Pose);
+                    var f2 = result.Screen.CaptureFrame(1920, 1080)!; var point = f2.View.Project(f2.Battle.Units.Single(u => u.Id == Own(result._ownedIds, "Вера")).Pose);
                     result.Screen.OnMouseMove(point.X * 1.5f, point.Y * 1.5f);
                 }
                 result._manualDamage = scene == "2-build-damaged";

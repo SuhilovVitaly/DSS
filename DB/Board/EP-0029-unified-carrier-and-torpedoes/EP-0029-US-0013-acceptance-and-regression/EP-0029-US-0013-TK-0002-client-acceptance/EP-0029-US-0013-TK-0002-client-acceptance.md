@@ -128,4 +128,4 @@ Implementation status: **implemented**. Automated tests are **NOT RUN** in this 
 
 Known final-suite risk (не скрывается): seed-1 owned Tutorial может больше не быть победой; существующий `TutorialBattleWinnabilityTests` сохраняет реальное win assertion, поэтому финальный прогон должен это показать (checkpoint C1).
 
-Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; native RU/EN UI gate **OPEN**; product/human acceptance **OPEN**.
+Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; single batch compile `dotnet build DeepSpaceSaga.sln --no-restore` -> **Build succeeded, 0 warnings, 0 errors** (после fix-коммита); native RU/EN UI gate **OPEN**; product/human acceptance **OPEN**.

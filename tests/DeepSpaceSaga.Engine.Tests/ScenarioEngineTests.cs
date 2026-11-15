@@ -258,8 +258,10 @@ public class ScenarioEngineTests
         Assert.Equal("module.container.basic", actualRegistry.ModuleTypes.GetDefinition(cargoModule.ModuleTypeIndex).TypeId);
         Assert.Null(engineModule.ActiveCycle);
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
-        Assert.Equal(2, playerShip.Modules.Count(m => m.ModuleTypeId == "module.drone-bay.medium"));
-        Assert.Equal(2, playerShip.Modules.Count(m => m.ModuleTypeId == "living.quarters.mk1.four-cabins"));
+        Assert.Equal(2, playerShip.Modules.Count(m =>
+            actualRegistry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).TypeId == "module.drone-bay.medium"));
+        Assert.Equal(2, playerShip.Modules.Count(m =>
+            actualRegistry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).TypeId == "living.quarters.mk1.four-cabins"));
         Assert.Equal(2, playerShip.Modules.Count(m => m.ModuleId is "MOD-PLAYER-LIVING-QUARTERS-01" or "MOD-PLAYER-LIVING-QUARTERS-02"));
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-SCANNER-01");

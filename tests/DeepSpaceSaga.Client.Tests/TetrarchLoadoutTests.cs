@@ -189,14 +189,14 @@ public sealed class TetrarchLoadoutTests
             Assert.NotNull(ship.Modules);
             Assert.Equal(9, ship.Modules.Count);
             Assert.Equal(ship.Modules.Count, ship.Modules.Select(m => m.ModuleId).Distinct(StringComparer.Ordinal).Count());
-            var occupied = new HashSet<(int X, int Y)>();
+            var starterOccupied = new HashSet<(int X, int Y)>();
             foreach (var module in ship.Modules)
                 foreach (var cell in module.OccupiedCells)
                 {
                     Assert.Contains((cell.X, cell.Y), cells);
-                    Assert.True(occupied.Add((cell.X, cell.Y)), $"Module {module.ModuleId} overlaps another module.");
+                    Assert.True(starterOccupied.Add((cell.X, cell.Y)), $"Module {module.ModuleId} overlaps another module.");
                 }
-            Assert.Equal(15, occupied.Count);
+            Assert.Equal(15, starterOccupied.Count);
             var quarters = ship.Modules.Where(m => m.ModuleTypeId == "living.quarters.mk1.four-cabins").ToArray();
             Assert.Equal(2, quarters.Length);
             Assert.Equal([new HullCellCoordinate(3, 1)],

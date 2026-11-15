@@ -120,4 +120,4 @@ Implementation status: **implemented**. Automated tests are **NOT RUN** in this 
 - `tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs` — starter-shape ожидания: 24 hull cells, 9 modules (два four-cabin living quarters (3,1)/(5,1), два medium bay (1,2)/(6,2) 2×2), cargo 3 stacks (energy1000/food200/torpedo42), 6 crew, snapshot 6 crew/8 cabins/2 reserved; item stacks резолвятся по registry typeId (без индексов 2/5).
 - `tests/DeepSpaceSaga.Engine.Tests/ModuleHealthBootstrapTests.cs` — `Default_modules_have_structure`: medium bays 250 SP, остальные starter modules 150 SP, все intact.
 
-Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; build/focused/format **NOT RUN in this batch**; native/product acceptance **OPEN**.
+Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; single batch compile `dotnet build DeepSpaceSaga.sln --no-restore` -> **Build succeeded, 0 warnings, 0 errors** (после fix-коммита); focused tests/format **NOT RUN in this batch**; native/product acceptance **OPEN**.

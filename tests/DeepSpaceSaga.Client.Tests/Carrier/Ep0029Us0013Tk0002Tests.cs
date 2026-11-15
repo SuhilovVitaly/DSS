@@ -248,10 +248,11 @@ public sealed class Ep0029Us0013Tk0002Tests
             foreach (var unit in state.Units.Where(unit =>
                 unit.Side == state.PlayerSide && unit.Kind == TacticalUnitKind.Drone))
             {
-                var member = carrier.Crew.Single(crew => crew.Id == unit.Build!.PilotId);
-                Assert.Equal(member.DisplayName, unit.Build.PilotName);
-                Assert.Equal(member.PortraitAssetId, unit.Build.PilotPortraitAssetId);
-                Assert.Equal<CrewGender?>(member.Gender, unit.Build.PilotGender);
+                var build = unit.Build!;
+                var member = carrier.Crew.Single(crew => crew.Id == build.PilotId);
+                Assert.Equal(member.DisplayName, build.PilotName);
+                Assert.Equal(member.PortraitAssetId, build.PilotPortraitAssetId);
+                Assert.Equal<CrewGender?>(member.Gender, build.PilotGender);
                 Assert.Equal(member.Accuracy, unit.Accuracy);
                 Assert.Equal(member.Maneuver, unit.Maneuver);
             }
