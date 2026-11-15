@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Тексты корабля и резервных мест
@@ -104,4 +104,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+В `Russian.json`/`English.json` добавлены `Ship.*` (Title/Hull/Crew/Wing/ReservedCabins/Captives/Unsupported) и `Ship.Rearm.<reason>` для всех 14 причин отказа (unsupported, invalid_request, wrong_ship, carrier_not_ready, battle_active, stale_revision, unknown_drone, destroyed_drone, hangar_not_ready, invalid_quantity, no_capacity, no_cargo, duplicate_command, identity_conflict).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0009Tk0004Tests"` — **3/3 passed** (`ShipLocaleParity`, `ReservedTextNeverClaimsCaptives`, `RearmFailureKeysExist`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-032-us0009tk0004/US-0009-TK-0004/focused.trx`.
+- `dotnet format --verify-no-changes` clean. Standalone `dotnet build src/DeepSpaceSaga.Client` сейчас не собирается из-за **незакоммиченного** `UI/Portraits/ModularCrewPortraits.cs` (использует `SKSamplingOptions`, SkiaSharp 3.x) — это незакоммиченная работа пользователя, не этого тикета; тестовый build (dotnet test) компилирует клиент и проходит.
+
+Status: automated PASS (content-data layer); native/product acceptance remains OPEN.
