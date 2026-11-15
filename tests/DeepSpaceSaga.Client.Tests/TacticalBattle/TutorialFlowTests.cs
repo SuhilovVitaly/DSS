@@ -293,6 +293,7 @@ public sealed class TutorialFlowTests
             battle.Render(canvas, 1280, 720);
         // The confirm button of the tabletop exit dialog (left button of the centred 520x180 box at 1280x720).
         Assert.Equal(ScreenEvent.MainMenu, battle.OnMouseDown(380 + 24 + 110, 270 + 180 - 68 + 20, MouseButton.Left));
+        string battleId = battle.Flow.State!.BattleId;
 
         await fixture.PressKey(Key.Enter);
 
@@ -301,6 +302,20 @@ public sealed class TutorialFlowTests
         Assert.Null(fixture.Session);
         await fixture.LastSessionDisposal.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.True(fixture.Proxy!.Disposed);
+
+        // US-0022-TK-0005: the abandoned tutorial battle is told apart from a crash — the report says "exited"
+        // and the tutorial journal ends with an "abandoned" event.
+        string report = TacticalBattleMetrics.ReportPath(battleId, TacticalBattleMetrics.DirectoryPath);
+        using (var json = JsonDocument.Parse(File.ReadAllText(report)))
+            Assert.Equal("exited", json.RootElement.GetProperty("status").GetString());
+        var tutorial = battle.Tutorial!;
+        using (var journal = JsonDocument.Parse(File.ReadAllText(tutorial.Metrics!.FilePath)))
+        {
+            var last = journal.RootElement.GetProperty("events").EnumerateArray().Last();
+            Assert.Equal("abandoned", last.GetProperty("kind").GetString());
+            Assert.Equal(JsonValueKind.Null, last.GetProperty("step").ValueKind);
+        }
+        Assert.Equal(battleId, tutorial.Metrics.BattleId);
     }
 
     [Fact]

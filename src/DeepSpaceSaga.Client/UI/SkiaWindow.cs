@@ -911,8 +911,14 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.MainMenu:
                     // A confirmed mid-tutorial abort must write the real losses/checkpoint before the
                     // session is disposed. A failed write keeps the battle modal and its Retry visible.
-                    if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } abortingBattle &&
-                        !await abortingBattle.Flow.ExitAsync()) break;
+                    if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } abortingBattle)
+                    {
+                        bool unfinished = abortingBattle.Flow.State is { Outcome: null };
+                        if (!await abortingBattle.Flow.ExitAsync()) break;
+                        // The exit wrote the battle report as "exited"; the tutorial journal marks the abandonment too.
+                        if (unfinished && abortingBattle is TacticalBattleScreen { Tutorial: { } tutorial })
+                            tutorial.RecordAbandoned();
+                    }
                     await ReturnToMainMenuAsync();
                     break;
                 case ScreenEvent.Exit:

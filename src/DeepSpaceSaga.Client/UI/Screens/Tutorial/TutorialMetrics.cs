@@ -36,6 +36,10 @@ internal sealed class TutorialMetrics(string battleId, string? directory = null)
     internal void RecordHints(bool enabled, string phase, int turn, long atMs) =>
         Add(new Entry(null, enabled ? "hints-enabled" : "hints-disabled", phase, turn, atMs - OriginMs));
 
+    /// <summary>The player left the unfinished tutorial battle for the main menu (tells an abandoned battle from a crash).</summary>
+    internal void RecordAbandoned(string phase, int turn, long atMs) =>
+        Add(new Entry(null, "abandoned", phase, turn, atMs - OriginMs));
+
     private void Add(Entry entry)
     {
         _events.Add(entry);

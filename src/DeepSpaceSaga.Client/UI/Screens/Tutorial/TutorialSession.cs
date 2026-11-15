@@ -144,6 +144,16 @@ internal sealed class TutorialSession
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // the battle goes on
     }
 
+    /// <summary>
+    /// Records a confirmed exit from the unfinished tutorial battle to the main menu; pending step events come first.
+    /// Nothing is recorded before the first observation (no metrics file yet).
+    /// </summary>
+    internal void RecordAbandoned()
+    {
+        RecordEvents();
+        if (LastObservation is { } at) Metrics?.RecordAbandoned(at.Phase, at.Turn, at.NowMs);
+    }
+
     /// <summary>H toggles the comms log (also with hints off); Esc closes an open log first. Everything else is the battle's.</summary>
     internal bool OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
