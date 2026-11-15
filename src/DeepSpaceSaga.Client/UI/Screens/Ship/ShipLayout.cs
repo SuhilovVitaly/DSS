@@ -3,7 +3,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 public enum ShipButton
 {
     None,
-    Close
+    Close,
+    DroneRow,
+    QuantityMinus,
+    QuantityPlus,
+    ConfirmRearm
 }
 
 /// <summary>
@@ -22,6 +26,17 @@ public sealed class ShipLayout
 
     public const float CloseButtonSize = 28f;
     public const float CloseButtonMargin = 14f;
+
+    /// <summary>One wing row: 28 px high, inset from both wing panel edges.</summary>
+    public const float WingRowHeight = 28f;
+    public const float WingRowInset = 12f;
+    public const float WingPanelHeaderHeight = 34f;
+
+    /// <summary>Rearm control block: minus/plus/confirm buttons plus preview and status lines.</summary>
+    public const float RearmControlHeight = 28f;
+    public const float RearmControlWidth = 32f;
+    public const float RearmControlGap = 8f;
+    public const float RearmControlsHeight = 88f;
 
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
@@ -52,6 +67,65 @@ public sealed class ShipLayout
         float bottom = top + CloseButtonSize;
         return (left, top, right, bottom);
     }
+
+    /// <summary>One drone row in the wing panel, local to the panel.</summary>
+    public static (float Left, float Top, float Right, float Bottom) WingRowLocalRect(int index)
+    {
+        var wing = WingPanelLocalRect();
+        float top = wing.Top + WingPanelHeaderHeight + index * WingRowHeight;
+        return (wing.Left + WingRowInset, top, wing.Right - WingRowInset, top + WingRowHeight);
+    }
+
+    /// <summary>Rearm selection block under the final wing row, local to the panel.</summary>
+    public static (float Left, float Top, float Right, float Bottom) RearmControlsLocalRect(int rowCount)
+    {
+        var wing = WingPanelLocalRect();
+        float top = wing.Top + WingPanelHeaderHeight + Math.Max(0, rowCount) * WingRowHeight + 16;
+        return (wing.Left + WingRowInset, top, wing.Right - WingRowInset, top + RearmControlsHeight);
+    }
+
+    public static (float Left, float Top, float Right, float Bottom) RearmMinusLocalRect(int rowCount)
+    {
+        var controls = RearmControlsLocalRect(rowCount);
+        return (controls.Left, controls.Top, controls.Left + RearmControlWidth, controls.Top + RearmControlHeight);
+    }
+
+    public static (float Left, float Top, float Right, float Bottom) RearmPlusLocalRect(int rowCount)
+    {
+        var minus = RearmMinusLocalRect(rowCount);
+        float left = minus.Right + RearmControlGap;
+        return (left, minus.Top, left + RearmControlWidth, minus.Bottom);
+    }
+
+    public static (float Left, float Top, float Right, float Bottom) RearmConfirmLocalRect(int rowCount)
+    {
+        var controls = RearmControlsLocalRect(rowCount);
+        float right = controls.Right;
+        float left = right - 140;
+        return (left, controls.Top, right, controls.Top + RearmControlHeight);
+    }
+
+    /// <summary>
+    /// Hit test for the wing rows and rearm controls. Returns the row index only for
+    /// <see cref="ShipButton.DroneRow"/>; every other hit carries -1. Close/background handling stays
+    /// with <see cref="HitTest"/> and <see cref="IsInsidePanel"/>.
+    /// </summary>
+    public static (ShipButton Button, int RowIndex) RearmHitTest(float screenX, float screenY,
+        int screenWidth, int screenHeight, int rowCount)
+    {
+        float lx = screenX - PanelLeft(screenWidth);
+        float ly = screenY - PanelTop(screenHeight);
+        for (int i = 0; i < rowCount; i++)
+            if (Contains(WingRowLocalRect(i), lx, ly))
+                return (ShipButton.DroneRow, i);
+        if (Contains(RearmMinusLocalRect(rowCount), lx, ly)) return (ShipButton.QuantityMinus, -1);
+        if (Contains(RearmPlusLocalRect(rowCount), lx, ly)) return (ShipButton.QuantityPlus, -1);
+        if (Contains(RearmConfirmLocalRect(rowCount), lx, ly)) return (ShipButton.ConfirmRearm, -1);
+        return (ShipButton.None, -1);
+    }
+
+    private static bool Contains((float Left, float Top, float Right, float Bottom) rect, float x, float y) =>
+        x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
 
     /// <summary>True when (screenX, screenY) lands inside the panel rect (screen space).</summary>
     public static bool IsInsidePanel(float screenX, float screenY, int screenWidth, int screenHeight)

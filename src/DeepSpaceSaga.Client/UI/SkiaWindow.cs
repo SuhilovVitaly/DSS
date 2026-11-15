@@ -1302,7 +1302,31 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is ShipScreen)
             return;
 
-        await PushModalAsync(new ShipScreen(ShipViewModel.From(_session?.CarrierOperations)));
+        var session = _session;
+        var carrier = session?.CarrierOperations;
+        // Rearm draws from the cargo hold, not from a fabricated stock: sum the authoritative torpedo
+        // stacks and pass them to the screen. Legacy/unsupported sessions get zero stock and no transport.
+        int stock = carrier is null ? 0 : TorpedoStock(session!.Buffer.Presented?.Snapshot);
+        Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? rearm =
+            session is not null && carrier is not null
+                ? (request, cancellationToken) => session.RearmDroneAsync(request, cancellationToken)
+                : null;
+        await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm));
+    }
+
+    private static int TorpedoStock(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot?.InstalledModules is not { IsDefaultOrEmpty: false } modules)
+            return 0;
+        long total = 0;
+        foreach (var module in modules)
+        {
+            if (module.Cargo is not { IsDefaultOrEmpty: false } cargo) continue;
+            foreach (var stack in cargo)
+                if (stack.ItemTypeId == "item.drone-torpedo.t1")
+                    total += stack.Quantity;
+        }
+        return (int)Math.Clamp(total, 0, int.MaxValue);
     }
 
     /// <summary>

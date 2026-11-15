@@ -5,8 +5,9 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 /// <summary>Read-only presentation of the persistent wing (one card per owned drone).</summary>
 public static class ShipWingPanel
 {
-    /// <summary>Stable state label; a destroyed drone is never presented as ready.</summary>
-    public static string DroneStateLabel(bool destroyed) => destroyed ? "destroyed" : "ready";
+    /// <summary>Stable state label; a destroyed drone is never presented as ready, and a disabled drone is not ready either.</summary>
+    public static string DroneStateLabel(bool destroyed, bool disabled = false) =>
+        destroyed ? "destroyed" : disabled ? "disabled" : "ready";
 
     public static string DroneAmmoText(int current, int capacity) => $"{current}/{capacity}";
 
@@ -20,11 +21,26 @@ public static class ShipWingPanel
         return "disabled";
     }
 
-    /// <summary>The largest quantity the player may select for this drone (never negative).</summary>
-    public static int MaxSelectableQuantity(int current, int capacity) => Math.Max(0, capacity - current);
+    /// <summary>
+    /// The largest quantity the player may select: the magazine gap, limited by the torpedoes in the
+    /// cargo hold. Never negative.
+    /// </summary>
+    public static int MaxSelectableQuantity(int gap, int stock) => Math.Max(0, Math.Min(gap, stock));
 
     /// <summary>Clamp a chosen quantity into [0, max]; the chosen value is preserved, never auto-raised to max.</summary>
     public static int ClampQuantity(int selected, int max) => Math.Clamp(selected, 0, Math.Max(0, max));
+
+    /// <summary>
+    /// One-line rearm preview. The transferred count is bounded by the magazine gap and the cargo
+    /// stock, so the preview never promises more than the hold can supply.
+    /// </summary>
+    public static string PreviewText(int current, int capacity, int stock, int quantity)
+    {
+        int transferred = ClampQuantity(quantity, MaxSelectableQuantity(capacity - current, stock));
+        int magazine = Math.Min(capacity, Math.Max(0, current) + transferred);
+        int hold = Math.Max(0, stock - transferred);
+        return $"magazine {current}→{magazine}, hold {stock}→{hold}";
+    }
 }
 
 /// <summary>

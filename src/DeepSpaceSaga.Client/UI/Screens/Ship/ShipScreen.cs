@@ -1,23 +1,32 @@
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 
 /// <summary>
-/// Ship overlay (ТЗ DB/Documentation/02-FirstRelease/Screens/Ship.md). Placeholder shell: the
-/// TetrarchClass/CrewAndHabitation/CrewDialogues/IceMining mechanics it will report
-/// on are not yet implemented in the Engine, so every section shows a "not
-/// available yet" line instead of fabricated data. Opened via the bottom-center
-/// Ship panel button or Ctrl+S; closes via the × button, Escape, or a click
-/// outside the panel (on the dimmed background). Pause-on-open/resume-on-close
-/// is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
+/// Ship overlay (ТЗ DB/Documentation/02-FirstRelease/Screens/Ship.md). Renders the authoritative
+/// carrier surface, the persistent wing and the between-battle rearm controls. The screen selects
+/// one drone and one quantity, previews the magazine/hold transition and confirms through the
+/// injected rearm transport; the local display is updated only from the authoritative response,
+/// never optimistically. Closes via the × button, Escape, or a click outside the panel. Pause-on-
+/// open/resume-on-close is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
 /// screen has no speed/pause logic of its own.
 /// </summary>
 public sealed class ShipScreen : IScreen
 {
     private readonly ShipViewModel _model;
+    private readonly Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? _rearm;
+    private readonly Func<string> _commandId;
+    private readonly ShipRearmController _controller = new();
+    private ShipViewModel.DroneRow[] _drones;
+    private int _torpedoStock;
+    private int _revision;
+    private int _selectedRow = -1;
+    private int _quantity;
+    private string _status = "";
     private int _screenWidth;
     private int _screenHeight;
     private bool _isCloseHovered;
@@ -25,7 +34,28 @@ public sealed class ShipScreen : IScreen
     /// <summary>Legacy open path: no carrier surface yet — renders the explicit unsupported state.</summary>
     public ShipScreen() : this(ShipViewModel.From(null)) { }
 
-    public ShipScreen(ShipViewModel model) => _model = model;
+    public ShipScreen(ShipViewModel model) : this(model, 0, null) { }
+
+    public ShipScreen(ShipViewModel model, int torpedoStock,
+        Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? rearm, Func<string>? commandId = null)
+    {
+        _model = model;
+        _torpedoStock = Math.Max(0, torpedoStock);
+        _rearm = rearm;
+        _commandId = commandId ?? (() => Guid.NewGuid().ToString("N"));
+        _drones = model.Drones.ToArray();
+        _revision = model.Revision;
+    }
+
+    /// <summary>The request currently in flight; awaited by tests and never re-sent while non-null and pending.</summary>
+    internal Task? PendingRearm;
+    internal IReadOnlyList<ShipViewModel.DroneRow> Drones => _drones;
+    internal int TorpedoStock => _torpedoStock;
+    internal int Revision => _revision;
+    internal int SelectedRow => _selectedRow;
+    internal int SelectedQuantity => _quantity;
+    internal string Status => _status;
+    internal bool IsPending => _controller.IsPending;
 
     public void OnActivated() => _isCloseHovered = false;
 
@@ -47,6 +77,25 @@ public sealed class ShipScreen : IScreen
         if (!ShipLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseShip;
 
+        if (_model.Unsupported)
+            return ScreenEvent.None;
+
+        var (control, row) = ShipLayout.RearmHitTest(x, y, _screenWidth, _screenHeight, _drones.Length);
+        switch (control)
+        {
+            case ShipButton.DroneRow:
+                Select(row);
+                break;
+            case ShipButton.QuantityMinus:
+                ChangeQuantity(-1);
+                break;
+            case ShipButton.QuantityPlus:
+                ChangeQuantity(+1);
+                break;
+            case ShipButton.ConfirmRearm:
+                StartRearm();
+                break;
+        }
         return ScreenEvent.None;
     }
 
@@ -61,6 +110,128 @@ public sealed class ShipScreen : IScreen
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+
+    private void Select(int index)
+    {
+        if (index < 0 || index >= _drones.Length)
+            return;
+        if (_drones[index].Destroyed)
+        {
+            // A destroyed drone can never receive torpedoes; the row stays visible but unselectable.
+            _status = "destroyed drones cannot be rearmed";
+            return;
+        }
+        _selectedRow = index;
+        _quantity = MaxQuantity(index);
+        _status = Explanation(index);
+    }
+
+    private int MaxQuantity(int index)
+    {
+        var drone = _drones[index];
+        return ShipWingPanel.MaxSelectableQuantity(drone.AmmoCapacity - drone.AmmoCurrent, _torpedoStock);
+    }
+
+    private string Explanation(int index)
+    {
+        var drone = _drones[index];
+        int max = MaxQuantity(index);
+        if (drone.AmmoCurrent >= drone.AmmoCapacity) return "magazine full";
+        if (_torpedoStock <= 0) return "no torpedoes in the hold";
+        if (max <= 0) return "nothing to transfer";
+        return ShipWingPanel.PreviewText(drone.AmmoCurrent, drone.AmmoCapacity, _torpedoStock, max);
+    }
+
+    private void ChangeQuantity(int delta)
+    {
+        if (_selectedRow < 0)
+            return;
+        int max = MaxQuantity(_selectedRow);
+        _quantity = ShipWingPanel.ClampQuantity(_quantity + delta, max);
+        var drone = _drones[_selectedRow];
+        _status = max <= 0
+            ? Explanation(_selectedRow)
+            : ShipWingPanel.PreviewText(drone.AmmoCurrent, drone.AmmoCapacity, _torpedoStock, _quantity);
+    }
+
+    private void StartRearm()
+    {
+        if (_rearm is null)
+        {
+            _status = "rearm is not available for this ship";
+            return;
+        }
+        if (_selectedRow < 0)
+        {
+            _status = "select a drone to rearm";
+            return;
+        }
+        var drone = _drones[_selectedRow];
+        if (drone.Destroyed)
+            return;
+        int max = MaxQuantity(_selectedRow);
+        int quantity = ShipWingPanel.ClampQuantity(_quantity, max);
+        if (quantity <= 0)
+        {
+            _status = Explanation(_selectedRow);
+            return;
+        }
+        // The pending barrier guarantees a double-click sends exactly one request.
+        if (!_controller.TryBegin(quantity))
+            return;
+        _status = $"rearming {quantity}…";
+        PendingRearm = SubmitAsync(drone.Id, quantity, _revision, _controller);
+    }
+
+    private async Task SubmitAsync(string droneId, int quantity, int revision, ShipRearmController controller)
+    {
+        try
+        {
+            var request = new RearmDroneRequest(_commandId(), _model.ShipId, droneId, quantity, revision);
+            var response = await _rearm!(request, CancellationToken.None).ConfigureAwait(true);
+            if (response.Snapshot is { } snapshot) Rebuild(snapshot);
+            if (response.Accepted)
+            {
+                _revision = response.Revision;
+                if (response.Snapshot is null) ApplyTransfer(droneId, response.Transferred);
+                else _torpedoStock = Math.Max(0, _torpedoStock - response.Transferred);
+                _status = $"rearmed {response.Transferred} torpedo(es)";
+                if (_selectedRow >= 0) _quantity = MaxQuantity(_selectedRow);
+            }
+            else
+            {
+                // A rejection transfers nothing: the magazine stays exactly as it was.
+                _status = response.Reason ?? "rearm rejected";
+                if (_selectedRow >= 0) _quantity = ShipWingPanel.ClampQuantity(_quantity, MaxQuantity(_selectedRow));
+            }
+        }
+        finally
+        {
+            controller.End();
+        }
+    }
+
+    private void ApplyTransfer(string droneId, int transferred)
+    {
+        if (transferred <= 0)
+            return;
+        int index = Array.FindIndex(_drones, drone => drone.Id == droneId);
+        if (index < 0)
+            return;
+        var drone = _drones[index];
+        _drones[index] = drone with { AmmoCurrent = Math.Min(drone.AmmoCapacity, drone.AmmoCurrent + transferred) };
+        _torpedoStock = Math.Max(0, _torpedoStock - transferred);
+    }
+
+    private void Rebuild(CarrierOperationsSnapshot snapshot)
+    {
+        string? selectedId = _selectedRow >= 0 && _selectedRow < _drones.Length ? _drones[_selectedRow].Id : null;
+        _revision = snapshot.Revision;
+        _drones = ShipViewModel.From(snapshot).Drones.ToArray();
+        int index = selectedId is null ? -1 : Array.FindIndex(_drones, drone => drone.Id == selectedId);
+        _selectedRow = index;
+        if (index >= 0) _quantity = ShipWingPanel.ClampQuantity(_quantity, MaxQuantity(index));
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -86,16 +257,27 @@ public sealed class ShipScreen : IScreen
             canvas.DrawText($"{_model.Name} ({_model.ShipClassId}) — hull {_model.HullCurrent}/{_model.HullMax}",
                 cx, pt + ShipLayout.BodyStartY, MenuStyle.TextStatus);
 
-            // Wing panel (left half): one line per owned drone, destroyed/disabled never shown ready.
+            // Wing panel (left half): one row per owned drone, destroyed/disabled never shown ready.
             var (wl, wt, _, _) = ShipLayout.WingPanelLocalRect();
-            float wingY = pt + wt;
-            foreach (var drone in _model.Drones)
+            canvas.DrawText($"wing · torpedoes in hold {_torpedoStock}", pl + wl + ShipLayout.WingRowInset,
+                pt + wt + 20, MenuStyle.TextStatus);
+            for (int i = 0; i < _drones.Length; i++)
             {
-                string state = ShipWingPanel.DroneStateLabel(drone.Destroyed);
-                canvas.DrawText($"{drone.Id} — ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
-                    pl + wl, wingY, MenuStyle.TextStatus);
-                wingY += ShipLayout.BodyLineHeight;
+                var drone = _drones[i];
+                var row = ShipLayout.WingRowLocalRect(i);
+                var rect = new SKRect(pl + row.Left, pt + row.Top, pl + row.Right, pt + row.Bottom);
+                if (i == _selectedRow)
+                {
+                    using var highlight = new SKPaint { Color = MenuStyle.ColorButtonHover, Style = SKPaintStyle.Fill };
+                    canvas.DrawRect(rect, highlight);
+                }
+                string marker = i == _selectedRow ? "› " : "  ";
+                string state = ShipWingPanel.DroneStateLabel(drone.Destroyed, drone.Disabled);
+                canvas.DrawText($"{marker}{drone.Id} — ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
+                    rect.Left + 6, rect.Top + 19, MenuStyle.TextStatus);
             }
+            if (_selectedRow >= 0)
+                DrawRearmControls(canvas, pl, pt);
 
             // Crew panel (right half): one line per crew member.
             var (cl, ct, _, _) = ShipLayout.CrewPanelLocalRect();
@@ -108,6 +290,37 @@ public sealed class ShipScreen : IScreen
         }
 
         DrawCloseButton(canvas, pl, pt);
+    }
+
+    private void DrawRearmControls(SKCanvas canvas, float panelLeft, float panelTop)
+    {
+        var drone = _drones[_selectedRow];
+        int max = MaxQuantity(_selectedRow);
+        int quantity = ShipWingPanel.ClampQuantity(_quantity, max);
+        bool confirmEnabled = _rearm is not null && quantity > 0 && !_controller.IsPending;
+
+        DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmMinusLocalRect(_drones.Length), "−",
+            quantity > 0 && !_controller.IsPending);
+        DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmPlusLocalRect(_drones.Length), "+",
+            quantity < max && !_controller.IsPending);
+        DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmConfirmLocalRect(_drones.Length), "Rearm",
+            confirmEnabled);
+
+        var controls = ShipLayout.RearmControlsLocalRect(_drones.Length);
+        float x = panelLeft + controls.Left;
+        var preview = max > 0
+            ? ShipWingPanel.PreviewText(drone.AmmoCurrent, drone.AmmoCapacity, _torpedoStock, quantity)
+            : Explanation(_selectedRow);
+        canvas.DrawText($"quantity {quantity} · {preview}", x, panelTop + controls.Top + 52, MenuStyle.TextStatus);
+        if (_status.Length > 0)
+            canvas.DrawText(_status, x, panelTop + controls.Top + 72, MenuStyle.TextStatus);
+    }
+
+    private static void DrawLocalButton(SKCanvas canvas, float panelLeft, float panelTop,
+        (float Left, float Top, float Right, float Bottom) local, string text, bool enabled)
+    {
+        var rect = new SKRect(panelLeft + local.Left, panelTop + local.Top, panelLeft + local.Right, panelTop + local.Bottom);
+        MenuStyle.DrawButton(canvas, rect, text, enabled ? ButtonState.Normal : ButtonState.Disabled);
     }
 
     private void DrawCloseButton(SKCanvas canvas, float panelLeft, float panelTop)
