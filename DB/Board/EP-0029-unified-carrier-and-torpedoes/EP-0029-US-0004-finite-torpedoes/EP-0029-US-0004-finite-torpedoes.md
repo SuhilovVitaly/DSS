@@ -57,12 +57,12 @@ Workflow approval автоматический по поручению созд�
 
 ## Completion evidence
 
-- AC-01: тикеты TK-0001, TK-0002, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-02: тикеты TK-0001, TK-0003, TK-0004; named tests и наблюдаемый результат внутри тикетов.
-- AC-03: тикеты TK-0001, TK-0004, TK-0005; named tests и наблюдаемый результат внутри тикетов.
-- AC-04: тикеты TK-0001, TK-0005; named tests и наблюдаемый результат внутри тикетов.
-- Future evidence: уникальный run под D:/DeepSpaceSaga/artifacts/validation/ep-0029/; после реализации сюда записать результаты и ссылки.
-- Сейчас implementation/automated/native/product: **NOT RUN / OPEN**.
+- AC-01: TK-0001/0002/0003 — `CapacitiesAreSixTwelveSix`, `EnemyThugStartsWithSix` (light6/heavy12/thug6, initial magazines full = 36) — PASS.
+- AC-02: TK-0001/0003/0004 — `HitMissAbsorptionEachConsumeOne` (one per actual shot regardless of outcome), `KilledBeforeInitiativeConsumesZero`, `DeadTargetAndJamConsumeZero` — PASS.
+- AC-03: TK-0001/0004/0005 — `RepeatedCaptureDoesNotReload`, `FrameCapacityAndOwnedAmmoValidated`, `BothEmptyEndInStalemate` (0 ammo: no fire, movement/E/D available, invalid packet atomic) — PASS.
+- AC-04: TK-0001/0005 — `BothEmptyEndInStalemate` (Draw), `OneEmptyStillTakesDamage`, `DustOrDistanceIsNotExhaustion`, `InteractiveTurnCapEnds` — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-011..015-*`.
+- Implementation/automated: **PASS**. Native/product: **OPEN**.
 
 ## Decisions and review log
 
