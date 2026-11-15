@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0014-raster-first-open
 title: Растровый замер: firstMs не измеряет первое открытие
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: tooling
 test_project: tools/DeepSpaceSaga.Performance
@@ -15,7 +16,7 @@ revision: 1
 
 # Растровый замер: firstMs не измеряет первое открытие
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -36,6 +37,8 @@ revision: 1
 | Файл | Состояние |
 |---|---|
 | `tools/DeepSpaceSaga.Performance/TabletopClientRaster.cs:41, 50-53, 58-61` | Предварительный рендер и `Measure`. |
+| `tools/DeepSpaceSaga.Performance/README.md` | Добавлено при исполнении: описание полей `firstMs` и `cache`. |
+| `tools/DeepSpaceSaga.Performance.Tests/TabletopClientRasterReportTests.cs` | Добавлено при исполнении: новый тест отчёта. |
 
 ## Implementation steps
 
@@ -54,4 +57,11 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: после `SetZoom` выполнялся проверочный рендер, и `firstMs` фиксировал уже второй рендер уровня; холодный и тёплый проходы не различались.
+
+- `TabletopClientRaster`: лишний рендер перед замером убран, `firstMs` — первый рендер после смены масштаба; проверка `MapDetail` выполняется после него через обратный вызов `Measure`. У каждого результата поле `cache`: `cold` для первого прохода процесса, `warm` для последующего. Класс и `Run` стали `public` для тестового проекта.
+- Начальный рендер при создании `GameSessionScreen` сохранён (нужен для камеры), поэтому уровень с масштабом по умолчанию может быть частично прогрет.
+
+Тест: `TabletopClientRasterReportTests.FirstOpenIsMeasuredOnFirstRenderAndPassesAreMarkedColdOrWarm` (12 результатов, метки cold/warm, `firstMs > p95Ms` для уровней карты холодного прохода; критерий зависит от времени).
+
+Проверки: `dotnet build tools/DeepSpaceSaga.Performance.Tests` — 0 предупреждений, 0 ошибок. Тесты и повторный замер для чисел EP-0026 AcceptanceCoverage выполняются после завершения истории; результат записан в документе истории.
