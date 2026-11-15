@@ -59,12 +59,13 @@ Workflow approval автоматический по поручению созд�
 
 ## Completion evidence
 
-- AC-01: тикеты TK-0001, TK-0002, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-02: тикеты TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- AC-03: тикеты TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- AC-04: тикеты TK-0001, TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- Future evidence: уникальный run под D:/DeepSpaceSaga/artifacts/validation/ep-0029/; после реализации сюда записать результаты и ссылки.
-- Сейчас implementation/automated/native/product: **NOT RUN / OPEN**.
+- AC-01: **automated PASS** — TK-0001 `DefaultAndTutorialResolveSameCarrier` (one manifest expands to both New Game stubs: 24 cells / 9 modules / 6 crew / 4 drones / 78 torpedoes), TK-0002 `StarterHasExactlySeventyEightTorpedoes`, `EightCabinsSixCrewTwoReserved`, `SameCrewPortraitsAsApproved`, TK-0003 `TutorialMentionsRealLosses`, `DisabledHintsStillRealBattle`. Native player path: **OPEN** (no native run).
+- AC-02: **automated PASS** — TK-0002 `StarterFootprintsDoNotOverlap` and manifest content: 2 heavy/2 light, sword/spear, plate.medium, 2× drive.standard each, 6 shields, 4 decoy modules with 2 charges.
+- AC-03: **automated PASS** — TK-0002 independent 24-cell oracle, 15 occupied, 9 free, no overlaps/outside cells; hullCurrent 400, modules Ready with type-max SP. Engine load of the expanded Default world passed through `ModuleHealthBootstrapTests.Configured_structure_is_projected` and `ScenarioEngineTests.Real_default_scenario_loads_from_the_client_build_output_directory`.
+- AC-04: **automated PASS** — TK-0001 `LoadNeverReappliesManifest` (save round-trip keeps fired ammo/consumed cargo; stale manifest reference is not applied), `ConflictingInlineAndManifestReject`, `TraversalRejected`, `LoadFromJsonRejectsNewGameManifest`; Default_500 and other scenarios keep their own content.
+- Evidence runs: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-038-us0011tk0001/`, `run-039-us0011tk0002/`, `run-040-us0011tk0003/` (focused trx, builds, format, boundary runs).
+- Story boundary after TK-0003: focused US-0011 classes + `TutorialScenarioTests` + `TutorialContentTests` + `TutorialLocaleParityTests` are green; only the expected starter-shape reds remain, owned by US-0013: `ScenarioEngineTests` (4), `ModuleHealthBootstrapTests.Default_modules_have_structure`, `TetrarchLoadoutTests` (4), pre-existing `ScenarioModuleCleanupTests.CurrentContentHasOnlyWorldShipIdentityAndNoLegacyDefinitions` (2). No other regression observed.
+- implementation/automated: **PASS**; native/product: **OPEN** — native RU/EN input/visual verification and product acceptance are not claimed.
 
 ## Decisions and review log
 
