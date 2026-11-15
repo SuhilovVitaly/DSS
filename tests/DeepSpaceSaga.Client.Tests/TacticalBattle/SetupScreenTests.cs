@@ -11,21 +11,27 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SetupScreenTests
 {
     [Fact]
-    public async Task RealDefaultFormUsesScenarioOwnedRowsLoadoutsTacticsAndProbabilityGoal()
+    public async Task RealDefaultFormUsesOwnedWingRowsScenarioTacticsAndProbabilityGoal()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
         var setup = await Open(fixture);
         Render(setup);
         var options = setup.Flow.Options!;
         var scenario = options.Scenarios[0];
+        var carrier = fixture.Handle.CarrierOperations!;
         var request = setup.BuildStartRequest();
         Assert.Equal(scenario.Id, request.ScenarioId);
         Assert.Equal(scenario.OwnTacticId, request.OwnTacticId);
         Assert.Equal(scenario.EnemyTacticId, request.EnemyTacticId);
         Assert.Equal(1, request.Seed);
-        var expected = scenario.Drones.Where(d => d.Side == scenario.PlayerSide).Select(d =>
-            new TacticalLoadoutChoice(d.Id, d.WeaponId, d.ArmorId, d.ShieldId, d.ShieldCount));
-        Assert.Equal(expected, request.Loadout);
+        // EP-0029: the F8 form renders the persistent owned wing read-only; it never submits a
+        // public loadout and always carries the latest authoritative ShipId/revision.
+        Assert.True(setup.OwnedWingMode);
+        Assert.Equal(0, setup.EditableLoadoutControls);
+        Assert.Equal(carrier.OwnedDrones.Select(drone => drone.Id), setup.WingComposition.Select(drone => drone.Id));
+        Assert.True(request.Loadout.IsDefaultOrEmpty);
+        Assert.Equal(carrier.ShipId, request.SourceShipId);
+        Assert.Equal(carrier.Revision, request.ExpectedCarrierRevision);
         Assert.Contains("80%", setup.ScenarioSummary);
         Assert.Contains("60%", setup.ScenarioSummary);
         Assert.Contains("3%", setup.ScenarioSummary);
@@ -34,31 +40,25 @@ public sealed class SetupScreenTests
     }
 
     [Fact]
-    public async Task SelectedModulesShieldSlotsTacticsAndExactLongSeedReachRealEngine()
+    public async Task OwnedReadOnlyWingTacticsAndExactLongSeedReachRealEngine()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
         var setup = await Open(fixture);
         Render(setup);
         var layout = setup.CurrentLayout!;
         var options = setup.Flow.Options!;
-        var first = options.Scenarios[0].Drones.First(d => d.Side == options.Scenarios[0].PlayerSide);
-        Choose(setup, layout.RowCell(0, 2), Key.Home);
-        Choose(setup, layout.RowCell(0, 3), Key.Home);
-        Choose(setup, layout.RowCell(0, 4), Key.End);
-        var withShield = setup.BuildStartRequest().Loadout[0];
-        Assert.Equal(options.Shields[^1].Id, withShield.ShieldId);
-        Assert.Equal(first.ShieldSlots, withShield.ShieldCount);
-        Choose(setup, layout.RowCell(0, 4), Key.Home);
+        var carrier = fixture.Handle.CarrierOperations!;
+        Assert.True(setup.OwnedWingMode);
+        Assert.Equal(0, setup.EditableLoadoutControls);
         Choose(setup, layout.OwnTactic, Key.Home);
         Choose(setup, layout.EnemyTactic, Key.End);
         Click(setup, layout.Seed);
         WriteSeed(setup, "−9223372036854775808");
         var wanted = setup.BuildStartRequest();
         Assert.Equal(long.MinValue, wanted.Seed);
-        Assert.Equal(options.Weapons[0].Id, wanted.Loadout[0].GunId);
-        Assert.Equal(options.Armor[0].Id, wanted.Loadout[0].PlateId);
-        Assert.Null(wanted.Loadout[0].ShieldId);
-        Assert.Equal(0, wanted.Loadout[0].ShieldCount);
+        Assert.True(wanted.Loadout.IsDefaultOrEmpty);
+        Assert.Equal(carrier.ShipId, wanted.SourceShipId);
+        Assert.Equal(carrier.Revision, wanted.ExpectedCarrierRevision);
         Assert.Equal(options.Tactics[0].Id, wanted.OwnTacticId);
         Assert.Equal(options.Tactics[^1].Id, wanted.EnemyTacticId);
         var action = setup.OnKeyDown(Key.Enter);
@@ -68,10 +68,20 @@ public sealed class SetupScreenTests
         Assert.Equal(long.MinValue, state.Seed);
         Assert.Equal(wanted.OwnTacticId, state.Tactics[0].TacticId);
         Assert.Equal(wanted.EnemyTacticId, state.Tactics[1].TacticId);
-        var unit = state.Units.First(u => u.Id == first.Id);
-        Assert.Equal(wanted.Loadout[0].GunId, unit.Build!.WeaponId);
-        Assert.Equal(wanted.Loadout[0].PlateId, unit.Build.ArmorId);
-        Assert.Null(unit.Build.ShieldId);
+        // The launched units are the owned drones with their owned equipment, not catalog defaults.
+        var ownUnits = state.Units
+            .Where(unit => unit.Side == state.PlayerSide && unit.Kind == TacticalUnitKind.Drone).ToArray();
+        Assert.Equal(carrier.OwnedDrones.Select(drone => drone.Id).Order(StringComparer.Ordinal),
+            ownUnits.Select(unit => unit.Id).Order(StringComparer.Ordinal));
+        foreach (var unit in ownUnits)
+        {
+            var drone = carrier.OwnedDrones.Single(candidate => candidate.Id == unit.Id);
+            Assert.Equal(drone.WeaponId, unit.Build!.WeaponId);
+            Assert.Equal(drone.ArmorId, unit.Build.ArmorId);
+            Assert.Equal(drone.ShieldId, unit.Build.ShieldId);
+            Assert.Equal(drone.ShieldCount, unit.Build.ShieldCount);
+            Assert.Equal(drone.AmmoCapacity, unit.AmmoCapacity!.Value);
+        }
         Assert.Equal(1, fixture.Proxy.Starts);
     }
 
@@ -111,7 +121,8 @@ public sealed class SetupScreenTests
         setup.OnKeyDown(Key.Tab, KeyModifiers.None, false);
         Assert.Equal(ScreenEvent.None, setup.OnKeyDown(Key.Enter)); // scenario popup
         Assert.Equal(ScreenEvent.None, setup.OnKeyDown(Key.Escape)); // close popup, keep setup
-        int toSeed = 1 + setup.CurrentLayout.DroneCount * 3 + 2;
+        // Owned rows are read-only: focus order is scenario, own tactic, enemy tactic, then seed.
+        int toSeed = 1 + 2 + 1;
         for (int i = 0; i < toSeed; i++) setup.OnKeyDown(Key.Tab, KeyModifiers.None, false);
         Assert.True(setup.CurrentLayout.Scroll > 0);
         Assert.True(setup.CurrentLayout.Content.Contains(setup.CurrentLayout.Seed));
@@ -123,7 +134,7 @@ public sealed class SetupScreenTests
     }
 
     [Fact]
-    public async Task SetupUsesPlayerSideBAndKeepsNpcRangesInItsOwnedRows()
+    public async Task OwnedSetupKeepsScenarioPlayerSideAndNpcRangesInItsRows()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
         var options = fixture.Engine.GetTacticalBattleOptions();
@@ -138,11 +149,16 @@ public sealed class SetupScreenTests
         fixture.Proxy.OptionsOverride = options with { Scenarios = [sideB] };
         var setup = await Open(fixture);
         Render(setup);
-        var owned = sideB.Drones.Where(d => d.Side == "B").ToArray();
-        Assert.Contains(owned, d => d.Accuracy.IsRandom || d.Maneuver.IsRandom);
-        Assert.Equal(owned.Select(d => d.Id), setup.BuildStartRequest().Loadout.Select(d => d.DroneId));
-        Assert.Equal(owned.Length, setup.CurrentLayout!.DroneCount);
-        Assert.Equal(sideB.OwnTacticId, setup.BuildStartRequest().OwnTacticId);
+        // The encounter's side-B drones still describe NPC ranges, but the F8 form shows and
+        // launches only the persistent owned wing — scenario/player-side/tactics stay selectable.
+        var encounterRows = sideB.Drones.Where(d => d.Side == "B").ToArray();
+        Assert.Contains(encounterRows, d => d.Accuracy.IsRandom || d.Maneuver.IsRandom);
+        Assert.True(setup.OwnedWingMode);
+        Assert.Equal(fixture.Handle.CarrierOperations!.OwnedDrones.Length, setup.CurrentLayout!.DroneCount);
+        var request = setup.BuildStartRequest();
+        Assert.True(request.Loadout.IsDefaultOrEmpty);
+        Assert.Equal(sideB.Id, request.ScenarioId);
+        Assert.Equal(sideB.OwnTacticId, request.OwnTacticId);
     }
 
     [Theory]

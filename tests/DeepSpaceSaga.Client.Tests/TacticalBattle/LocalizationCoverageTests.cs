@@ -175,12 +175,31 @@ public sealed class LocalizationCoverageTests
             var roles = catalog.RootElement.GetProperty("roles");
             var cards = TacticalBattleSidesTab.Cards(frame).Where(c => c.Unit.Kind == TacticalUnitKind.Drone).ToArray();
             Assert.Contains(cards, c => c.Unit.RoleId == "striker");
+            // EP-0029: the F8 setup launches the persistent owned wing (no encounter loadout
+            // override), so own rows read identity/equipment from CarrierOperations; the enemy
+            // side still comes from the encounter scenario rows.
+            var carrier = Assert.IsType<CarrierOperationsSnapshot>(setup.Flow.Session.CarrierOperations);
+            var owned = carrier.OwnedDrones.ToDictionary(drone => drone.Id, StringComparer.Ordinal);
+            var crew = carrier.Crew.ToDictionary(member => member.Id, StringComparer.Ordinal);
             foreach (var card in cards)
             {
                 var unit = card.Unit;
-                var row = scenario.Drones.Single(d => d.Id == unit.Id);
-                Assert.Equal(row.FrameName, unit.Build!.FrameName);
-                Assert.Equal(row.PilotName, unit.Build.PilotName);
+                if (owned.TryGetValue(unit.Id, out var drone))
+                {
+                    var member = crew[drone.CrewId];
+                    Assert.False(string.IsNullOrWhiteSpace(unit.Build!.FrameName));
+                    Assert.Equal(drone.WeaponId, unit.Build.WeaponId);
+                    Assert.Equal(drone.ArmorId, unit.Build.ArmorId);
+                    Assert.Equal(drone.ShieldId, unit.Build.ShieldId);
+                    Assert.Equal(member.DisplayName, unit.Build.PilotName);
+                    Assert.Equal(member.PortraitAssetId, unit.Build.PilotPortraitAssetId);
+                }
+                else
+                {
+                    var row = scenario.Drones.Single(d => d.Id == unit.Id);
+                    Assert.Equal(row.FrameName, unit.Build!.FrameName);
+                    Assert.Equal(row.PilotName, unit.Build.PilotName);
+                }
                 string role = roles.GetProperty(unit.RoleId!).GetProperty("name").GetString()!;
                 Assert.Equal(role, unit.RoleName);
                 Assert.Contains(role, card.Details);
