@@ -11,8 +11,8 @@ depends_on: [EP-0029-US-0007-TK-0002-carrier-roundtrip]
 files_touched: 5
 serves: [AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
-revision: 1
-implementation_status: not-started
+revision: 2
+implementation_status: implemented
 ---
 
 # Совместимость нового inventory с каталогом
@@ -36,7 +36,7 @@ implementation_status: not-started
 | File | Current state | Allowed change |
 |---|---|---|
 | [src/DeepSpaceSaga.Engine/SimulationEngine.cs](../../../../../src/DeepSpaceSaga.Engine/SimulationEngine.cs) | `src/DeepSpaceSaga.Engine/SimulationEngine.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Совместимость нового inventory с каталогом» по шагам ниже, без соседних историй. |
-| [src/DeepSpaceSaga.Engine/Scenario/CatalogCompatibilityData.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/CatalogCompatibilityData.cs) | `src/DeepSpaceSaga.Engine/Scenario/CatalogCompatibilityData.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Совместимость нового inventory с каталогом» по шагам ниже, без соседних историй. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.TradingContinuation.cs](../../../../../src/DeepSpaceSaga.Engine/SimulationEngine.TradingContinuation.cs) | `src/DeepSpaceSaga.Engine/SimulationEngine.TradingContinuation.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Совместимость нового inventory с каталогом»: trading-config fingerprint включает catalog, поэтому принимает и предыдущий digest. |
 | [src/DeepSpaceSaga.Engine/Scenario/CarrierCatalogCompatibility.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/CarrierCatalogCompatibility.cs) | Новый проектируемый файл; до выполнения отсутствует. | Только «Совместимость нового inventory с каталогом» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs](../../../../../src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs) | `src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Совместимость нового inventory с каталогом» по шагам ниже, без соседних историй. |
 | [tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0007Tk0003Tests.cs](../../../../../tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0007Tk0003Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0007Tk0003Tests ниже с независимым oracle. |
@@ -107,4 +107,11 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`CarrierCatalogCompatibility` принимает сохранённый catalog identity, только если он равен текущему `CatalogCompatibility` или явно известному предыдущему digest (пересчитанному из текущих economic items за вычетом нового SKU `item.drone-torpedo.t1` — структурная проверка неизменности прежних SKU/цен/масс). Generic check не отключён; произвольный fingerprint не подставляется. `EconomicCatalogFingerprint` вынесен в `GameDataRegistry` (общий для обоих digest). Trading-config fingerprint включает catalog, поэтому `StageTradingContinuation` принимает и предыдущий digest (6-й файл `SimulationEngine.TradingContinuation.cs` отражён в Code context вместо неиспользованного `CatalogCompatibilityData.cs`).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0007Tk0003Tests"` — **4/4 passed** (`KnownPreCarrierCatalogAccepted`, `UnknownFingerprintRejected`, `ChangedExistingCommodityNotWhitelisted`, `GiftedAmmoHasExplicitBasis`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-024-us0007tk0003/US-0007-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+- Ранее падавшие Save18/19/20 фикстуры теперь проходят: `SaveFixturesTests` + `SaveMigration20Tests` — 17/17 passed.
+- Регрессия (save/carrier/catalog): 179/181 passed; 2 падения — `CatalogCompatibilityTests.Station_inventory_rejects_unknown_or_nontradeable_content` («solarSystem: invalid offset», доэпиковый solar-system corpus failure, не связан с этим тикетом).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

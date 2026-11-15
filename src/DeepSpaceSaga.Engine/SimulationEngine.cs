@@ -264,7 +264,7 @@ public sealed partial class SimulationEngine : IDisposable
         PlacementValidationResult? aiPlacementValidation = null;
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.MarketEventCatalogFingerprint is { } eventFingerprint && eventFingerprint != _registry.StationMarketEventCatalogFingerprint)
             throw new ScenarioException("Incompatible market event catalog fingerprint. Save was not modified.");
-        if (gs.CatalogCompatibility is { } catalog && catalog != _registry.CatalogCompatibility)
+        if (gs.CatalogCompatibility is { } catalog && !CarrierCatalogCompatibility.Accepts(_registry, catalog))
             throw new ScenarioException("Incompatible catalogVersion, rulesVersion or catalog fingerprint. Save was not modified.");
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.CatalogCompatibility is null && _registry.ItemTypes.Count > 0 &&
             !string.Equals(_registry.LegacyCatalogFingerprint, _registry.CatalogCompatibility.Fingerprint, StringComparison.Ordinal))
