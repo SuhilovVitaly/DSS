@@ -139,3 +139,15 @@ Status: automated PASS (client layer); native/product acceptance remains OPEN.
 **Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-054-us0009tk0003-followup/US-0009-TK-0003/{red.trx,green.trx,client-build.log,format.log}`; build 0 warnings/0 errors, format clean.
 
 Status: automated PASS (client layer); native/product acceptance remains OPEN.
+
+### Validation follow-up 2026-11-15 (P3 hardening)
+
+**Finding:** расчёт остатка торпед в `SkiaWindow` суммировал `long` без насыщения и лишь затем клампил; две стопки по `long.MaxValue` переполнялись в отрицательное значение и давали 0.
+
+**Fix:** вычисление вынесено в `internal static int TorpedoStock(AuthoritativeSnapshot?)` с насыщающим сложением (кап на `int.MaxValue`, неположительные/чужие стеки игнорируются). Транспортная лямбда `RearmDroneAsync` остаётся inspection-verified (сетевой/локальный handle — вне allowlist).
+
+**Tests:** `Ep0029Us0009Tk0003Tests` — 13/13 passed; добавлен `TorpedoStockSumsCargoAndSaturates` (null snapshot и snapshot без модулей → 0, нормальные стопки 42+6=48 с игнором ore, `long.MaxValue`×2 и `int.MaxValue`+1 → `int.MaxValue`).
+
+**Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-056-us0009tk0003-hardening/US-0009-TK-0003/{red.log,green.trx,final-followup.trx,client-build.log,format.log}`; `red.log` — compile-red доступа к `TorpedoStock` (CS0117; упавшая сборка TRX не создаёт), `green.trx` — 13/13, `final-followup.trx` — 34/34 по пяти запрошенным классам; build 0 warnings/0 errors, format clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.

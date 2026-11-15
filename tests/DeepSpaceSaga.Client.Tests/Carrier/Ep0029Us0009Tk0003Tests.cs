@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
@@ -44,6 +45,34 @@ public sealed class Ep0029Us0009Tk0003Tests
 
     private static ShipScreen Screen(Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>> rearm, int stock = 42) =>
         new(ShipViewModel.From(Carrier()), stock, rearm);
+
+    private static AuthoritativeSnapshot SnapshotWithCargo(params (string ItemTypeId, long Quantity)[] stacks) => new(
+        SnapshotSequence: 1, GameTimeMs: 0, CurrentSpeed: SimulationSpeed.Speed1, Objects: [],
+        InstalledModules:
+        [
+            new InstalledModuleSnapshot("MOD-CARGO-1", "module.cargo.medium", "Cargo hold", 0, [],
+                Cargo: [.. stacks.Select(stack => new CargoStackSnapshot(stack.ItemTypeId, stack.Quantity))]),
+            new InstalledModuleSnapshot("MOD-CARGO-2", "module.cargo.medium", "Cargo hold", 1, [],
+                Cargo: [new CargoStackSnapshot("item.ore", 5000)]),
+        ]);
+
+    [Fact]
+    public void TorpedoStockSumsCargoAndSaturates()
+    {
+        // No session / legacy snapshot with no modules means no stock, never a fabricated one.
+        Assert.Equal(0, SkiaWindow.TorpedoStock(null));
+        Assert.Equal(0, SkiaWindow.TorpedoStock(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed1, [])));
+
+        // Normal stock sums only torpedo stacks across installed modules (ore is ignored).
+        Assert.Equal(48, SkiaWindow.TorpedoStock(SnapshotWithCargo(
+            ("item.drone-torpedo.t1", 42), ("item.ore", 5000), ("item.drone-torpedo.t1", 6))));
+
+        // Two huge stacks must saturate at int.MaxValue instead of wrapping negative.
+        Assert.Equal(int.MaxValue, SkiaWindow.TorpedoStock(SnapshotWithCargo(
+            ("item.drone-torpedo.t1", long.MaxValue), ("item.drone-torpedo.t1", long.MaxValue))));
+        Assert.Equal(int.MaxValue, SkiaWindow.TorpedoStock(SnapshotWithCargo(
+            ("item.drone-torpedo.t1", int.MaxValue), ("item.drone-torpedo.t1", 1))));
+    }
 
     [Fact]
     public async Task ConfirmSendsSelectedQuantityThroughScreen()

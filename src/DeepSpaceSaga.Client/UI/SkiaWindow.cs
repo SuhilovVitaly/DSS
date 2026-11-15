@@ -1314,7 +1314,11 @@ public sealed class SkiaWindow : IDisposable
         await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm));
     }
 
-    private static int TorpedoStock(AuthoritativeSnapshot? snapshot)
+    /// <summary>
+    /// Torpedoes available in the cargo hold, summed across installed modules with saturated
+    /// addition: oversized cargo stacks cap at <see cref="int.MaxValue"/> instead of wrapping.
+    /// </summary>
+    internal static int TorpedoStock(AuthoritativeSnapshot? snapshot)
     {
         if (snapshot?.InstalledModules is not { IsDefaultOrEmpty: false } modules)
             return 0;
@@ -1323,10 +1327,13 @@ public sealed class SkiaWindow : IDisposable
         {
             if (module.Cargo is not { IsDefaultOrEmpty: false } cargo) continue;
             foreach (var stack in cargo)
-                if (stack.ItemTypeId == "item.drone-torpedo.t1")
-                    total += stack.Quantity;
+            {
+                if (stack.ItemTypeId != "item.drone-torpedo.t1" || stack.Quantity <= 0) continue;
+                long remaining = int.MaxValue - total;
+                total += stack.Quantity >= remaining ? remaining : stack.Quantity;
+            }
         }
-        return (int)Math.Clamp(total, 0, int.MaxValue);
+        return (int)total;
     }
 
     /// <summary>
