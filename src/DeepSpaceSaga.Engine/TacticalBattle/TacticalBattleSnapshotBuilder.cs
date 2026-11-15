@@ -141,6 +141,7 @@ internal static class TacticalBattleSnapshotBuilder
                 TacticalCarrierDestroyed c => new TacticalOutcomeReasonSnapshot(TacticalOutcomeReasonCode.CarrierDestroyed, c.CarrierId),
                 TacticalNoDrones d => new TacticalOutcomeReasonSnapshot(TacticalOutcomeReasonCode.NoDrones, d.CarrierId),
                 TacticalTimeout t => new TacticalOutcomeReasonSnapshot(TacticalOutcomeReasonCode.Timeout, Cap: t.Cap),
+                TacticalNoCombatCapability => new TacticalOutcomeReasonSnapshot(TacticalOutcomeReasonCode.NoCombatCapability),
                 _ => throw new InvalidOperationException("Unknown tactical outcome reason.")
             }).ToImmutableArray(), result.Turns,
             TacticalBattleConstants.SideOrder.Select((side, i) => new TacticalLossCount(side, result.Losses[i])).ToImmutableArray(),

@@ -191,7 +191,19 @@ internal sealed class TacticalBattleSession
         }
         _fireSteps = steps.ToImmutable();
         _shots = _fireSteps.Where(s => s.Shot is not null).Select(s => s.Shot!).ToImmutableArray();
-        if (Battle.Result is null) BeginTurn();
+        if (Battle.Result is null)
+        {
+            // Apply the series turn cap to the interactive path too, so two evading sides cannot loop forever.
+            if (Battle.Turn >= Battle.Catalog.Rules.SeriesTurnCap)
+            {
+                Battle.EndWithTimeout(Battle.Catalog.Rules.SeriesTurnCap);
+                AddOutcome(TacticalBattlePhase.Fire);
+            }
+            else
+            {
+                BeginTurn();
+            }
+        }
     }
 
     private void BeginTurn()

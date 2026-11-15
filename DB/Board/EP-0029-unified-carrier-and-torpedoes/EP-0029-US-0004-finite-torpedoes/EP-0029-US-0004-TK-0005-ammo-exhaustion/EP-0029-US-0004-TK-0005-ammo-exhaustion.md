@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Завершение боя без возможности огня
@@ -107,4 +107,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `TacticalNoCombatCapability` outcome reason: after the normal victory check, if neither side has an active, un-jammed drone with `AmmoCurrent > 0`, the battle ends `Draw/NoCombatCapability` (dust/distance/geometry are not exhaustion). Mapped it to `TacticalOutcomeReasonCode.NoCombatCapability` in the snapshot builder. Extracted `TacticalBattle.EndWithTimeout` and applied the `SeriesTurnCap` to the interactive session path (timeout after fire when `Turn >= SeriesTurnCap`) so two evading sides cannot loop.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0004Tk0005Tests"` — **4/4 passed** (`BothEmptyEndInStalemate`, `OneEmptyStillTakesDamage`, `DustOrDistanceIsNotExhaustion`, `InteractiveTurnCapEnds`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-015-us0004tk0005/US-0004-TK-0005/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `git diff --check` clean.
+- `dotnet format --verify-no-changes` flags pre-existing whitespace at `TacticalBattleSnapshotBuilder.cs:20-22` (untouched by this change); my touched lines are conformant.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

@@ -58,7 +58,20 @@ internal sealed partial class TacticalBattle
             defeated.Add(side);
             reasons.Add(reason);
         }
-        if (defeated.Count == 0) return null;
+        if (defeated.Count == 0)
+        {
+            // No normal defeat: if neither side has an active, un-jammed drone with ammo, the
+            // battle ends in a draw with NoCombatCapability (dust/distance/geometry are not exhaustion).
+            bool sideACanFire = ActiveDrones("A").Any(d => !d.Jammed && d.AmmoCurrent > 0);
+            bool sideBCanFire = ActiveDrones("B").Any(d => !d.Jammed && d.AmmoCurrent > 0);
+            if (!sideACanFire && !sideBCanFire)
+            {
+                Result = CaptureResult(TacticalOutcomeKind.Draw, [new TacticalNoCombatCapability()]);
+                Phase = TacticalTurnPhase.Complete;
+                return Result;
+            }
+            return null;
+        }
         TacticalOutcomeKind kind = defeated.Count == 2 ? TacticalOutcomeKind.Draw
             : defeated[0] == "A" ? TacticalOutcomeKind.B : TacticalOutcomeKind.A;
         Result = CaptureResult(kind, reasons.ToImmutable());
@@ -82,12 +95,16 @@ internal sealed partial class TacticalBattle
         if (Result is not null) return Result;
         Require(TacticalTurnPhase.Planning);
         while (Turn < limit && Result is null) Step(planner);
-        if (Result is null)
-        {
-            Result = CaptureResult(TacticalOutcomeKind.Timeout, [new TacticalTimeout(limit)]);
-            Phase = TacticalTurnPhase.Complete;
-        }
-        return Result;
+        return Result ?? EndWithTimeout(limit);
+    }
+
+    public TacticalBattleResult EndWithTimeout(int cap)
+    {
+        if (Result is not null) return Result;
+        var result = CaptureResult(TacticalOutcomeKind.Timeout, [new TacticalTimeout(cap)]);
+        Result = result;
+        Phase = TacticalTurnPhase.Complete;
+        return result;
     }
 
     public TacticalBattleTotals CaptureStatistics() => new(Statistics.Shots, Statistics.Hits, Statistics.RearHits,
