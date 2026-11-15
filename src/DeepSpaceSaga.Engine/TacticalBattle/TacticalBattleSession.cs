@@ -32,6 +32,10 @@ internal sealed class TacticalBattleSession
         BeginTurn();
     }
 
+    /// <summary>Factory for an already-assembled battle (owned sortie path).</summary>
+    internal static TacticalBattleSession Create(TacticalBattle battle, string id, string playerSide) =>
+        new(battle, id, playerSide);
+
     public static TacticalBattleSession? TryCreate(TacticalBattleCatalog catalog, StartTacticalBattleRequest request, out TacticalBattleRejectionCode code)
     {
         code = TacticalBattleRejectionCode.None;

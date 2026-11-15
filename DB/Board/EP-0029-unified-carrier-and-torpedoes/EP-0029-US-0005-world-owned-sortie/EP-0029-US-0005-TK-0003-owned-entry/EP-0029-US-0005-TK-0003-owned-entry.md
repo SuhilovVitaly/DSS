@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Авторитетная проверка входа
@@ -106,4 +106,11 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`StartTacticalBattle` now routes an owned sortie (`SourceShipId` present) through `StartOwnedTacticalBattle`: validates ownership (`WrongShip`), carrier revision (`StaleCarrierState`, 0 not a wildcard), ship alive (`CarrierNotReady`), rejects any public `Loadout` override (`InvalidRequest`), requires a ready wing (`NoReadyDrones`), then assembles via `OwnedBattleAssembly` and binds the session + source ship. Diagnostic creation (no `SourceShipId`) is unchanged.
+
+**TK-0002 follow-up fix:** `OwnedBattleAssembly` now takes the encounter scenario id separately (the `TacticalBattle.ScenarioId` must be the dictionary key, not the display name) and reads tactical skills from the slot's catalog pilot record rather than the world crew's 0..30 `AccuracySkill` (which is a different, module-operation range).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0005Tk0003Tests|FullyQualifiedName~Ep0029Us0005Tk0002Tests"` — **8/8 passed** (`WrongShipAndStaleRevisionReject`, `OwnedLoadoutOverrideRejects`, `DuplicateStartReturnsReceipt`, `NoReadyDronesNoFallback` + 4 TK-0002) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-018-us0005tk0003/US-0005-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

@@ -14,13 +14,12 @@ internal static class OwnedBattleAssembly
 {
     public static TacticalBattle Create(TacticalBattleCatalog catalog, string shipId, int hullCurrent, int maneuver,
         ImmutableArray<OwnedDroneData> wing, ImmutableArray<CrewMemberRuntime> crew, BattleScenario encounter,
-        long seed, string playerSide = "A")
+        string scenarioId, long seed, string playerSide = "A")
     {
         var random = new Mulberry32(seed);
         var drones = ImmutableArray.CreateBuilder<TacticalDrone>();
         var carriers = ImmutableArray.CreateBuilder<TacticalCarrier>();
         var selectedTactics = ImmutableArray.CreateBuilder<string>();
-        var crewById = crew.ToDictionary(c => c.Id, StringComparer.Ordinal);
 
         foreach (var side in encounter.Sides)
         {
@@ -39,8 +38,7 @@ internal static class OwnedBattleAssembly
                     if (slotIndex >= side.Drones.Length) break;
                     if (owned.Destroyed) { slotIndex++; continue; }
                     var start = side.Drones[slotIndex];
-                    crewById.TryGetValue(owned.CrewId, out var pilot);
-                    drones.Add(BuildOwnedDrone(catalog, owned, start, playerSide, pilot));
+                    drones.Add(BuildOwnedDrone(catalog, owned, start, playerSide));
                     slotIndex++;
                 }
             }
@@ -64,7 +62,7 @@ internal static class OwnedBattleAssembly
 
         var assembledDrones = drones.ToImmutable();
         var assembledCarriers = carriers.ToImmutable();
-        var battle = new TacticalBattle(catalog, encounter.Name, seed, assembledDrones, assembledCarriers,
+        var battle = new TacticalBattle(catalog, scenarioId, seed, assembledDrones, assembledCarriers,
             selectedTactics.ToImmutable(), random)
         { Anomalies = TacticalAnomalyGenerator.Generate(catalog, seed, assembledDrones, assembledCarriers) };
 
@@ -99,7 +97,7 @@ internal static class OwnedBattleAssembly
     }
 
     private static TacticalDrone BuildOwnedDrone(TacticalBattleCatalog catalog, OwnedDroneData owned,
-        BattleDroneStart start, string side, CrewMemberRuntime? pilot)
+        BattleDroneStart start, string side)
     {
         var layout = catalog.Layouts[owned.FrameId];
         var frame = catalog.Frames[layout.Class];
@@ -114,8 +112,13 @@ internal static class OwnedBattleAssembly
             moduleMass: (decoy?.MassKg ?? 0) + owned.AmmoCurrent * 1.0);
         double speed = PyMath.Clamp(start.Speed, limits.MinSpeed, limits.MaxSpeed);
 
-        var drone = new TacticalDrone(owned.DroneId, side, new(start.X, start.Y, start.Course),
-            owned.MaxHull, owned.MaxArmor, pilot?.ManeuverabilitySkill ?? 0, pilot?.AccuracySkill ?? 0,
+        // Tactical skills come from the slot's pilot record (fixed for the starter wing, no RNG).
+        var catalogPilot = catalog.Pilots[start.Pilot];
+        int accuracy = catalogPilot.Accuracy.Minimum;
+        int maneuver = catalogPilot.Maneuver.Minimum;
+
+        return new TacticalDrone(owned.DroneId, side, new(start.X, start.Y, start.Course),
+            owned.MaxHull, owned.MaxArmor, maneuver, accuracy,
             start.Pilot, layout, frame, weapon, armor, shield, shieldCount, engines, speed, decoy)
         {
             Hull = owned.CurrentHull,
@@ -125,9 +128,8 @@ internal static class OwnedBattleAssembly
             AmmoUnitMassKg = 1.0,
             DecoyCharges = owned.DecoyCharges,
             Jammed = owned.Jammed,
-            Initiative = pilot?.Initiative ?? 50,
+            Initiative = catalogPilot.Initiative.Minimum,
         };
-        return drone;
     }
 
     private static TacticalDrone BuildScenarioDrone(TacticalBattleCatalog catalog, BattleDroneStart start, string side, Mulberry32 random)

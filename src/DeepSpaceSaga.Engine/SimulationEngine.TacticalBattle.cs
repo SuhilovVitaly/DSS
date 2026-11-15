@@ -1,8 +1,10 @@
+using System.Collections.Immutable;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.TacticalBattle;
+using DeepSpaceSaga.Engine.TacticalBattle.Content;
 
 namespace DeepSpaceSaga.Engine;
 
@@ -14,6 +16,7 @@ public sealed partial class SimulationEngine
         if (_tacticalBattleSession is not null) throw new InvalidOperationException(TacticalBattleActiveReason);
     }
     private TacticalBattleSession? _tacticalBattleSession;
+    private string? _tacticalBattleSourceShipId;
     // ReceiveCommand's view of the battle, guarded by _commandGate so sending a world command never
     // waits for _worldStateLock. Written only together with _tacticalBattleSession (world lock held).
     private bool _tacticalBattleCommandBlock;
@@ -59,12 +62,58 @@ public sealed partial class SimulationEngine
             }
             if (_clock.Speed != SimulationSpeed.Speed0)
                 return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WorldNotPaused);
+            if (request.SourceShipId is not null)
+                return StartOwnedTacticalBattle(request, catalog);
             var session = TacticalBattleSession.TryCreate(catalog, request, out var code);
             if (session is null) return RejectTactical(request.CommandId, code);
             _tacticalBattleSession = session;
             SetTacticalBattleCommandBlock(true);
             return session.Initial(request.CommandId);
         });
+    }
+    private TacticalBattleResponse StartOwnedTacticalBattle(StartTacticalBattleRequest request, TacticalBattleCatalog catalog)
+    {
+        string sourceShipId = request.SourceShipId!; // routing guarantees non-null here
+        // Ownership: the owned sortie must launch from the world's actual player ship.
+        if (sourceShipId != PlayerShipObjectId)
+            return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongShip);
+        // Optimistic concurrency: the caller must present the current carrier revision (0 is not a wildcard).
+        if (request.ExpectedCarrierRevision != GetCarrierRevision(sourceShipId))
+            return RejectTactical(request.CommandId, TacticalBattleRejectionCode.StaleCarrierState);
+        // Ship must be alive.
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == sourceShipId);
+        if (ship is null || ship.IsDestroyed)
+            return RejectTactical(request.CommandId, TacticalBattleRejectionCode.CarrierNotReady);
+        // An owned sortie never accepts a public equipment override.
+        if (!request.Loadout.IsDefaultOrEmpty)
+            return RejectTactical(request.CommandId, TacticalBattleRejectionCode.InvalidRequest);
+
+        string scenarioId = string.IsNullOrWhiteSpace(request.ScenarioId) ? catalog.Scenarios.Entries[0].Id : request.ScenarioId;
+        if (!catalog.Scenarios.Contains(scenarioId))
+            return RejectTactical(request.CommandId, TacticalBattleRejectionCode.UnknownScenario);
+        var scenario = catalog.Scenarios[scenarioId];
+        string playerSide = scenario.Goal?.PlayerSide ?? "A";
+        string enemySide = playerSide == "A" ? "B" : "A";
+        string ownTactic = string.IsNullOrWhiteSpace(request.OwnTacticId) ? scenario.Sides.First(s => s.Id == playerSide).Tactic : request.OwnTacticId;
+        string enemyTactic = string.IsNullOrWhiteSpace(request.EnemyTacticId) ? scenario.Sides.First(s => s.Id == enemySide).Tactic : request.EnemyTacticId;
+        if (!catalog.Ai.Tactics.Contains(ownTactic) || !catalog.Ai.Tactics.Contains(enemyTactic))
+            return RejectTactical(request.CommandId, TacticalBattleRejectionCode.UnknownTactic);
+
+        // Ready wing: a destroyed/tombstoned drone is never deployed; an empty wing refuses entry.
+        var readyWing = GetOwnedWing(sourceShipId).Where(d => !d.Destroyed).ToImmutableArray();
+        if (readyWing.IsEmpty)
+            return RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoReadyDrones);
+
+        int hullMax = GetCarrierHullMax(sourceShipId);
+        int hullCurrent = GetCarrierHullCurrent(sourceShipId, hullMax);
+        int maneuver = GetShipManeuver(sourceShipId);
+        var battle = OwnedBattleAssembly.Create(catalog, sourceShipId, hullCurrent, maneuver, readyWing,
+            ship.Crew, scenario, scenarioId, request.Seed, playerSide);
+        var session = TacticalBattleSession.Create(battle, request.CommandId, playerSide);
+        _tacticalBattleSession = session;
+        _tacticalBattleSourceShipId = sourceShipId;
+        SetTacticalBattleCommandBlock(true);
+        return session.Initial(request.CommandId);
     }
     public TacticalBattleResponse MoveTacticalBattle(MoveTacticalBattleRequest request)
     {

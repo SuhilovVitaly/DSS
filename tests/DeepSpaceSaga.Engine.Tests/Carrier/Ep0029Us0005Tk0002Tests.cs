@@ -46,7 +46,7 @@ public sealed class Ep0029Us0005Tk0002Tests
     public void TwoSurvivorsStartAsTwo()
     {
         var battle = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 400, 35,
-            FourWing(twoDestroyed: true), FourCrew(), Catalog().Scenarios["initial"], 1);
+            FourWing(twoDestroyed: true), FourCrew(), Catalog().Scenarios["initial"], "initial", 1);
         Assert.Equal(2, battle.Drones.Count(d => d.Side == "A"));
         Assert.Equal(6, battle.Drones.Count(d => d.Side == "B")); // enemy unchanged
     }
@@ -56,7 +56,7 @@ public sealed class Ep0029Us0005Tk0002Tests
     {
         var wing = FourWing();
         var battle = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 317, 35, wing, FourCrew(),
-            Catalog().Scenarios["initial"], 1);
+            Catalog().Scenarios["initial"], "initial", 1);
 
         Assert.Equal(317, battle.Carrier("A").Hull);
         var light = battle.Drones.Single(d => d.Side == "A" && d.Id == "DRN-PLAYER-03");
@@ -66,7 +66,7 @@ public sealed class Ep0029Us0005Tk0002Tests
         // Damage a drone's ammo and hull, then rebuild.
         var damaged = wing.Select(d => d.DroneId == "DRN-PLAYER-03" ? d with { AmmoCurrent = 2, CurrentHull = 40 } : d).ToImmutableArray();
         var damagedBattle = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 317, 35, damaged, FourCrew(),
-            Catalog().Scenarios["initial"], 1);
+            Catalog().Scenarios["initial"], "initial", 1);
         var rebuiltLight = damagedBattle.Drones.Single(d => d.Side == "A" && d.Id == "DRN-PLAYER-03");
         Assert.Equal(2, rebuiltLight.AmmoCurrent);
         Assert.Equal(40, rebuiltLight.Hull);
@@ -81,8 +81,8 @@ public sealed class Ep0029Us0005Tk0002Tests
             Pilot("CHR-PILOT-1", 55, 52, 55), Pilot("CHR-PILOT-2", 53, 55, 53),
             Pilot("CHR-PILOT-3", 59, 54, 59), Pilot("CHR-PILOT-4", 50, 51, 50));
 
-        var a = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 400, 35, FourWing(), crewA, Catalog().Scenarios["initial"], 1);
-        var b = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 400, 35, FourWing(), crewB, Catalog().Scenarios["initial"], 1);
+        var a = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 400, 35, FourWing(), crewA, Catalog().Scenarios["initial"], "initial", 1);
+        var b = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 400, 35, FourWing(), crewB, Catalog().Scenarios["initial"], "initial", 1);
         Assert.Equal(a.Drones.Where(d => d.Side == "A").Select(d => d.Id),
             b.Drones.Where(d => d.Side == "A").Select(d => d.Id));
     }
@@ -99,8 +99,8 @@ public sealed class Ep0029Us0005Tk0002Tests
             Pilot("CHR-PILOT-1", 90, 90, 90), Pilot("CHR-PILOT-2", 90, 90, 90),
             Pilot("CHR-PILOT-3", 90, 90, 90), Pilot("CHR-PILOT-4", 90, 90, 90));
 
-        var a = OwnedBattleAssembly.Create(catalog, "SPC-0001", 400, 35, FourWing(), fixedCrew, encounter, 1);
-        var b = OwnedBattleAssembly.Create(catalog, "SPC-0001", 400, 35, FourWing(), otherCrew, encounter, 1);
+        var a = OwnedBattleAssembly.Create(catalog, "SPC-0001", 400, 35, FourWing(), fixedCrew, encounter, "initial", 1);
+        var b = OwnedBattleAssembly.Create(catalog, "SPC-0001", 400, 35, FourWing(), otherCrew, encounter, "initial", 1);
 
         var enemyA = a.Drones.Where(d => d.Side == "B").Select(d => (d.Accuracy, d.Maneuver, d.Initiative)).ToArray();
         var enemyB = b.Drones.Where(d => d.Side == "B").Select(d => (d.Accuracy, d.Maneuver, d.Initiative)).ToArray();

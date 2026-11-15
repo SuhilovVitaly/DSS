@@ -156,4 +156,24 @@ public partial class SimulationEngine
             _carrierHull[objectId] = new CarrierHullRuntime(hullCurrent, Revision: 0);
         }
     }
+
+    internal int GetCarrierRevision(string shipId) =>
+        _carrierHull.TryGetValue(shipId, out var stored) ? stored.Revision : 0;
+
+    internal int GetCarrierHullCurrent(string shipId, int hullMax) =>
+        _carrierHull.TryGetValue(shipId, out var stored) ? stored.HullCurrent : hullMax;
+
+    internal int GetCarrierHullMax(string shipId)
+    {
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == shipId);
+        if (ship?.ShipClassId is null || !_registry.ShipClasses.Contains(ship.ShipClassId)) return 0;
+        return _registry.ShipClasses.GetDefinition(_registry.ShipClasses.GetIndex(ship.ShipClassId)).HullMax ?? 0;
+    }
+
+    internal int GetShipManeuver(string shipId)
+    {
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == shipId);
+        if (ship?.ShipClassId is null || !_registry.ShipClasses.Contains(ship.ShipClassId)) return 0;
+        return _registry.ShipClasses.GetDefinition(_registry.ShipClasses.GetIndex(ship.ShipClassId)).TacticalManeuver ?? 0;
+    }
 }
