@@ -99,8 +99,13 @@ public sealed partial class SimulationEngine
         if (!catalog.Ai.Tactics.Contains(ownTactic) || !catalog.Ai.Tactics.Contains(enemyTactic))
             return RejectTactical(request.CommandId, TacticalBattleRejectionCode.UnknownTactic);
 
-        // Ready wing: a destroyed/tombstoned drone is never deployed; an empty wing refuses entry.
-        var readyWing = GetOwnedWing(sourceShipId).Where(d => !d.Destroyed).ToImmutableArray();
+        // Ready wing: a destroyed/tombstoned or disabled drone is never deployed, and a drone whose
+        // hangar is not structurally intact, powered on and operationally ready cannot launch. The
+        // approved filter keeps DroneId order; an empty ready wing refuses entry (never a fallback).
+        var readyWing = GetOwnedWing(sourceShipId)
+            .Where(d => !d.Destroyed && !d.Disabled && IsHangarReady(d.HangarModuleId))
+            .OrderBy(d => d.DroneId, StringComparer.Ordinal)
+            .ToImmutableArray();
         if (readyWing.IsEmpty)
             return RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoReadyDrones);
 

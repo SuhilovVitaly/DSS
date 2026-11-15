@@ -29,7 +29,7 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
         return new JsonObject { ["width"] = 5, ["height"] = 5, ["cells"] = cells };
     }
 
-    private static JsonObject Bay(string moduleId, int ax)
+    private static JsonObject Bay(string moduleId, int ax, string powerState = "On")
     {
         var cells = new JsonArray();
         foreach (var (x, y) in new[] { (ax, 0), (ax + 1, 0), (ax, 1), (ax + 1, 1) })
@@ -40,7 +40,7 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
             ["moduleTypeId"] = "module.drone-bay.medium",
             ["occupiedCells"] = cells,
             ["structurePoints"] = 250,
-            ["powerState"] = "On",
+            ["powerState"] = powerState,
             ["operationalState"] = "Ready",
             ["cargo"] = new JsonArray(),
         };
@@ -56,7 +56,7 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
         ["initiative"] = 55,
     };
 
-    private void WriteScenario()
+    private void WriteScenario(string bay1Power = "On", string bay2Power = "On")
     {
         var ship = new JsonObject
         {
@@ -72,7 +72,7 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
             ["movementType"] = "Stationary",
             ["isKnown"] = true,
             ["hullLayout"] = HullLayout(),
-            ["modules"] = new JsonArray(Bay("BAY-01", 0), Bay("BAY-02", 2)),
+            ["modules"] = new JsonArray(Bay("BAY-01", 0, bay1Power), Bay("BAY-02", 2, bay2Power)),
             ["crew"] = new JsonArray(
                 Crew("CHR-0001", "Captain"), Crew("CHR-PLAYER-DEFENSE", "Officer"),
                 Crew("CHR-PILOT-1", "Pilot"), Crew("CHR-PILOT-2", "Pilot"),
@@ -93,9 +93,9 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
         File.WriteAllText(ScenarioPath, scenario.ToJsonString());
     }
 
-    private SimulationEngine Load()
+    private SimulationEngine Load(string bay1Power = "On", string bay2Power = "On")
     {
-        WriteScenario();
+        WriteScenario(bay1Power, bay2Power);
         return EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, ScenarioPath);
     }
 
@@ -171,5 +171,41 @@ public sealed class Ep0029Us0005Tk0003Tests : IDisposable
         var response = engine.StartTacticalBattle(Owned("c1"));
         Assert.Equal(TacticalBattleRejectionCode.NoReadyDrones, response.Code);
         Assert.Null(engine.TacticalBattleSessionForTests);
+    }
+
+    private static string[] PlayerDroneIds(SimulationEngine engine) =>
+        engine.TacticalBattleSessionForTests!.Battle.Drones
+            .Where(d => d.Side == "A").Select(d => d.Id).Order(StringComparer.Ordinal).ToArray();
+
+    [Fact]
+    public void OfflineHangarDronesCannotLaunch()
+    {
+        // BAY-01 is Off: only the powered/ready BAY-02 launches its two drones.
+        using var engine = Load(bay1Power: "Off");
+        engine.SetOwnedWingForTests("SPC-0001", FourWing());
+        var response = engine.StartTacticalBattle(Owned("c1"));
+        Assert.True(response.Accepted);
+        Assert.Equal(new[] { "DRN-PLAYER-03", "DRN-PLAYER-04" }, PlayerDroneIds(engine));
+        engine.ExitTacticalBattle(new("exit", response.State!.BattleId));
+
+        // Both bays Off: the wing is present but has no ready hangar — refuse, never fall back.
+        using var offline = Load(bay1Power: "Off", bay2Power: "Off");
+        offline.SetOwnedWingForTests("SPC-0001", FourWing());
+        var rejected = offline.StartTacticalBattle(Owned("c1"));
+        Assert.Equal(TacticalBattleRejectionCode.NoReadyDrones, rejected.Code);
+        Assert.Null(offline.TacticalBattleSessionForTests);
+    }
+
+    [Fact]
+    public void DisabledDroneIsNotDeployed()
+    {
+        using var engine = Load();
+        var wing = FourWing();
+        wing[1] = wing[1] with { Disabled = true };
+        engine.SetOwnedWingForTests("SPC-0001", wing);
+
+        var response = engine.StartTacticalBattle(Owned("c1"));
+        Assert.True(response.Accepted);
+        Assert.Equal(new[] { "DRN-PLAYER-01", "DRN-PLAYER-03", "DRN-PLAYER-04" }, PlayerDroneIds(engine));
     }
 }

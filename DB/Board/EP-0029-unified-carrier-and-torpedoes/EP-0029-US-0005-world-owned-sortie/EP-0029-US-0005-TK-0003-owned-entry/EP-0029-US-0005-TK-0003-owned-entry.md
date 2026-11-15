@@ -114,3 +114,20 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 - `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
 
 Status: automated PASS (engine layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15
+
+Verified finding (remediation review P1, item 3): the owned-sortie ready-wing filter in `StartOwnedTacticalBattle` excluded only `Destroyed`. A drone stored in a hangar that was Off/damaged still launched, and a `Disabled` survivor was deployed as if healthy.
+
+Fix: the ready wing is now `!Destroyed && !Disabled && IsHangarReady(d.HangarModuleId)`, ordered by `DroneId` (ordinal) so the assembled order stays deterministic. `IsHangarReady` requires a drone-capable module that is structurally intact, powered `On` and operationally `Ready`. An empty ready wing still rejects with `NoReadyDrones` — never a diagnostic fallback.
+
+Named tests (`Ep0029Us0005Tk0003Tests`):
+- `OfflineHangarDronesCannotLaunch` — BAY-01 `Off`: only BAY-02's DRN-PLAYER-03/04 are assembled; both bays `Off` → `NoReadyDrones` and no session.
+- `DisabledDroneIsNotDeployed` — a wing with DRN-PLAYER-02 disabled assembles only DRN-PLAYER-01/03/04.
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0005Tk0003Tests"` → 2 failed / 4 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-044-us0005tk0003/red.stdout.txt`.
+- Green: same filter → 6/6 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-044-us0005tk0003/US-0005-TK-0003/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
