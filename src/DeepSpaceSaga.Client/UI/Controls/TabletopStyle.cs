@@ -23,8 +23,9 @@ internal static class TabletopStyle
 
     internal static void Panel(SKCanvas canvas, SKRect rect) => Draw(canvas, rect, Steel);
 
-    internal static void Field(SKCanvas canvas, SKRect rect, bool focused = false, float scale = 1) =>
-        Draw(canvas, rect, Inset, recessed: true, highlighted: focused, scale: scale);
+    /// <summary>Recessed field; a disabled field gets the disabled fill and never the gold focus edge.</summary>
+    internal static void Field(SKCanvas canvas, SKRect rect, bool focused = false, float scale = 1, bool enabled = true) =>
+        Draw(canvas, rect, enabled ? Inset : Disabled, recessed: true, highlighted: focused && enabled, scale: scale);
 
     internal static void Button(SKCanvas canvas, SKRect rect, ButtonState state, bool primary = false)
     {

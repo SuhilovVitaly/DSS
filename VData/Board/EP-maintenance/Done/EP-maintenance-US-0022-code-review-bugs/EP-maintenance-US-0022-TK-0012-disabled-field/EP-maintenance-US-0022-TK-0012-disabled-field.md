@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0012-disabled-field
 title: Недоступный контрол вне боя выглядит как доступный
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Недоступный контрол вне боя выглядит как доступный
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -37,6 +38,7 @@ revision: 1
 |---|---|
 | `src/DeepSpaceSaga.Client/UI/Controls/TabStrip.cs:78-82` | `ControlVisuals.Frame` без скина. |
 | `src/DeepSpaceSaga.Client/UI/Controls/DropDown.cs:336` | Подсказка с `active: true`. |
+| `src/DeepSpaceSaga.Client/UI/Controls/TabletopStyle.cs` | Добавлено при исполнении (названо в шаге 2): `Field(..., enabled)` — недоступное поле получает заливку `Disabled` и никогда не получает золотую кромку. |
 
 ## Implementation steps
 
@@ -55,4 +57,13 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `ControlVisuals.Frame` без скина вызывал `TabletopStyle.Field` с заливкой `Inset` независимо от доступности, `ControlText.Tooltip` рисовал рамку с `active: true` и получал золотую кромку.
+
+- `TabletopStyle.Field` принимает `enabled`: недоступное поле залито `Disabled` (как недоступные кнопки), без золотой кромки. Остальные вызовы не изменились.
+- `ControlVisuals.Frame` без скина передаёт `enabled` — это покрывает DropDown, TabStrip, Toggle, ShortcutButton.
+- `ControlText.Tooltip` вне боевого скина рисуется неактивным; в боевых скинах подсказка не изменена (буквальный `active: false` поменял бы её цвета в Classic и Xenon Star).
+- Остаток: `ScrollTextPanel` не имеет состояния доступности и всегда рисуется как доступный; добавление такого состояния — новое поведение, не делалось.
+
+Тесты (`TabletopStyleTests`): `Disabled_field_differs_from_normal_field_and_never_gets_the_gold_edge`, `Tooltip_outside_battle_skin_has_no_gold_focus_edge`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.

@@ -355,7 +355,9 @@ internal static class ControlText
         float top = pointer.Y + height + 16 * scale <= viewport.Bottom ? pointer.Y + 16 * scale : pointer.Y - height - 12 * scale;
         top = Math.Clamp(top, viewport.Top + 4 * scale, viewport.Bottom - height - 4 * scale);
         var rect = SKRect.Create(left, top, width, height);
-        ControlVisuals.Frame(canvas, rect, true, true, scale, role);
+        // Outside a battle skin a tooltip is not a focused control, so it must not get the gold focus edge;
+        // battle skins keep their existing active tooltip frame.
+        ControlVisuals.Frame(canvas, rect, SkinStyle.Current is not null, true, scale, role);
         canvas.Save(); canvas.ClipRect(rect);
         for (int i = 0; i < lines.Length; i++) canvas.DrawText(lines[i], left + 8 * scale, top + 8 * scale - paint.FontMetrics.Ascent + i * lineHeight, paint);
         canvas.Restore();

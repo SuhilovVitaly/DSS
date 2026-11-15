@@ -77,7 +77,7 @@ internal static class ControlVisuals
     {
         if (SkinStyle.Current is null)
         {
-            TabletopStyle.Field(canvas, rect, active && enabled, scale);
+            TabletopStyle.Field(canvas, rect, active, scale, enabled);
             return;
         }
 
