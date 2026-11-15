@@ -115,7 +115,7 @@ internal sealed class TutorialSession
             TutorialHighlight.Target(layout, TutorialHighlight.ResolveKey(anchor, layout, observation, line.SignalUnitId)) is { } target)
             TutorialHighlight.Draw(canvas, layout, target, nowMs); // under the panel; not part of Bounds
         Panel.Draw(canvas, layout, designWidth, line, Director.Enabled, _portrait, Script.Officer);
-        Journal.Draw(canvas, layout, HeardSteps);
+        Journal.Draw(canvas, layout, designWidth, HeardSteps);
     }
 
     internal bool OnMouseDown(SKPoint designPoint, MouseButton button)

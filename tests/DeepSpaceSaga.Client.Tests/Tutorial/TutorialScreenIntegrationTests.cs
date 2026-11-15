@@ -234,6 +234,45 @@ public sealed class TutorialScreenIntegrationTests
         Assert.DoesNotContain(panel, screen.PanelRects);
     }
 
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0022: on a 5:4 window (1280x1024, design width 900) the open comms log narrows with the comms
+    /// panel and stays clear of the right column, so its clicks never land on the phase panel or the battle log.
+    /// </summary>
+    [Fact]
+    public async Task OpenJournalOnNarrowWindowStaysClearOfTheRightColumn()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var started = await StartF8(fixture);
+        using var skins = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var session = new TutorialSession(SelectPilotScript());
+        var screen = new TacticalBattleScreen(started.Flow, 1, skins.GetOrClassic("tabletop"))
+        { ClockMilliseconds = started.ClockMilliseconds, Tutorial = session };
+        fixture.Screens.Replace(screen);
+        void RenderNarrow()
+        {
+            using var bitmap = new SKBitmap(1280, 1024);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, 1280, 1024);
+        }
+
+        RenderNarrow();
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.H));
+        Assert.True(session.Journal.IsOpen);
+        RenderNarrow();
+
+        var journal = screen.Layout.Rects["tutorial:journal"];
+        Assert.Equal(journal, session.Journal.Bounds);
+        Assert.Equal(TutorialCommsPanel.WidthFor(900), journal.Width); // 1280 * 720 / 1024 = 900; the comms panel's width
+        foreach (string key in new[] { "phase", "battle-log" })
+        {
+            var rect = screen.Layout.Rects[key];
+            Assert.False(SKRect.Intersect(journal, rect) is { IsEmpty: false }, $"journal {journal} overlaps {key} {rect}");
+        }
+        var log = screen.Layout.Rects["battle-log"];
+        Assert.False(session.OnMouseDown(new SKPoint(log.Left + 1, journal.MidY), MouseButton.Left)); // the battle log keeps its clicks
+        Assert.True(session.Journal.IsOpen);
+    }
+
 
     [Fact]
     public async Task DraggingPathKeepsOfficerQuiet()

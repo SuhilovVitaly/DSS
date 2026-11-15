@@ -65,10 +65,18 @@ public sealed class TutorialContentTests
         }
     }
 
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0022: the narrowest supported window is 5:4 (1280x1024, design width 900), where the comms panel
+    /// shrinks to 448 and its text column to 340; every line must still fit two rows there (no ellipsis, D-06).
+    /// </summary>
+    private const float NarrowestDesignWidth = 900;
+
     [Fact]
     public void EveryLineFitsTwoPanelLinesInBothLanguages()
     {
         var script = Shipped();
+        float width = TutorialCommsPanel.TextWidthFor(TutorialCommsPanel.WidthFor(NarrowestDesignWidth));
+        Assert.Equal(340, width);
         foreach (string language in Languages)
         {
             using var locale = Localization.UseLocaleForTests(language);
@@ -76,7 +84,7 @@ public sealed class TutorialContentTests
             {
                 string text = Localization.Get(step.LineKey);
                 Assert.NotEqual(step.LineKey, text);
-                var rows = TutorialCommsPanel.Wrap(text);
+                var rows = TutorialCommsPanel.Wrap(text, width);
                 Assert.True(rows.Length <= 2, $"{language} {step.Id}: {rows.Length} rows: {string.Join(" | ", rows)}");
             }
         }

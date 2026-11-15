@@ -27,6 +27,19 @@ internal sealed class TutorialCommsPanel
     internal bool Expanded { get; private set; }
     private bool _hintsEnabled = true;
 
+    /// <summary>
+    /// Width of the panel (and of the comms log above it) in a window <paramref name="designWidth"/> wide: <see cref="Width"/>,
+    /// narrowed so it ends before the right column (<c>designWidth - 240</c>) with a gap.
+    /// </summary>
+    internal static float WidthFor(float designWidth)
+    {
+        float available = designWidth - RightReserve - Left;
+        return available < Width ? available : Width;
+    }
+
+    /// <summary>Row width of a line in a panel <paramref name="width"/> wide (<see cref="TextWidth"/> at full size).</summary>
+    internal static float TextWidthFor(float width) => width - TextLeft - Pad - 10;
+
     /// <summary>Wraps a line into rows of <see cref="TextWidth"/> with the panel font (glyph-safe).</summary>
     internal static ImmutableArray<string> Wrap(string text) => Wrap(text, TextWidth);
 
@@ -67,9 +80,7 @@ internal sealed class TutorialCommsPanel
     private void DrawExpanded(SKCanvas c, BattleLayout layout, float designWidth, TutorialLine line, SKBitmap? portrait,
         TutorialOfficer? officer)
     {
-        float available = designWidth - RightReserve - Left;
-        float width = available < Width ? available : Width;
-        var r = new SKRect(Left, Bottom - Height, Left + width, Bottom);
+        var r = new SKRect(Left, Bottom - Height, Left + WidthFor(designWidth), Bottom);
         Bounds = r;
         layout.Rects["tutorial:panel"] = r;
         PanelBox(c, r);
@@ -80,7 +91,7 @@ internal sealed class TutorialCommsPanel
         layout.Rects["tutorial:portrait"] = face;
         DrawPortrait(c, face, portrait, officer is null ? name : Localization.Get(officer.NameKey));
 
-        float x = r.Left + TextLeft, textWidth = r.Right - Pad - 10 - x;
+        float x = r.Left + TextLeft, textWidth = TextWidthFor(r.Width);
         using (var header = BattleTypography.TextPaint(11, true))
             T(c, ControlText.Ellipsize(name, textWidth, header), x, r.Top + 19, 11, Cyan, true);
         var rows = Rows(Localization.Get(line.Step.LineKey), textWidth);

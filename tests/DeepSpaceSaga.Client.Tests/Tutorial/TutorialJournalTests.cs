@@ -194,6 +194,35 @@ public sealed class TutorialJournalTests
         Assert.Equal(2, growing.Journal.Entries.Count); // a new line rebuilds
     }
 
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0022: a narrow window shrinks the log like the comms panel (never into the right column at
+    /// designWidth - 240) and wraps its rows to the narrower width; a wide window restores the full log.
+    /// </summary>
+    [Fact]
+    public void NarrowWindowShrinksTheJournalLikeThePanelAndRewrapsItsRows()
+    {
+        using var locale = Localization.UseLocaleForTests("Russian");
+        var session = HeardThree();
+        session.OnKeyDown(Key.H, KeyModifiers.None, false);
+
+        var narrow = Draw(session, 900).Rects["tutorial:journal"];
+        Assert.Equal(TutorialCommsPanel.WidthFor(900), narrow.Width); // 900 - 246 - 206 = 448
+        Assert.True(narrow.Right < 900 - 240);
+        Assert.Equal(narrow, session.Journal.Bounds);
+        float narrowText = TutorialJournal.TextWidthFor(narrow.Width);
+        Assert.True(narrowText < TutorialJournal.TextWidth);
+        for (int i = 0; i < LineKeys.Length; i++)
+            Assert.Equal(TutorialCommsPanel.Wrap(Localization.Get(LineKeys[i]), narrowText).ToArray(), session.Journal.Entries[i].ToArray());
+        Assert.False(session.OnMouseDown(new SKPoint(900 - 239, narrow.MidY), MouseButton.Left)); // the right column keeps its clicks
+
+        var wide = Draw(session, 1707).Rects["tutorial:journal"];
+        Assert.Equal(new SKRect(TutorialCommsPanel.Left, TutorialJournal.BottomEdge - TutorialJournal.Height,
+            TutorialCommsPanel.Left + TutorialJournal.Width, TutorialJournal.BottomEdge), wide);
+        for (int i = 0; i < LineKeys.Length; i++)
+            Assert.Equal(TutorialCommsPanel.Wrap(Localization.Get(LineKeys[i]), TutorialJournal.TextWidth).ToArray(),
+                session.Journal.Entries[i].ToArray());
+    }
+
     [Fact]
     public void JournalWorksWithHintsDisabled()
     {

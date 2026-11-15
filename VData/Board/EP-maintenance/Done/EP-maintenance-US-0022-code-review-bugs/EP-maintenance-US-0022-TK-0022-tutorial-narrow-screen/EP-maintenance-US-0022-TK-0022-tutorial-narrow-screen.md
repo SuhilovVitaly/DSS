@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0022-tutorial-narrow-screen
 title: Обучение на узком экране: журнал залезает на правую колонку, реплики обрезаются
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Обучение на узком экране: журнал залезает на правую колонку, реплики обрезаются
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -38,6 +39,9 @@ revision: 1
 | `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialJournal.cs:16, 25` | Фиксированная ширина журнала. |
 | `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialCommsPanel.cs:70-86` | Ширина панели и текста. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs:121` | Начало правой колонки. |
+| `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialSession.cs` | Добавлено при исполнении: передаёт `designWidth` в `Journal.Draw`. |
+| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | Добавлено при исполнении: сокращены `Tutorial.Line.Intro` и `Tutorial.Line.OverVictory`. |
+| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | Добавлено при исполнении: сокращена `Tutorial.Line.OverVictory`. |
 
 ## Implementation steps
 
@@ -56,4 +60,15 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: журнал связи всегда рисовался шириной 460 (x 206…666) и при 1280×1024 (Wd 900) заходил на правую колонку (с x 660); при ширине текста 340 три реплики требовали трёх строк и получали многоточие.
+
+- `TutorialCommsPanel.WidthFor`/`TextWidthFor`: прежнее правило ширины панели вынесено в общие помощники (на полной ширине числа те же).
+- `TutorialJournal`: ширина как у панели связи для текущей `designWidth`, перенос по фактической ширине, кэш строк пересобирается при её смене. `TutorialSession` передаёт `designWidth`.
+- Реплики (смысл сохранён, слова, которые проверяет `Ep0029Us0011Tk0003Tests`, на месте):
+  - EN `Tutorial.Line.Intro`: «…Click a pilot card on the left.» → «…Select a pilot on the left.»
+  - EN `Tutorial.Line.OverVictory`: «Rearm from the hold — the ship screen holds 42 torpedoes.» → «Rearm on the ship screen — the hold has 42 torpedoes.»
+  - RU `Tutorial.Line.OverVictory`: «…на экране корабля. Жмите «На карту».» → «…на экране корабля, затем «На карту».»
+
+Тесты: `TutorialScreenIntegrationTests.OpenJournalOnNarrowWindowStaysClearOfTheRightColumn`, `TutorialJournalTests.NarrowWindowShrinksTheJournalLikeThePanelAndRewrapsItsRows`; `TutorialContentTests.EveryLineFitsTwoPanelLinesInBothLanguages` проверяет ширину текста 340 (Wd 900).
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
