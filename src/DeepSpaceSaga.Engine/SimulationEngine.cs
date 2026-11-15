@@ -226,7 +226,12 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     public void LoadScenario(ScenarioFile scenario, bool isSave = false, SolarSystemGenerationConfig? generation = null)
     {
-        if (isSave) scenario = SaveMigration20.Upgrade(scenario);
+        if (isSave && scenario.SaveFormatVersion <= SaveMigration20.TargetVersion)
+        {
+            scenario = SaveMigration20.Upgrade(scenario);
+            if (scenario.SaveFormatVersion == SaveMigration21.PreviousVersion)
+                scenario = SaveMigration21.Upgrade(scenario);
+        }
         if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
         var tuning = new DebugTuningState(_catalogRegistry);
         if (scenario.GameState.DebugTuning is { } values && !tuning.TryApply(new([.. values]), out tuning, out var reason))
@@ -259,7 +264,7 @@ public sealed partial class SimulationEngine : IDisposable
         PlacementValidationResult? aiPlacementValidation = null;
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.MarketEventCatalogFingerprint is { } eventFingerprint && eventFingerprint != _registry.StationMarketEventCatalogFingerprint)
             throw new ScenarioException("Incompatible market event catalog fingerprint. Save was not modified.");
-        if (gs.CatalogCompatibility is { } catalog && catalog != _registry.CatalogCompatibility)
+        if (gs.CatalogCompatibility is { } catalog && !CarrierCatalogCompatibility.Accepts(_registry, catalog))
             throw new ScenarioException("Incompatible catalogVersion, rulesVersion or catalog fingerprint. Save was not modified.");
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.CatalogCompatibility is null && _registry.ItemTypes.Count > 0 &&
             !string.Equals(_registry.LegacyCatalogFingerprint, _registry.CatalogCompatibility.Fingerprint, StringComparison.Ordinal))
@@ -488,6 +493,7 @@ public sealed partial class SimulationEngine : IDisposable
         var restoredTrading = StageTradingContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
+        ValidateCarrierStateForLoad(gs, runtimeObjects);
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
@@ -525,6 +531,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
+            RestoreCarrierState(gs);
             _appliedMotionTimeMs = gs.MotionTimeMs;
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
@@ -809,6 +816,7 @@ public sealed partial class SimulationEngine : IDisposable
                 CommandResults: commandResults,
                 ShipEvents: shipEvents,
                 InstalledModules: installedModules,
+                CarrierOperations: BuildCarrierOperationsProjection(),
                 ActiveObjectId: ActiveObjectId,
                 SelectedObjectId: SelectedObjectId,
                 PlayerCredits: PlayerCredits,
@@ -1179,6 +1187,7 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketRevision: isStation && obj.MarketProfileId is not null ? obj.MarketRevision : null,
                 RelationToPlayer: obj.RelationToPlayer,
                 ShipClassId: obj.ShipClassId,
+                CarrierState: isPlayerShip ? BuildCarrierStateData(obj) : null,
                 Orbit: obj.IsDocked ? null : obj.InitialMotion.Orbit,
                 WorldOffsetX: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetY));
         }
@@ -1319,7 +1328,8 @@ public sealed partial class SimulationEngine : IDisposable
     private static ShipCrewMemberData BuildSaveCrewMember(CrewMemberRuntime member)
     {
         return new ShipCrewMemberData(member.Id, member.DisplayName,
-            member.AccuracySkill, member.ManeuverabilitySkill);
+            member.AccuracySkill, member.ManeuverabilitySkill,
+            member.Gender, member.PortraitAssetId, member.Role, member.Initiative);
     }
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
@@ -1418,11 +1428,14 @@ public sealed partial class SimulationEngine : IDisposable
         ModuleTypeDefinition moduleType,
         HashSet<(int X, int Y)> occupiedHullCells)
     {
-        if (module.OccupiedCells.Count != moduleType.SlotSize)
+        int expectedCells = moduleType.FootprintWidth is { } fw && moduleType.FootprintHeight is { } fh
+            ? fw * fh
+            : moduleType.SlotSize;
+        if (module.OccupiedCells.Count != expectedCells)
         {
             throw new ScenarioException(
                 $"Module '{module.ModuleId}' on '{objectId}' occupies {module.OccupiedCells.Count} cells, " +
-                $"but module type '{moduleType.TypeId}' requires {moduleType.SlotSize}.");
+                $"but module type '{moduleType.TypeId}' requires {expectedCells}.");
         }
 
         if (hullLayout is null)
@@ -1961,7 +1974,8 @@ public sealed partial class SimulationEngine : IDisposable
             }
 
             crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName,
-                member.AccuracySkill, member.ManeuverabilitySkill));
+                member.AccuracySkill, member.ManeuverabilitySkill,
+                member.Gender, member.PortraitAssetId, member.Role, member.Initiative));
         }
 
         return crew.ToImmutable();
@@ -4057,7 +4071,8 @@ internal sealed record SpaceObjectRuntime(
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName,
-    int AccuracySkill = 0, int ManeuverabilitySkill = 0);
+    int AccuracySkill = 0, int ManeuverabilitySkill = 0,
+    string? Gender = null, string? PortraitAssetId = null, string? Role = null, int Initiative = 0);
 
 /// <summary>One named crew member displayed on a station (see <see cref="StationCrewMemberData"/>).</summary>
 internal sealed record StationCrewMemberRuntime(string Id, string Role, string DisplayName, string PortraitImage);

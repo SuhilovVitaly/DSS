@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0012-slim-column
 ticket: EP-0024-US-0012-TK-0002-slim-card
 title: Узкая карточка пилота
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0012-TK-0001-slim-layout, EP-0024-US-0002-TK-0001-sprite-renderer]
@@ -88,3 +88,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us12-tk2
+
+Узкие карточки: штатный портрет, имя, броня/корпус, оружие курсивом и спрайт; рамка выбора, рамки потерь и серый сбитый. Проверены движение/результаты, grayscale и клик выбора. slim-1-move-no-hover-x2.png сопоставлен с эталоном колонки: геометрия/состав совпадают, портреты штатные; место панели пока пустое до US-0013. Build: 0 ошибок/предупреждений.
+
+Проверки: 7/7 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us12-tk2/client.trx`, `us12-tk2-test.log`, `us12-tk2-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

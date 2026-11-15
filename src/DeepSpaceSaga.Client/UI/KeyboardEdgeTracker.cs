@@ -12,7 +12,9 @@ internal sealed class KeyboardEdgeTracker
         Key.Number0, Key.Keypad0, Key.KeypadEnter, Key.F8, Key.F12,
         Key.Number1, Key.Number2, Key.Number3, Key.Number4, Key.Number5,
         Key.Up, Key.Down, Key.Left, Key.Right, Key.F5, Key.F9, Key.F10, Key.C, Key.Backspace,
-        Key.Equal, Key.Minus, Key.KeypadAdd, Key.KeypadSubtract, Key.Home, Key.End
+        Key.Equal, Key.Minus, Key.KeypadAdd, Key.KeypadSubtract, Key.Home, Key.End,
+        // Tactical battle: E evade / D decoy in Fire (independent of maneuver bindings), H comms log of the battle tutorial.
+        Key.E, Key.D, Key.H
     ];
     private readonly Key[] _keys;
     private readonly Dictionary<Key, bool> _previous = new();

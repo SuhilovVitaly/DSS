@@ -1,0 +1,28 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.drone-bay.small",
+      "displayName": "Small Drone Bay",
+      "type": "module.drone-bay",
+      "massKg": 2500,
+      "structurePointsMax": 150,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 0,
+      "droneCapacity": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 2
+    },
+    {
+      "typeId": "module.drone-bay.medium",
+      "displayName": "Medium Drone Bay",
+      "type": "module.drone-bay",
+      "massKg": 4500,
+      "structurePointsMax": 250,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 0,
+      "droneCapacity": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2
+    }
+  ]
+}

@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0007-project-documentation
 ticket: EP-0019-US-0007-TK-0001-update-contracts-and-docs
 title: Итоговая документация
-stage: draft
+stage: done
 layer: documentation
 test_project: —
 depends_on: [EP-0019-US-0006-TK-0002-view-acceptance]
@@ -56,7 +56,7 @@ No API change.
 
 Только Markdown.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `—`. Именованные проверки:
 
@@ -81,4 +81,16 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
+
+## Уточнение scope до реализации
+
+Завершающий тикет дополнительно включает полную инвентаризацию итогового diff по всему репозиторию, обновление всех найденных релевантных README/руководств/Board и значимых комментариев, проверку текущих контрактов и исторической точности, таблицу criterion-to-evidence и ticket-to-SHA, ссылки/ID/количества/dependencies, offline Graphify rebuild после итогового кода и текстов с честной фиксацией ограничений. Scope расширен по §6 EpicExecutionPrompt: исходные три документа не ограничивают обязательную актуализацию проекта. Выполняется последним, после всех функциональных историй.
+
+## Проверенное исполнение 2026-11-08
+
+Обновлены текущие контракты экрана, презентации, скинов, Settings/каталога экранов и первого релиза, tooling/asset guidance, Skins README и native README. По итоговому diff составлена DocumentationImpact.md, проверяются ссылки/MD-only, синхронизированы 21 карточка и 7 историй. История первой частичной попытки сохранена отдельно. Graphify rebuild расширен на EP-0019 и нового владельца renderer; свежая селективная семантика, source hashes, warnings и ограничения сохраняются в task artifacts. Фактические результаты и собственный опубликованный SHA проверяются через Git/ExecutionStatus после создания коммита. Это последняя история; UI-код после функциональной приёмки не менялся.
+
+## Фактическая привязка проверок
+
+Markdown links/status/diff audit; graph verification. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

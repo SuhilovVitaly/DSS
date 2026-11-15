@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0012-build-card-ui
 ticket: EP-0020-US-0012-TK-0001-build-card-model
 title: Модель карточки «Пилот и сборка»
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0011-TK-0002-slot-snapshot, EP-0020-US-0010-TK-0004-anomaly-view-regression]
@@ -88,4 +88,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope расширен на captured LastSelectedDroneId в TacticalBattleFrame/Screen и RU/EN Build строки (перенесены из TK2, нужны модели). Причина: SelectedDroneId намеренно null в Salvo, поэтому A35 требует отдельной captured selection без изменения существующего контракта выбора. При Results без своего выстрела используется последний выбранный свой дрон; итог без Salvo всегда без build card. Draw пока прежний, интеграция TK2.
+
+Завершено. BuildCardModel8 + HoverCard5 =13PASS, сборка ClientPASS. Все пять именованных проверок, RU/EN, A35 enemy-flight fallback/own results и terminal absence покрыты. Scoped format/diffPASS. Cells используют только Slots для наличия/состояния; Build/Engines/Limits только для чисел. Speed F1, углы limits/engine уже в градусах. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us12-tk1/review-focus/tests.trx`. US12-AC1 реализован, renderer подключается следующим TK2.

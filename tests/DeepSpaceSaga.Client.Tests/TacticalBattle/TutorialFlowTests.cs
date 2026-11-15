@@ -7,6 +7,7 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Client.UI.Screens.Tutorial;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.LocalClient;
@@ -33,7 +34,8 @@ public sealed class TutorialFlowTests
         Assert.False(battle.IsSetup);
         Assert.Equal(TutorialPath, Assert.Single(fixture.CreatedPaths));
         Assert.Equal(TacticalBattlePhase.Move, battle.Flow.State!.Phase);
-        Assert.Equal(1, battle.Flow.State.Seed);
+        Assert.Equal(SkiaWindow.TutorialBattleSeed, battle.Flow.State.Seed);
+        Assert.Equal(TacticalBattleMetrics.DirectoryPath, battle.Tutorial!.MetricsDirectory); // step events next to the battle report
         Assert.True(fixture.Engine!.IsTacticalBattleActive);
         Assert.Equal(1, fixture.Proxy!.Starts);
         Assert.Equal(2, fixture.Screens.Count);
@@ -221,6 +223,148 @@ public sealed class TutorialFlowTests
         Assert.True(File.Exists(Path.Combine(fixture.SaveDirectory, SaveSlotNaming.ToFileName(SaveSlots.Quicksave))));
     }
 
+    /// <summary>EP-0028-US-0001-TK-0004: only the tutorial battle gets a tutorial session, an F8 battle after it does not.</summary>
+    [Fact]
+    public async Task TutorialBattleCarriesTutorialSessionAndF8BattleDoesNot()
+    {
+        await using var fixture = new TutorialFixture();
+        await fixture.Route(ScreenEvent.NewGame);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.NotNull(battle.Tutorial);
+        for (int i = 0; battle.Flow.State!.Phase != TacticalBattlePhase.Over && i < 100; i++)
+        {
+            fixture.FinishPresentation();
+            await fixture.Route(battle.OnKeyDown(Key.Enter));
+        }
+        fixture.FinishPresentation();
+        Assert.Equal(TacticalBattlePhase.Over, battle.Flow.State!.Phase);
+        await fixture.PressKey(Key.Escape);
+        Assert.IsType<GameSessionScreen>(fixture.Screens.Current);
+
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+        await setup.Flow.OptionsTask!;
+        await fixture.Route(ScreenEvent.StartTacticalBattle);
+
+        var regular = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.False(regular.Flow.IsTutorial);
+        Assert.Null(regular.Tutorial);
+    }
+
+    /// <summary>
+    /// EP-0028-US-0004-TK-0003: «Подсказки: выкл» in the tutorial battle saves <c>tutorialHints: false</c> (other keys kept), the next
+    /// tutorial starts silent with the «Подсказки: вкл» chip, and the chip saves <c>true</c> again.
+    /// </summary>
+    [Fact]
+    public async Task HintsDisabledInBattleStayDisabledForNextTutorialStart()
+    {
+        await using var fixture = new TutorialFixture();
+        await fixture.Route(ScreenEvent.NewGame);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        var session = battle.Tutorial!;
+        Assert.True(session.HintsEnabled);
+        for (int i = 0; session.Director.Current is null && i < 20; i++)
+        {
+            fixture.Advance(session.Script.Limits.MinGapMs);
+            Render(battle);
+        }
+        Assert.NotNull(session.Director.Current);
+        var off = battle.Layout.Rects["tutorial:hints"];
+        Assert.Equal(ScreenEvent.None, battle.OnMouseDown(off.MidX, off.MidY, MouseButton.Left));
+        Assert.False(session.HintsEnabled);
+        Assert.False(TutorialHintsPreference.Read(fixture.SettingsPath));
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+
+        Assert.Equal(ScreenEvent.None, battle.OnKeyDown(Key.Escape));
+        Assert.True(battle.ConfirmExit);
+        await fixture.PressKey(Key.Enter);
+        Assert.IsType<MainMenuScreen>(fixture.Screens.Current);
+        await fixture.LastSessionDisposal.WaitAsync(TimeSpan.FromSeconds(10));
+
+        await fixture.Route(ScreenEvent.NewGame);
+        var next = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.NotSame(battle, next);
+        var silent = next.Tutorial!;
+        Assert.False(silent.HintsEnabled);
+        Assert.False(silent.Director.Enabled);
+        for (int i = 0; i < 5; i++)
+        {
+            fixture.Advance(silent.Script.Limits.MinGapMs);
+            Render(next);
+        }
+        Assert.Null(silent.Director.Current);
+        Assert.Empty(silent.Director.Heard);
+        var chip = next.Layout.Rects["tutorial:chip"];
+        Assert.Equal("hints-on", silent.Panel.Hit(new SKPoint(chip.MidX, chip.MidY)));
+        Assert.Equal(ScreenEvent.None, next.OnMouseDown(chip.MidX, chip.MidY, MouseButton.Left));
+        Assert.True(silent.HintsEnabled);
+        Assert.True(TutorialHintsPreference.Read(fixture.SettingsPath));
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+
+        static void Render(TacticalBattleScreen screen)
+        {
+            using var bitmap = new SKBitmap(1280, 720);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, 1280, 720);
+        }
+    }
+
+    /// <summary>
+    /// EP-0028-US-0005-TK-0001: with the «classic» preference and the Tabletop pack installed, the tutorial battle is Tabletop,
+    /// the saved preference stays «classic» and the next F8 battle uses it.
+    /// </summary>
+    [Fact]
+    public async Task TutorialBattleAlwaysUsesTabletopAndKeepsSkinPreference()
+    {
+        await using var fixture = new TutorialFixture(installTabletop: true);
+        string before = File.ReadAllText(fixture.SettingsPath);
+        await fixture.Route(ScreenEvent.NewGame);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.Equal(SkiaWindow.TutorialSkinId, battle.SkinId);
+        Assert.Equal("tabletop", battle.SkinId);
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+
+        for (int i = 0; battle.Flow.State!.Phase != TacticalBattlePhase.Over && i < 100; i++)
+        {
+            fixture.FinishPresentation();
+            await fixture.Route(battle.OnKeyDown(Key.Enter));
+        }
+        fixture.FinishPresentation();
+        Assert.Equal(TacticalBattlePhase.Over, battle.Flow.State!.Phase);
+        await fixture.PressKey(Key.Escape);
+        Assert.IsType<GameSessionScreen>(fixture.Screens.Current);
+
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+        await setup.Flow.OptionsTask!;
+        await fixture.Route(ScreenEvent.StartTacticalBattle);
+        var regular = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.False(regular.Flow.IsTutorial);
+        Assert.Equal("classic", regular.SkinId);
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+        Assert.Equal(before, File.ReadAllText(fixture.SettingsPath)); // the tutorial never wrote the profile
+    }
+
+    /// <summary>EP-0028-US-0005-TK-0001 / A-07: without the Tabletop pack the tutorial opens in the preferred skin and logs why.</summary>
+    [Fact]
+    public async Task TutorialWithoutTabletopPackFallsBackToPreferredSkin()
+    {
+        await using var fixture = new TutorialFixture();
+        long logLength = File.Exists(InterfaceLog.FileName) ? new FileInfo(InterfaceLog.FileName).Length : 0;
+        await fixture.Route(ScreenEvent.NewGame);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.Equal("classic", battle.SkinId);
+        Assert.NotNull(battle.Tutorial);
+        Assert.Contains("TUTORIAL: skin 'tabletop' unavailable, using 'classic'", LogTailReader.ReadTail(logLength));
+        using (var bitmap = new SKBitmap(1280, 720))
+        using (var canvas = new SKCanvas(bitmap))
+            battle.Render(canvas, 1280, 720); // renders without the pack
+        Assert.Equal("classic", TacticalBattleSkinPreference.Read(fixture.SettingsPath));
+    }
+
     [Theory]
     [InlineData("Russian", "Выйти в главное меню? Прогресс обучения будет потерян.")]
     [InlineData("English", "Exit to the main menu? Tutorial progress will be lost.")]
@@ -277,7 +421,9 @@ public sealed class TutorialFlowTests
         internal GameSessionHandle? Session => Field<GameSessionHandle?>(Window, "_session");
         internal Task LastSessionDisposal => Field<Task>(Window, "_lastSessionDisposal");
 
-        internal TutorialFixture(SaveSlotInfo[]? saves = null, StartFailure failure = StartFailure.None)
+        /// <param name="installTabletop">Copies the shipped <c>Skins/tabletop</c> pack next to the profile (otherwise the profile has no packs).</param>
+        internal TutorialFixture(SaveSlotInfo[]? saves = null, StartFailure failure = StartFailure.None, bool? tutorialHints = null,
+            bool installTabletop = false)
         {
             _saves = saves ?? [];
             _failure = failure;
@@ -285,10 +431,26 @@ public sealed class TutorialFlowTests
             _directory = Path.Combine(validationRoot, $"tutorial-flow-{Guid.NewGuid():N}");
             SaveDirectory = Path.Combine(_directory, "Saves");
             Directory.CreateDirectory(SaveDirectory);
-            string settingsPath = Path.Combine(_directory, "Settings.json");
-            File.WriteAllText(settingsPath, """{"gameSettings":{"tacticalBattleSkinId":"classic"}}""");
-            Window = new SkiaWindow(new MainMenuScreen(), this, null, createNativeWindow: false, settingsPath);
+            SettingsPath = Path.Combine(_directory, "Settings.json");
+            string hints = tutorialHints is { } value ? $",\"tutorialHints\":{(value ? "true" : "false")}" : "";
+            File.WriteAllText(SettingsPath, "{\"gameSettings\":{\"tacticalBattleSkinId\":\"classic\"" + hints + "}}");
+            if (installTabletop)
+                CopyDirectory(Path.Combine(AppContext.BaseDirectory, "Skins", "tabletop"), Path.Combine(_directory, "Skins", "tabletop"));
+            Window = new SkiaWindow(new MainMenuScreen(), this, null, createNativeWindow: false, SettingsPath);
         }
+
+        private static void CopyDirectory(string source, string target)
+        {
+            Directory.CreateDirectory(target);
+            foreach (string file in Directory.EnumerateFiles(source))
+                File.Copy(file, Path.Combine(target, Path.GetFileName(file)));
+            foreach (string directory in Directory.EnumerateDirectories(source))
+                CopyDirectory(directory, Path.Combine(target, Path.GetFileName(directory)));
+        }
+
+        internal string SettingsPath { get; }
+
+        internal void Advance(long ms) => Interlocked.Add(ref _clockMilliseconds, ms);
 
         internal void FinishPresentation()
         {

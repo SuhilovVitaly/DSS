@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0007-decoy-ui
 ticket: EP-0020-US-0007-TK-0001-fire-orders-decoy
 title: Модель приказов: ловушка, клавиша D, заряды на карточке
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0006-TK-0004-session-decoy, EP-0020-US-0004-TK-0004-view-regression]
@@ -89,4 +89,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. ClearAll снимает все три приказа; выбор цели/hold сохраняет D, E снимает D. Старый integration assertion ownShot.Chance сверяет ChanceWithoutDecoy??Chance с точным forecast, так как enemy AI теперь может включить ловушку; дополнительно проверены Decoyed/nullable agreement и невозрастание шанса. Идентичность стрелка/цели не ослаблена.
+
+Завершено: FirePlanning/Keyboard28/28PASS; Client build/scoped format/diff-checkPASS. D физическая edge-only без modifier/repeat, Fire-only; целевой/hold выбор сохраняет D, E снимает D, clear-all снимает все приказы, charges null/0 недоступны. PilotCard.Decoy берётся только из собственного FirePlan. Самопроверка request equality без D, selection/cache и pending input выполнена. US7-AC1 покрыт; отрисовка следуетTK2. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us7-tk1/focused/tests.trx,format-client.log,format-tests.log.

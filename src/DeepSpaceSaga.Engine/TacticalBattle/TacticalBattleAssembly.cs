@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine.TacticalBattle;
 // Null means omitted; empty Shield explicitly removes it. No slot revalidation here
 // (Generation §2). Public player commands validate their own narrower loadout contract.
 internal sealed record TacticalLoadoutOverride(string? Weapon = null, string? Armor = null, string? Shield = null,
-    int? ShieldCount = null, int? Hull = null, ImmutableArray<string>? Engines = null);
+    int? ShieldCount = null, int? Hull = null, ImmutableArray<string>? Engines = null, int? Ammo = null);
 
 internal sealed partial class TacticalBattle
 {
@@ -33,17 +33,24 @@ internal sealed partial class TacticalBattle
             foreach (var start in side.Drones)
             {
                 var layout = catalog.Layouts[start.Layout];
-                if (loadouts is not null && loadouts.TryGetValue(start.Id, out var overlay))
+                TacticalLoadoutOverride? overlay = null;
+                if (loadouts is not null && loadouts.TryGetValue(start.Id, out var ov))
+                {
+                    overlay = ov;
                     layout = layout with
                     {
-                        Weapon = overlay.Weapon ?? layout.Weapon,
-                        Armor = overlay.Armor ?? layout.Armor,
-                        Shield = overlay.Shield is null ? layout.Shield : overlay.Shield.Length == 0 ? null : overlay.Shield,
-                        ShieldCount = overlay.ShieldCount ?? layout.ShieldCount,
-                        Hull = overlay.Hull ?? layout.Hull,
-                        Engines = overlay.Engines ?? layout.Engines
+                        Weapon = ov.Weapon ?? layout.Weapon,
+                        Armor = ov.Armor ?? layout.Armor,
+                        Shield = ov.Shield is null ? layout.Shield : ov.Shield.Length == 0 ? null : ov.Shield,
+                        ShieldCount = ov.ShieldCount ?? layout.ShieldCount,
+                        Hull = ov.Hull ?? layout.Hull,
+                        Engines = ov.Engines ?? layout.Engines
                     };
+                }
                 var frame = catalog.Frames[layout.Class];
+                int ammo = overlay?.Ammo ?? frame.AmmoCapacity;
+                if (ammo < 0 || ammo > frame.AmmoCapacity)
+                    throw new ArgumentOutOfRangeException(nameof(ammo), ammo, $"Ammo must be within 0..{frame.AmmoCapacity} for frame '{frame.Id}'.");
                 var weapon = catalog.Weapons[layout.Weapon!];
                 var armor = catalog.Armor[layout.Armor];
                 var shield = layout.Shield is { } shieldId ? catalog.Shields[shieldId] : null;
@@ -51,12 +58,18 @@ internal sealed partial class TacticalBattle
                 int shieldCount = shield is null ? 0 : layout.ShieldCount ?? TacticalBattleConstants.DefaultShieldCount;
                 var engines = layout.Engines.Select(id => new TacticalEngineState(catalog.Engines[id])).ToImmutableArray();
                 var limits = TacticalLimits.Of(new(frame.FrameMassKg, frame.ReferenceMassKg, frame.MinSpeed, frame.MaxSpeedCap, frame.TurnCapDeg),
-                    armor.MassKg, weapon.MassKg, shield?.MassKg ?? 0, shieldCount, engines.Select(e => e.Motion).ToArray(), moduleMass: decoy?.MassKg ?? 0);
+                    armor.MassKg, weapon.MassKg, shield?.MassKg ?? 0, shieldCount, engines.Select(e => e.Motion).ToArray(),
+                    moduleMass: (decoy?.MassKg ?? 0) + ammo * 1.0); // loaded torpedoes count toward the initial speed clamp (A-02)
                 double speed = PyMath.Clamp(start.Speed, limits.MinSpeed, limits.MaxSpeed);
                 var pilot = catalog.Pilots[start.Pilot];
                 int accuracy = Skill(pilot.Accuracy), maneuver = Skill(pilot.Maneuver);
                 drones.Add(new(start.Id, side.Id, new(start.X, start.Y, start.Course), layout.Hull ?? frame.Hull,
-                    armor.Armor, maneuver, accuracy, start.Pilot, layout, frame, weapon, armor, shield, shieldCount, engines, speed, decoy));
+                    armor.Armor, maneuver, accuracy, start.Pilot, layout, frame, weapon, armor, shield, shieldCount, engines, speed, decoy)
+                {
+                    AmmoCurrent = ammo,
+                    AmmoCapacity = frame.AmmoCapacity,
+                    AmmoUnitMassKg = 1.0, // A-02 technical torpedo unit mass
+                });
             }
         }
         foreach (var drone in drones)

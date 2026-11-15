@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0006-decoy-resolution
 ticket: EP-0020-US-0006-TK-0003-salvo-decoy
 title: Ловушки в разрешении залпа и правило ИИ
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0006-TK-0002-decoy-hit-transform]
@@ -95,4 +95,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Техническое уточнение API: Firing/Fire получают optional aiDecoysFor predicate; null targetsFor = обе стороны ИИ, явные приказы без predicate не включают автоматику. Сессия следующим TK4 передаст только enemy predicate. AiDecoys принимает полный неизменяемый словарь зафиксированных приказов. Для отчёта Run статистика хранит суммы шансов DecoyChanceBefore/After без RNG. Golden explicit call включается здесь для одинакового правила, итоговая регрессия/подписи остаётся TK5.
+
+Завершено: focused55/55PASS, Golden+DecoyState94/94PASS, Engine build/scoped format/diff-checkPASS. Первый фактический shot получает WithDecoy; charge списан при freeze даже при уничтожении до своего шага, skipped не расходует эффект, неиспользованный эффект не переносится. AI threshold39/40/41%,EV/empty, неизменяемый frozen input и no-RNG проверены. Incoming сортируется по замороженной инициативе, ChanceIfDecoy только первый; Shot DTO/rules проецируют новые данные. Самопроверка атомарности, порядка, жизненного цикла и no-module M1 hashes выполнена. US6-AC2/3/4/5 Engine часть покрыта; session snapshot list и журнал следуют TK4. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us6-tk3/focused/tests.trx,golden/tests.trx,format-engine-final.log,format-tests-final.log.

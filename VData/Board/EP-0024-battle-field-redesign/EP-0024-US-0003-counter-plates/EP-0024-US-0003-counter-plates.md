@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0003-counter-plates
 title: Плашки юнитов: имя, броня, корпус
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0002]
 created: 2026-11-12T13:00:00Z
 source_request: "Заменить в режиме подписи с двумя полосками плашками с именем и квадратами брони и корпуса с раскладкой вокруг юнита."
@@ -49,3 +49,8 @@ D-01. Сейчас — `Label` (`BattleMapRenderer.cs:180-220`, вызов `:151
 | ID | Название | Слой | Зависимости | Критерии |
 |---|---|---|---|---|
 | [EP-0024-US-0003-TK-0001-plates](EP-0024-US-0003-TK-0001-plates/EP-0024-US-0003-TK-0001-plates.md) | Плашка юнита и её раскладка | client-ui | `EP-0024-US-0002-TK-0002-sprite-geometry` | US3-AC1, US3-AC2 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

@@ -39,7 +39,7 @@ public sealed class SaveMigration20Tests
         var save = engine.CaptureSaveState();
         string json = ScenarioLoader.Serialize(save);
         using var document = JsonDocument.Parse(json);
-        Assert.Equal(20, document.RootElement.GetProperty("saveFormatVersion").GetInt32());
+        Assert.Equal(21, document.RootElement.GetProperty("saveFormatVersion").GetInt32());
         var world = document.RootElement.GetProperty("gameState");
         Assert.All(Obsolete, field => Assert.False(world.TryGetProperty(field, out _), field));
         AssertWorld(save);
@@ -200,7 +200,7 @@ public sealed class SaveMigration20Tests
 
     private static void AssertWorld(ScenarioFile save)
     {
-        Assert.Equal(20, save.SaveFormatVersion);
+        Assert.Equal(21, save.SaveFormatVersion);
         Assert.DoesNotContain(save.GameState.SpaceObjects, o => o.ObjectType is "Missile" or "Countermeasure" or "Wreck");
         var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         Assert.Contains(player.Modules!, m => m.ModuleTypeId.Contains("scanner", StringComparison.Ordinal));

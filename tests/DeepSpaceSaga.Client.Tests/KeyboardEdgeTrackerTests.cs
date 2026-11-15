@@ -331,6 +331,42 @@ public class KeyboardEdgeTrackerTests
         Assert.Equal(new[] { key }, next);
     }
 
+    [Fact]
+    public void H_is_reported_on_press_edge()
+    {
+        // EP-0028 G-02: H toggles the battle-tutorial comms log.
+        var tracker = new KeyboardEdgeTracker();
+        var keys = new HashSet<Key>();
+        Assert.Empty(Poll(tracker, keys));
+        keys.Add(Key.H);
+        PollBoth(tracker, keys, out var pressed, out _);
+        Assert.Equal([Key.H], pressed);
+        PollBoth(tracker, keys, out pressed, out _);
+        Assert.Empty(pressed); // held — not reported again
+        keys.Clear();
+        PollBoth(tracker, keys, out _, out var released);
+        Assert.Equal([Key.H], released);
+    }
+
+    [Theory]
+    [InlineData(Key.E)]
+    [InlineData(Key.D)]
+    public void Battle_evade_and_decoy_keys_are_polled_regardless_of_maneuver_bindings(Key key)
+    {
+        // EP-0028 G-01: the Fire phase handles E (evade) and D (decoy); D used to arrive only through the turnRight binding.
+        var maneuver = new ManeuverInputSettings { TurnRight = [Key.Right], TurnLeft = [Key.Left], Accelerate = [Key.Up], Brake = [Key.Down] };
+        Assert.DoesNotContain(key, maneuver.MappedKeys);
+        var tracker = new KeyboardEdgeTracker(maneuver: maneuver);
+        var keys = new HashSet<Key> { key };
+        PollBoth(tracker, keys, out var pressed, out _);
+        Assert.Equal([key], pressed);
+        PollBoth(tracker, keys, out pressed, out _);
+        Assert.Empty(pressed);
+        tracker.ResyncToCurrentState(keys.Contains);
+        PollBoth(tracker, keys, out pressed, out _);
+        Assert.Empty(pressed); // a key held across focus regain is not a fresh press
+    }
+
     private static Key[] Poll(KeyboardEdgeTracker tracker, HashSet<Key> pressed)
     {
         Span<Key> buffer = stackalloc Key[21];

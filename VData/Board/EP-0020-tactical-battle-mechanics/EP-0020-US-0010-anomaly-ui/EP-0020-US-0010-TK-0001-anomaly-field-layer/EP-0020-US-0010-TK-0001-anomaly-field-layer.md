@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0010-anomaly-ui
 ticket: EP-0020-US-0010-TK-0001-anomaly-field-layer
 title: Слой поля аномалий на карте
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0009-TK-0005-anomaly-regression, EP-0020-US-0007-TK-0004-decoy-view-regression]
@@ -87,4 +87,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Актуальный renderer — BattleMapRenderer.cs/Fire.cs, не прежнее имя в таблице; scope включает оба partial. Масштаб физического растра берётся из canvas.TotalMatrix (Frame.UiScale=1 — design coordinates). UiSpec §20 содержит арифметическую неоднозначность:6центров+4σточки на каждый+2фона=32, не20; проверяются все32, без уменьшения покрытия. Cache сравнивает значения clumps, не ссылки новых DTO; cached image заимствуется до следующей Render/Dispose, Draw держит lock на всё использование.
+
+CPU raster использует консервативные bounds гауссиан для точного нулевого вклада: epsilon=(100·2^.002−background)/N; вне всех bounds сумма ≤ порога t=.002, поэтому цвет по §16 равен0 и Exp/gradient не нужны. Для всех ненулевых пикселей остаётся общий FieldWithGradient. Это оптимизация вычисления заданного cutoff, не аппроксимация поля для решений.
+
+Завершено. Client5/5PASS:32независимых Python scalar reference pixels RU1920×1080 (всеканалыΔ≤6), world-anchored pan bit-exact, cache values/camera/size/scale/clump invalidation, empty map bit-exact, production Screen повтор внутри сектора. Первый sector oracle ошибочно использовал DrawColor default Src; исправлен explicit SrcOver без изменения production. Полные1920×1080растры до/после conservative bounds byte-exact (optimization-comparison.json), per-pixel closure allocation устранён. Build/scopedformat/diffcheckPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us10-tk1/` (accepted/tests.trx,independent-pixels.json,optimization-comparison.json). Растр просмотрен: палитра/фактура/тени без контуров; human/art/native приёмка этим не закрыта. AC1 выполнен; свойства решений клиента не пересчитываются.

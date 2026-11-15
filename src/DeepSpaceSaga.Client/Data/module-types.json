@@ -83,6 +83,12 @@
       "displayName": "Living quarters",
       "slotSize": 1,
       "commandTypeIds": []
+    },
+    {
+      "typeId": "module.drone-bay",
+      "displayName": "Drone Bay",
+      "slotSize": 1,
+      "commandTypeIds": []
     }
   ]
 }

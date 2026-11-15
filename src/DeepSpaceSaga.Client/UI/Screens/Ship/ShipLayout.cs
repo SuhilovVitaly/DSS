@@ -26,6 +26,23 @@ public sealed class ShipLayout
     public static float PanelLeft(int screenWidth) => (screenWidth - PanelWidth) / 2f;
     public static float PanelTop(int screenHeight) => (screenHeight - PanelHeight) / 2f;
 
+    private const float SectionGap = 20f;
+    private const float SectionTop = 90f;
+    private const float SectionBottom = PanelHeight - 20f;
+    private const float HalfWidth = PanelWidth / 2f;
+
+    /// <summary>Wing panel rect, local to the panel (add PanelLeft/PanelTop for screen space).</summary>
+    public static (float Left, float Top, float Right, float Bottom) WingPanelLocalRect() =>
+        (SectionGap, SectionTop, HalfWidth - SectionGap, SectionBottom);
+
+    /// <summary>Crew panel rect, local to the panel (add PanelLeft/PanelTop for screen space).</summary>
+    public static (float Left, float Top, float Right, float Bottom) CrewPanelLocalRect() =>
+        (HalfWidth + SectionGap, SectionTop, PanelWidth - SectionGap, SectionBottom);
+
+    /// <summary>True when a panel-local rect stays inside the panel bounds (used at 1280×720 and 1920×1080).</summary>
+    public static bool FitsInsidePanel((float Left, float Top, float Right, float Bottom) rect) =>
+        rect.Left >= 0 && rect.Top >= 0 && rect.Right <= PanelWidth && rect.Bottom <= PanelHeight;
+
     /// <summary>Close button rect, local to the panel (add PanelLeft/PanelTop for screen space).</summary>
     public static (float Left, float Top, float Right, float Bottom) CloseButtonLocalRect()
     {

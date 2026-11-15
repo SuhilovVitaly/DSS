@@ -20,6 +20,7 @@ using DeepSpaceSaga.Client.UI.Screens.Dialogue;
 using DeepSpaceSaga.Client.UI.Screens.Hire;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
+using DeepSpaceSaga.Client.UI.Screens.Tutorial;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Core;
@@ -1104,7 +1105,7 @@ public sealed class SkiaWindow : IDisposable
             // Same order as a battle opened from the map: authoritative pause first, then the battle.
             session.ClearStationTravelPause();
             await session.SetSpeedAsync(SimulationSpeed.Speed0);
-            var started = await flow.StartAsync(new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), 1));
+            var started = await flow.StartAsync(new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), TutorialBattleSeed));
             if (started?.Accepted != true || flow.State is null)
                 throw new InvalidOperationException("Tutorial battle was rejected: " + (started?.Code.ToString() ?? "no response"));
             if (_closing)
@@ -1205,8 +1206,40 @@ public sealed class SkiaWindow : IDisposable
 
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
         new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+    /// <summary>
+    /// Seed of the tutorial battle (scenario «initial», default loadout). Pinned by <c>TutorialBattleWinnabilityTests</c>: on this seed the
+    /// player's side wins both by Enter only and by following the officer's lessons (EP-0028-US-0005-TK-0002).
+    /// </summary>
+    internal const long TutorialBattleSeed = 1;
+
+    /// <summary>The tutorial battle's skin (D-03): its hints are laid out for Tabletop.</summary>
+    internal const string TutorialSkinId = "tabletop";
+
     private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) =>
-        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, _battleSkin) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, flow.IsTutorial ? TutorialSkin() : _battleSkin)
+        {
+            LaunchKey = _tacticalInputs.TacticalBattle,
+            WorldDebugKey = _maneuverInputs.DebugPanel,
+            Tutorial = flow.IsTutorial ? CreateTutorialSession() : null,
+        };
+
+    /// <summary>Tabletop for the tutorial battle without touching the saved preference; without the pack, the preferred skin (A-07).</summary>
+    private TacticalBattleSkin TutorialSkin()
+    {
+        if (_battleSkinCatalog.TryGet(TutorialSkinId, out var tabletop))
+            return tabletop;
+        LogTutorialWarning($"TUTORIAL: skin '{TutorialSkinId}' unavailable, using '{_battleSkin.Id}'");
+        return _battleSkin;
+    }
+
+    /// <summary>The tutorial battle's session: hints start from <c>gameSettings.tutorialHints</c>; in-battle switches are saved there.</summary>
+    private TutorialSession CreateTutorialSession() =>
+        new(TutorialScriptLoader.Load(AppContext.BaseDirectory, LogTutorialWarning))
+        {
+            HintsEnabled = TutorialHintsPreference.Read(SettingsFilePath, LogTutorialHintsWarning),
+            PersistHints = TrySetTutorialHints,
+            MetricsDirectory = TacticalBattleMetrics.DirectoryPath, // step events next to the battle report
+        };
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {
         await flow.OptionsTask!;
@@ -1269,7 +1302,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is ShipScreen)
             return;
 
-        await PushModalAsync(new ShipScreen());
+        await PushModalAsync(new ShipScreen(ShipViewModel.From(_session?.CarrierOperations)));
     }
 
     /// <summary>
@@ -1378,8 +1411,14 @@ public sealed class SkiaWindow : IDisposable
             monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
             uiScale, SaveUiScale,
             language, SaveLanguage,
-            _battleSkinCatalog.Options, _battleSkin.Id, TrySelectBattleSkin));
+            _battleSkinCatalog.Options, _battleSkin.Id, TrySelectBattleSkin,
+            TutorialHintsPreference.Read(SettingsFilePath, LogTutorialHintsWarning), TrySetTutorialHints));
     }
+
+    private bool TrySetTutorialHints(bool enabled) =>
+        TutorialHintsPreference.TryWrite(SettingsFilePath, enabled, LogTutorialHintsWarning);
+
+    private static void LogTutorialHintsWarning(string message) => LogTutorialWarning("TUTORIAL: " + message);
 
     private bool TrySelectBattleSkin(string id)
     {
@@ -1393,6 +1432,14 @@ public sealed class SkiaWindow : IDisposable
     private static void LogSkinWarning(string message)
     {
         try { InterfaceLog.Write("TACTICAL SKIN: " + message); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    /// <summary>TutorialScriptLoader messages already start with "TUTORIAL: ".</summary>
+    private static void LogTutorialWarning(string message)
+    {
+        try { InterfaceLog.Write(message); }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
     }

@@ -7,10 +7,10 @@ public sealed partial class SimulationEngine
 {
     private sealed record StagedTradingContinuation(StagedMarketContinuation Market, StagedVoyageContinuation Voyage, EngineIdentityCountersData Identities);
 
-    private string BuildTradingConfigurationFingerprint(GameStateData state) =>
+    private string BuildTradingConfigurationFingerprint(GameStateData state, CatalogCompatibilityData catalog) =>
         TradingEconomySaveMigration.ConfigurationFingerprint(state with
         {
-            CatalogCompatibility = _registry.CatalogCompatibility,
+            CatalogCompatibility = catalog,
             MarketEventCatalogFingerprint = _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
             SpaceObjects = state.SpaceObjects.Select(o => o.MarketProfileId is { } id ? o with
             { MarketProfileFingerprint = _registry.StationMarketProfiles.GetDefinition(_registry.StationMarketProfiles.GetIndex(id)).Fingerprint } : o).ToArray()
@@ -19,13 +19,16 @@ public sealed partial class SimulationEngine
     private StagedTradingContinuation StageTradingContinuation(ScenarioFile source,
         IReadOnlyList<SpaceObjectRuntime> objects, VoyageStateData? voyage)
     {
-        if (source.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion &&
-            !string.Equals(source.GameState.TradingEconomyContinuation!.ConfigurationFingerprint,
-                BuildTradingConfigurationFingerprint(source.GameState), StringComparison.Ordinal) ||
-            source.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion &&
-            !string.Equals(source.GameState.TradingEconomyContinuation!.ConfigurationFingerprint,
-                TradingEconomySaveMigration.ConfigurationFingerprint(source.GameState), StringComparison.Ordinal))
-            throw new ScenarioException("Incompatible trading configuration fingerprint (catalog/profile/events/map rules). Save was not modified.");
+        if (source.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion)
+        {
+            string saved = source.GameState.TradingEconomyContinuation!.ConfigurationFingerprint;
+            bool catalogMatch =
+                string.Equals(saved, BuildTradingConfigurationFingerprint(source.GameState, _registry.CatalogCompatibility), StringComparison.Ordinal) ||
+                string.Equals(saved, BuildTradingConfigurationFingerprint(source.GameState, CarrierCatalogCompatibility.Previous(_registry)), StringComparison.Ordinal);
+            bool selfConsistent = string.Equals(saved, TradingEconomySaveMigration.ConfigurationFingerprint(source.GameState), StringComparison.Ordinal);
+            if (!catalogMatch || !selfConsistent)
+                throw new ScenarioException("Incompatible trading configuration fingerprint (catalog/profile/events/map rules). Save was not modified.");
+        }
         var counters = source.GameState.EngineIdentityCounters;
         ulong highestCycle = 0;
         foreach (var cycle in objects.SelectMany(o => o.Modules).Select(m => m.ActiveCycle))
@@ -41,7 +44,7 @@ public sealed partial class SimulationEngine
     private TradingEconomyContinuationData CaptureTradingContinuation(GameStateData state) =>
         CaptureMarketContinuation(TradingEconomySaveMigration.ManifestFromPersistedFacts(state)) with
         {
-            ConfigurationFingerprint = BuildTradingConfigurationFingerprint(state),
+            ConfigurationFingerprint = BuildTradingConfigurationFingerprint(state, _registry.CatalogCompatibility),
             DurableTerminalReceiptIds = _durableVoyageTerminalIds.Order(StringComparer.Ordinal).ToArray()
         };
 

@@ -3,7 +3,7 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0001-card-column
 ticket: EP-0023-US-0001-TK-0003-card-commands-input
 title: Команды карточки: реестр, клики, перетаскивание, колесо
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0001-TK-0001-column-layout]
@@ -87,4 +87,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US1-AC3: реестр кадра обрезает прямоугольники по viewport, принимает команды выбранного дрона и сбрасывается при новой раскладке. Маршрутизация проверяет текущий выбор и блокировки. 20/20 тестов (реестр, клавиши, цели карты), build, scoped format и diff check прошли. D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us1-tk3-02/. Самопроверка diff выполнена. Проверки реальных команд и колеса списка целей выполняются с соответствующими блоками.

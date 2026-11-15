@@ -19,10 +19,14 @@ public sealed class ModuleStructureCatalogTests
         var modules = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Select(registry.ModuleTypes.GetDefinition).ToArray();
         Assert.NotEmpty(modules);
-        Assert.All(modules, module => Assert.Equal(150, module.StructurePointsMax));
+        Assert.All(modules, module => Assert.True(module.StructurePointsMax > 0));
+        // Drone bays carry their own structure points (S 150, M 250); every other module stays 150.
+        Assert.All(modules.Where(m => m.CategoryTypeId != "module.drone-bay"), module => Assert.Equal(150, module.StructurePointsMax));
         Assert.Contains(modules, m => m.TypeId == "module.bridge.navigation.computer.basic");
         Assert.Contains(modules, m => m.TypeId == "living.quarters.mk1.three-cabins");
         Assert.Contains(modules, m => m.TypeId == "module.engine.strizh");
+        Assert.Contains(modules, m => m.TypeId == "module.drone-bay.small" && m.StructurePointsMax == 150);
+        Assert.Contains(modules, m => m.TypeId == "module.drone-bay.medium" && m.StructurePointsMax == 250);
         Assert.DoesNotContain(modules, m => m.TypeId == "module.countermeasure.launcher.single");
     }
 }

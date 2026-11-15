@@ -1,12 +1,14 @@
 ---
 epic: EP-0023-pilot-card-commands
-stage: draft
+stage: implemented
 created: 2026-11-11T14:30:00Z
 ---
 
 # EP-0023 — карта тикетов
 
 [Эпик и решения](Documentation.md) · [UiSpec](UiSpec.md) · 8 историй, 13 тикетов. Порядок строк соблюдает зависимости. База — `main` @ `8b0bf6ce` (после EP-0022).
+
+Все восемь историй и тринадцать тикетов реализованы. [Статус, проверка и публикация](ExecutionStatus.md).
 
 ## Истории
 
@@ -37,7 +39,7 @@ created: 2026-11-11T14:30:00Z
 | [EP-0023-US-0006-TK-0001-skin-roles](EP-0023-US-0006-skins/EP-0023-US-0006-TK-0001-skin-roles/EP-0023-US-0006-TK-0001-skin-roles.md) | Роли скина для новой карточки и значения в паках | client-ui | `EP-0023-US-0005-TK-0002-remove-panel-controls` | US6-AC1, US6-AC3 |
 | [EP-0023-US-0006-TK-0002-skin-scenes](EP-0023-US-0006-skins/EP-0023-US-0006-TK-0002-skin-scenes/EP-0023-US-0006-TK-0002-skin-scenes.md) | Сцены скинов с новой карточкой | client-tests | `EP-0023-US-0006-TK-0001-skin-roles` | US6-AC2 |
 | [EP-0023-US-0007-TK-0001-snapshots](EP-0023-US-0007-view-regression/EP-0023-US-0007-TK-0001-snapshots/EP-0023-US-0007-TK-0001-snapshots.md) | Пересоздание снимков и пробы приёмки | client-tests | `EP-0023-US-0006-TK-0002-skin-scenes` | US7-AC1, US7-AC2 |
-| [EP-0023-US-0008-TK-0001-docs](EP-0023-US-0008-project-documentation/EP-0023-US-0008-TK-0001-docs/EP-0023-US-0008-TK-0001-docs.md) | Документация карточки пилота с командами | docs | `EP-0023-US-0007-TK-0001-snapshots` | US8-AC1, US8-AC2 |
+| [EP-0023-US-0008-TK-0001-docs](EP-0023-US-0008-project-documentation/EP-0023-US-0008-TK-0001-docs/EP-0023-US-0008-TK-0001-docs.md) | Документация карточки пилота с командами | docs | `EP-0023-US-0007-TK-0001-snapshots` | US8-AC1, US8-AC2, US8-AC3 |
 
 ## Контроль передачи
 

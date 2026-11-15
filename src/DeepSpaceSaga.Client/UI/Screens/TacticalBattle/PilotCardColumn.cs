@@ -80,6 +80,7 @@ internal sealed class PilotCardColumn
     }
 
     public void EndSlider() => _slider = null;
+    internal bool SliderActive => _slider is not null;
 
     internal static void ApplySlider(TacticalBattleOrders orders, bool speed, float x, float start, float end)
     {
@@ -458,7 +459,7 @@ internal sealed class PilotCardColumn
         {
             c.Save(); using var clip = new SKRoundRect(r, Skin.Steel ? 0 : 3, Skin.Steel ? 0 : 3); c.ClipRoundRect(clip, antialias: true);
             using var p = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
-            c.DrawBitmap(image, new SKRect(170, 70, 854, 754), r, p); c.Restore();
+            c.DrawBitmap(image, catalog.SourceRect(id), r, p); c.Restore();
         }
         else T(c, string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[..1])), r.MidX, r.MidY + 4, 11, Text, true, SKTextAlign.Center);
     }

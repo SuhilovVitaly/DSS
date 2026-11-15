@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0012-build-card-ui
 title: Карточка «Пилот и сборка»
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0011-build-slots, EP-0020-US-0010-anomaly-ui]
 created: 2026-11-08T11:46:28Z
 source_request: "Для своих дронов заменить карточку «Под курсором» карточкой «Пилот и сборка» со схемой рамы (силуэт по раме, слоты-ячейки с модулями и числами, повреждения) и итогами массы и движения — точно по [UiSpec](../UiSpec.md) §22–§26."
@@ -46,7 +46,7 @@ D-34–D-42. Вид задаёт только [UiSpec](../UiSpec.md) §22–§26
 
 ## Решения и согласование
 
-Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы)).
+Исполнение всего эпика разрешено текущим поручением пользователя.
 
 ## Ticket map
 
@@ -55,3 +55,7 @@ D-34–D-42. Вид задаёт только [UiSpec](../UiSpec.md) §22–§26
 | [EP-0020-US-0012-TK-0001-build-card-model](EP-0020-US-0012-TK-0001-build-card-model/EP-0020-US-0012-TK-0001-build-card-model.md) | Модель карточки «Пилот и сборка» | client | `EP-0020-US-0011-TK-0002-slot-snapshot`, `EP-0020-US-0010-TK-0004-anomaly-view-regression` | US12-AC1 |
 | [EP-0020-US-0012-TK-0002-build-card-render](EP-0020-US-0012-TK-0002-build-card-render/EP-0020-US-0012-TK-0002-build-card-render.md) | Отрисовка карточки и силуэтов рам | client | `EP-0020-US-0012-TK-0001-build-card-model` | US12-AC2 |
 | [EP-0020-US-0012-TK-0003-build-card-view-regression](EP-0020-US-0012-TK-0003-build-card-view-regression/EP-0020-US-0012-TK-0003-build-card-view-regression.md) | Проверки вида EP-0019 после карточки сборки | tests | `EP-0020-US-0012-TK-0002-build-card-render` | US12-AC3 |
+
+## Исполнение
+
+US12-AC1:8model tests, A35/captured last selection, RU/EN. US12-AC2:7raster/geometry tests и literal UiSpec probes, unknown-frame fallback. US12-AC3: Client2252PASS,29originalEP19PASS,15strictsnapshots different0,12M3oldpanels exact. Engine не вызывается рисованием; input блокируется всей карточкой300design units. Self-review выполнен; native/global gates фиксируются в ExecutionStatus отдельно. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us12-tk3/view-audit.json`.

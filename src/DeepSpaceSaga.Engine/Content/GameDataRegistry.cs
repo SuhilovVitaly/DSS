@@ -40,7 +40,18 @@ internal sealed class GameDataRegistry
         StationMarketEventCatalogFingerprint = StationMarketEventCatalog.Fingerprint(StationMarketEvents);
         CatalogVersion = catalogVersion;
         LegacyCatalogFingerprint = legacyCatalogFingerprint;
-        var economicItems = Enumerable.Range(0, itemTypes.Count).Select(itemTypes.GetDefinition)
+        CatalogCompatibility = new(catalogVersion, EconomyTimeData.CurrentRulesVersion,
+            EconomicCatalogFingerprint(Enumerable.Range(0, itemTypes.Count).Select(itemTypes.GetDefinition)));
+    }
+
+    /// <summary>
+    /// Deterministic SHA256 digest of the immutable economic catalog (names/presentation excluded).
+    /// Shared so the carrier/ammo compatibility allowlist can recompute the pre-carrier digest by
+    /// excluding the newly added SKUs without duplicating the field list.
+    /// </summary>
+    internal static string EconomicCatalogFingerprint(IEnumerable<ItemTypeDefinition> items)
+    {
+        var economicItems = items
             .OrderBy(item => item.TypeId, StringComparer.Ordinal)
             .Select(item => new
             {
@@ -53,8 +64,7 @@ internal sealed class GameDataRegistry
                 item.BuyQuantityStep,
                 item.SellQuantityStep
             });
-        CatalogCompatibility = new(catalogVersion, EconomyTimeData.CurrentRulesVersion,
-            Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(economicItems))));
+        return Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(economicItems)));
     }
 
     public TypeRegistry<ModuleCategoryDefinition> ModuleCategories { get; }

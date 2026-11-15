@@ -1,0 +1,74 @@
+---
+epic: EP-0029-unified-carrier-and-torpedoes
+story: EP-0029-US-0004-finite-torpedoes
+title: Конечный боезапас в пошаговом бою
+stage: draft
+dependencies: [US-0003]
+created: 2026-11-14T19:42:24Z
+source_request: "Создай подробный эпик со всеми сторисами и тикетами."
+current_review: complete
+revision: 1
+---
+
+# Конечный боезапас в пошаговом бою
+
+## Входное техническое задание
+
+Часть [EP-0029](../Documentation.md). Утверждены единый корабль, 2 двухместных ангара, 2 жилых модуля по4 места (6 людей+2 резерва), четыре женщины-пилота, реальные потери обучения, магазины6/12 и42 торпеды в трюме. Захват пленных исключён.
+
+## User story
+
+Игрок видит конечный магазин дрона и осмысленно выбирает выстрел. Пропущенные действия не расходуют торпеды, а пустой магазин оставляет управление движением и защитой. История принимается по наблюдаемому состоянию и критериям ниже; существование DTO или документа не означает готовности пользовательского пути.
+
+## Grounding
+
+Текущая реализация и source pointers находятся в [Grounding эпика](../Documentation.md#grounding--текущая-реализация). Изменяемые файлы перечислены в Code context тикетов. Новые классы/API явно проектируемые.
+
+## Acceptance criteria
+
+- **AC-01**: Ёмкость light=6, heavy=12; исходно магазины полны. Начальное крыло несёт 36 торпед. Противник подчиняется тем же правилам, thug имеет 6 (A-03).
+- **AC-02**: Каждый фактически начатый выстрел расходует ровно 1 торпеду независимо от попадания, промаха, поглощения и ловушки. Пропуск, evade, уничтоженный стрелок/цель, jam и пыль не расходуют.
+- **AC-03**: При 0 торпед нет допустимого огня, но движение/уклонение/ловушки доступны. Невалидный пакет атомарно отклоняется до любых затрат и RNG.
+- **AC-04**: Если обе стороны лишились способности стрелять, бой завершается stalemate; одна пустая сторона не останавливает огонь другой. Терминальное состояние не маскирует поражение от уничтоженного носителя.
+
+## Non-goals
+
+Захват/обмен пленных, найм, верфь, рыночное пополнение, ремонт, новый тип оружия, realtime бой, Ironman и сохранение посреди боя исключены. История не расширяет scope соседних тикетов.
+
+## Dependencies
+
+- [US-0003 — Постоянное крыло корабля](../EP-0029-US-0003-persistent-wing/EP-0029-US-0003-persistent-wing.md): завершённая prerequisite поверхность. Наличие Board файла не равно выполнению.
+
+## Invariants
+
+Engine владеет ресурсами и итогами; Client показывает immutable snapshots. Один ShipId/DroneId/CrewId сохраняется между поверхностями. Расходы идемпотентны, пакетные отказы атомарны. Реальное обучение не имеет бесплатного reset. Два reserved места не создают пленных. На Load имущество не выдаётся.
+
+## Approved ticket map
+
+Workflow approval автоматический по поручению создать весь пакет; human approval подробной новой карты не заявляется.
+
+| ID / Title | Layer | Depends on | Served criteria |
+|---|---|---|---|
+| [TK-0001 — Боезапас и причины отказа в DTO](EP-0029-US-0004-TK-0001-ammo-contract/EP-0029-US-0004-TK-0001-ammo-contract.md) | contracts | [US-0003-TK-0003](../EP-0029-US-0003-persistent-wing/EP-0029-US-0003-TK-0003-wing-mass/EP-0029-US-0003-TK-0003-wing-mass.md) | AC-01, AC-02, AC-03, AC-04 |
+| [TK-0002 — Товар торпеды и ёмкость рам](EP-0029-US-0004-TK-0002-ammo-content/EP-0029-US-0004-TK-0002-ammo-content.md) | content-data | [US-0004-TK-0001](EP-0029-US-0004-TK-0001-ammo-contract/EP-0029-US-0004-TK-0001-ammo-contract.md) | AC-01 |
+| [TK-0003 — Загрузка, сборка и проекция магазинов](EP-0029-US-0004-TK-0003-ammo-runtime/EP-0029-US-0004-TK-0003-ammo-runtime.md) | engine | [US-0004-TK-0002](EP-0029-US-0004-TK-0002-ammo-content/EP-0029-US-0004-TK-0002-ammo-content.md) | AC-01, AC-02 |
+| [TK-0004 — Атомарное списание при фактическом выстреле](EP-0029-US-0004-TK-0004-shot-consumption/EP-0029-US-0004-TK-0004-shot-consumption.md) | engine | [US-0004-TK-0003](EP-0029-US-0004-TK-0003-ammo-runtime/EP-0029-US-0004-TK-0003-ammo-runtime.md) | AC-02, AC-03 |
+| [TK-0005 — Завершение боя без возможности огня](EP-0029-US-0004-TK-0005-ammo-exhaustion/EP-0029-US-0004-TK-0005-ammo-exhaustion.md) | engine | [US-0004-TK-0004](EP-0029-US-0004-TK-0004-shot-consumption/EP-0029-US-0004-TK-0004-shot-consumption.md) | AC-03, AC-04 |
+
+## Completion evidence
+
+- AC-01: TK-0001/0002/0003 — `CapacitiesAreSixTwelveSix`, `EnemyThugStartsWithSix` (light6/heavy12/thug6, initial magazines full = 36) — PASS.
+- AC-02: TK-0001/0003/0004 — `HitMissAbsorptionEachConsumeOne` (one per actual shot regardless of outcome), `KilledBeforeInitiativeConsumesZero`, `DeadTargetAndJamConsumeZero` — PASS.
+- AC-03: TK-0001/0004/0005 — `RepeatedCaptureDoesNotReload`, `FrameCapacityAndOwnedAmmoValidated`, `BothEmptyEndInStalemate` (0 ammo: no fire, movement/E/D available, invalid packet atomic) — PASS.
+- AC-04: TK-0001/0005 — `BothEmptyEndInStalemate` (Draw), `OneEmptyStillTakesDamage`, `DustOrDistanceIsNotExhaustion`, `InteractiveTurnCapEnds` — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-011..015-*`.
+- Implementation/automated: **PASS**. Native/product: **OPEN**.
+
+## Decisions and review log
+
+2026-11-14T19:42:24Z — время записи, не отправки. Пользователь: «Пока только резервируем два места, захват пилотов сделаем позже. По торпедам согласен: один выстрел — одна торпеда, перезарядка из трюма между боями. Создай подробный эпик со всеми сторисами и тикетами.»
+Концепция согласована. Assumptions A-01..A-06 берутся из эпика. Story draft отличает новую детализацию от human approval; ticket approved означает workflow-only. Поручения реализовать/публиковать нет.
+
+## Gaps and backlog
+
+Блокирующих вопросов для planning нет. Native проверка, баланс и совместимость должны быть доказаны исполнением. Если исходники изменились, перечитать owning files и обновить конкретный тикет до правок, сохранив лимит5 файлов; не расширять allowlist молча.

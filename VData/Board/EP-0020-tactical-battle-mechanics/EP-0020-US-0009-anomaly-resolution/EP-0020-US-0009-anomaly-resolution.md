@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0009-anomaly-resolution
 title: Аномалии в движке: поглощение, пыль, ИИ
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0008-anomaly-field]
 created: 2026-11-08T11:46:28Z
 source_request: "Температурная аномалия поглощает выстрел с вероятностью, равной доле линии огня внутри неё (отдельный бросок до попадания); дрон в пыли не стреляет; ИИ не заканчивает ход в пыли, если оттуда были бы цели, и выбирает цель по итоговому шансу."
@@ -60,3 +60,7 @@ Engine владеет RNG. Аномалии не влияют на движен�
 | [EP-0020-US-0009-TK-0003-ai-dust-avoidance](EP-0020-US-0009-TK-0003-ai-dust-avoidance/EP-0020-US-0009-TK-0003-ai-dust-avoidance.md) | ИИ: не заканчивать ход в пыли | engine | `EP-0020-US-0009-TK-0002-salvo-anomalies` | US9-AC4 |
 | [EP-0020-US-0009-TK-0004-session-anomalies](EP-0020-US-0009-TK-0004-session-anomalies/EP-0020-US-0009-TK-0004-session-anomalies.md) | Сессия: отказ в пыли и журнал | engine | `EP-0020-US-0009-TK-0003-ai-dust-avoidance` | US9-AC3, US9-AC5 |
 | [EP-0020-US-0009-TK-0005-anomaly-regression](EP-0020-US-0009-TK-0005-anomaly-regression/EP-0020-US-0009-TK-0005-anomaly-regression.md) | Регрессия боя с аномалиями и отчёт | engine | `EP-0020-US-0009-TK-0004-session-anomalies` | US9-AC6 |
+
+## Исполнение
+
+US9 завершена. AC1/2: ручные47проверок и frozen-shot math/RNG; AC3/5: Contracts30+Session146PASS с atomic refusal/EV/D/replay/ShotAbsorbed; AC4:5AI cases+Session regressionPASS; AC6:Engine2924uniquePASS,90corpusbattlepairs/5000seriespairs/5000reportbattlesPASS, реальные отчёты и таблица в TK5. Параметры сохранены. Motion broad sourceguard имеет известные UI находки (1282PASS/1FAIL), не объявлен PASS; human/independent/native остаются отдельной приёмкой. Evidence в карточках.

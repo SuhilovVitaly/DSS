@@ -1,6 +1,6 @@
 {
   "shipClasses": [
-    { "typeId": "ship.tetrarch" },
+    { "typeId": "ship.tetrarch", "hullMax": 400, "tacticalManeuver": 35, "appearanceId": "carrier" },
     { "typeId": "ship.mukha" },
     { "typeId": "ship.shmel" }
   ]

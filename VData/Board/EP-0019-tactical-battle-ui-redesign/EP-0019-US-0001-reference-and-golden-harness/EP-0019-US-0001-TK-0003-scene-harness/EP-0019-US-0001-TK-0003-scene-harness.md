@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0001-reference-and-golden-harness
 ticket: EP-0019-US-0001-TK-0003-scene-harness
 title: Харнесс сцен и проверки вида
-stage: draft
+stage: done
 layer: tests
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0001-TK-0002-bundle-battle-font]
@@ -61,7 +61,7 @@ A-01, A-06. Мир на паузе. Приказы — предложения И
 
 Харнесс не меняет данные боя и не тратит RNG сверх реальных команд.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -91,6 +91,24 @@ git diff --check
 
 Все ожидания — в DesignSpec §12; фикстура уже существует.
 
-## Исполнение
+## История начальной попытки (заменена возобновлением)
 
-Не начато.
+2026-11-08: BLOCKED до реализации харнесса. Обязательный Assets/battle-data-seed1.txt отсутствует в HEAD f9fcbd45, свежем origin/main 50d96441, всей доступной Git-истории и локальных workspace artifacts. В Assets отслеживался только README; шрифты отдельно восстановлены TK-0002 по совпавшим SHA, но независимый oracle боя не восстановлен.
+
+DesignSpec §12.1 и шаги 1/4 этого тикета требуют именно reference с позами (±0.05), приказами, целями/шансами и FireSteps ходов 1 и 3. §12.3 содержит только часть этих величин. Запись текущего Engine output как ожидаемых значений не доказывает совпадение с потерянным reference и не выполняет обязательную сверку данных до вида. Значения и допуски не изменены; фиктивного Seed1_battle_data_matches_assets нет. Нужен исходный reference из сессии планирования либо его независимая восстановленная версия с проверяемым происхождением.
+
+Проверено: source tree/hash и Git history, поиск workspace (включая ignored artifacts), актуальный origin после fetch. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-setup/input-audit.txt. Следующие 18 тикетов зависимы от этого харнесса, поэтому их production-реализация не начата. US-0007 дополнена scope, но не выполнена. См. ExecutionStatus.md.
+
+## Возобновление 2026-11-08
+
+По повторному запросу выполнить все тикеты прежний блокер разрешается техническим восстановлением. Источник — неизменённые Engine/Contracts/TacticalBattle content относительно указанного в DesignSpec 8c6f4e2a (git diff пуст). Сохраняется одноразовый baseline до изменения UI, нормализуется только случайный BattleId; известные DesignSpec скорости/цели/шансы/урон/итог проверяются независимыми literal assertions до фиксации. Это recovered baseline, не найденный оригинал. Значения и допуски DesignSpec не меняются. Дополнительный scope: BattleLayout.cs, Assets/battle-data-seed1.txt и происхождение README.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Restore seed1 reference with specification checks and real scene harness
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us1-tk3. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+Ep0019ViewTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0012-build-card-ui
 ticket: EP-0020-US-0012-TK-0002-build-card-render
 title: Отрисовка карточки и силуэтов рам
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0012-TK-0001-build-card-model]
@@ -89,4 +89,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope расширен на HoverCard для production bridge, старые HoverCardTests для утверждённой замены own hover, UI spec уточнение актуальной фазы M3: первая стрельба seed1 Turn4, Марта выбирается реальным Tab. RU/EN уже поставлены TK1; примитивы размещены в BuildCard, чтобы не расширять общий BattleDesign без необходимости.
+
+Завершено. Client28PASS: BuildRender7/Model8/Hover5/Localization8; сборкаPASS, scoped format/diffPASS. UiSpec§25:5полосок≥90%, light/heavy силуэт≥50%,2красные рамки≥50%, модель пустогоShield2; все3силуэта+unknown, обе локали. Overlay bounds300, label collision и oldenemy104px проверены. Растр выбранной Марты визуально осмотрен: шапка/ячейки/итоги помещаются без перекрытий. Self-review: Slots authority, read-only отображение и input bounds сохранены. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us12-tk2/focus/tests.trx`. US12-AC2 покрыт; baseline замена только TK3.

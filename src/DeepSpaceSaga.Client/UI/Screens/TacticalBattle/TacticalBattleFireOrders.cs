@@ -11,6 +11,8 @@ public sealed record TacticalFirePlanRow(TacticalUnitSnapshot Drone, TacticalTar
 {
     public bool Evade { get; init; }
     public bool Decoy { get; init; }
+    /// <summary>The player explicitly chose «Не стрелять» (not an empty target left by evade).</summary>
+    public bool Hold { get; init; }
     public bool CanDecoy => !Evade && Drone.Build?.DecoyId is not null && Drone.DecoyCharges > 0;
     public DecoyRowState DecoyState => Decoy ? DecoyRowState.Selected : CanDecoy ? DecoyRowState.Available : DecoyRowState.Unavailable;
     public bool CanEvade { get; init; }
@@ -73,9 +75,10 @@ internal sealed class TacticalBattleFireOrders
         var row = _rows[index];
         if (target is not null && !row.Group.List.Any(c => c.TargetId == target)) return false;
         string? actual = toggle && row.TargetId == target ? null : target;
-        if (row.TargetId != actual || row.Evade)
+        bool hold = actual is null;
+        if (row.TargetId != actual || row.Evade || row.Hold != hold)
         {
-            _rows[index] = row with { TargetId = actual, Evade = false };
+            _rows[index] = row with { TargetId = actual, Evade = false, Hold = hold };
             _cached = null;
         }
         return true;
@@ -83,7 +86,7 @@ internal sealed class TacticalBattleFireOrders
 
     public void ClearAll()
     {
-        for (int i = 0; i < _rows.Count; i++) _rows[i] = _rows[i] with { TargetId = null, Evade = false, Decoy = false };
+        for (int i = 0; i < _rows.Count; i++) _rows[i] = _rows[i] with { TargetId = null, Evade = false, Decoy = false, Hold = false };
         _cached = null;
     }
 
@@ -91,7 +94,7 @@ internal sealed class TacticalBattleFireOrders
     {
         int index = _rows.FindIndex(r => r.Drone.Id == droneId);
         if (index < 0 || !_rows[index].CanEvade) return false;
-        _rows[index] = _rows[index] with { TargetId = null, Evade = !_rows[index].Evade, Decoy = false };
+        _rows[index] = _rows[index] with { TargetId = null, Evade = !_rows[index].Evade, Decoy = false, Hold = false };
         _cached = null;
         return true;
     }

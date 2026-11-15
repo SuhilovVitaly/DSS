@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0007-decoy-ui
 title: Ловушки в интерфейсе боя
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0006-decoy-resolution, EP-0020-US-0004-evasion-ui]
 created: 2026-11-08T11:46:28Z
 source_request: "Встроить пуск ловушки, заряды, метку ловушки на карте и раскрытие ловушек в залпе и результатах в интерфейс EP-0019 точно по [UiSpec](../UiSpec.md) §8–§13."
@@ -57,3 +57,7 @@ D-16–D-22. Интерфейс M1 (US-0004) должен быть реализ�
 | [EP-0020-US-0007-TK-0002-fire-panel-decoy](EP-0020-US-0007-TK-0002-fire-panel-decoy/EP-0020-US-0007-TK-0002-fire-panel-decoy.md) | Строка ловушки, значок карточки, метка на карте, строки | client | `EP-0020-US-0007-TK-0001-fire-orders-decoy` | US7-AC2 |
 | [EP-0020-US-0007-TK-0003-salvo-decoy-reveal](EP-0020-US-0007-TK-0003-salvo-decoy-reveal/EP-0020-US-0007-TK-0003-salvo-decoy-reveal.md) | Ловушки в полёте залпа и результатах | client | `EP-0020-US-0007-TK-0002-fire-panel-decoy` | US7-AC3 |
 | [EP-0020-US-0007-TK-0004-decoy-view-regression](EP-0020-US-0007-TK-0004-decoy-view-regression/EP-0020-US-0007-TK-0004-decoy-view-regression.md) | Проверки вида EP-0019 после ловушек | tests | `EP-0020-US-0007-TK-0003-salvo-decoy-reveal` | US7-AC4 |
+
+## Исполнение
+
+Все4тикета завершены. AC1orders/input28PASS; AC2panel/localization18PASS+Engine94/Contracts27; AC3Results31+Engine44/Contracts27PASS; AC4Client2206PASS,29Ep0019PASS,masked7PASS,independent47PASS. Самопроверка выполнена; temporarycontent fixtures очищены. Native/human/physical gates не подменяются raster-проверками.

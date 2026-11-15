@@ -1,6 +1,6 @@
 # Deep Space Saga: документация
 
-Здесь описаны текущие игровые контракты. Статус разработки, результаты тестов и приёмка находятся в [Board](../Board). [Тактический бой с инициативой](04-Engineering/TacticalBattle.md) запускается с карты; [Save20](04-Engineering/SaveFormat.md) хранит мир и читает поддерживаемые архивные сохранения.
+Здесь описаны текущие игровые контракты. Статус разработки, результаты тестов и приёмка находятся в [Board](../Board). [Тактический бой: инициатива, уклонение, ловушки, аномалии и сборка](04-Engineering/TacticalBattle.md) запускается с карты; [Save20](04-Engineering/SaveFormat.md) хранит мир и читает поддерживаемые архивные сохранения.
 
 ## Начать здесь
 
@@ -38,7 +38,7 @@
 - [Меню игровой сессии](02-FirstRelease/Screens/GameMenu.md).
 - [Карта игровой сессии](02-FirstRelease/Screens/GameSession.md).
 - [Подготовка боя](02-FirstRelease/Screens/TacticalBattleSetup.md).
-- [Экран тактического боя](02-FirstRelease/Screens/TacticalBattle.md).
+- [Экран тактического боя, команды пилота и Tabletop](02-FirstRelease/Screens/TacticalBattle.md).
 - [Найм экипажа](02-FirstRelease/Screens/Hire.md).
 - [Загрузка игры](02-FirstRelease/Screens/Load.md).
 - [Главное меню](02-FirstRelease/Screens/MainMenu.md).
@@ -52,6 +52,7 @@
 
 ### 03-Design
 
+- [Оболочка Tabletop](03-Design/TabletopClient.md).
 - [Портреты в диалогах](03-Design/DialoguePortraits.md).
 - [Портретные наборы и композиция](03-Design/PortraitGenerator.md).
 - [Мужской набор M4](03-Design/PortraitGeneratorM4.md).
@@ -68,7 +69,7 @@
 - [Каталог товаров и совместимость](04-Engineering/ItemCatalogSchema.md).
 - [Принципы моддинга и архивный прототип C#-мода](04-Engineering/Modding.md).
 - [Прогноз движения NPC по наблюдениям](04-Engineering/NpcObservedTrajectories.md).
-- [Тактический бой с инициативой](04-Engineering/TacticalBattle.md).
+- [Тактический бой: инициатива, уклонение, ловушки, аномалии и сборка](04-Engineering/TacticalBattle.md).
 - [Создание и установка скинов боя](04-Engineering/TacticalBattleSkins.md).
 - [Сохранения и восстановление](04-Engineering/SaveFormat.md).
 - [Экономика и процедурный мир](04-Engineering/TradingAndSolarSystem.md).

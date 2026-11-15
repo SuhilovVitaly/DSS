@@ -2,7 +2,7 @@
 epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0004-phase-panel
 title: Панель фазы
-stage: draft
+stage: done
 dependencies: [EP-0019-US-0002-overlay-layout-shell]
 created: 2026-11-08T09:31:05Z
 source_request: "Правая постоянная панель: шапка хода и фазы, детали фазы и действие; управление приказами движения и огня, воспроизведением залпа и итогом."
@@ -47,7 +47,7 @@ D-03. [DesignSpec §6, §9](../DesignSpec.md#6-правая-колонка--па
 
 ## Решения и согласование
 
-Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы-нужно-решение-до-утверждения)).
+Исполнение draft-карточек разрешено запросом выполнить весь эпик. Использованы записанные варианты по умолчанию; художественное/пользовательское одобрение не приписывается. Итог — [ExecutionStatus](../ExecutionStatus.md).
 
 ## Ticket map
 
@@ -58,3 +58,7 @@ D-03. [DesignSpec §6, §9](../DesignSpec.md#6-правая-колонка--па
 | [EP-0019-US-0004-TK-0003-fire-details-and-target-click](EP-0019-US-0004-TK-0003-fire-details-and-target-click/EP-0019-US-0004-TK-0003-fire-details-and-target-click.md) | Детали стрельбы и назначение цели | client | `EP-0019-US-0004-TK-0001-phase-panel-container-and-header` | US4-AC3 |
 | [EP-0019-US-0004-TK-0004-salvo-and-results-details](EP-0019-US-0004-TK-0004-salvo-and-results-details/EP-0019-US-0004-TK-0004-salvo-and-results-details.md) | Детали залпа и результатов | client | `EP-0019-US-0004-TK-0001-phase-panel-container-and-header` | US4-AC4 |
 | [EP-0019-US-0004-TK-0005-outcome-details](EP-0019-US-0004-TK-0005-outcome-details/EP-0019-US-0004-TK-0005-outcome-details.md) | Итог боя | client | `EP-0019-US-0004-TK-0004-salvo-and-results-details` | US4-AC5 |
+
+## Итоговая проверка
+
+Все тикеты истории реализованы и опубликованы. Критерии сопоставлены проверкам в [ExecutionStatus](../ExecutionStatus.md); текущие результаты заменяют начальную запись blocked. Human/physical input и проверки недоступных ОС остаются отдельными gates.

@@ -40,7 +40,7 @@ internal static class TacticalBattleSalvo
 {
     public static ImmutableArray<TacticalCandidate> Candidates(TacticalBattle battle, TacticalDrone shooter, IReadOnlyCollection<string>? evading = null, bool ignoreDust = false, TacticalPose? pose = null)
     {
-        if (!shooter.IsActive || shooter.Jammed || (!ignoreDust && InDust(battle, shooter))) return [];
+        if (!shooter.IsActive || shooter.Jammed || shooter.AmmoCurrent <= 0 || (!ignoreDust && InDust(battle, shooter))) return [];
         var origin = pose ?? shooter.Pose;
         var result = ImmutableArray.CreateBuilder<TacticalCandidate>();
         string enemy = battle.EnemySide(shooter.Side);
@@ -167,6 +167,9 @@ internal static class TacticalBattleSalvo
             var priorOutcome = battle.Result;
             if (candidate is not null)
             {
+                // One actual shot = one torpedo, spent before any absorption/hit RNG — hit, miss
+                // and absorption all consume it; skip/no-candidate never does.
+                shooter.AmmoCurrent--;
                 var target = candidate.Target;
                 bool wasActive = target.IsActive;
                 bool decoyed = lured.Remove(target.Id);

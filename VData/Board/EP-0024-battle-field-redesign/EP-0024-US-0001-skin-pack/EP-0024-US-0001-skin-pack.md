@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0001-skin-pack
 title: Пакет скина «Tabletop» и режим поля
-stage: draft
+stage: done
 dependencies: []
 created: 2026-11-12T13:00:00Z
 source_request: "Добавить в клиент пакет скина `tabletop` из материалов эпика и режим поля, который включается метрикой скина; ввести роли листов спрайтов."
@@ -53,3 +53,8 @@ D-02, D-07, A-01, A-02. Пакеты лежат в `src/DeepSpaceSaga.Client/Ski
 |---|---|---|---|---|
 | [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | Пакет `tabletop` в клиенте и в сборке | client-data | — | US1-AC1 |
 | [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | Признак режима и доступ к листам спрайтов | client-ui | `EP-0024-US-0001-TK-0001-pack-files` | US1-AC2, US1-AC3 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.
