@@ -12,7 +12,7 @@ files_touched: 2
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Асинхронный transport перезарядки
@@ -103,4 +103,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`LocalGameSessionConnection.RearmDroneAsync` — thin adapter `TacticalCall(() => _engine.RearmDrone(request), token)`; отмена до отправки не вызывает engine, после принятия committed change не откатывается.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0008Tk0003Tests"` — **3/3 passed** (`LocalRearmMatchesEngineReceipt`, `CancelledBeforeSendDoesNotSpend`, `RetryAfterLostReplyKeepsOneTransfer`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-027-us0008tk0003/US-0008-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine.LocalClient --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (local-client layer); native/product acceptance remains OPEN.
