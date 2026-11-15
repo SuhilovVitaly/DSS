@@ -124,8 +124,17 @@ Status: automated PASS (client layer); native/product acceptance remains OPEN.
 
 **Fix:** `PilotCard.PortraitAssetId` проекция из `u.Build?.PilotPortraitAssetId`; `PilotPortraitCatalog.TryGet(pilotId, portraitAssetId, out bitmap)` декодирует общий asset с проверкой пути (rooted path, `..`, выход за baseDir и не-`.png` отклоняются; wildcard — только `.png`), кэширует по asset id и освобождает bitmap в `Dispose`; при отсутствии/ошибке asset используется прежний alias. `SourceRect(pilotId, portraitAssetId)` возвращает raw W4 crop `(170,70,854,754)` для asset-портрета и прежний composed/raw crop для alias. `PilotCardColumn.Portrait` получил optional `portraitAssetId`; main card, BuildCard и HoverCard передают его.
 
-**Tests:** `Ep0029Us0010Tk0001Tests` — 6/6 passed, включая `SharedCrewPortraitAssetWinsOverLegacyAlias` (реальный W4 asset 1024×1536 против 2×2 alias, raw crop, card carries id), `LegacyAliasStillWorksWhenAssetMissing`, `AssetPathTraversalIsRejectedAndFallsBack`; прежние `OwnedPortraitOverridesLegacyAlias`, `MissingPortraitKeepsIdentity`, `SessionSwitchDropsOldPortraitBindings` зелёные. `PilotPortraitCatalogTests` — 2/2 passed. `BuildCardRenderTests` — 9/9 passed (extra guard).
+**Tests:** `Ep0029Us0010Tk0001Tests` — 6/6 passed, включая `SharedCrewPortraitAssetWinsOverLegacyAlias` (реальный W4 asset 1024×1024 против 2×2 alias, raw crop, card carries id), `LegacyAliasStillWorksWhenAssetMissing`, `AssetPathTraversalIsRejectedAndFallsBack`; прежние `OwnedPortraitOverridesLegacyAlias`, `MissingPortraitKeepsIdentity`, `SessionSwitchDropsOldPortraitBindings` зелёные. `PilotPortraitCatalogTests` — 2/2 passed. `BuildCardRenderTests` — 7/7 passed (extra guard).
 
 **Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-051-us0010tk0001/US-0010-TK-0001/focused.trx` (8/8 ticket+catalog), `guards.trx` (12 passed, 3 ambient EP-0019 `HoverCardTests` starter-manifest failures, unrelated to portrait code), `client-build.log` (0 warnings/0 errors), `format.log` (clean).
+
+Status: automated PASS (client layer); native RU/EN remains OPEN.
+
+### Validation follow-up 2026-11-15 (P3 evidence correction)
+
+Исправлены неточности evidence: W4/Portraits PNG имеют размер **1024×1024** (проверено `file` по четырём пилотам), а `BuildCardRenderTests` содержит **7** результатов (7/7), не 9. Комментарий теста `SharedCrewPortraitAssetWinsOverLegacyAlias` и раздел Tests выше приведены к фактическим значениям; поведение не менялось.
+
+- Повторный прогон: `Ep0029Us0010Tk0001Tests` — 6/6, `PilotPortraitCatalogTests` — 2/2, `BuildCardRenderTests` — 7/7.
+- Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-055-us0010tk0001-followup/US-0010-TK-0001/{focused.trx,client-build.log,format.log}`.
 
 Status: automated PASS (client layer); native RU/EN remains OPEN.

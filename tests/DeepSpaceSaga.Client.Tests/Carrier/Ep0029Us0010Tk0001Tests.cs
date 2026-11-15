@@ -85,7 +85,7 @@ public sealed class Ep0029Us0010Tk0001Tests : IDisposable
     public void SharedCrewPortraitAssetWinsOverLegacyAlias()
     {
         // The legacy alias points at a valid but different 2x2 image; the shared crew portrait is the
-        // real 1024x1536 W4 asset, so dimensions prove which one the catalog decoded.
+        // real 1024x1024 W4 asset, so dimensions prove which one the catalog decoded.
         WriteCatalog(("yun", "W4/Portraits/legacy", false));
         WriteTinyPortrait("Images/Persons/W4/Portraits/legacy");
         CopyClientAsset(PilotAssetId);
