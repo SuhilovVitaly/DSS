@@ -1218,7 +1218,8 @@ public sealed class SkiaWindow : IDisposable
     private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) =>
         new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, flow.IsTutorial ? TutorialSkin() : _battleSkin)
         {
-            LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel,
+            LaunchKey = _tacticalInputs.TacticalBattle,
+            WorldDebugKey = _maneuverInputs.DebugPanel,
             Tutorial = flow.IsTutorial ? CreateTutorialSession() : null,
         };
 
@@ -1301,7 +1302,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is ShipScreen)
             return;
 
-        await PushModalAsync(new ShipScreen());
+        await PushModalAsync(new ShipScreen(ShipViewModel.From(_session?.CarrierOperations)));
     }
 
     /// <summary>

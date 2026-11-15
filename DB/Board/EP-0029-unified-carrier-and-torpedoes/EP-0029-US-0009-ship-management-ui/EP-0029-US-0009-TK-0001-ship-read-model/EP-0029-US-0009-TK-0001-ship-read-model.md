@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Модель экрана корабля
@@ -105,4 +105,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`ShipViewModel.From(CarrierOperationsSnapshot?)` строит read-only модель только из snapshot (hull/class/name/revision, drones ammo, crew, cabins occupied/reserved отдельно); null → `Unsupported` (legacy ship без wing, никаких подаренных дронов). `ShipScreen` принимает `ShipViewModel`, рендерит реальные hull/crew/drones или явный unsupported (placeholder-lines для carrier-секций убраны); `OpenShipAsync` передаёт `_session?.CarrierOperations`.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0009Tk0001Tests"` — **3/3 passed** (`ShipViewUsesSnapshotNotDefaults`, `LegacyShipShowsNoWing`, `ReservedIsSeparateFromOccupied`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-029-us0009tk0001/US-0009-TK-0001/focused.trx`; существующий `ShipScreenTests` 6/6 также зелёный.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean (попутно исправлен pre-existing whitespace в `SkiaWindow.CreateTacticalBattleView`).
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
