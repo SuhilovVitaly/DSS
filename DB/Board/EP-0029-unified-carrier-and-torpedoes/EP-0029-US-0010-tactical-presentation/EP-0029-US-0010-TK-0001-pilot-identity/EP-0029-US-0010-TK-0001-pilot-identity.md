@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Портреты и имена из общей записи экипажа
@@ -107,4 +107,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`PilotCardModel.IsFemale(unit, portraits)` теперь берёт gender из общей записи экипажа (`TacticalBuildSnapshot.PilotGender`), с fallback на legacy alias только когда build не имеет crew identity; имя остаётся из `PilotName`. Никакого кэша привязки между сессиями — пол читается из каждого build.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0010Tk0001Tests"` — **3/3 passed** (`OwnedPortraitOverridesLegacyAlias`, `MissingPortraitKeepsIdentity`, `SessionSwitchDropsOldPortraitBindings`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-033-us0010tk0001/US-0010-TK-0001/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.

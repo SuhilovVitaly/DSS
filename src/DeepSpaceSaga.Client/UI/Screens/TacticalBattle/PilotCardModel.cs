@@ -22,6 +22,12 @@ internal sealed record PilotCard(string UnitId, string Name, string Weapon, stri
 internal static class PilotCardModel
 {
     internal static string Name(TacticalUnitSnapshot unit) => unit.Build?.PilotName ?? unit.Id;
+    /// <summary>Gender from the shared crew record; falls back to the legacy alias only when the build predates crew identity.</summary>
+    internal static bool IsFemale(TacticalUnitSnapshot unit, PilotPortraitCatalog portraits)
+    {
+        string pilot = unit.Build?.PilotId ?? "";
+        return unit.Build?.PilotGender is { } gender ? gender == CrewGender.Female : portraits.IsFemale(pilot);
+    }
     internal static string State(TacticalUnitSnapshot unit, bool female = false) => U(unit.State switch
     { TacticalUnitState.Destroyed => female ? "DestroyedFemale" : "DestroyedMale", TacticalUnitState.Disabled => female ? "DisabledFemale" : "DisabledMale", _ => "Alive" });
     internal static string? ActiveShooter(TacticalBattleFrame f) => f.Salvo?.Flights.FirstOrDefault(s => s.Flying)?.Shot.ShooterId ?? f.Salvo?.Flights.FirstOrDefault(s => !s.Arrived)?.Shot.ShooterId ?? f.Salvo?.Flights.LastOrDefault()?.Shot.ShooterId;
@@ -76,7 +82,7 @@ internal static class PilotCardModel
                 {
                     selected = ResultShot(f)?.ShooterId;
                     int received = salvo.Damage.FirstOrDefault(d => d.Unit.Id == u.Id) is { } d ? d.Armor + d.Hull : 0;
-                    chip = U(shot is null ? portraits.IsFemale(pilot) ? "NotFiredFemale" : "NotFiredMale" : shot.Hit ? "HitChip" : "MissChip");
+                    chip = U(shot is null ? IsFemale(u, portraits) ? "NotFiredFemale" : "NotFiredMale" : shot.Hit ? "HitChip" : "MissChip");
                     if (shot?.Absorbed == true) chip = M("AbsorbedChip");
                     if (salvo.Evading.Contains(u.Id)) chip = BattleFormat.Localize("EvadeChipResult");
                     accent = received > 0;
@@ -87,7 +93,7 @@ internal static class PilotCardModel
             {
                 selected = null;
                 int dealt = Dealt(f.Battle, u.Id), received = u.MaxArmor - u.Armor + u.MaxHull - u.Hull;
-                chip = State(u, portraits.IsFemale(pilot)).ToLowerInvariant(); accent = u.State is TacticalUnitState.Disabled or TacticalUnitState.Destroyed;
+                chip = State(u, IsFemale(u, portraits)).ToLowerInvariant(); accent = u.State is TacticalUnitState.Disabled or TacticalUnitState.Destroyed;
                 Template("ResultStats", (dealt.ToString(), dealt > 0 ? Orange : Muted), (received > 0 ? "−" + received : "0", received > 0 ? Red : Muted));
             }
             else if (f.Movement?.Orders.FirstOrDefault(o => o.Unit.Id == u.Id) is { } move)
