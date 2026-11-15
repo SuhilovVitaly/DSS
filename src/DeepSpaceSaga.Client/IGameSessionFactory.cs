@@ -17,7 +17,8 @@ public interface IGameSessionFactory
 
     /// <summary>
     /// Full path of the hidden Tutorial scenario file (passed to <see cref="CreateSessionFromScenario"/>),
-    /// or null when this factory has no tutorial. Default null keeps factories without tutorial support unchanged.
+    /// or null when this factory has no tutorial. With null, New Game without saves logs the missing
+    /// tutorial and opens the scenario picker instead of the tutorial battle.
     /// </summary>
     string? GetTutorialScenarioPath() => null;
 

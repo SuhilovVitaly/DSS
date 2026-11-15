@@ -62,13 +62,12 @@ public sealed class TutorialFlowTests
     }
 
     [Theory]
-    [InlineData(StartFailure.NoTutorial)]
-    [InlineData(StartFailure.SessionThrows)]
-    [InlineData(StartFailure.BattleRejected)]
-    [InlineData(StartFailure.BattleThrows)]
-    public async Task TutorialStartFailureReturnsToMainMenuAndDisposesSession(StartFailure failure)
+    [InlineData(StartFailure.SessionThrows, "tutorial scenario is broken")]
+    [InlineData(StartFailure.BattleRejected, "Tutorial battle was rejected: Unsupported")]
+    public async Task TutorialStartFailureReturnsToMainMenuAndDisposesSession(StartFailure failure, string reason)
     {
         await using var fixture = new TutorialFixture(failure: failure);
+        long logLength = File.Exists(InterfaceLog.FileName) ? new FileInfo(InterfaceLog.FileName).Length : 0;
 
         await fixture.Route(ScreenEvent.NewGame);
 
@@ -82,6 +81,42 @@ public sealed class TutorialFlowTests
             Assert.True(proxy.Disposed);
             Assert.All(proxy.ScreensAtCalls, screen => Assert.Equal(typeof(MainMenuScreen), screen));
         }
+        Assert.Contains("Tutorial start failed: " + reason, LogTailReader.ReadTail(logLength));
+    }
+
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0002: when the tutorial itself is unavailable (no tutorial scenario, or the engine refuses the
+    /// battle as <see cref="TacticalBattleRejectionCode.Unavailable"/>, which is also what a transport failure maps to), New Game
+    /// without saves logs the reason and opens the scenario picker instead of leaving the player on the main menu.
+    /// </summary>
+    [Theory]
+    [InlineData(StartFailure.NoTutorial, "Tutorial scenario is not available.")]
+    [InlineData(StartFailure.BattleUnavailable, "Tutorial battle was rejected: Unavailable")]
+    [InlineData(StartFailure.BattleThrows, "Tutorial battle was rejected: Unavailable")]
+    public async Task UnavailableTutorialFallsBackToScenarioSelect(StartFailure failure, string reason)
+    {
+        await using var fixture = new TutorialFixture(failure: failure);
+        long logLength = File.Exists(InterfaceLog.FileName) ? new FileInfo(InterfaceLog.FileName).Length : 0;
+
+        await fixture.Route(ScreenEvent.NewGame);
+
+        Assert.IsType<ScenarioSelectScreen>(fixture.Screens.Current);
+        Assert.Equal(1, fixture.Screens.Count);
+        Assert.Null(fixture.Session);
+        Assert.Equal(0, fixture.Depth);
+        await fixture.LastSessionDisposal.WaitAsync(TimeSpan.FromSeconds(10));
+        if (failure == StartFailure.NoTutorial)
+        {
+            Assert.Empty(fixture.CreatedPaths);
+            Assert.Null(fixture.Proxy);
+        }
+        else
+        {
+            Assert.Equal(1, fixture.Proxy!.Starts);
+            Assert.True(fixture.Proxy.Disposed);
+            Assert.False(fixture.Engine!.IsTacticalBattleActive);
+        }
+        Assert.Contains("Tutorial start failed: " + reason, LogTailReader.ReadTail(logLength));
     }
 
     [Fact]
@@ -375,7 +410,7 @@ public sealed class TutorialFlowTests
         Assert.Equal(expected, json.RootElement.GetProperty("TacticalBattle.ConfirmExitToMenu").GetString());
     }
 
-    public enum StartFailure { None, NoTutorial, SessionThrows, BattleRejected, BattleThrows }
+    public enum StartFailure { None, NoTutorial, SessionThrows, BattleRejected, BattleUnavailable, BattleThrows }
 
     public class TutorialProxy : DispatchProxy
     {
@@ -397,6 +432,8 @@ public sealed class TutorialFlowTests
                 var request = (StartTacticalBattleRequest)args![0]!;
                 if (Failure == StartFailure.BattleRejected)
                     return ValueTask.FromResult(new TacticalBattleResponse(request.CommandId, false, TacticalBattleRejectionCode.Unsupported, null, null, []));
+                if (Failure == StartFailure.BattleUnavailable)
+                    return ValueTask.FromResult(new TacticalBattleResponse(request.CommandId, false, TacticalBattleRejectionCode.Unavailable, null, null, []));
                 if (Failure == StartFailure.BattleThrows)
                     return ValueTask.FromException<TacticalBattleResponse>(new InvalidOperationException("tutorial battle start failed"));
             }

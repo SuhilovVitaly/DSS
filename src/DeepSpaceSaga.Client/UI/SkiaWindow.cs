@@ -1087,7 +1087,10 @@ public sealed class SkiaWindow : IDisposable
     /// tactical battle (default request, seed 1, no setup screen). The whole sequence runs under
     /// <see cref="_transitionLock"/> while the main menu stays on screen; the world map is only
     /// placed under the battle modal once the battle has been accepted, so it never becomes the
-    /// current screen or receives input. Any failure disposes the session and returns to the main menu.
+    /// current screen or receives input. Any failure is logged to InterfaceLog and disposes the session.
+    /// When the tutorial itself is unavailable (no tutorial scenario, or the engine rejects the battle as
+    /// <see cref="TacticalBattleRejectionCode.Unavailable"/>) the player falls back to the scenario picker,
+    /// so a fresh install without saves can always start a game; any other failure returns to the main menu.
     /// </summary>
     private async Task StartTutorialAsync()
     {
@@ -1098,10 +1101,15 @@ public sealed class SkiaWindow : IDisposable
         if (_closing) return;
 
         GameSessionHandle? session = null;
+        bool fallBackToScenarioSelect = false;
         try
         {
-            string scenarioPath = _sessionFactory.GetTutorialScenarioPath()
-                ?? throw new FileNotFoundException("Tutorial scenario is not available.");
+            string? scenarioPath = _sessionFactory.GetTutorialScenarioPath();
+            if (scenarioPath is null)
+            {
+                fallBackToScenarioSelect = true;
+                throw new FileNotFoundException("Tutorial scenario is not available.");
+            }
             var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
             if (!_connectionLoader.TryAdopt(connection)) return;
 
@@ -1131,7 +1139,10 @@ public sealed class SkiaWindow : IDisposable
                 ExpectedCarrierRevision = carrier.Revision,
             });
             if (started?.Accepted != true || flow.State is null)
+            {
+                fallBackToScenarioSelect = started is { Accepted: false, Code: TacticalBattleRejectionCode.Unavailable };
                 throw new InvalidOperationException("Tutorial battle was rejected: " + (started?.Code.ToString() ?? "no response"));
+            }
             if (_closing)
             {
                 await session.DisposeAsync();
@@ -1154,7 +1165,10 @@ public sealed class SkiaWindow : IDisposable
             _gameSessionScreen = null;
             _modalDepth = 0;
             _savedSpeed = SimulationSpeed.Speed1;
-            if (!_closing) _screens.ReplaceAll(new MainMenuScreen());
+            if (!_closing)
+                _screens.ReplaceAll(fallBackToScenarioSelect
+                    ? new ScenarioSelectScreen(() => _sessionFactory.ListScenarios())
+                    : new MainMenuScreen());
             if (session is not null)
             {
                 _lastSessionDisposal = session.DisposeAsync().AsTask();

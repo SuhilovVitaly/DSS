@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0002-tutorial-start-fallback
 title: «Новая игра» без сохранений не должна застревать при сбое обучения
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: major
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # «Новая игра» без сохранений не должна застревать при сбое обучения
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -56,4 +57,13 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на `d67d538e` подтверждён.
+
+- `SkiaWindow.StartTutorialAsync`: при `GetTutorialScenarioPath() == null` или отказе боя с кодом `Unavailable` (в том числе сбой транспорта, который `GameSessionHandle` превращает в `Unavailable`) сессия освобождается, причина пишется в InterfaceLog (`Tutorial start failed: …`) и открывается выбор сценария. Прочие сбои по-прежнему возвращают главное меню с записью в лог.
+- `IGameSessionFactory`: исправлен комментарий контракта `GetTutorialScenarioPath`.
+
+Тесты (`TutorialFlowTests`): `UnavailableTutorialFallsBackToScenarioSelect` (NoTutorial, BattleUnavailable, BattleThrows); `TutorialStartFailureReturnsToMainMenuAndDisposesSession` дополнительно проверяет строку InterfaceLog.
+
+Остаток: сбои создания сессии, отсутствие носителя/крыла и прочие коды отказа ведут в главное меню — расширение запасного пути на них остаётся продуктовым решением.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
