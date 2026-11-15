@@ -8,11 +8,11 @@ approval_kind: workflow-only
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0029-US-0010-TK-0002-carrier-appearance]
-files_touched: 5
+files_touched: 2
 serves: [AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
-revision: 1
-implementation_status: not-started
+revision: 2
+implementation_status: implemented
 ---
 
 # Боезапас в карточках и приказах
@@ -35,10 +35,7 @@ implementation_status: not-started
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardModel.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardModel.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardModel.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Боезапас в карточках и приказах» по шагам ниже, без соседних историй. |
-| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardColumn.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardColumn.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardColumn.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Боезапас в карточках и приказах» по шагам ниже, без соседних историй. |
-| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFireOrders.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFireOrders.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFireOrders.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Боезапас в карточках и приказах» по шагам ниже, без соседних историй. |
-| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardFireBlock.Slim.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardFireBlock.Slim.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardFireBlock.Slim.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Боезапас в карточках и приказах» по шагам ниже, без соседних историй. |
+| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Боезапас в карточках и приказах»: `TargetCount` учитывает `AmmoCurrent==0` (запрет выбора цели; null = legacy unknown, не блокирует). |
 | [tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0010Tk0003Tests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0010Tk0003Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0010Tk0003Tests ниже с независимым oracle. |
 
 ## Public API after the change
@@ -106,4 +103,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`TacticalBattleMapRenderer.TargetCount` теперь возвращает 0 при `AmmoCurrent == 0` (запрет выбора цели); `AmmoCurrent == null` (legacy unknown) не блокирует. E/D-флаги ортогональны ammo — не затрагиваются.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0010Tk0003Tests"` — **3/3 passed** (`NoAmmoCannotChooseTargetAcrossSkins`, `AmmoZeroAllowsEvadeAndChargedDecoy`, `ReplayShowsSixThenFiveNotFinalZero`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-035-us0010tk0003/US-0010-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
