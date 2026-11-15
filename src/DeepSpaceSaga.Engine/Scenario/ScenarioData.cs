@@ -62,12 +62,21 @@ public sealed record ScenarioFile(
 /// client). Optional and omitted from JSON when null, so existing scenario and save files keep
 /// their exact shape.
 /// </param>
+/// <param name="StarterCarrierManifest">
+/// Relative path (under the content root) to the one shared starter carrier manifest materialized
+/// into the world player ship by the New Game path (EP-0029 US-0011). Only a version-0 New Game
+/// scenario may reference it; the loader expands the carrier before validation and strips the
+/// reference, so neither the materialized scenario nor a save ever carries a live grant. Null for
+/// every other scenario/save and omitted from JSON.
+/// </param>
 public sealed record ScenarioMetadata(
     [property: JsonPropertyName("scenarioId")] string ScenarioId,
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("description")] string? Description = null,
     [property: JsonPropertyName("hidden"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    bool? Hidden = null);
+    bool? Hidden = null,
+    [property: JsonPropertyName("starterCarrierManifest"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? StarterCarrierManifest = null);
 
 /// <summary>Initial game state.</summary>
 /// <param name="MasterSeed">
