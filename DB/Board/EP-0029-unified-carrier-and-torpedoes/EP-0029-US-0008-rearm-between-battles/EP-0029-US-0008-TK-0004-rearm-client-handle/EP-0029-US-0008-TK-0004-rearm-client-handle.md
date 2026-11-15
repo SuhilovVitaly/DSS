@@ -8,11 +8,11 @@ approval_kind: workflow-only
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0029-US-0008-TK-0003-rearm-transport]
-files_touched: 3
+files_touched: 2
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Клиентское выполнение и pending
@@ -104,4 +104,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`GameSessionHandle.Carrier.cs` добавляет read-only `CarrierOperations` (из `Buffer.Presented`), `IsRearmPending(commandId)` и `RearmDroneAsync` — thin wrapper к `IGameSessionConnection` с pending keyed commandId; handle не вычисляет перенос локально, CommandId владеет вызывающий (retry переиспользует тот же id). `GameSessionHandle.cs` не потребовался (2 файла вместо 3).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0008Tk0004Tests"` — **3/3 passed** (`OutOfOrderSnapshotDoesNotUndoReload`, `LostResponseRetryKeepsIdentity`, `SwitchSessionClearsPending`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-028-us0008tk0004/US-0008-TK-0004/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
