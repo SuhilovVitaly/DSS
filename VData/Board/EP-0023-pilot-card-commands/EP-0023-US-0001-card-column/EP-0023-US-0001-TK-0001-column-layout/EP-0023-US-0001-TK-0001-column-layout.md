@@ -3,11 +3,11 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0001-card-column
 ticket: EP-0023-US-0001-TK-0001-column-layout
 title: Раскладка колонки переменной высоты и прокрутка
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: []
-files_touched: 6
+files_touched: 7
 serves: [US1-AC2, US1-AC3]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -39,6 +39,8 @@ A-01, A-02. Высота блока раскрытия запрашиваетс�
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | :313-317 `OnMouseWheel` → `ScrollTargets`, `ScrollQueue`, `ScrollResults` | Колесо над колонкой прокручивает её, если колонка не помещается (раньше остальных обработчиков, кроме прокрутки целей карточки из US-0003). |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/PilotCardColumnTests.cs` | пробы колонки и выбор кликом | Ожидания раскладки по UiSpec §4. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/OverlayBoundaryTests.cs` | :11-26 восемь карточек, `Bounds.Bottom = 697` | Сохранить 697 для восьми нераскрытых; добавить случай с раскрытой карточкой и прокруткой. |
+
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotColumnLayout.cs` | — | Выделить расчёт раскладки и отсечение в отдельный тип для независимых тестов. |
 
 ## Public API after the change
 
@@ -89,4 +91,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US1-AC2/AC3: общая раскладка используется рендером, кликами и зоной подписей. В headless-пробах подтверждены 697 без раскрытия, 853/145 при высоте 244, отсечение попаданий и показ восьмой карточки после смены выбора. Клиент собран, 5/5 целевых тестов, scoped format и diff check прошли. Проверки: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us1-tk1/. Самопроверка diff выполнена. Блоки раскрытия подключаются в US-0002–US-0004.

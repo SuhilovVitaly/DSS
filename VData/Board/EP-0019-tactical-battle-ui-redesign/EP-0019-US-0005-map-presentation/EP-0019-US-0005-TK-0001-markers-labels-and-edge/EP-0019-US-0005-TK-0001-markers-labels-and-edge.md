@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0005-map-presentation
 ticket: EP-0019-US-0005-TK-0001-markers-labels-and-edge
 title: Маркеры, подписи и носители за краем
-stage: draft
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0002-TK-0003-phase-camera-fit]
@@ -54,7 +54,7 @@ No public API change.
 
 Порядок обхода подписей фиксирован: выбранный, носители, затем по `y`.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -85,4 +85,16 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
+
+Scope: прежний TacticalBattleMapRenderer.cs заменён BattleMapRenderer.cs с тем же owning type; phase layers вынесены в partial-файлы следующих тикетов. Новый renderer использует только BattleDesign/BattleTypography. HoverUnitId добавлен к immutable frame для резерва карточки.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Replace map markers labels and carrier edge layout with design algorithm
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us5-tk1. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+MapDesignTests; Ep0019ViewTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

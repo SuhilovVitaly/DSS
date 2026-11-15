@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0002-evasion-resolution
 ticket: EP-0020-US-0002-TK-0004-session-evasion
 title: Сессия: приказ уклонения и открытие фазы стрельбы
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0002-TK-0003-salvo-evasion]
@@ -89,4 +89,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: Fire атомарно отвергает Evade+Target и недостаток сознания; допускает jam/нет целей; пропущенный приказ остаётся hold. Move открывает Fire при угрозе дронам, carrier-only не открывает. Противник использует DefaultPlan, journal хранит Evading. Session/Journal/LocalSession/Connection 137/137 PASS, build/scoped format/diff-check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us2-tk4/session-parity/tests.trx. Self-review по identity/revision/отказам/скрытию/RNG выполнен. Начальные 28 и затем 10 FAIL были устаревшим равенством разных приказов (игрок не уклоняется автоматически), а также двумя фикстурами с оставшимся AI-поворотом; исправлены явные приказы/контрольные пути, полные outcome/units assertions сохранены. Direct/connection oracle учитывает hold игрока в пропущенных фазах; это сохраняет A-05. US2-AC1/5/6 покрыты.
+
+## Scope проверки connection
+
+Добавлен LocalSessionBattleTests.cs: полный direct/connection oracle предполагает одинаковые приказы. С введением уклонения он обязан явно выбирать уклонение для игрока по правилу ИИ; игра сама этого за игрока не делает (A-05). Сохраняются полные сравнения outcome/units/RNG. Исторические seed1 ожидания обновляются по той же причине, без ослабления asserts.

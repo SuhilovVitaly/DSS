@@ -3,11 +3,11 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0003-fire-in-card
 ticket: EP-0023-US-0003-TK-0001-fire-block-render
 title: Блок стрельбы в карточке: состояния и подробности
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0001-TK-0003-card-commands-input]
-files_touched: 7
+files_touched: 8
 serves: [US3-AC1, US3-AC2]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -40,6 +40,8 @@ A-07, A-08, A-09. Строки «под огнём» и подсказки об�
 | `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | ключи `TacticalBattle.*` | Новые строки UiSpec §6.6. |
 | `src/DeepSpaceSaga.Client/Data/Locale/English.json` | ключи `TacticalBattle.*` | Те же ключи на английском. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/PilotCardFireBlockTests.cs` | — | Пробы UiSpec §10.3 для четырёх состояний. |
+
+PilotCardColumnTests.cs также обновляет прямоугольники выбранной карточки стрельбы, сохраняя проверки вертикальных шкал.
 
 ## Public API after the change
 
@@ -90,4 +92,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US3-AC1/AC2: четыре состояния, геометрия/урон, цвет и величина поглощения, защита, угроза, заряд и цена уклонения показаны в выбранной карточке. Пробы UiSpec §10.2/§10.3 и локализации прошли. Build, 21/21 тестов, scoped format и diff check: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us3-tk1-02/. Самопроверка diff выполнена. Снятие дублирования справа и итоговые растры идут по зависимостям.

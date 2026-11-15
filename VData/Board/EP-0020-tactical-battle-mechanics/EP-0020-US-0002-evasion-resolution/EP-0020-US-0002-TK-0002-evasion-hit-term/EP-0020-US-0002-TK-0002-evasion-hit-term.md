@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0002-evasion-resolution
 ticket: EP-0020-US-0002-TK-0002-evasion-hit-term
 title: Слагаемое уклонения в шансе попадания
-stage: draft
+stage: done
 layer: motion
 test_project: tests/DeepSpaceSaga.Motion.Tests
 depends_on: [EP-0020-US-0002-TK-0001-evasion-contracts]
@@ -83,4 +83,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: Evasion слагаемое после Shield до clamp, только у цели-дрона; optional defaults сохраняют старых callers. Ручные front/rear/clamp и опубликованный V4 trace: LimitsAndChanceTests 6/6 PASS; Motion build/scoped format/diff-check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us2-tk2/final/tests.trx. Первый тест использовал неверный вход Accuracy128 для raw110; исправлен на108 без изменения production. Self-review: carrier-target guard, бонус кормы, нижний/верхний clamp, отсутствие RNG; US2-AC2 покрыт общей математикой, подключение движка следует в TK-0003.

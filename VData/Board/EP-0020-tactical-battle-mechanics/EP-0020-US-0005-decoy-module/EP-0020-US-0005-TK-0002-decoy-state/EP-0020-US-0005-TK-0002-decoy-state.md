@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0005-decoy-module
 ticket: EP-0020-US-0005-TK-0002-decoy-state
 title: Модуль и заряды в состоянии боя, масса, снимки
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0005-TK-0001-decoy-content, EP-0020-US-0002-TK-0005-evasion-regression]
@@ -103,4 +103,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Свежие подписи before5000 сохранены. Scope расширен на AssemblyTests helper и три исторических trace-теста AiCommander/AiSteering/Movement: они используют явно module:null каталог, сохраняя прежний независимый V4 oracle и проверяя инвариант «без модуля побитно прежнее». Пороги/исторические данные не меняются. Session literal mass870→880: новый модуль10кг. Новые DecoyState и серии проверяют production с модулем.
+
+Завершено: Engine2834/2834 уникальных IDsPASS (main2204+corpus630,36TRX,audit без дублей/failed/skipped); Motion7/7,Contracts26/26; before/after5000 конфигураций direct/explicitPASS. Полные M1 SHA-256 пяти seed1 тактик без модуля совпали после удаления только новых DTO-полей (3/3 DecoyState повторноPASS); старые trace-числа и допуски сохранены. Build/все scoped-format/diff-checkPASS. Самопроверка сборки, current limits, nullable DTO, независимых RNG и сохранения мира выполнена. US5-AC3/AC4 выполнены. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us5-tk2/coverage-audit.json, series-comparison.json, before/, after/, legacy-hash/tests.trx, motion/tests.trx, contracts-final/tests.trx, format-*.log. Смена исходов с модулем вызвана10кг, пусков ещё нет; например balanced победA966→967, commander969→981, defence942→958, dogfight977→975, raid873→884, только initial scenario. Client view актуализируется по назначенной US7/TK4 после механики M2.

@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0010-anomaly-ui
 ticket: EP-0020-US-0010-TK-0004-anomaly-view-regression
 title: Проверки вида EP-0019 после аномалий
-stage: draft
+stage: done
 layer: tests
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0010-TK-0003-anomaly-salvo-results]
@@ -90,4 +90,10 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope включает все затронутые view partial/tests/snapshotassets, не только первоначальные4файла. Перед заменой7productionM3снимков выполняется более строгая сверка прежнего M2 вида на реальном withoutAnomalies contentfixture без масок (flag VERIFY_M3_LAYOUT). Затем literal данные/тексты/геометрия и пробы обновляются по реальному Engine; field/map/sector pixels проверяются формулой Screen+Lighten, самостоятельная32pixel oracle в TK1 сохраняется. Новые реальные SceneFactory cases проходят production handlers, без sourcecopy.
+
+Промежуточные подтверждения: old-m2-layout7/7 без масок PASS; full-initial2200PASS/20FAIL прежних literal/view ожиданий; затем literals-probes36/36PASS и новыеproduction SceneFactory5/5PASS. Исходный capture режим отмечен как создание reference, не независимая проверка. AA border уточнение: при выбранном Юне top93×1.5=139.5 пикселя бинарный Yellow считал50% вместо60% при правильной1.8обводке. Проба теперь сравнивает ту же площадь с независимым literal PanelBox1.8/5/glow50 AA raster; Δ40 и60% сохранены. Sector/map reference включает предписанное Screen field, те же площади/50%/95%;32independent scalar pixels TK1 сохранены. Полныйstrict baseline ожидается после замены.
+
+Фактический seed1M3: первый Fire4, выбранЮн→Таг6 73%/73.4дистанция/0.4°, own3выстрела+enemy1; Results4shots/3hits, Марта→Таг1miss55→34%, ЮнArmor80→46, Tag6Hull0. OutcomeA23turn42shots20hitsLoss0:6; cardsВера130/0,Юн322/−34,Марта51/−34,Олег209/−40. Изменение — разрешённые аномалии/AI dust/effective target/RNG absorption. У input-теста недопустимой цели клик перенесён с нового допустимого Таг6 на недопустимый Таг2; отказ и hold assertions сохранены.
+
+Завершено. Полная Client2230/2230 uniquePASS; все29исходныхEp0019checksPASS;5новыхhandler-сценPASS;12strict regression comparisons pixel-identical (different=0,maxTile=0) при всехcapture/transitionflags=false. До обновления7старых M2снимков проверены без масок. Новые5сцен: move-dust seed1Move3, absorption seed1Fire4Олег→Таг1, dust seed6Fire5Олег, hoverHeat seed1Move1, absorbed seed1MartaFire11 (FlowMove12). Setup seed6 введён production Tab/Backspace/TextInput с доказанно неизменным loadout; выбор/targetclick/движение/залп реальные. SourceSnapshots12 иseed1data обновлены после независимых36literal/probe+5handlerPASS; capture-mode не заявлен независимой приёмкой. Scopedformat/diffcheckPASS, contentfixturesDispose удалены. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us10-tk4/coverage-audit.json` и full/tests.trx. AC4 выполнен, US10завершена технически; human/art/native/independentreview не закрыты. Исправлена опечатка отчёта TK2 о числе locale проверок, фактический31PASS сохранён.

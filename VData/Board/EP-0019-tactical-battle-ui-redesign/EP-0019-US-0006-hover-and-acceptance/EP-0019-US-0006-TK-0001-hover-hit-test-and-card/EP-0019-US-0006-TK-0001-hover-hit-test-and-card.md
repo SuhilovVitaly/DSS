@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0006-hover-and-acceptance
 ticket: EP-0019-US-0006-TK-0001-hover-hit-test-and-card
 title: Хит-тест наведения и карточка
-stage: draft
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0003-TK-0003-pilot-card-rendering-and-selection, EP-0019-US-0004-TK-0005-outcome-details, EP-0019-US-0005-TK-0003-fire-salvo-and-results-overlays]
@@ -56,7 +56,7 @@ No public API change.
 
 Наведение не вызывает `ObserveOrders` и не меняет `_orders`/`_fireOrders`.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -87,4 +87,14 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Show unit hover card and map corners without changing selection or orders
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us6-tk1. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+HoverCardTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

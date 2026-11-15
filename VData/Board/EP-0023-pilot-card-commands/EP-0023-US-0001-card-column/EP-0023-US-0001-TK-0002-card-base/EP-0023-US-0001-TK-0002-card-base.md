@@ -3,7 +3,7 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0001-card-column
 ticket: EP-0023-US-0001-TK-0002-card-base
 title: Базовая карточка: портрет, плашка, вертикальные шкалы и иконки
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0001-TK-0001-column-layout]
@@ -87,4 +87,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US1-AC1: геометрия базовой карточки и шкал, портрет, плашка и маркер ловушки, значения над шкалами, контуры и подгонка текста. Подтверждено headless-пробами в движении и стрельбе, 9/9 целевых тестов; build, scoped format и diff check прошли. Результаты: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us1-tk2/. Самопроверка diff выполнена; визуальная сверка итоговых сцен входит в US-0007.

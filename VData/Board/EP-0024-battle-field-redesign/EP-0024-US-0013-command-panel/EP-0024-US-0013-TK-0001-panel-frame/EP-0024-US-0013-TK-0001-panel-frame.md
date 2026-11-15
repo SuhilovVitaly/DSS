@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0013-command-panel
 ticket: EP-0024-US-0013-TK-0001-panel-frame
 title: Панель команд: положение, плита, ввод
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0012-TK-0002-slim-card]
@@ -89,3 +89,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us13-tk1
+
+Плита панели (51,49)—(201,140), язычок, clip и overlay/input интегрированы. 4/4 targeted: клик/drag/wheel на выступе панели не передают ввод карте. Содержимое блоков реализуется следующими TK; визуальная сверка всей панели в TK-0002…0004. Самопроверка scope/commands пройдена.
+
+Проверки: 4/4 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us13-tk1/client.trx`, `us13-tk1-test.log`, `us13-tk1-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

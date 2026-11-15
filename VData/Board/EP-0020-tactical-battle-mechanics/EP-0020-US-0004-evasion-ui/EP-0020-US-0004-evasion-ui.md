@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0004-evasion-ui
 title: Уклонение в интерфейсе боя
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0002-evasion-resolution, EP-0019-tactical-battle-ui-redesign]
 created: 2026-11-08T11:46:28Z
 source_request: "Встроить выбор уклонения, сознание и раскрытие уклонения противника в интерфейс EP-0019 точно по [UiSpec](../UiSpec.md)."
@@ -58,3 +58,7 @@ D-08, D-09, D-13. Интерфейс EP-0019 должен быть полнос�
 | [EP-0020-US-0004-TK-0002-fire-panel-evasion](EP-0020-US-0004-TK-0002-fire-panel-evasion/EP-0020-US-0004-TK-0002-fire-panel-evasion.md) | Панель стрельбы, кольцо уклонения, строки | client | `EP-0020-US-0004-TK-0001-fire-orders-evasion` | US4-AC2 |
 | [EP-0020-US-0004-TK-0003-results-evasion-reveal](EP-0020-US-0004-TK-0003-results-evasion-reveal/EP-0020-US-0004-TK-0003-results-evasion-reveal.md) | Раскрытие уклонения в залпе и результатах | client | `EP-0020-US-0004-TK-0002-fire-panel-evasion` | US4-AC3 |
 | [EP-0020-US-0004-TK-0004-view-regression](EP-0020-US-0004-TK-0004-view-regression/EP-0020-US-0004-TK-0004-view-regression.md) | Проверки вида EP-0019 после уклонения | tests | `EP-0020-US-0004-TK-0003-results-evasion-reveal` | US4-AC4 |
+
+## Исполнение
+
+Все4 тикета завершены. US4-AC1:orders/input28PASS; AC2:panel/probes/RUEN13PASS; AC3:Results/reveal/replay/zero-shot21PASS; AC4:Client2182PASS включая29 Ep0019. Самопроверка границ и продолжения выполнена. Тактическое состояние не сохраняется; сохранение мира/закрытие/возврат покрыты suite. Native будет выполнен по итоговой реализации; physical/human acceptance открыта.

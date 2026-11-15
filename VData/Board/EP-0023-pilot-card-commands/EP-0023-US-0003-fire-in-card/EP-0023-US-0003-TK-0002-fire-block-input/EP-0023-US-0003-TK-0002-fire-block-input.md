@@ -3,11 +3,11 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0003-fire-in-card
 ticket: EP-0023-US-0003-TK-0002-fire-block-input
 title: Блок стрельбы: цели, ловушка, «Не стрелять», уклонение и прокрутка
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0003-TK-0001-fire-block-render]
-files_touched: 6
+files_touched: 8
 serves: [US3-AC2, US3-AC3]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -39,6 +39,8 @@ A-07, A-10.
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/FirePanelEvasionTests.cs` | кнопка уклонения панели | Перевести на `CardCommandBounds("evade")`. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/FirePlanningTests.cs` | выбор цели строками панели и «Не стрелять» | Перевести на `CardCommandBounds("target:<id>")`, `CardCommandBounds("hold")`. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/MapFireTests.cs` | выбор цели на карте | Без изменения смысла; проверить, что карточка отражает выбор. |
+
+Дополнительно: PilotCardColumn.cs связывает выбранный FirePlanRow с прокруткой; PilotCardFireBlockTests.cs проверяет смену группы и равенство запросов при вводе из карточки, с карты и с клавиатуры.
 
 ## Public API after the change
 
@@ -91,4 +93,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US3-AC2/AC3: список целей прокручивается до колонки и сбрасывается при смене группы. Клики цели, ловушки, уклонения и отказа от огня проходят через существующие приказы; сравнение с картой и E/D дало одинаковые FireRequest.Targets. Недоступные команды не регистрируются. Build, 44/44 тестов, scoped format, diff check и самопроверка diff: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us3-tk2/. Снятие правых дубликатов следует в US-0005.

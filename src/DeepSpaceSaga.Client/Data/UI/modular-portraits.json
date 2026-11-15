@@ -1,0 +1,18 @@
+{
+  "dialogue": {
+    "CHR-20260915-102445-3C5C5D.png": { "head": "violet", "outfit": "casual:01" },
+    "CHR-20260915-102448-E2757F.png": { "head": "crew-f12", "outfit": "casual:02" },
+    "CHR-20260915-104315-4DF131.png": { "head": "crew-f05", "outfit": "casual:03" },
+    "CHR-20260915-102441-5F95F0.png": { "head": "crew-f07", "outfit": "casual:04" },
+    "CHR-20260915-102443-8556E4.png": { "head": "crew-f18", "outfit": "casual:05" },
+    "CHR-20260915-102444-0A5275.png": { "head": "crew-f19", "outfit": "medic" },
+    "CHR-20260915-102450-0C35C0.png": { "head": "crew-f25", "outfit": "security" },
+    "CHR-20260915-102715-184156.png": { "head": "crew-f10", "outfit": "explorer" },
+    "CHR-20260915-102717-165E8F.png": { "head": "crew-f13", "outfit": "pilot" }
+  },
+  "pilots": {
+    "vera": { "head": "violet", "outfit": "eva" },
+    "yun": { "head": "crew-f12", "outfit": "pilot" },
+    "marta": { "head": "crew-f05", "outfit": "engineer" }
+  }
+}

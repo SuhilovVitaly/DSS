@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0011-steel-panels
 ticket: EP-0024-US-0011-TK-0002-steel-frames
 title: Прямые углы, тёмный скос и тень плит
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0011-TK-0001-steel-roles, EP-0024-US-0001-TK-0002-tabletop-mode]
@@ -89,3 +89,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us11-tk2
+
+Steel включает прямые углы, тёмные кромки, скосы с инверсией полей, тени плит и отсутствие glow. Геометрия окон сохранена; проверены пиксели и Xenon Star scenes. Увеличенный steel-frames-windows-x2.png сверен с эталоном: рамки/скос совпадают по принципу; полосы ещё прежние до TK-0003, текст/портрет — штатные ресурсы и текущая локаль. Build: 0 ошибок/предупреждений.
+
+Проверки: 19/19 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us11-tk2/client.trx`, `us11-tk2-test.log`, `us11-tk2-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

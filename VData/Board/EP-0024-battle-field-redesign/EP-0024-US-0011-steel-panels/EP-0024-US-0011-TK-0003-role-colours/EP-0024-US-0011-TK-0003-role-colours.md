@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0011-steel-panels
 ticket: EP-0024-US-0011-TK-0003-role-colours
 title: Цвета полос и имени в правых окнах из ролей
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0011-TK-0001-steel-roles]
@@ -92,3 +92,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us11-tk3
+
+Полосы корпуса/брони, имя своего пилота и броневой слот читают роли. Имя противника остаётся Orange. Реальный русский кадр steel-frames-windows-x2.png сверен с эталоном: зелёная/синяя полосы и светлое имя подтверждены пикселями; портрет штатный, геометрия правой карточки прежняя. В PhasePanel.Salvo на базе есть только полоса брони; новая полоса корпуса не добавлялась. Build: 0 ошибок/предупреждений.
+
+Проверки: 21/21 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us11-tk3/client.trx`, `us11-tk3-test.log`, `us11-tk3-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

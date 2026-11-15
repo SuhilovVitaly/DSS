@@ -12,6 +12,17 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class DialoguePortraitComposerTests
 {
+    [Fact]
+    public void Assigned_dialogue_uses_the_casual_hair_composition()
+    {
+        const string path = CharacterPortraits.FemaleFolder + "/CHR-20260915-102445-3C5C5D.png";
+        using var actual = DialoguePortraitComposer.Compose(path, PersonSex.Female, "station/operator");
+        using var expected = ModularCrewPortraits.Compose(AppContext.BaseDirectory, "violet", "casual:01");
+        Assert.NotNull(actual);
+        Assert.NotNull(expected);
+        Assert.Equal(expected.Bytes, actual.Bytes);
+    }
+
     [Theory]
     [InlineData(CharacterPortraits.DefaultFemale, PersonSex.Female, "station/operator")]
     [InlineData(CharacterPortraits.DefaultMale, PersonSex.Male, "captain")]

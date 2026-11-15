@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0004-phase-panel
 ticket: EP-0019-US-0004-TK-0003-fire-details-and-target-click
 title: Детали стрельбы и назначение цели
-stage: draft
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0004-TK-0001-phase-panel-container-and-header]
@@ -57,7 +57,7 @@ No public API change.
 
 Запрос огня формирует `BuildTargets()`; список кандидатов — из снимка.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -88,4 +88,20 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Show fire details and assign only admissible targets by map click
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us4-tk3. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+PhaseFireInputTests; FirePlanningTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.
+
+## Исправление P2 после review 2026-11-08
+
+Scope расширен на BattleMapRenderer.cs, BattleMapRenderer.Hover.cs и PhaseFireInputTests.cs: отрисовка, наведение и hit-test носителя должны использовать одну MarkerPoint. Это исправляет US4-AC3 совместно с US5-AC2 (US-0005/TK-0001), без изменения списка кандидатов Engine.
+
+Воспроизведение: три разрешения с прежним hit-test дали 3/3 ожидаемых FAIL; после исправления focused PhaseFireInputTests/FirePlanningTests/MapDesignTests — 9/9 PASS. Проверяется назначение допустимого носителя через смещённый маркер и отказ для недопустимой цели. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-review-fixes/carrier-before.trx и carrier-final.trx. Нативный ввод этим тестом не подтверждается.

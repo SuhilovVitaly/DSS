@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0011-steel-panels
 title: Стальная тема панелей
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0001]
 created: 2026-11-12T17:00:00Z
 source_request: "В скине tabletop окна и кнопки боя — тёмная воронёная сталь с тёмными кромками, как на эталоне Reference/panels."
@@ -53,3 +53,8 @@ D-11, A-17. Роли панелей читают `BattleDesign.Round/PanelBox/Bu
 | [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | Роли и текстуры стальной темы в пакете | client-data | `EP-0024-US-0001-TK-0001-pack-files` | US11-AC1 |
 | [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | Прямые углы, тёмный скос и тень плит | client-ui | `EP-0024-US-0011-TK-0001-steel-roles`, `EP-0024-US-0001-TK-0002-tabletop-mode` | US11-AC2 |
 | [EP-0024-US-0011-TK-0003-role-colours](EP-0024-US-0011-TK-0003-role-colours/EP-0024-US-0011-TK-0003-role-colours.md) | Цвета полос и имени в правых окнах из ролей | client-ui | `EP-0024-US-0011-TK-0001-steel-roles` | US11-AC3 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

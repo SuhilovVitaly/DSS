@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0007-decoy-ui
 ticket: EP-0020-US-0007-TK-0003-salvo-decoy-reveal
 title: Ловушки в полёте залпа и результатах
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0007-TK-0002-fire-panel-decoy]
@@ -88,4 +88,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope уточнён до реализации: реальные файлы BattleMapRenderer.cs/.Fire.cs, HoverCard.cs. Для typed journal пометки нужен init TacticalLogShot.Decoyed(defaultfalse), Engine session projection и compatibility/Journal tests; без него formatter(entry) не знает факт ловушки старых ходов. Полёт редактирует только presentation DTO: enemy decoy IDs/charges/шансы/метки журнала скрыты до Results, authoritative snapshot не меняется. Zero-shot с пуском сохраняет мгновенные Results как M1 EV, без фиктивного miss/projectile.
+
+Завершено: Results/SidesAndLog/FirePanelDecoy31/31PASS; EngineSession/Journal44/44PASS;Contracts27/27PASS; build/все scoped-format/diff-checkPASS. Новые owning Results проверки вынесены в partial ResultsPhaseTests.Decoys.cs. Проверены enemy hidden IDs/charge/chance/log→Results reveal, свой оплаченный charge/mark в полёте, Green chance собственной ловушки/обычный chance чужой в очереди, две выноски/панель ручной сцены UiSpec, replay без нового Fire/расхода, очистка послеResults и zero-shotD без fake miss/projectile. Map marks сохраняются у уничтоженных пустивших дронов до конца Results; callouts учитывают occupied/markers/q по §12.2. Самопроверка неизменности authoritative snapshot, последовательных impact states и журнала выполнена; production/manual render просмотрен. US7-AC3 покрыт. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us7-tk3/final/tests.trx,engine/tests.trx,contracts/tests.trx,format-*.log. Старые seed1 строки/снимки актуализируются следующимTK4.

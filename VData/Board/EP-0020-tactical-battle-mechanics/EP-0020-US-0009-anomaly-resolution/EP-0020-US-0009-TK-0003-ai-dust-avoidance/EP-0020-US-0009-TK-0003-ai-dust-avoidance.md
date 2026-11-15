@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0009-anomaly-resolution
 ticket: EP-0020-US-0009-TK-0003-ai-dust-avoidance
 title: ИИ: не заканчивать ход в пыли
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0009-TK-0002-salvo-anomalies]
@@ -84,4 +84,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope расширен на TacticalBattleSalvo.Candidates: optional pose для чистого запроса кандидатов из гипотетического конца пути без временной мутации Drone.Pose. Проверка использует те же clampSpeed/turnLimit, что production Movement; поиск min/max также ограничен изменением скорости за ход. Предложенный приказ возвращается неизменным, если проверка/поиск не требуют замены.
+
+Завершено. Engine45/45PASS (5AnomalyAi+40Session), build/scopedformat/diffcheckPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us9-tk3/final/tests.trx`. AC4: первый допустимый +¼turn, отсутствие целей/выхода/jam, неизменность пустого списка, чистый hypothetical pose, реальный Plan обеих сторон проверены. Самопроверка: avoidance не добавляет draw; существующий steering сохраняет свои RNG (первый новый тест ошибочно требовал всего Plan без draw, заменён сравнением с тем же Plan без аномалий). Движение использует прежнюю геометрию и ограничения, Save20 не меняется.

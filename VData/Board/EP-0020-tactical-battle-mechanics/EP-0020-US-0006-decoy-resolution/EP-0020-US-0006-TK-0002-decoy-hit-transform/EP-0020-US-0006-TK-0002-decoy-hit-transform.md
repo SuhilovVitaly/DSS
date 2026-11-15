@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0006-decoy-resolution
 ticket: EP-0020-US-0006-TK-0002-decoy-hit-transform
 title: Преобразование шанса ловушкой
-stage: draft
+stage: done
 layer: motion
 test_project: tests/DeepSpaceSaga.Motion.Tests
 depends_on: [EP-0020-US-0006-TK-0001-decoy-contracts]
@@ -83,4 +83,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+Выполнено: WithDecoy принимает вероятности0…1, minChance также probability (Engine передаёт Rules.Hit.MinChance/100). Формула применяется после штатного clamp; Motion12/12PASS, включая47→20.5,56→34,30→5,95→92.5,identity factor и нижний предел. Старый V4 trace и допуски неизменны. Build/scoped format/diff-checkPASS; самопроверка порядка и единиц выполнена. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us6-tk2/motion/tests.trx,format-motion.log,format-tests.log.

@@ -1,6 +1,6 @@
 # Источники и проверки тактического боя
 
-Базовый каталог переносится из [VData/Planning/V4.0](../../../VData/Planning/V4.0/) Markdown. Initiative присоединяется только из runtime pilots.json по точному ordinal ID. Standalone V4 и его Reference сохранены как историческая одновременная модель и не являются oracle новой инициативной стрельбы.
+Базовый каталог переносится из [VData/Planning/V4.0](../../../VData/Planning/V4.0/) Markdown. Initiative присоединяется только из runtime pilots.json по точному ordinal ID. Standalone V4 и его Reference сохранены как историческая одновременная модель и не являются oracle текущей инициативной стрельбы и расширений EP-0020.
 
 Из корня DSS:
 
@@ -13,6 +13,6 @@ python tools/tactical-battle/export_references.py --check
 
 Новая механика проверяется ручными expected cases, ограниченным независимым oracle (гарантированное попадание/промах, фиксированный урон, jam) и интеграционным direct/API сравнением. Oracle не вызывает production Salvo/CheckVictory и не заменяет проверку всей боевой математики. Массовая parity нового правила сравнивает детерминированные пути, а не старые V4 итоги.
 
-Обычный Engine-прогон исключает `Category=LongRunning`. Для серии запускайте по одному точному FQN класса SeriesParityTests: Dogfight, Raid, Defence, Balanced, Commander — seeds1…1000 каждый. Сохраняйте signatures итогового состояния и RNG. Каждый процесс ограничивается 300000 ms с завершением дерева; точные команды и результаты находятся на [Board EP-0017](../../Board/EP-0017-pilot-initiative/ExecutionStatus.md). TRX, stdout/stderr и fixtures направляйте абсолютными путями в уникальный D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/<run>/; создавайте каталог заранее. Historical результаты EP-0015 остаются в его [FinalValidation](../../Board/EP-0015-tactical-carrier-battle/FinalValidation.md).
+Обычный Engine-прогон исключает `Category=LongRunning` и `Category=Balance`. Балансовые EvasionCalibrationTests/DecoyReportTests/AnomalyReportTests запускаются отдельно; их отчёты не объявляются универсальной приёмкой баланса. Для серии запускайте по одному точному FQN класса SeriesParityTests: Dogfight, Raid, Defence, Balanced, Commander — seeds1…1000 каждый. Сохраняйте signatures итогового состояния и RNG. Каждый процесс ограничивается 300000 ms с завершением дерева; точные команды и результаты находятся на [Board EP-0020](../../Board/EP-0020-tactical-battle-mechanics/ExecutionStatus.md). TRX, stdout/stderr и fixtures направляйте абсолютными путями в уникальный D:/DeepSpaceSaga/artifacts/validation/ep-0020/<run>/; создавайте каталог заранее. Historical результаты EP-0015 остаются в его [FinalValidation](../../Board/EP-0015-tactical-carrier-battle/FinalValidation.md).
 
 См. [контракт боя](../04-Engineering/TacticalBattle.md).

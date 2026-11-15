@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0005-move-templates
 ticket: EP-0024-US-0005-TK-0001-templates
 title: Ленты-шаблоны движения
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0003-TK-0001-plates]
@@ -46,7 +46,7 @@ revision: 1
 ## Implementation steps
 
 1. Перенести отрисовку лент, кружков, зоны, «призраков», скобок и подсказки.
-2. Подключить в режиме; отключить сектор и значки за краем в движении.
+2. Подключить в режиме; отключить прежний сектор. Значки носителей за краем сохранить по UiSpec §5.8 и A-11 (исправлена противоречащая им фраза шага).
 3. Строка подсказки в локализации.
 4. Тесты на `1-move-no-hover` и `1-anomaly-move-dust`; сценарий перетаскивания из `MovementOrdersTests` в режиме.
 
@@ -89,3 +89,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us5-tk1
+
+Ленты, зона досягаемости, скорость, призраки, скобки, RU/EN-подсказка и выноска пыли реализованы. Проверены две сцены, геометрия handles, отсутствие зависимости рендера движения от оружейного сектора и реальное редактирование приказа перетаскиванием. Значки Edge сохранены по A-11. Build: 0 ошибок/предупреждений.
+
+Проверки: 15/15 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us5-tk1/client.trx`, `us5-tk1-test.log`, `us5-tk1-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

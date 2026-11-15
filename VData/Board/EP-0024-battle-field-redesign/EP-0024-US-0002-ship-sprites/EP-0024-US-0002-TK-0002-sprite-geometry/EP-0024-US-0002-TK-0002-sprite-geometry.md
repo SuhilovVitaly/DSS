@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0002-ship-sprites
 ticket: EP-0024-US-0002-TK-0002-sprite-geometry
 title: Занятые прямоугольники и наведение на модели
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0002-TK-0001-sprite-renderer]
@@ -84,3 +84,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us2-tk2
+
+Tabletop использует увеличенные области моделей и наведения; ввод проверен вне render scope, Classic сохраняет прежние радиусы.
+
+Проверки: 16/16 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us2-tk2/client.trx`, `us2-tk2-test.log`, `us2-tk2-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.
