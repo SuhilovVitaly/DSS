@@ -55,7 +55,10 @@ internal sealed class HoverCard
         T(c, U(own ? "HoverOwn" : "HoverEnemy"), r.Left + 24, r.Top + 18, 10.5f, Muted, true);
         float x = r.Left + 9;
         if (own && unit.Kind == TacticalUnitKind.Drone)
-        { PilotCardColumn.Portrait(c, portraits, unit.Build?.PilotId ?? "", PilotCardModel.Name(unit), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32)); x = r.Left + 48; }
+        {
+            PilotCardColumn.Portrait(c, portraits, unit.Build?.PilotId ?? "", PilotCardModel.Name(unit), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32),
+            unit.Build?.PilotPortraitAssetId); x = r.Left + 48;
+        }
         if (disabled)
         {
             TacticalBattleMapRenderer.DrawDisabledCross(c, x, r.Top + 25, 14);

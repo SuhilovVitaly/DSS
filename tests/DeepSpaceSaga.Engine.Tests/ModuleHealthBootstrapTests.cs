@@ -39,9 +39,14 @@ public sealed class ModuleHealthBootstrapTests
     public void Default_modules_have_structure()
     {
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"));
-        Assert.All(engine.CaptureSnapshot().InstalledModules, module =>
+        var modules = engine.CaptureSnapshot().InstalledModules;
+        Assert.Equal(9, modules.Length);
+        // The starter manifest (EP-0029 US-0011 TK-0002) starts every module intact at its type max:
+        // medium drone bays 250 SP, every other starter module 150 SP.
+        Assert.All(modules, module =>
         {
-            Assert.Equal(150, module.StructureMax);
+            Assert.Equal(module.ModuleTypeId == "module.drone-bay.medium" ? 250 : 150, module.StructureMax);
+            Assert.Equal(module.StructureMax, module.StructureCurrent);
             Assert.False(module.IsDestroyed);
         });
     }

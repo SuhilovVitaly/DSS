@@ -464,6 +464,9 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_session?.IsPlayerShipDestroyed == true)
         {
+            // The battle modal owns the screen until its authoritative exit/settlement/checkpoint
+            // completes; replacing it here would hide a pending retry and lose the result.
+            if (_screens.Current is TacticalBattleModalScreen { IsSetup: false }) return;
             if (!ReferenceEquals(_shipDestroyedSession, _session) && (_shipDestroyedTransitionTask?.IsCompleted ?? true))
                 _shipDestroyedTransitionTask = HandleScreenEvent(ScreenEvent.None);
             return;
@@ -863,6 +866,10 @@ public sealed class SkiaWindow : IDisposable
                         if (!await modal.Flow.ExitAsync()) break;
                         if (evt == ScreenEvent.NewTacticalBattle) _screens.Replace(CreateTacticalSetupView(modal.Flow));
                         else await PopModalAsync();
+                        // HP0 routes to the terminal screen; only drones lost keeps the live map.
+                        // Ensure runs after the battle screen is gone, so a destroyed ship can never
+                        // be resurrected by a repeat New/Close event or an animation tick.
+                        EnsureShipDestroyedScreen();
                     }
                     break;
                 case ScreenEvent.NewGame:
@@ -882,6 +889,10 @@ public sealed class SkiaWindow : IDisposable
                     await CloseOverlayAsync();
                     break;
                 case ScreenEvent.MainMenu:
+                    // A confirmed mid-tutorial abort must write the real losses/checkpoint before the
+                    // session is disposed. A failed write keeps the battle modal and its Retry visible.
+                    if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } abortingBattle &&
+                        !await abortingBattle.Flow.ExitAsync()) break;
                     await ReturnToMainMenuAsync();
                     break;
                 case ScreenEvent.Exit:
@@ -1095,6 +1106,14 @@ public sealed class SkiaWindow : IDisposable
             if (!_connectionLoader.TryAdopt(connection)) return;
 
             session = new GameSessionHandle(connection, deferDebugTuningWrites: true);
+            // The tutorial starts the player's own persistent wing: wait for the first authoritative
+            // carrier surface so the start request carries its real ShipId/revision. A missing or
+            // empty wing fails the atomic start instead of granting a synthetic four-drone fallback.
+            var carrier = await session.WaitForCarrierOperationsAsync(TutorialCarrierSnapshotTimeout);
+            if (carrier is null || carrier.OwnedDrones.IsDefaultOrEmpty)
+                throw new InvalidOperationException(carrier is null
+                    ? "Tutorial requires the carrier operations snapshot."
+                    : "Tutorial requires an owned drone wing.");
             var gameScreen = new GameSessionScreen(session.Buffer, new LinearMotionPredictor(), session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")),
@@ -1105,7 +1124,12 @@ public sealed class SkiaWindow : IDisposable
             // Same order as a battle opened from the map: authoritative pause first, then the battle.
             session.ClearStationTravelPause();
             await session.SetSpeedAsync(SimulationSpeed.Speed0);
-            var started = await flow.StartAsync(new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), TutorialBattleSeed));
+            var started = await flow.StartAsync(new StartTacticalBattleRequest(
+                TacticalBattleFlow.NewIdentity("start"), TutorialBattleSeed, TutorialBattleScenarioId)
+            {
+                SourceShipId = carrier.ShipId,
+                ExpectedCarrierRevision = carrier.Revision,
+            });
             if (started?.Accepted != true || flow.State is null)
                 throw new InvalidOperationException("Tutorial battle was rejected: " + (started?.Code.ToString() ?? "no response"));
             if (_closing)
@@ -1195,6 +1219,9 @@ public sealed class SkiaWindow : IDisposable
     private bool EnsureShipDestroyedScreen()
     {
         if (_session?.IsPlayerShipDestroyed != true) return false;
+        // The battle screen is authoritative until its exit/settlement/checkpoint (and any retry)
+        // succeeds. Only after the battle screen is gone may the terminal screen replace the world.
+        if (_screens.Current is TacticalBattleModalScreen { IsSetup: false }) return false;
         if (ReferenceEquals(_shipDestroyedSession, _session)) return true;
         _shipDestroyedSession = _session;
         _modalDepth = 0;
@@ -1211,6 +1238,12 @@ public sealed class SkiaWindow : IDisposable
     /// player's side wins both by Enter only and by following the officer's lessons (EP-0028-US-0005-TK-0002).
     /// </summary>
     internal const long TutorialBattleSeed = 1;
+
+    /// <summary>The tutorial always launches the owned wing into the canonical first encounter.</summary>
+    internal const string TutorialBattleScenarioId = "initial";
+
+    /// <summary>Bounded wait for the first authoritative <c>CarrierOperations</c> snapshot; internal so tests need not wait ten seconds.</summary>
+    internal TimeSpan TutorialCarrierSnapshotTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
     /// <summary>The tutorial battle's skin (D-03): its hints are laid out for Tabletop.</summary>
     internal const string TutorialSkinId = "tabletop";
@@ -1302,7 +1335,38 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is ShipScreen)
             return;
 
-        await PushModalAsync(new ShipScreen(ShipViewModel.From(_session?.CarrierOperations)));
+        var session = _session;
+        var carrier = session?.CarrierOperations;
+        // Rearm draws from the cargo hold, not from a fabricated stock: sum the authoritative torpedo
+        // stacks and pass them to the screen. Legacy/unsupported sessions get zero stock and no transport.
+        int stock = carrier is null ? 0 : TorpedoStock(session!.Buffer.Presented?.Snapshot);
+        Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? rearm =
+            session is not null && carrier is not null
+                ? (request, cancellationToken) => session.RearmDroneAsync(request, cancellationToken)
+                : null;
+        await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm));
+    }
+
+    /// <summary>
+    /// Torpedoes available in the cargo hold, summed across installed modules with saturated
+    /// addition: oversized cargo stacks cap at <see cref="int.MaxValue"/> instead of wrapping.
+    /// </summary>
+    internal static int TorpedoStock(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot?.InstalledModules is not { IsDefaultOrEmpty: false } modules)
+            return 0;
+        long total = 0;
+        foreach (var module in modules)
+        {
+            if (module.Cargo is not { IsDefaultOrEmpty: false } cargo) continue;
+            foreach (var stack in cargo)
+            {
+                if (stack.ItemTypeId != "item.drone-torpedo.t1" || stack.Quantity <= 0) continue;
+                long remaining = int.MaxValue - total;
+                total += stack.Quantity >= remaining ? remaining : stack.Quantity;
+            }
+        }
+        return (int)total;
     }
 
     /// <summary>

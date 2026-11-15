@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.TacticalBattle.Content;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion.TacticalBattle;
@@ -8,18 +9,21 @@ namespace DeepSpaceSaga.Engine.TacticalBattle;
 /// <summary>
 /// Assembles a tactical battle whose player side is the world carrier and its persistent wing,
 /// and whose enemy side is the encounter scenario. Deployment slots are matched by stable
-/// DroneId order, never by display name; owned drones restore hull/armor/charges/ammo/jam.
+/// DroneId order, never by display name; owned drones restore hull/armor/charges/ammo/jam,
+/// disabled state and engine damage. Pilot identity/skills come from the persistent crew record.
 /// </summary>
 internal static class OwnedBattleAssembly
 {
     public static TacticalBattle Create(TacticalBattleCatalog catalog, string shipId, int hullCurrent, int maneuver,
         ImmutableArray<OwnedDroneData> wing, ImmutableArray<CrewMemberRuntime> crew, BattleScenario encounter,
-        string scenarioId, long seed, string playerSide = "A")
+        string scenarioId, long seed, string playerSide = "A",
+        ImmutableHashSet<string>? deployableDroneIds = null)
     {
         var random = new Mulberry32(seed);
         var drones = ImmutableArray.CreateBuilder<TacticalDrone>();
         var carriers = ImmutableArray.CreateBuilder<TacticalCarrier>();
         var selectedTactics = ImmutableArray.CreateBuilder<string>();
+        var crewById = crew.ToDictionary(c => c.Id, StringComparer.Ordinal);
 
         foreach (var side in encounter.Sides)
         {
@@ -32,14 +36,21 @@ internal static class OwnedBattleAssembly
                 carriers.Add(new(shipId, playerSide, new(carrierStart.X, carrierStart.Y, carrierStart.Course),
                     hullCurrent, catalog.Armor[carrierLayout.Armor].Armor, maneuver));
 
-                int slotIndex = 0;
-                foreach (var owned in wing.OrderBy(d => d.DroneId, StringComparer.Ordinal))
+                // The encounter slot is pinned to the FULL wing's stable DroneId index. A drone that
+                // cannot deploy leaves its slot unused and never shifts a survivor onto another
+                // alias (a destroyed tombstone or a disabled/offline-hangar drone keeps its place).
+                // deployableDroneIds null means the default rule (non-destroyed, non-disabled);
+                // disabling a drone is always a caller decision, so the persisted disabled restore
+                // stays reachable only through an explicit direct-caller set.
+                var ordered = wing.OrderBy(d => d.DroneId, StringComparer.Ordinal).ToArray();
+                for (int i = 0; i < ordered.Length && i < side.Drones.Length; i++)
                 {
-                    if (slotIndex >= side.Drones.Length) break;
-                    if (owned.Destroyed) { slotIndex++; continue; }
-                    var start = side.Drones[slotIndex];
-                    drones.Add(BuildOwnedDrone(catalog, owned, start, playerSide));
-                    slotIndex++;
+                    var owned = ordered[i];
+                    bool deployable = !owned.Destroyed && (deployableDroneIds is null
+                        ? !owned.Disabled
+                        : deployableDroneIds.Contains(owned.DroneId));
+                    if (!deployable) continue;
+                    drones.Add(BuildOwnedDrone(catalog, owned, side.Drones[i], playerSide, crewById));
                 }
             }
             else
@@ -97,8 +108,11 @@ internal static class OwnedBattleAssembly
     }
 
     private static TacticalDrone BuildOwnedDrone(TacticalBattleCatalog catalog, OwnedDroneData owned,
-        BattleDroneStart start, string side)
+        BattleDroneStart start, string side, IReadOnlyDictionary<string, CrewMemberRuntime> crewById)
     {
+        if (!crewById.TryGetValue(owned.CrewId, out var member))
+            throw new ScenarioException($"Drone '{owned.DroneId}' pilot '{owned.CrewId}' is not a crew member.");
+
         var layout = catalog.Layouts[owned.FrameId];
         var frame = catalog.Frames[layout.Class];
         var weapon = catalog.Weapons[owned.WeaponId];
@@ -112,15 +126,23 @@ internal static class OwnedBattleAssembly
             moduleMass: (decoy?.MassKg ?? 0) + owned.AmmoCurrent * 1.0);
         double speed = PyMath.Clamp(start.Speed, limits.MinSpeed, limits.MaxSpeed);
 
-        // Tactical skills come from the slot's pilot record (fixed for the starter wing, no RNG).
+        // Skills/initiative come from the persistent crew record once it carries the tactical scale
+        // (the starter wing does); a legacy wing whose world skills are both 0 keeps the encounter
+        // alias's catalog values. Identity is always the persistent CrewId, never the alias.
         var catalogPilot = catalog.Pilots[start.Pilot];
-        int accuracy = catalogPilot.Accuracy.Minimum;
-        int maneuver = catalogPilot.Maneuver.Minimum;
+        bool crewSkills = member.AccuracySkill != 0 || member.ManeuverabilitySkill != 0;
+        int accuracy = crewSkills ? member.AccuracySkill : catalogPilot.Accuracy.Minimum;
+        int maneuver = crewSkills ? member.ManeuverabilitySkill : catalogPilot.Maneuver.Minimum;
+        int initiative = crewSkills ? member.Initiative : catalogPilot.Initiative.Minimum;
 
-        return new TacticalDrone(owned.DroneId, side, new(start.X, start.Y, start.Course),
+        var drone = new TacticalDrone(owned.DroneId, side, new(start.X, start.Y, start.Course),
             owned.MaxHull, owned.MaxArmor, maneuver, accuracy,
-            start.Pilot, layout, frame, weapon, armor, shield, shieldCount, engines, speed, decoy)
+            owned.CrewId, layout, frame, weapon, armor, shield, shieldCount, engines, speed, decoy)
         {
+            PilotName = member.DisplayName,
+            PilotGender = ParseCrewGender(member.Gender),
+            PilotPortraitAssetId = member.PortraitAssetId,
+            PilotRole = ParseCrewRole(member.Role),
             Hull = owned.CurrentHull,
             Armor = owned.Armor,
             AmmoCurrent = owned.AmmoCurrent,
@@ -128,9 +150,29 @@ internal static class OwnedBattleAssembly
             AmmoUnitMassKg = 1.0,
             DecoyCharges = owned.DecoyCharges,
             Jammed = owned.Jammed,
-            Initiative = catalogPilot.Initiative.Minimum,
+            Initiative = initiative,
         };
+
+        // Restore the persisted damage from the previous sortie (US-0006): a disabled drone stays
+        // grounded (not destroyed, keeps pilot/slot/magazine) and engine factors apply per slot.
+        if (owned.Disabled)
+        {
+            drone.Status = TacticalDroneStatus.Disabled;
+            drone.Speed = 0;
+        }
+        if (owned.EngineFactors is { Count: > 0 } factors)
+            for (int i = 0; i < factors.Count && i < drone.Engines.Length; i++)
+                drone.Engines[i].Factor = factors[i];
+        return drone;
     }
+
+    private static CrewGender ParseCrewGender(string? value) =>
+        Enum.TryParse<CrewGender>(value, ignoreCase: true, out var gender) ? gender : CrewGender.Female;
+
+    private static CrewRole? ParseCrewRole(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : Enum.TryParse<CrewRole>(value, ignoreCase: true, out var role) ? role : null;
 
     private static TacticalDrone BuildScenarioDrone(TacticalBattleCatalog catalog, BattleDroneStart start, string side, Mulberry32 random)
     {

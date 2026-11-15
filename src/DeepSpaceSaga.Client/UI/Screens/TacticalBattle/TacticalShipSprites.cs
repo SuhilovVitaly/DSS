@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.Screens.Ship;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using Skin = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
@@ -39,14 +40,27 @@ internal static class TacticalShipSprites
             MathF.Round((point.Y - size / 2) * scale) / scale, size, size);
     }
 
-    internal static bool Draw(SKCanvas canvas, TacticalUnitSnapshot unit, SKPoint point, bool own,
-        double course, byte alpha = 255, int? factor = null, bool shadow = true, float unitScale = 1)
-    {
-        string model = unit.Kind == TacticalUnitKind.Carrier ? "carrier"
+    /// <summary>
+    /// Sprite model for one unit: a carrier uses the world appearance resource key, drones keep the
+    /// frame-id selection. Null/blank appearance keeps the default carrier sheet.
+    /// </summary>
+    internal static string ModelFor(TacticalUnitSnapshot unit, string? carrierAppearance) =>
+        unit.Kind == TacticalUnitKind.Carrier
+            ? CarrierAppearance.ResourceKey(carrierAppearance)
             : unit.FrameId is "light" or "heavy" or "thug" ? unit.FrameId : "heavy";
+
+    internal static bool Draw(SKCanvas canvas, TacticalUnitSnapshot unit, SKPoint point, bool own,
+        double course, byte alpha = 255, int? factor = null, bool shadow = true, float unitScale = 1,
+        string? carrierAppearance = null)
+    {
+        string model = ModelFor(unit, carrierAppearance);
         string side = unit.Kind == TacticalUnitKind.Drone && unit.State is TacticalUnitState.Disabled or TacticalUnitState.Destroyed
             ? "disabled" : own ? "own" : "enemy";
         var sheet = Skin.ShipSheet(model, side);
+        // A requested carrier resource that the pack does not define degrades to the default carrier
+        // sheet; drones never borrow another model's sheet.
+        if (sheet is null && unit.Kind == TacticalUnitKind.Carrier && model != CarrierAppearance.DefaultResourceKey)
+            sheet = Skin.ShipSheet(CarrierAppearance.DefaultResourceKey, side);
         if (sheet is null || !double.IsFinite(course)) return false;
         int index = Frame(course) % sheet.Value.Frames;
         var source = SKRect.Create(index % sheet.Value.Columns * sheet.Value.Cell,
@@ -62,8 +76,12 @@ internal static class TacticalShipSprites
         var destination = Bounds(point, (int)source.Width, scale, factor ?? Factor(scale));
         if (unitScale != 1)
             destination.Inflate(destination.Width * (unitScale - 1) / 2, destination.Height * (unitScale - 1) / 2);
-        using var paint = new SKPaint { IsAntialias = false, FilterQuality = SKFilterQuality.None,
-            Color = SKColors.White.WithAlpha(alpha) };
+        using var paint = new SKPaint
+        {
+            IsAntialias = false,
+            FilterQuality = SKFilterQuality.None,
+            Color = SKColors.White.WithAlpha(alpha)
+        };
         if (shadow)
         {
             using var filter = SKColorFilter.CreateBlendMode(new SKColor(0, 0, 0, 140), SKBlendMode.SrcIn);

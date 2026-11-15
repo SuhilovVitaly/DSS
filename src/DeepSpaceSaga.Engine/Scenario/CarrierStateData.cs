@@ -70,4 +70,14 @@ public sealed record OwnedDroneData(
     [property: JsonPropertyName("ammoCapacity")] int AmmoCapacity = 0,
     [property: JsonPropertyName("jammed")] bool Jammed = false,
     [property: JsonPropertyName("engineIds")] IReadOnlyList<string>? EngineIds = null,
-    [property: JsonPropertyName("destroyed")] bool Destroyed = false);
+    [property: JsonPropertyName("destroyed")] bool Destroyed = false,
+    /// <summary>
+    /// True when the last sortie left the drone disabled but not destroyed (EP-0029 US-0006). An
+    /// absent field means the drone is Air/intact, so schema 1 stays backward compatible.
+    /// </summary>
+    [property: JsonPropertyName("disabled")] bool Disabled = false,
+    /// <summary>
+    /// Per-engine damage factors captured at settlement, in <see cref="EngineIds"/> order
+    /// (1.0 = intact, e.g. 0.5 = damaged). Null means every engine is intact.
+    /// </summary>
+    [property: JsonPropertyName("engineFactors")] IReadOnlyList<double>? EngineFactors = null);

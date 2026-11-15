@@ -9,6 +9,8 @@ public sealed class Ep0029Us0003Tk0002Tests : IDisposable
     private readonly string _directory = Path.Combine(Path.GetTempPath(), $"dss-ep0029-us0003-tk0002-{Guid.NewGuid():N}");
     private string SettingsPath => Path.Combine(_directory, "settings.json");
     private string ScenarioPath => Path.Combine(_directory, "scenario.json");
+    private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
+        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
 
     public Ep0029Us0003Tk0002Tests()
     {
@@ -71,13 +73,19 @@ public sealed class Ep0029Us0003Tk0002Tests : IDisposable
         ["maneuverabilitySkill"] = 0,
     };
 
-    private static OwnedDroneData Drone(string id, string bay, int slot, string crewId, bool destroyed = false) => new(
+    private static OwnedDroneData Drone(string id, string bay, int slot, string crewId, bool destroyed = false,
+        string frameId = "heavy.sword.shield", string weaponId = "weapon.sword", string armorId = "plate.medium",
+        string? shieldId = "shield", int shieldCount = 2, int shieldSlots = 2,
+        string? decoyId = "decoy.t1", int decoyMaxCharges = 2, int decoyCharges = 2,
+        int currentHull = 100, int maxHull = 100, int armor = 50, int maxArmor = 50,
+        int ammoCurrent = 12, int ammoCapacity = 12, IReadOnlyList<string>? engineIds = null) => new(
         DroneId: id, HangarModuleId: bay, SlotIndex: slot, CrewId: crewId,
-        FrameId: "heavy.sword.shield", WeaponId: "weapon.sword", ArmorId: "plate.medium",
-        ShieldId: "shield", ShieldCount: 2, ShieldSlots: 2,
-        DecoyId: "decoy.t1", DecoyMaxCharges: 2, DecoyCharges: 2,
-        CurrentHull: 100, MaxHull: 100, Armor: 50, MaxArmor: 50,
-        AmmoCurrent: 12, AmmoCapacity: 12, Destroyed: destroyed);
+        FrameId: frameId, WeaponId: weaponId, ArmorId: armorId,
+        ShieldId: shieldId, ShieldCount: shieldCount, ShieldSlots: shieldSlots,
+        DecoyId: decoyId, DecoyMaxCharges: decoyMaxCharges, DecoyCharges: decoyCharges,
+        CurrentHull: currentHull, MaxHull: maxHull, Armor: armor, MaxArmor: maxArmor,
+        AmmoCurrent: ammoCurrent, AmmoCapacity: ammoCapacity,
+        EngineIds: engineIds, Destroyed: destroyed);
 
     private void WriteScenario()
     {
@@ -179,5 +187,120 @@ public sealed class Ep0029Us0003Tk0002Tests : IDisposable
         Assert.Equal(4, carrier.OwnedDrones.Length);
         Assert.Contains(carrier.OwnedDrones, d => d.Id == "DRN-2" && d.ReadinessReasons.Contains("destroyed"));
         Assert.Equal(6, carrier.Crew.Length);
+    }
+
+    /// <summary>Loads the engine from the real settings file so the tactical content catalog exists.</summary>
+    private SimulationEngine LoadRealContent()
+    {
+        WriteScenario();
+        return EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"), ScenarioPath);
+    }
+
+    /// <summary>Four drones shaped exactly like the shipped starter wing (Documentation starter tables).</summary>
+    private static OwnedDroneData[] StarterShapedWing() =>
+    [
+        Drone("DRN-PLAYER-01", "BAY-01", 0, "CHR-PILOT-1", frameId: "heavy.sword.shield",
+            weaponId: "gun.sword.t1", armorId: "plate.medium", shieldId: "shield.t1",
+            shieldCount: 2, shieldSlots: 2, decoyId: "decoy.t1", decoyMaxCharges: 2, decoyCharges: 2,
+            currentHull: 65, maxHull: 65, armor: 80, maxArmor: 80, ammoCurrent: 12, ammoCapacity: 12,
+            engineIds: ["drive.standard", "drive.standard"]),
+        Drone("DRN-PLAYER-02", "BAY-01", 1, "CHR-PILOT-2", frameId: "heavy.spear.shield",
+            weaponId: "gun.spear.t1", armorId: "plate.medium", shieldId: "shield.t1",
+            shieldCount: 2, shieldSlots: 2, decoyId: "decoy.t1", decoyMaxCharges: 2, decoyCharges: 2,
+            currentHull: 65, maxHull: 65, armor: 80, maxArmor: 80, ammoCurrent: 12, ammoCapacity: 12,
+            engineIds: ["drive.standard", "drive.standard"]),
+        Drone("DRN-PLAYER-03", "BAY-02", 0, "CHR-PILOT-3", frameId: "light.sword.shield",
+            weaponId: "gun.sword.t1", armorId: "plate.medium", shieldId: "shield.t1",
+            shieldCount: 1, shieldSlots: 1, decoyId: "decoy.t1", decoyMaxCharges: 2, decoyCharges: 2,
+            currentHull: 55, maxHull: 55, armor: 80, maxArmor: 80, ammoCurrent: 6, ammoCapacity: 6,
+            engineIds: ["drive.standard", "drive.standard"]),
+        Drone("DRN-PLAYER-04", "BAY-02", 1, "CHR-PILOT-4", frameId: "light.spear",
+            weaponId: "gun.spear.t1", armorId: "plate.medium", shieldId: "shield.t1",
+            shieldCount: 1, shieldSlots: 1, decoyId: "decoy.t1", decoyMaxCharges: 2, decoyCharges: 2,
+            currentHull: 55, maxHull: 55, armor: 80, maxArmor: 80, ammoCurrent: 6, ammoCapacity: 6,
+            engineIds: ["drive.standard", "drive.standard"]),
+    ];
+
+    private static void AssertRejected(SimulationEngine engine, OwnedDroneData[] wing,
+        Func<OwnedDroneData, OwnedDroneData> mutate)
+    {
+        var invalid = wing.Select((d, i) => i == 0 ? mutate(d) : d).ToArray();
+        Assert.Throws<ScenarioException>(() => engine.SetOwnedWingForTests("SPC-0001", invalid));
+    }
+
+    [Fact]
+    public void WingRejectsUnknownLayoutWeaponEngine()
+    {
+        using var engine = LoadRealContent();
+        var wing = StarterShapedWing();
+        engine.SetOwnedWingForTests("SPC-0001", wing); // the valid baseline is accepted
+
+        AssertRejected(engine, wing, d => d with { FrameId = "heavy.unknown" });
+        AssertRejected(engine, wing, d => d with { WeaponId = "gun.unknown" });
+        AssertRejected(engine, wing, d => d with { ArmorId = "plate.unknown" });
+        AssertRejected(engine, wing, d => d with { ShieldId = "shield.unknown" });
+        AssertRejected(engine, wing, d => d with { DecoyId = "decoy.unknown" });
+        AssertRejected(engine, wing, d => d with { EngineIds = ["drive.standard", "drive.unknown"] });
+    }
+
+    [Fact]
+    public void WingRejectsOverCapacityMagazineAndSlots()
+    {
+        using var engine = LoadRealContent();
+        var wing = StarterShapedWing();
+        engine.SetOwnedWingForTests("SPC-0001", wing);
+
+        // Heavy frame: ammoCapacity 12, shieldSlots 2, engineSlots 2. Decoy t1 carries 2 charges.
+        AssertRejected(engine, wing, d => d with { AmmoCurrent = 13, AmmoCapacity = 13 });
+        AssertRejected(engine, wing, d => d with { ShieldCount = 3, ShieldSlots = 3 });
+        AssertRejected(engine, wing, d => d with { ShieldCount = 2, ShieldSlots = 3 });
+        AssertRejected(engine, wing, d => d with { DecoyMaxCharges = 3, DecoyCharges = 3 });
+        AssertRejected(engine, wing, d => d with { EngineIds = ["drive.standard", "drive.standard", "drive.standard"] });
+    }
+
+    [Fact]
+    public void ValidStarterWingPassesCatalogValidation()
+    {
+        using var engine = LoadRealContent();
+        engine.SetOwnedWingForTests("SPC-0001", StarterShapedWing());
+
+        var wing = engine.CaptureSnapshot().CarrierOperations!.OwnedDrones;
+        Assert.Equal(4, wing.Length);
+        Assert.All(wing, d => Assert.Empty(d.ReadinessReasons));
+    }
+
+    [Fact]
+    public void NullOrBlankEquipmentIdsRejectCleanly()
+    {
+        using var engine = LoadRealContent();
+        var wing = StarterShapedWing();
+        engine.SetOwnedWingForTests("SPC-0001", wing);
+
+        // Null ids must be a domain rejection, never an ArgumentNullException from a dictionary probe.
+        AssertRejected(engine, wing, d => d with { HangarModuleId = null! });
+        AssertRejected(engine, wing, d => d with { FrameId = null! });
+        AssertRejected(engine, wing, d => d with { WeaponId = null! });
+        AssertRejected(engine, wing, d => d with { ArmorId = null! });
+        AssertRejected(engine, wing, d => d with { EngineIds = ["drive.standard", null!] });
+
+        // Blank ids are unknown references under the same ScenarioException contract.
+        AssertRejected(engine, wing, d => d with { HangarModuleId = "  " });
+        AssertRejected(engine, wing, d => d with { FrameId = "  " });
+        AssertRejected(engine, wing, d => d with { ShieldId = "  " });
+        AssertRejected(engine, wing, d => d with { DecoyId = "  " });
+
+        // Null optional equipment means "none" and stays valid (no over-rejection).
+        engine.SetOwnedWingForTests("SPC-0001",
+            wing.Select((d, i) => i == 0
+                ? d with
+                {
+                    ShieldId = null,
+                    ShieldCount = 0,
+                    ShieldSlots = 0,
+                    DecoyId = null,
+                    DecoyMaxCharges = 0,
+                    DecoyCharges = 0,
+                }
+                : d).ToArray());
     }
 }

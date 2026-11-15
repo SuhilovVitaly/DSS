@@ -12,6 +12,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 public sealed class ShipViewModel
 {
     public bool Unsupported { get; private init; }
+    public string ShipId { get; private init; } = "";
     public string Name { get; private init; } = "";
     public string ShipClassId { get; private init; } = "";
     public int HullCurrent { get; private init; }
@@ -22,7 +23,8 @@ public sealed class ShipViewModel
     public ImmutableArray<CrewRow> Crew { get; private init; } = ImmutableArray<CrewRow>.Empty;
     public CabinRow Cabins { get; private init; } = new(0, 0, 0, 0);
 
-    public sealed record DroneRow(string Id, int AmmoCurrent, int AmmoCapacity, int CurrentHull, bool Destroyed);
+    public sealed record DroneRow(string Id, int AmmoCurrent, int AmmoCapacity, int CurrentHull, bool Destroyed,
+        bool Disabled = false);
     public sealed record CrewRow(string Id, string DisplayName, CrewRole? Role);
     public sealed record CabinRow(int TotalCabins, int OccupiedCabins, int ReservedCabins, int FreeCabins);
 
@@ -33,6 +35,7 @@ public sealed class ShipViewModel
 
         return new ShipViewModel
         {
+            ShipId = carrier.ShipId,
             Name = carrier.Name,
             ShipClassId = carrier.ShipClassId,
             HullCurrent = carrier.HullCurrent,
@@ -43,7 +46,8 @@ public sealed class ShipViewModel
                 ? ImmutableArray<DroneRow>.Empty
                 : carrier.OwnedDrones
                     .Select(d => new DroneRow(d.Id, d.AmmoCurrent, d.AmmoCapacity, d.CurrentHull,
-                        !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("destroyed")))
+                        !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("destroyed"),
+                        !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("disabled")))
                     .ToImmutableArray(),
             Crew = carrier.Crew.IsDefaultOrEmpty
                 ? ImmutableArray<CrewRow>.Empty

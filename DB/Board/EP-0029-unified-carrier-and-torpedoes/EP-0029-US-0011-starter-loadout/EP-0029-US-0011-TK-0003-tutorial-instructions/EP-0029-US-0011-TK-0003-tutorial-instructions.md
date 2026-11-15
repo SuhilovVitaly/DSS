@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Подсказки о настоящем бое и перезарядке
@@ -106,4 +106,18 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implementation status: **implemented** (automated PASS; native/product OPEN).
+
+- TDD red: focused run before the locale edits failed 4/6 (`TutorialMentionsRealLosses` RU/EN, `OutcomeDoesNotPromiseRevival` RU/EN); `DisabledHintsStillRealBattle` and `OfficerPortraitRemainsDistinct` were already satisfied by the unchanged script/officer and stay green — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-040-us0011tk0003/red.stdout.txt`.
+- Content: only existing locale keys changed (RU/EN `Tutorial.Line.Intro`, `Tutorial.Line.FireTarget`, `Tutorial.Line.OverVictory`, `Tutorial.Line.OverDefeat`). Intro now warns the battle is real and losses/spent torpedoes persist; `FireTarget` names finite magazines and keeps the «Не стрелять»/“Hold fire” label; victory points to the ship screen and the 42-torpedo hold; defeat is terminal (`Скиталец` lost, voyage over) and still quotes the ToMap label without promising revival. `battle-tutorial.json` is unchanged: Irina remains the only speaker (same name/role/portrait keys), no steps/signals added; every edited line wraps to ≤2 rows of 352 px.
+- Focused tests (6/6 passed, 0 failed):
+  `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~Ep0029Us0011Tk0003Tests" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-040-us0011tk0003/US-0011-TK-0003" --logger "trx;LogFileName=focused.trx"`
+  Evidence: `run-040-us0011tk0003/focused.stdout.txt`, `run-040-us0011tk0003/US-0011-TK-0003/focused.trx`.
+  Named: `TutorialMentionsRealLosses` (RU/EN real battle + losses + torpedoes, no simulation/training wording, finite magazines, required phrases/wrap), `DisabledHintsStillRealBattle` (script schema has no mode flag; hint toggle is display-only; real 4-drone/36+42 tutorial world), `OutcomeDoesNotPromiseRevival` (terminal defeat wording, no banned restart/revival words, ToMap kept; victory rearm hint), `OfficerPortraitRemainsDistinct` (same W4 officer asset, not one of the four pilots, RU/EN speaker identity).
+- Guard tests PASS: `TutorialContentTests` + `TutorialLocaleParityTests` → 22 passed, 0 failed (`run-040-us0011tk0003/guard.stdout.txt`).
+- Owning build PASS: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore` → 0 warnings, 0 errors (`run-040-us0011tk0003/client-build.stdout.txt`).
+- Scoped format PASS: `dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0011Tk0003Tests.cs` → exit 0 (`run-040-us0011tk0003/format.stdout.txt`).
+- Story boundary run matches the expected reds only:
+  Engine: `Ep0029Us0011Tk0001Tests` + `ScenarioEngineTests` + `ModuleHealthBootstrapTests` → 5 failed (all expected) / 77 passed (`run-040-us0011tk0003/engine-boundary.stdout.txt`).
+  Client: `Ep0029Us0011Tk0002Tests` + `Ep0029Us0011Tk0003Tests` + `TutorialScenarioTests` + `TutorialContentTests` + `TutorialLocaleParityTests` + `TetrarchLoadoutTests` + `ScenarioModuleCleanupTests` → 7 failed (all expected) / 60 passed (`run-040-us0011tk0003/client-boundary.stdout.txt`).
+- Serves AC-01. Native/UI acceptance remains **OPEN** — no native run was performed; headless tests do not close the V-10/native gate.

@@ -2,7 +2,8 @@
   "scenarioMetadata": {
     "scenarioId": "default",
     "name": "Default Scenario",
-    "description": "A fully equipped starter ship drifting in open space near a station, with a couple of nearby asteroids to scan and approach."
+    "description": "A fully equipped starter ship drifting in open space near a station, with a couple of nearby asteroids to scan and approach.",
+    "starterCarrierManifest": "Data/Ships/starter-carrier.json"
   },
   "gameState": {
     "gameTimeMs": 0,
@@ -19,184 +20,16 @@
             "objectType": "PlayerShip",
             "shipClassId": "ship.tetrarch",
             "persistenceType": "Permanent",
-            "name": "Player Ship",
+            "name": "Skitalets",
+            "captainDisplayName": "Dunkan Su",
+            "captainPortraitImage": "Images/Persons/M4/Portraits/CHR-20260915-105947-6DC202.png",
             "positionX": 10000.0,
             "positionY": 10000.0,
             "speedMps": 700,
             "directionDegrees": 0,
             "movementType": "Linear",
-            "isKnown": true,
-            "hullLayout": {
-              "width": 9,
-              "height": 9,
-              "cells": [
-                {
-                  "x": 4,
-                  "y": 0
-                },
-                {
-                  "x": 3,
-                  "y": 1
-                },
-                {
-                  "x": 4,
-                  "y": 1
-                },
-                {
-                  "x": 5,
-                  "y": 1
-                },
-                {
-                  "x": 4,
-                  "y": 2
-                },
-                {
-                  "x": 4,
-                  "y": 3
-                },
-                {
-                  "x": 4,
-                  "y": 4
-                },
-                {
-                  "x": 3,
-                  "y": 5
-                },
-                {
-                  "x": 4,
-                  "y": 5
-                },
-                {
-                  "x": 5,
-                  "y": 5
-                },
-                {
-                  "x": 3,
-                  "y": 2
-                },
-                {
-                  "y": 2,
-                  "x": 5
-                }
-              ]
-            },
-            "modules": [
-              {
-                "moduleId": "MOD-PLAYER-BRIDGE-01",
-                "moduleTypeId": "module.bridge.navigation.computer.basic",
-                "occupiedCells": [
-                  {
-                    "x": 4,
-                    "y": 0
-                  }
-                ],
-                "structurePoints": 80,
-                "powerState": "On",
-                "operationalState": "Ready",
-                "activeCycle": null,
-                "cargo": []
-              },
-              {
-                "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
-                "moduleTypeId": "living.quarters.mk1",
-                "occupiedCells": [
-                  {
-                    "x": 4,
-                    "y": 1
-                  }
-                ],
-                "structurePoints": 60,
-                "powerState": "On",
-                "operationalState": "Ready",
-                "activeCycle": null,
-                "cargo": []
-              },
-              {
-                "moduleId": "MOD-PLAYER-CARGO-01",
-                "moduleTypeId": "module.container.basic",
-                "occupiedCells": [
-                  {
-                    "x": 4,
-                    "y": 2
-                  }
-                ],
-                "structurePoints": 150,
-                "powerState": "On",
-                "operationalState": "Ready",
-                "activeCycle": null,
-                "cargo": [
-                  {
-                    "itemTypeId": "item.energy-cells",
-                    "quantity": 1000
-                  },
-                  {
-                    "itemTypeId": "item.food-rations",
-                    "quantity": 200
-                  }
-                ]
-              },
-              {
-                "moduleId": "MOD-PLAYER-SCANNER-01",
-                "moduleTypeId": "module.scanner.mk1",
-                "occupiedCells": [
-                  {
-                    "x": 4,
-                    "y": 3
-                  }
-                ],
-                "structurePoints": 60,
-                "powerState": "On",
-                "operationalState": "Ready",
-                "activeCycle": null,
-                "cargo": []
-              },
-              {
-                "moduleId": "MOD-PLAYER-GENERATOR-01",
-                "moduleTypeId": "module.generator.basic",
-                "occupiedCells": [
-                  {
-                    "x": 4,
-                    "y": 4
-                  }
-                ],
-                "structurePoints": 150,
-                "powerState": "On",
-                "operationalState": "Ready",
-                "activeCycle": null,
-                "cargo": []
-              },
-              {
-                "moduleId": "MOD-PLAYER-ENGINE-01",
-                "moduleTypeId": "module.engine.basic",
-                "occupiedCells": [
-                  {
-                    "x": 4,
-                    "y": 5
-                  }
-                ],
-                "structurePoints": 100,
-                "powerState": "On",
-                "operationalState": "Ready",
-                "activeCycle": null,
-                "cargo": [],
-                "fuelAmountKg": 750
-              }
-            ],
-            "crew": [
-              {
-                "crewId": "CHR-0001",
-                "displayName": "Dunkan Su",
-                "accuracySkill": 0,
-                "maneuverabilitySkill": 0
-              },
-              {
-                "crewId": "CHR-PLAYER-DEFENSE",
-                "maneuverabilitySkill": 0,
-                "accuracySkill": 0,
-                "displayName": "Defense operator"
-              }
-            ]
-          },
+            "isKnown": true
+        },
       {
         "objectId": "SPC-0002",
         "stationCrew": [{ "crewId": "CHR-0003", "role": "Dock Operator", "displayName": "Mari Lefeber" }],

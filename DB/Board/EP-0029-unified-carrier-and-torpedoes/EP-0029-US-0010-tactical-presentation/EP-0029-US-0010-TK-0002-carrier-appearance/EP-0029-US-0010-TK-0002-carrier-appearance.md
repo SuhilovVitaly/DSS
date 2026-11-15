@@ -37,9 +37,11 @@ implementation_status: implemented
 |---|---|---|
 | [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalShipSprites.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalShipSprites.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalShipSprites.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Одинаковый облик носителя в мире и бою» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Одинаковый облик носителя в мире и бою» по шагам ниже, без соседних историй. |
-| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMinimap.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMinimap.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMinimap.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Одинаковый облик носителя в мире и бою» по шагам ниже, без соседних историй. |
+| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs:12` — `TacticalBattleFrame`/`CaptureFrame`, где появляется appearance из world `CarrierOperations`. | Добавить `CarrierAppearanceId` в кадр и заполнять из `Flow.Session.CarrierOperations?.AppearanceId`; без соседних историй. |
 | [src/DeepSpaceSaga.Client/UI/Screens/Ship/CarrierAppearance.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/Ship/CarrierAppearance.cs) | Новый проектируемый файл; до выполнения отсутствует. | Только «Одинаковый облик носителя в мире и бою» по шагам ниже, без соседних историй. |
 | [tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0010Tk0002Tests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0010Tk0002Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0010Tk0002Tests ниже с независимым oracle. |
+
+Allowlist amendment (2026-11-15, process-only): строка `TacticalBattleMinimap.cs` заменена на `TacticalBattleScreen.cs` тем же количеством файлов (5). Мини-карта рисует только маркеры, не спрайты; appearance попадает в кадр именно в `CaptureFrame` тактического экрана. `CarrierAppearance.cs` — read-only зависимость, не редактировался.
 
 ## Public API after the change
 
@@ -112,3 +114,17 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 - `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
 
 Status: automated PASS (client layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15
+
+**Finding (review, P2 #6):** `TacticalShipSprites.Draw` всегда выбирал лист `"carrier"`; `CarrierAppearance` не имел production-вызова, поэтому облик носителя в бою не совпадал с миром.
+
+**Fix:** `TacticalBattleFrame.CarrierAppearanceId` заполняется в `CaptureFrame` из `Flow.Session.CarrierOperations?.AppearanceId`. `TacticalShipSprites.ModelFor(unit, carrierAppearance)` — носитель использует `CarrierAppearance.ResourceKey(carrierAppearance)`, дроны сохраняют frame-id логику (light/heavy/thug, неизвестный → heavy); `Draw` получил optional `carrierAppearance` и при отсутствии запрошенного carrier-листа откатывается на лист `carrier`, не меняя ориентацию/scale/hitbox. `BattleMapRenderer` передаёт `f.CarrierAppearanceId` в вызовы Draw основной карты, дронов и обломков носителя.
+
+**Tests:** `Ep0029Us0010Tk0002Tests` — 5/5 passed: `SameAppearanceKeyAcrossWorldAndBattle` (ModelFor carrier null/`""`/`carrier`/`ship.tetrarch`, дроны light/heavy/thug/unknown), `CarrierRotationAndHitboxStayAligned`, `MissingAssetFallbackKeepsName`, `UnknownCarrierAppearanceFallsBackToDefaultCarrierSheet` (пиксельно равен листу `carrier` при отсутствующем ключе), `CapturedFrameCarriesTheWorldCarrierAppearance` (кадр = world `AppearanceId`). Guards `TabletopSpriteTests` + `BattleMapRenderTests` — 19/19 passed (отдельно подтверждено baseline: 2 ambient `TabletopSalvoTests` падения существуют и на HEAD — starterCarrierManifest фикстура и известный US-0013 starter-shape red).
+
+**Deviation:** вызов `TacticalShipSprites.Draw` в `BattleMapRenderer.Templates.cs` не получает appearance — это отдельный partial-файл вне allowlist, а templates рисуют только движение дронов (носитель в бою не двигается), поэтому параметр там не наблюдаем. Функциональный scope не изменён.
+
+**Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-053-us0010tk0002/US-0010-TK-0002/focused.trx` (5/5), `guards-root.trx` (38/40; 2 ambient), `baseline-head.trx` (те же 2 ambient на HEAD), `client-build.log` (0 warnings/0 errors), `format.log` (clean). Native visual approval остаётся OPEN.
+
+Status: automated PASS (client layer); native visual approval remains OPEN.

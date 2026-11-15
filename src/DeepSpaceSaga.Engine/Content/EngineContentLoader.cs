@@ -55,7 +55,8 @@ public static class EngineContentLoader
     public static SimulationEngine CreateEngineFromScenarioFile(string settingsPath, string scenarioPath)
     {
         var registry = LoadRegistryFromSettingsFile(settingsPath, out _, out _);
-        var scenario = ScenarioLoader.LoadFromFile(scenarioPath);
+        var scenario = ScenarioLoader.LoadFromFile(scenarioPath,
+            contentRoot: Path.GetDirectoryName(Path.GetFullPath(settingsPath)));
         var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
@@ -120,7 +121,10 @@ public static class EngineContentLoader
     internal static LoadedEngineContent LoadFromSettingsFile(string settingsPath)
     {
         var registry = LoadRegistryFromSettingsFile(settingsPath, out string basePath, out var settings);
-        var scenario = ScenarioLoader.LoadFromFile(Resolve(basePath, settings.DefaultScenario));
+        // The settings directory is the content root for the optional starter carrier manifest
+        // (EP-0029 US-0011): Data/Ships/... and Scenarios/... are siblings under it.
+        var scenario = ScenarioLoader.LoadFromFile(Resolve(basePath, settings.DefaultScenario),
+            contentRoot: Path.GetDirectoryName(Path.GetFullPath(settingsPath)));
 
         return new LoadedEngineContent(registry, scenario);
     }

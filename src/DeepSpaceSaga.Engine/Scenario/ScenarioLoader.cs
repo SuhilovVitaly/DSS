@@ -40,7 +40,13 @@ public static class ScenarioLoader
     /// gameTimeMs &gt; 0 — pass true only for the explicit save/load bootstrap path
     /// (see SimulationEngine.CreateFromSaveFile / EngineContentLoader.CreateEngineFromSaveFile).
     /// </param>
-    public static ScenarioFile LoadFromFile(string path, bool allowNonZeroGameTime = false, bool isSave = false)
+    /// <param name="contentRoot">
+    /// Root the optional <see cref="ScenarioMetadata.StarterCarrierManifest"/> is resolved against
+    /// (EP-0029 US-0011). Null infers the root by walking up from the scenario file's directory
+    /// until a directory containing the relative manifest path is found. Ignored by saves.
+    /// </param>
+    public static ScenarioFile LoadFromFile(string path, bool allowNonZeroGameTime = false, bool isSave = false,
+        string? contentRoot = null)
     {
         if (!File.Exists(path))
             throw new ScenarioException($"Scenario file not found: {path}");
@@ -55,10 +61,17 @@ public static class ScenarioLoader
             throw new ScenarioException($"Failed to read scenario file: {path}", ex);
         }
 
-        return LoadFromJson(json, allowNonZeroGameTime, isSave);
+        var scenario = Parse(json, allowNonZeroGameTime, isSave);
+        return Complete(scenario, allowNonZeroGameTime, isSave, path, contentRoot);
     }
 
     public static ScenarioFile LoadFromJson(string json, bool allowNonZeroGameTime = false, bool isSave = false)
+    {
+        var scenario = Parse(json, allowNonZeroGameTime, isSave);
+        return Complete(scenario, allowNonZeroGameTime, isSave, sourcePath: null, contentRoot: null);
+    }
+
+    private static ScenarioFile Parse(string json, bool allowNonZeroGameTime, bool isSave)
     {
         ScenarioFile scenario;
         HashSet<string>? legacyActors = null;
@@ -94,8 +107,128 @@ public static class ScenarioLoader
         }
         if (scenario.SaveFormatVersion == SaveMigration21.PreviousVersion)
             scenario = SaveMigration21.Upgrade(scenario, allowNonZeroGameTime);
+        return scenario;
+    }
+
+    private static ScenarioFile Complete(ScenarioFile scenario, bool allowNonZeroGameTime, bool isSave,
+        string? sourcePath, string? contentRoot)
+    {
+        scenario = ApplyStarterCarrierManifest(scenario, isSave, sourcePath, contentRoot);
         return ValidateAndNormalize(scenario, allowNonZeroGameTime);
     }
+
+    /// <summary>
+    /// Materialize the referenced starter carrier into the world player ship (EP-0029 US-0011).
+    /// Only a version-0 New Game can resolve a manifest: a save (explicit <paramref name="isSave"/>
+    /// or any positive save format) carries expanded state and never re-grants, and JSON content
+    /// without a file path cannot resolve one at all. The returned metadata never keeps the
+    /// reference, so no serialized scenario or save can carry a live grant.
+    /// </summary>
+    private static ScenarioFile ApplyStarterCarrierManifest(ScenarioFile scenario, bool isSave,
+        string? sourcePath, string? contentRoot)
+    {
+        if (scenario.Metadata.StarterCarrierManifest is not { } declared)
+            return scenario;
+
+        if (isSave || scenario.SaveFormatVersion > 0)
+            return scenario with { Metadata = scenario.Metadata with { StarterCarrierManifest = null } };
+
+        if (sourcePath is null)
+            throw new ScenarioException(
+                "starterCarrierManifest requires a scenario file path; a New Game manifest cannot be resolved from JSON content.");
+
+        string root = contentRoot ?? InferManifestRoot(sourcePath, declared);
+        string manifestPath = ResolveManifestPath(root, declared);
+        if (!File.Exists(manifestPath))
+            throw new ScenarioException(
+                $"starterCarrierManifest file not found: {declared} (resolved to {manifestPath}).");
+
+        var manifest = StarterCarrierManifest.Load(manifestPath);
+        var gs = scenario.GameState;
+        var objects = gs.SpaceObjects ?? [];
+        var playerShip = objects.FirstOrDefault(o =>
+            string.Equals(o.ObjectId, gs.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ScenarioException(
+                $"starterCarrierManifest: player ship '{gs.PlayerShipObjectId}' not found in spaceObjects.");
+
+        if (playerShip.HullLayout is not null || playerShip.Modules is { Count: > 0 } ||
+            playerShip.Crew is { Count: > 0 } || playerShip.CarrierState is not null)
+            throw new ScenarioException(
+                $"Ship '{playerShip.ObjectId}' mixes inline carrier fields with starterCarrierManifest; only one source is allowed.");
+
+        if (manifest.ShipClassId is { } manifestClass &&
+            !string.Equals(manifestClass, playerShip.ShipClassId, StringComparison.Ordinal))
+            throw new ScenarioException(
+                $"starterCarrierManifest shipClassId '{manifestClass}' does not match scenario ship '{playerShip.ShipClassId}'.");
+
+        var expanded = playerShip with
+        {
+            HullLayout = manifest.HullLayout,
+            Modules = manifest.Modules,
+            Crew = manifest.Crew,
+            CarrierState = manifest.CarrierState,
+        };
+
+        return scenario with
+        {
+            Metadata = scenario.Metadata with { StarterCarrierManifest = null },
+            GameState = gs with
+            {
+                SpaceObjects = objects
+                    .Select(o => string.Equals(o.ObjectId, playerShip.ObjectId, StringComparison.OrdinalIgnoreCase) ? expanded : o)
+                    .ToArray(),
+            },
+        };
+    }
+
+    /// <summary>
+    /// Reject rooted/traversal references before touching the filesystem, then walk up from the
+    /// scenario directory until a directory containing the relative manifest path is found.
+    /// </summary>
+    private static string InferManifestRoot(string scenarioPath, string declared)
+    {
+        string relative = NormalizeManifestRelativePath(declared);
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(scenarioPath));
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory, relative)))
+                return directory;
+            directory = Path.GetDirectoryName(directory);
+        }
+
+        throw new ScenarioException(
+            $"starterCarrierManifest file not found: {declared} (no ancestor directory of {scenarioPath} contains it).");
+    }
+
+    private static string ResolveManifestPath(string root, string declared)
+    {
+        string relative = NormalizeManifestRelativePath(declared);
+        string rootFull = Path.GetFullPath(root);
+        string resolved = Path.GetFullPath(Path.Combine(rootFull, relative));
+        string prefix = rootFull.EndsWith(Path.DirectorySeparatorChar)
+            ? rootFull
+            : rootFull + Path.DirectorySeparatorChar;
+        StringComparison comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (!resolved.StartsWith(prefix, comparison))
+            throw new ScenarioException($"starterCarrierManifest resolves outside the content root: {declared}.");
+        return resolved;
+    }
+
+    private static string NormalizeManifestRelativePath(string declared)
+    {
+        if (string.IsNullOrWhiteSpace(declared))
+            throw new ScenarioException("starterCarrierManifest must not be empty.");
+        if (Path.IsPathRooted(declared))
+            throw new ScenarioException($"starterCarrierManifest must be relative to the content root: {declared}.");
+
+        var segments = declared.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Any(segment => segment == ".."))
+            throw new ScenarioException($"starterCarrierManifest must not contain traversal segments: {declared}.");
+        return segments.Length == 0 ? string.Empty : Path.Combine(segments);
+    }
+
 
     internal static void RequireSupportedSaveVersion(int version)
     {
@@ -495,10 +628,11 @@ public static class ScenarioLoader
             if (crew is null)
                 throw new ScenarioException($"Ship '{obj.ObjectId}' has a null crew member.");
             crewIds.Add(crew.CrewId);
-            if (crew.AccuracySkill is < 0 or > 30)
-                throw new ScenarioException($"Crew '{crew.CrewId}' accuracySkill must be in 0..30.");
-            if (crew.ManeuverabilitySkill is < 0 or > 30)
-                throw new ScenarioException($"Crew '{crew.CrewId}' maneuverabilitySkill must be in 0..30.");
+            // World crew skills use the tactical 0..100 scale (EP-0029 US-0011 remediation).
+            if (crew.AccuracySkill is < 0 or > 100)
+                throw new ScenarioException($"Crew '{crew.CrewId}' accuracySkill must be in 0..100.");
+            if (crew.ManeuverabilitySkill is < 0 or > 100)
+                throw new ScenarioException($"Crew '{crew.CrewId}' maneuverabilitySkill must be in 0..100.");
         }
         var assigned = new HashSet<string>(StringComparer.Ordinal);
         foreach (var module in obj.Modules ?? [])

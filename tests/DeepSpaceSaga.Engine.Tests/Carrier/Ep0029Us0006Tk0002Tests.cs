@@ -197,4 +197,85 @@ public sealed class Ep0029Us0006Tk0002Tests : IDisposable
         Assert.True(engine.CaptureSnapshot().CarrierOperations!.IsDestroyed);
         Assert.True(engine.CaptureSnapshot().Objects.Single(o => o.ObjectType == SpaceObjectType.PlayerShip).IsDestroyed);
     }
+
+    private static OwnedDroneData SaveWingDrone(SimulationEngine engine, string droneId) =>
+        engine.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == "SPC-0001")
+            .CarrierState!.OwnedDrones!.Single(d => d.DroneId == droneId);
+
+    [Fact]
+    public void SettlementPersistsDisabledAndEngineDamage()
+    {
+        var engine = StartBattle(out var battleId);
+        var session = engine.TacticalBattleSessionForTests!;
+        var drone = session.Battle.Drones.First(d => d.Side == "A" && d.Id == "DRN-PLAYER-03");
+        drone.Status = TacticalDroneStatus.Disabled;
+        drone.Engines[1].Factor = 0.5; // rules.Systems.EngineDamagedFactor literal
+
+        engine.ExitTacticalBattle(new("exit", battleId));
+
+        // Saved carrierState carries the disabled flag and per-engine factors (12/12/6/6 wing).
+        var persisted = SaveWingDrone(engine, "DRN-PLAYER-03");
+        Assert.True(persisted.Disabled);
+        Assert.False(persisted.Destroyed);
+        Assert.Equal([1.0, 0.5], persisted.EngineFactors!.ToArray());
+
+        var snapshot = engine.CaptureSnapshot().CarrierOperations!.OwnedDrones.Single(d => d.Id == "DRN-PLAYER-03");
+        Assert.Contains("disabled", snapshot.ReadinessReasons);
+        Assert.DoesNotContain("destroyed", snapshot.ReadinessReasons);
+        Assert.Equal(2, snapshot.EngineDamage.Length);
+        Assert.Equal((0, "drive.standard", "Ok"),
+            (snapshot.EngineDamage[0].Index, snapshot.EngineDamage[0].EngineId, snapshot.EngineDamage[0].State));
+        Assert.Equal((1, "drive.standard", "Damaged"),
+            (snapshot.EngineDamage[1].Index, snapshot.EngineDamage[1].EngineId, snapshot.EngineDamage[1].State));
+    }
+
+    [Fact]
+    public void DisabledDroneSurvivesRoundTrip()
+    {
+        var engine = StartBattle(out var battleId);
+        var session = engine.TacticalBattleSessionForTests!;
+        var drone = session.Battle.Drones.First(d => d.Side == "A" && d.Id == "DRN-PLAYER-03");
+        drone.Status = TacticalDroneStatus.Disabled;
+        drone.Engines[1].Factor = 0.5;
+
+        engine.ExitTacticalBattle(new("exit", battleId));
+        var before = engine.CaptureSnapshot().CarrierOperations!.OwnedDrones.Single(d => d.Id == "DRN-PLAYER-03");
+
+        string json = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        using var restored = new SimulationEngine(SaveFixturesTests.Registry(),
+            clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(json, allowNonZeroGameTime: true, isSave: true), isSave: true);
+
+        var after = restored.CaptureSnapshot().CarrierOperations!.OwnedDrones.Single(d => d.Id == "DRN-PLAYER-03");
+        Assert.Contains("disabled", after.ReadinessReasons);
+        Assert.Equal(
+            before.EngineDamage.Select(e => (e.Index, e.EngineId, e.State)),
+            after.EngineDamage.Select(e => (e.Index, e.EngineId, e.State)));
+
+        var persisted = SaveWingDrone(restored, "DRN-PLAYER-03");
+        Assert.True(persisted.Disabled);
+        Assert.Equal([1.0, 0.5], persisted.EngineFactors!.ToArray());
+
+        // Loading never re-settles: the revision and the receipt survive unchanged.
+        Assert.Equal(1, restored.GetCarrierRevision("SPC-0001"));
+        Assert.Equal(battleId, restored.CaptureSaveState().GameState.SpaceObjects
+            .Single(o => o.ObjectId == "SPC-0001").CarrierState!.LastSettlement!.BattleId);
+    }
+
+    [Fact]
+    public void WingRejectsInvalidEngineFactors()
+    {
+        using var engine = Load();
+        var drone = Drone("DRN-PLAYER-01", "CHR-PILOT-1", "BAY-01", 0);
+        engine.SetOwnedWingForTests("SPC-0001", new[] { drone });
+
+        // Two installed engines: a shorter list is allowed, factors must stay in (0, 1].
+        engine.SetOwnedWingForTests("SPC-0001", new[] { drone with { EngineFactors = [1.0, 0.5] } });
+        Assert.Throws<ScenarioException>(() =>
+            engine.SetOwnedWingForTests("SPC-0001", new[] { drone with { EngineFactors = [1.0, 0.0] } }));
+        Assert.Throws<ScenarioException>(() =>
+            engine.SetOwnedWingForTests("SPC-0001", new[] { drone with { EngineFactors = [1.0, 1.5] } }));
+        Assert.Throws<ScenarioException>(() =>
+            engine.SetOwnedWingForTests("SPC-0001", new[] { drone with { EngineFactors = [1.0, 1.0, 1.0] } }));
+    }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
@@ -11,12 +12,17 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
 {
     private sealed record Choice(string Id, string Label, int Count = 0);
     private sealed record DroneRow(TacticalDroneSetupOption Drone, DropDown<Choice> Gun, DropDown<Choice> Plate, DropDown<Choice> Shield);
+    private sealed record OwnedWingRow(string DroneId, string FrameId, string WeaponId, string ArmorId, string Shield);
     private readonly TextInputBox _seed = new(20, c => c is >= '0' and <= '9' or '-' or '−');
     private readonly ShortcutButton _random = new(L("RandomSeed"), tooltip: L("RandomSeedHelp"));
     private readonly ShortcutButton _start = new(L("Start"), "Enter");
     private readonly ShortcutButton _back = new(L("ToMap"), "Esc");
     private readonly List<DroneRow> _rows = [];
+    private readonly List<OwnedWingRow> _ownedRows = [];
     private readonly List<DropDown<Choice>> _fields = [];
+    private ImmutableArray<OwnedDroneSnapshot> _wingComposition = [];
+    private bool _ownedMode;
+    private bool _wingReady;
     private TacticalBattleOptions? _options;
     private TacticalScenarioOption? _scenario;
     private DropDown<Choice>? _scenarios, _ownTactic, _enemyTactic;
@@ -25,6 +31,13 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
     private float _scroll;
     internal TacticalBattleSetupLayout? CurrentLayout => _layout;
     internal string SeedText => _seed.Text;
+    /// <summary>The player's own ready wing shown read-only; empty when the carrier surface is absent or has no ready drone.</summary>
+    internal ImmutableArray<OwnedDroneSnapshot> WingComposition => _wingComposition;
+    /// <summary>True when the setup draws the persistent carrier wing instead of encounter defaults.</summary>
+    internal bool OwnedWingMode => _ownedMode;
+    /// <summary>Per-row equipment dropdowns; the owned F8 entry must never expose any (zero loadout grants).</summary>
+    internal int EditableLoadoutControls => _rows.Count * 3;
+    private int RowCount => _ownedMode ? _ownedRows.Count : _rows.Count;
     private int SeedFocus => _fields.Count;
     private int RandomFocus => SeedFocus + 1;
     private int StartFocus => SeedFocus + 2;
@@ -37,10 +50,37 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
     }
     internal override bool CanStart
     {
-        get { EnsureForm(); return base.CanStart && _scenario is not null && TrySeed(out _); }
+        get { EnsureForm(); return base.CanStart && _scenario is not null && TrySeed(out _) && _wingReady; }
+    }
+    /// <summary>
+    /// The F8 sortie launches the persistent owned wing, never the encounter's diagnostic drones:
+    /// a legacy producer without the carrier surface, or a carrier with no ready drone, is an
+    /// explicit explanation instead of a fabricated editable loadout.
+    /// </summary>
+    private void EnsureWing()
+    {
+        var carrier = Flow.Session.CarrierOperations;
+        if (carrier is null)
+        {
+            _ownedMode = false;
+            _wingReady = false;
+            _wingComposition = [];
+            _ownedRows.Clear();
+            return;
+        }
+        _ownedMode = true;
+        _wingComposition = carrier.OwnedDrones.IsDefaultOrEmpty
+            ? []
+            : carrier.OwnedDrones.Where(drone => drone.ReadinessReasons.IsDefaultOrEmpty).ToImmutableArray();
+        _wingReady = !_wingComposition.IsEmpty;
+        _ownedRows.Clear();
+        foreach (var drone in _wingComposition)
+            _ownedRows.Add(new(drone.Id, drone.FrameId, drone.WeaponId, drone.ArmorId,
+                drone.ShieldId is { Length: > 0 } shield ? shield + (drone.ShieldCount > 0 ? " ×" + drone.ShieldCount : "") : ""));
     }
     private void EnsureForm()
     {
+        EnsureWing();
         if (Flow.Options is not { Availability.Available: true } options || options.Scenarios.IsDefaultOrEmpty || ReferenceEquals(_options, options)) return;
         _options = options;
         _scenarios = Dropdown(options.Scenarios.Select(s => new Choice(s.Id, s.Name)));
@@ -58,23 +98,9 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
         _scenario = options.Scenarios.First(s => s.Id == id);
         var previous = restore && Flow.LastStart?.ScenarioId == id ? Flow.LastStart : null;
         _rows.Clear(); _fields.Clear(); _fields.Add(_scenarios!);
-        var guns = options.Weapons.Select(w => new Choice(w.Id, WeaponLabel(w))).ToArray();
-        var plates = options.Armor.Select(p => new Choice(p.Id, F("KitArmor", p.Name, N(p.Armor), N(p.Mass)))).ToArray();
-        foreach (var drone in _scenario.Drones.Where(d => d.Side == _scenario.PlayerSide))
-        {
-            var gun = Dropdown(guns); var plate = Dropdown(plates);
-            var shields = new List<Choice> { new("", L("NoShield")) };
-            foreach (var shield in options.Shields)
-                for (int count = 1; count <= drone.ShieldSlots; count++)
-                    shields.Add(new(shield.Id, F("KitShield", shield.Name, N(count), N((double)shield.Defense * count), N(shield.Mass * count)), count));
-            var shieldSelect = Dropdown(shields);
-            var saved = previous is not null && !previous.Loadout.IsDefaultOrEmpty ? previous.Loadout.FirstOrDefault(l => l.DroneId == drone.Id) : null;
-            Select(gun, saved?.GunId ?? drone.WeaponId);
-            Select(plate, saved?.PlateId ?? drone.ArmorId);
-            Select(shieldSelect, saved is null ? drone.ShieldId ?? "" : saved.ShieldId ?? "", saved?.ShieldCount ?? drone.ShieldCount);
-            _rows.Add(new(drone, gun, plate, shieldSelect));
-            _fields.Add(gun); _fields.Add(plate); _fields.Add(shieldSelect);
-        }
+        // Encounter drones describe the diagnostic battle only. The owned F8 entry renders the
+        // persistent wing read-only (EnsureWing), so no per-drone weapon/armor/shield controls are
+        // ever created and BuildStartRequest can never grant equipment.
         var tactics = options.Tactics.Select(t => new Choice(t.Id, t.Name)).ToArray();
         _ownTactic = Dropdown(tactics); _enemyTactic = Dropdown(tactics);
         Select(_ownTactic, previous?.OwnTacticId ?? _scenario.OwnTacticId);
@@ -116,14 +142,22 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
     {
         EnsureForm();
         if (_scenario is null || !TrySeed(out long seed)) throw new InvalidOperationException("Battle setup is not ready.");
-        return new(TacticalBattleFlow.NewIdentity("start"), seed, _scenario.Id, _ownTactic!.SelectedItem.Id, _enemyTactic!.SelectedItem.Id,
-            [.. _rows.Select(r => new TacticalLoadoutChoice(r.Drone.Id, r.Gun.SelectedItem.Id, r.Plate.SelectedItem.Id,
-                r.Shield.SelectedItem.Id.Length == 0 ? null : r.Shield.SelectedItem.Id, r.Shield.SelectedItem.Count))]);
+        // Read the carrier revision at submit time: a cached revision from form construction would
+        // go stale after any settlement/rearm and the engine would (correctly) reject the start.
+        var carrier = Flow.Session.CarrierOperations;
+        if (!_ownedMode || !_wingReady || carrier is null)
+            throw new InvalidOperationException("Battle setup requires a ready owned wing.");
+        return new(TacticalBattleFlow.NewIdentity("start"), seed, _scenario.Id,
+            _ownTactic!.SelectedItem.Id, _enemyTactic!.SelectedItem.Id)
+        {
+            SourceShipId = carrier.ShipId,
+            ExpectedCarrierRevision = carrier.Revision,
+        };
     }
     private void LayoutControls()
     {
         if (_width <= 0 || _height <= 0 || _scenarios is null || _ownTactic is null || _enemyTactic is null) return;
-        var layout = new TacticalBattleSetupLayout(_width, _height, UiScale, _rows.Count, _scroll);
+        var layout = new TacticalBattleSetupLayout(_width, _height, UiScale, RowCount, _scroll);
         _layout = layout; _scroll = layout.Scroll;
         _scenarios.Layout(layout.Scenario, layout.Viewport);
         for (int row = 0; row < _rows.Count; row++)
@@ -153,8 +187,18 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
         DrawParagraph(canvas, F("SetupRules", _scenario.PlayerSide), layout.Rules);
         string[] headings = ["Drone", "FrameSkills", "Weapon", "Armor", "Shield"];
         for (int i = 0; i < headings.Length; i++) ControlVisuals.Label(canvas, L(headings[i]), layout.ColumnTitle(i), true, 1);
-        for (int i = 0; i < _rows.Count; i++)
+        for (int i = 0; i < RowCount; i++)
         {
+            if (_ownedMode)
+            {
+                var owned = _ownedRows[i];
+                DrawParagraph(canvas, owned.DroneId, layout.RowCell(i, 0));
+                DrawParagraph(canvas, owned.FrameId, layout.RowCell(i, 1));
+                DrawParagraph(canvas, owned.WeaponId, layout.RowCell(i, 2));
+                DrawParagraph(canvas, owned.ArmorId, layout.RowCell(i, 3));
+                DrawParagraph(canvas, owned.Shield, layout.RowCell(i, 4));
+                continue;
+            }
             var row = _rows[i];
             DrawParagraph(canvas, row.Drone.Id, layout.RowCell(i, 0));
             DrawParagraph(canvas, row.Drone.FrameName + "\n" + F("SetupSkills", Skill(row.Drone.Accuracy), Skill(row.Drone.Maneuver)), layout.RowCell(i, 1));
@@ -171,6 +215,8 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
         _start.Enabled = CanStart; _back.Enabled = !Flow.Pending;
         _start.Draw(canvas); _back.Draw(canvas);
         string status = BlockedNotice is { Length: > 0 } notice ? notice : Flow.Pending ? L("Waiting") : !TrySeed(out _) ? L("InvalidSeed") : Flow.Error;
+        if (!_ownedMode) status = L("UnsupportedWing");
+        else if (!_wingReady) status = L("NoReadyWing");
         if (status.Length > 0) DrawParagraph(canvas, status, layout.Status);
         foreach (var field in _fields) field.DrawPopup(canvas);
         foreach (var field in _fields) field.DrawTooltip(canvas, layout.Viewport);

@@ -17,6 +17,12 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     private readonly Task _engineLoopTask;
     private readonly string? _saveDirectory;
     private readonly SemaphoreSlim _saveGate = new(1, 1);
+    // Owned-exit receipts by BattleId and the subset whose continuation checkpoint reached disk.
+    // Guarded by _checkpointGate, which serializes the engine call + storage phase so concurrent
+    // duplicate exits settle exactly once.
+    private readonly Dictionary<string, TacticalBattleResponse> _settledExits = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _checkpointedBattles = new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _checkpointGate = new(1, 1);
     private volatile bool _disposed;
     private readonly TaskCompletionSource _snapshotReaderStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -125,8 +131,79 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         TacticalCall(() => _engine.MoveTacticalBattle(request), cancellationToken);
     public ValueTask<TacticalBattleResponse> FireTacticalBattleAsync(FireTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
         TacticalCall(() => _engine.FireTacticalBattle(request), cancellationToken);
-    public ValueTask<TacticalBattleResponse> ExitTacticalBattleAsync(ExitTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
-        TacticalCall(() => _engine.ExitTacticalBattle(request), cancellationToken);
+
+    /// <summary>
+    /// Exit the active battle and own the campaign-continuation storage phase (EP-0029 US-0012).
+    /// An owned sortie settles exactly once in the engine; its accepted receipt is cached by
+    /// BattleId, and the post-commit world is written atomically to the reserved continuation slot
+    /// (see <see cref="SaveAsync"/>). Repeating the same BattleId — even with a new CommandId —
+    /// retries only a previously failed checkpoint write and never re-settles. A storage failure
+    /// after the commit surfaces as a recoverable <see cref="IOException"/> while the cached
+    /// receipt stays retryable; diagnostic (non-owned) exits and rejections pass through unchanged.
+    /// </summary>
+    public async ValueTask<TacticalBattleResponse> ExitTacticalBattleAsync(ExitTacticalBattleRequest request, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (request is null)
+            return _engine.ExitTacticalBattle(request!);
+        if (string.IsNullOrEmpty(request.BattleId))
+            return _engine.ExitTacticalBattle(request); // engine rejects an unroutable battle id
+
+        await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_settledExits.TryGetValue(request.BattleId, out var accepted))
+            {
+                if (!_checkpointedBattles.Contains(request.BattleId))
+                    await WriteContinuationCheckpointAsync(request.BattleId, cancellationToken).ConfigureAwait(false);
+                return accepted;
+            }
+
+            var response = _engine.ExitTacticalBattle(request);
+            if (!response.Accepted || response.Settlement is null)
+                return response;
+
+            // Cache before the write: a failed or cancelled checkpoint must stay retryable and
+            // must never reach the engine (and its loss/settlement) a second time.
+            _settledExits[request.BattleId] = response;
+            await WriteContinuationCheckpointAsync(request.BattleId, cancellationToken).ConfigureAwait(false);
+            return response;
+        }
+        finally
+        {
+            _checkpointGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Write the continuation checkpoint for an already-settled owned exit. SaveAsync captures the
+    /// post-commit world under <see cref="SimulationEngine.CaptureSaveState"/>, which the engine
+    /// refuses while a battle is active, so this must run only after ExitTacticalBattle cleared
+    /// the session. Legacy/test connections without a save directory have nothing to write and
+    /// are marked checkpointed.
+    /// </summary>
+    private async ValueTask WriteContinuationCheckpointAsync(string battleId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_saveDirectory))
+        {
+            _checkpointedBattles.Add(battleId);
+            return;
+        }
+
+        try
+        {
+            await SaveAsync(SaveSlotNaming.ContinuationSlotId, cancellationToken).ConfigureAwait(false);
+            _checkpointedBattles.Add(battleId);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or OperationCanceledException or ObjectDisposedException)
+        {
+            // The world is already committed: storage is a recoverable post-commit phase. The
+            // Client maps this IOException to an Unavailable receipt instead of an engine rejection.
+            throw new IOException($"campaign checkpoint failed: {error.Message}", error);
+        }
+    }
+
     public ValueTask<CarrierCommandResponse> RearmDroneAsync(RearmDroneRequest request, CancellationToken cancellationToken = default) =>
         TacticalCall(() => _engine.RearmDrone(request), cancellationToken);
 

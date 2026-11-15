@@ -8,11 +8,11 @@ approval_kind: workflow-only
 layer: engine
 test_project: DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0029-US-0001-TK-0004-module-validation, EP-0029-US-0002-TK-0003-pilot-catalog, EP-0029-US-0003-TK-0003-wing-mass, EP-0029-US-0004-TK-0005-ammo-exhaustion, EP-0029-US-0007-TK-0003-catalog-compatibility]
-files_touched: 4
+files_touched: 5
 serves: [AC-01, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Один manifest корабля для двух стартов
@@ -38,6 +38,7 @@ implementation_status: not-started
 | [src/DeepSpaceSaga.Engine/Scenario/StarterCarrierManifest.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/StarterCarrierManifest.cs) | Новый проектируемый файл; до выполнения отсутствует. | Только «Один manifest корабля для двух стартов» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs) | `src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Один manifest корабля для двух стартов» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs) | `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Один manifest корабля для двух стартов» по шагам ниже, без соседних историй. |
+| [src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs](../../../../../src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs) | `src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs:1` — существующий owning file; передаёт settings-каталог как content root при New Game. | Только «Один manifest корабля для двух стартов» по шагам ниже, без соседних историй. |
 | [tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0011Tk0001Tests.cs](../../../../../tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0011Tk0001Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0011Tk0001Tests ниже с независимым oracle. |
 
 ## Public API after the change
@@ -88,7 +89,7 @@ Matching project: `tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.c
 ```powershell
 dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --filter "FullyQualifiedName~Ep0029Us0011Tk0001Tests" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0029/<run>/US-0011-TK-0001" --logger "trx;LogFileName=focused.trx"
 dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --no-restore
-dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/DeepSpaceSaga.Engine/Scenario/StarterCarrierManifest.cs src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0011Tk0001Tests.cs
+dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/DeepSpaceSaga.Engine/Scenario/StarterCarrierManifest.cs src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0011Tk0001Tests.cs
 ```
 
 Stdout/stderr build/format перенаправить в абсолютные файлы того же run. Не писать validation artifacts в репозиторий. Для content также parse JSON и resource links в named tests. Full suite не заменяет focused tests.
@@ -97,7 +98,7 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Definition of Done
 
-- Шаги выполнены в 4 разрешённых файлах, один production layer.
+- Шаги выполнены в 5 разрешённых файлах, один production layer.
 - Named tests подтверждают часть AC-01, AC-04; полное покрытие story сверено по карте.
 - Focused tests и owning build/format выполнены; исходные падения записаны отдельно.
 - API/schema, identity, atomic rejection и остатки ресурсов соответствуют эпику.
@@ -110,4 +111,32 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implementation status: **implemented** (automated PASS; native/product OPEN).
+
+- Board amendment applied before code: allowlist 4→5 files (`EngineContentLoader.cs` added), DoD says 5 files; `Tickets.md` row updated. Process-only, no product change.
+- TDD red: focused run before implementation failed for the expected missing API (`LoadFromFile` has no `contentRoot`, `ScenarioMetadata.StarterCarrierManifest` missing) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-038-us0011tk0001/red.stdout.txt`.
+- Implementation: `StarterCarrierManifest` DTO (schema 1, `UnmappedMemberHandling.Disallow`, hull/modules/crew/carrierState required), `scenarioMetadata.starterCarrierManifest` (null omitted), New Game-only resolution in `ScenarioLoader.LoadFromFile` with content root, traversal/rooted/containment rejection, inline-conflict rejection, expansion before `ValidateAndNormalize`, metadata stripped; `EngineContentLoader` passes the settings directory as content root. Saves and `LoadFromJson` never resolve a manifest.
+- Focused tests (7/7 passed, 0 failed):
+  `dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --filter "FullyQualifiedName~Ep0029Us0011Tk0001Tests" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-038-us0011tk0001/US-0011-TK-0001" --logger "trx;LogFileName=focused.trx"`
+  Evidence: `run-038-us0011tk0001/focused.stdout.txt`, `run-038-us0011tk0001/US-0011-TK-0001/focused.trx`.
+  Named: `DefaultAndTutorialResolveSameCarrier` (identical expanded carrier; 24 hull cells / 9 modules / 6 crew / 4 drones / 78 torpedoes), `LoadNeverReappliesManifest` (ammo 12→7 and hold 42→5 persist; stale reference not applied), `ConflictingInlineAndManifestReject`, `TraversalRejected`; plus rooted-path, missing-file and `LoadFromJson` rejection checks.
+- Owning build PASS: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --no-restore` → 0 warnings, 0 errors (`run-038-us0011tk0001/engine-build.stdout.txt`).
+- Scoped format PASS: `dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include <the 5 allowlisted files>` → exit 0 (`run-038-us0011tk0001/format.stdout.txt`).
+- Serves AC-01/AC-04 (partially; story coverage across TK-0001…TK-0003). Native/UI and product acceptance: **OPEN** — no native run was performed for this engine ticket.
+
+## Remediation 2026-11-15
+
+Verified finding (remediation review P1, item 4, scale half): `ScenarioLoader.ValidateCrewAssignments` capped world crew `accuracySkill`/`maneuverabilitySkill` at the legacy module-operation range 0..30. The tactical skill scale is 0..100 (`Data/TacticalBattle/pilots.json` carries 55/52/53/55/59/54/50/51), so the starter manifest could not record the Board-approved pilot skills without a loader change.
+
+Fix (narrow, reversible): the two range checks widen to 0..100 and the rejection messages say so; no other validation rule changed. Values above 100 and below 0 are still rejected. The starter manifest then carries the Board table (TK-0002 remediation), and owned drones read those values from the persistent crew record (US-0005 TK-0002 remediation).
+
+Named tests (`Ep0029Us0011Tk0001Tests`, temp New Game scenarios):
+- `CrewSkillsUpToHundredAreAccepted` — 100/100 (boundary) and 55/52 load and preserve the values.
+- `CrewSkillAboveHundredIsRejected` — 101 on either skill still throws `ScenarioException`.
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0011Tk0001Tests"` → 1 failed / 8 passed (`CrewSkillsUpToHundredAreAccepted` rejected 100/100 under the 0..30 cap) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-045-us0011tk0001/red.stdout.txt`.
+- Green: same filter → 9/9 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-045-us0011tk0001/US-0011-TK-0001/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

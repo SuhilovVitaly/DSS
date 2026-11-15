@@ -20,15 +20,25 @@ public static class SaveSlotRepository
             return Array.Empty<SaveSlotInfo>();
 
         return Directory.EnumerateFiles(saveDirectory, "*.json")
-            .Select(path => new SaveSlotInfo(
-                SlotId: Path.GetFileNameWithoutExtension(path),
-                DisplayName: Path.GetFileNameWithoutExtension(path),
-                SavedAtUtc: File.GetLastWriteTimeUtc(path), GameTimeMs: ReadGameTime(path)))
+            .Select(path =>
+            {
+                string slotId = Path.GetFileNameWithoutExtension(path);
+                return new SaveSlotInfo(
+                    SlotId: slotId,
+                    DisplayName: DisplayName(slotId),
+                    SavedAtUtc: File.GetLastWriteTimeUtc(path), GameTimeMs: ReadGameTime(path));
+            })
             .OrderByDescending(slot => slot.SavedAtUtc)
             .ToArray();
     }
 
-    /// <summary>Delete a save slot's file, if present. No-op if the slot doesn't exist.</summary>
+    /// <summary>
+    /// Display name for a slot id: ordinary slots show their id, while the reserved automatic
+    /// continuation checkpoint gets its fixed, localized-neutral campaign label.
+    /// </summary>
+    private static string DisplayName(string slotId) =>
+        slotId == SaveSlotNaming.ContinuationSlotId ? SaveSlotNaming.ContinuationDisplayName : slotId;
+
     private static long? ReadGameTime(string path)
     {
         try

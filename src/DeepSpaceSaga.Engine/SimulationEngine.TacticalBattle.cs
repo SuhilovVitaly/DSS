@@ -99,16 +99,24 @@ public sealed partial class SimulationEngine
         if (!catalog.Ai.Tactics.Contains(ownTactic) || !catalog.Ai.Tactics.Contains(enemyTactic))
             return RejectTactical(request.CommandId, TacticalBattleRejectionCode.UnknownTactic);
 
-        // Ready wing: a destroyed/tombstoned drone is never deployed; an empty wing refuses entry.
-        var readyWing = GetOwnedWing(sourceShipId).Where(d => !d.Destroyed).ToImmutableArray();
-        if (readyWing.IsEmpty)
+        // Ready wing: a destroyed/tombstoned or disabled drone is never deployed, and a drone whose
+        // hangar is not structurally intact, powered on and operationally ready cannot launch. The
+        // assembly receives the FULL wing in stable DroneId order plus the deployable set, so an
+        // unavailable drone leaves its encounter slot unused instead of shifting survivors onto
+        // another pilot's alias. An empty deployable set refuses entry (never a fallback).
+        var wing = GetOwnedWing(sourceShipId).OrderBy(d => d.DroneId, StringComparer.Ordinal).ToImmutableArray();
+        var deployable = wing
+            .Where(d => !d.Destroyed && !d.Disabled && IsHangarReady(d.HangarModuleId))
+            .Select(d => d.DroneId)
+            .ToImmutableHashSet(StringComparer.Ordinal);
+        if (deployable.IsEmpty)
             return RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoReadyDrones);
 
         int hullMax = GetCarrierHullMax(sourceShipId);
         int hullCurrent = GetCarrierHullCurrent(sourceShipId, hullMax);
         int maneuver = GetShipManeuver(sourceShipId);
-        var battle = OwnedBattleAssembly.Create(catalog, sourceShipId, hullCurrent, maneuver, readyWing,
-            ship.Crew, scenario, scenarioId, request.Seed, playerSide);
+        var battle = OwnedBattleAssembly.Create(catalog, sourceShipId, hullCurrent, maneuver, wing,
+            ship.Crew, scenario, scenarioId, request.Seed, playerSide, deployable);
         var session = TacticalBattleSession.Create(battle, request.CommandId, playerSide);
         _tacticalBattleSession = session;
         _tacticalBattleSourceShipId = sourceShipId;

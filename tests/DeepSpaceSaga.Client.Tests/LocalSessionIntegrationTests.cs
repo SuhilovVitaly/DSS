@@ -413,7 +413,9 @@ public class LocalSessionIntegrationTests
 
             foreach (var scenarioPath in scenarioPaths)
             {
-                var source = ScenarioLoader.LoadFromFile(scenarioPath);
+                // The copied Default scenario keeps its starterCarrierManifest reference; resolve it
+                // against the real content root (the same directory EngineContentLoader uses).
+                var source = ScenarioLoader.LoadFromFile(scenarioPath, contentRoot: Path.GetDirectoryName(settingsPath));
                 var sourceShip = Assert.Single(source.GameState.SpaceObjects,
                     obj => obj.ObjectId == source.GameState.PlayerShipObjectId);
                 using var engine = SimulationEngine.CreateFromScenarioFile(settingsPath, scenarioPath);

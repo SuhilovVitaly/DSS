@@ -8,11 +8,11 @@ approval_kind: workflow-only
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0029-US-0013-TK-0001-engine-acceptance]
-files_touched: 2
+files_touched: 6
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Реальный session flow и визуальная проверка
@@ -37,6 +37,10 @@ implementation_status: not-started
 |---|---|---|
 | [tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialBattleWinnabilityTests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialBattleWinnabilityTests.cs) | `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialBattleWinnabilityTests.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Обновить test path под owned contract, не ослабляя исходы. |
 | [tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0013Tk0002Tests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0013Tk0002Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0013Tk0002Tests ниже с независимым oracle. |
+| [tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SetupScreenTests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SetupScreenTests.cs) | Ожидания старого editable F8 loadout (gun/plate/shield dropdowns, Loadout в start request); после US-0012 TK-0002 red. | Process-only amendment (2→6 files): ожидания owned read-only wing (0 editable controls, empty Loadout, SourceShipId/revision, units use owned equipment), legacy editable-path проверки не ослабляют production. |
+| [tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/Ep0019Scenes.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/Ep0019Scenes.cs) | F8 setup expectation на encounter loadout; legacy content fixture не содержит starter manifest. | Process-only amendment (2→6 files): owned read-only setup expectation, adapter alias→owned DroneId для выбора слотов, копия `Data/Ships/starter-carrier.json` в content fixture. |
+| [tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs) | Temp-копии Default/Docked/Undocked загружаются без contentRoot; Default теперь содержит starterCarrierManifest reference. | Process-only amendment (2→6 files): передать `contentRoot: Path.GetDirectoryName(settingsPath)` при загрузке temp-копии; остальные assertions без изменений. |
+| [tests/DeepSpaceSaga.Client.Tests/TacticalBattle/LocalizationCoverageTests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/TacticalBattle/LocalizationCoverageTests.cs) | Battle-screen language test сравнивает own cards с encounter drone rows. | Process-only amendment (2→6 files): own cards читают identity/equipment из CarrierOperations, enemy rows остаются encounter-based; locale coverage сохраняется. |
 
 ## Public API after the change
 
@@ -91,7 +95,7 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Definition of Done
 
-- Шаги выполнены в 2 разрешённых файлах, один production layer.
+- Шаги выполнены в 6 разрешённых файлах (allowlist amendment 2→6, process-only, зафиксировано в Code context), один production layer.
 - Named tests подтверждают часть AC-01, AC-02, AC-03, AC-04; полное покрытие story сверено по карте.
 - Focused tests и owning build/format выполнены; исходные падения записаны отдельно.
 - API/schema, identity, atomic rejection и остатки ресурсов соответствуют эпику.
@@ -105,3 +109,23 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 ## Execution evidence
 
 NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+
+## Execution evidence 2026-11-15
+
+Implementation status: **implemented**. Automated tests are **NOT RUN** in this batch по прямому указанию пользователя (no `dotnet test`, no TDD red/green); named tests written and deferred to the final full-suite run. PASS не заявляется.
+
+Изменено (allowlist expansion 2→6, process-only; production-код не менялся):
+- `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialBattleWinnabilityTests.cs` — `Play` стартует owned carrier из production loader (`SourceShipId`/`ExpectedCarrierRevision`), Enter-only и hint-following orders сохранены, реальная win-проверка не ослаблена; `Result` дополнен settlement consumption, отчёт пишет consumed.
+- `tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0013Tk0002Tests.cs` — новый класс:
+  - `OwnedTutorialRearmSecondBattle` — real LocalGameSessionConnection/GameSessionHandle: owned Tutorial → exit (settlement) → rearm через handle → second battle с теми же ShipId/DroneId/CrewId и восстановленным магазином.
+  - `TutorialEnterAndHintsReportActualOutcome` — seed1 Enter-only и hints, реальный outcome/losses/consumption в отчёт, победа не форсируется.
+  - `AmmoReplayDoesNotShowFutureState` — frame-consistent replay: кадр читает свой step magazine, не финальный/future.
+  - `RussianEnglishNamesAndReservedSeats` — 6 crew, 8 cabins, 2 reserved/0 prisoners, locale-независимые имена/портреты, совпадение с tactical build в RU и EN.
+- `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SetupScreenTests.cs` — owned read-only ожидания: 0 editable loadout controls, пустой Loadout, ShipId/revision из carrier snapshot, юниты используют owned equipment; scenario/seed/tactics coverage сохранён; legacy row test адаптирован к owned contract без ослабления production.
+- `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/Ep0019Scenes.cs` — owned F8 setup expectation, alias→owned DroneId mapping, starter manifest скопирован в legacy content fixture.
+- `tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs` — `contentRoot` для temp-копий Default/Docked/Undocked; прочие assertions не менялись.
+- `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/LocalizationCoverageTests.cs` — own battle cards читают identity/equipment из CarrierOperations, enemy rows остаются encounter-based.
+
+Known final-suite risk (не скрывается): seed-1 owned Tutorial может больше не быть победой; существующий `TutorialBattleWinnabilityTests` сохраняет реальное win assertion, поэтому финальный прогон должен это показать (checkpoint C1).
+
+Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; single batch compile `dotnet build DeepSpaceSaga.sln --no-restore` -> **Build succeeded, 0 warnings, 0 errors** (после fix-коммита); native RU/EN UI gate **OPEN**; product/human acceptance **OPEN**.

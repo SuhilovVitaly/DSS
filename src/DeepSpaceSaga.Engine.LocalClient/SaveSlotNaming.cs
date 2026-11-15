@@ -13,6 +13,16 @@ public static class SaveSlotNaming
     private const int MaxSanitizedLength = 64;
 
     /// <summary>
+    /// Reserved slot that receives the automatic campaign-continuation checkpoint after every
+    /// owned sortie (EP-0029 US-0012). It is an ordinary loadable slot; its file stays
+    /// "campaign-continuation.json".
+    /// </summary>
+    public const string ContinuationSlotId = "campaign-continuation";
+
+    /// <summary>Human-readable name shown for the continuation slot in the Load list.</summary>
+    public const string ContinuationDisplayName = "Campaign Continuation";
+
+    /// <summary>
     /// Reduce an arbitrary slot id to a safe file-name stem: keeps letters, digits,
     /// spaces, '-' and '_'; drops everything else; trims and caps length. If nothing
     /// survives (e.g. an empty or fully-illegal input), falls back to a UTC-timestamp

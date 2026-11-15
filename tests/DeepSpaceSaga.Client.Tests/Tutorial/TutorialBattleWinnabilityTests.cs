@@ -39,7 +39,7 @@ public sealed class TutorialBattleWinnabilityTests
     }
 
     internal sealed record Result(long Seed, string Scenario, TacticalBattleOutcomeCode? Outcome, string Reasons, int Turn,
-        string Losses, string HintActions);
+        string Losses, string HintActions, int ConsumedTorpedoes);
 
     private static void AssertWon(Result result)
     {
@@ -58,7 +58,15 @@ public sealed class TutorialBattleWinnabilityTests
     {
         using var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(AppContext.BaseDirectory, "Settings.json"), TutorialPath);
         engine.SetSpeed(SimulationSpeed.Speed0);
-        var started = engine.StartTacticalBattle(new StartTacticalBattleRequest("winnability-start", seed));
+        // EP-0029: the Tutorial launches the player's persistent owned carrier wing, not the
+        // encounter's diagnostic drones. The authoritative ShipId/revision come from the snapshot.
+        var carrier = engine.CaptureSnapshot().CarrierOperations
+            ?? throw new InvalidOperationException("The tutorial starter must own a carrier surface.");
+        var started = engine.StartTacticalBattle(new StartTacticalBattleRequest("winnability-start", seed, "initial")
+        {
+            SourceShipId = carrier.ShipId,
+            ExpectedCarrierRevision = carrier.Revision,
+        });
         Assert.True(started.Accepted, "tutorial battle start rejected: " + started.Code);
         var state = started.State!;
         var orders = new TacticalBattleOrders();
@@ -108,13 +116,17 @@ public sealed class TutorialBattleWinnabilityTests
         }
         string losses = string.Join(", ", state.Losses.Select(l => $"{l.Side}:{l.Count}"));
         string reasons = state.Outcome is null ? "" : string.Join(", ", state.Outcome.Reasons.Select(r => $"{r.Kind}"));
-        return new(seed, state.ScenarioId, state.Outcome?.Kind, reasons, state.Turn, losses, string.Join(" ", actions));
+        var exit = engine.ExitTacticalBattle(new ExitTacticalBattleRequest("winnability-exit", state.BattleId));
+        Assert.True(exit.Accepted, "tutorial battle exit rejected: " + exit.Code);
+        int consumed = exit.Settlement?.ConsumedTorpedoes ?? 0;
+        return new(seed, state.ScenarioId, state.Outcome?.Kind, reasons, state.Turn, losses,
+            string.Join(" ", actions), consumed);
     }
 
     private static void Report(string policy, Result result)
     {
         if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is not { Length: > 0 } root) return;
         File.AppendAllText(Path.Combine(root, "winnability.txt"), string.Create(CultureInfo.InvariantCulture,
-            $"{policy}: seed={result.Seed} scenario={result.Scenario} outcome={result.Outcome} turn={result.Turn} reasons=[{result.Reasons}] losses=[{result.Losses}] hintActions={result.HintActions}{Environment.NewLine}"));
+            $"{policy}: seed={result.Seed} scenario={result.Scenario} outcome={result.Outcome} turn={result.Turn} reasons=[{result.Reasons}] losses=[{result.Losses}] consumed={result.ConsumedTorpedoes} hintActions={result.HintActions}{Environment.NewLine}"));
     }
 }

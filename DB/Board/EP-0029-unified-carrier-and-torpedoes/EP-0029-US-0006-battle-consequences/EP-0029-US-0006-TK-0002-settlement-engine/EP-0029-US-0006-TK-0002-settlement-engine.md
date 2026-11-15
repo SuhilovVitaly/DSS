@@ -37,8 +37,8 @@ implementation_status: implemented
 |---|---|---|
 | [src/DeepSpaceSaga.Engine/SimulationEngine.SortieSettlement.cs](../../../../../src/DeepSpaceSaga.Engine/SimulationEngine.SortieSettlement.cs) | Новый проектируемый файл; до выполнения отсутствует. | Только «Единоразовая фиксация повреждений» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs](../../../../../src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs) | `src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Единоразовая фиксация повреждений» по шагам ниже, без соседних историй. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.Carrier.cs](../../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Carrier.cs) | Новый проектируемый файл; до выполнения отсутствует. | Только «Единоразовая фиксация повреждений» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Engine/Scenario/CarrierStateData.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/CarrierStateData.cs) | Новый проектируемый файл; до выполнения отсутствует. | Только «Единоразовая фиксация повреждений» по шагам ниже, без соседних историй. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.OwnedWing.cs](../../../../../src/DeepSpaceSaga.Engine/SimulationEngine.OwnedWing.cs) | `src/DeepSpaceSaga.Engine/SimulationEngine.OwnedWing.cs:1` — owning file проекции крыла; заменяет `SimulationEngine.Carrier.cs` в allowlist по амендменту remediation 2026-11-15 (persisted disabled/engineFactors проецируются в `OwnedDroneSnapshot`). | Только «Единоразовая фиксация повреждений»: persisted `disabled`/`engineFactors` и их проекция, без соседних историй. |
 | [tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0006Tk0002Tests.cs](../../../../../tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0006Tk0002Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0006Tk0002Tests ниже с независимым oracle. |
 
 ## Public API after the change
@@ -112,5 +112,25 @@ Added `SimulationEngine.CommitSortieOutcome(session, exitKind)` (atomic, under t
 
 - `dotnet test --filter "FullyQualifiedName~Ep0029Us0006Tk0002Tests"` — **5/5 passed** (`FinishThenExitSettlesOnce`, `LostDroneAmmoNotRecovered`, `DisabledReturnsDamaged`, `AbortPreservesSpentAmmo`, `HullZeroMarksWorldDestroyed`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-020-us0006tk0002/US-0006-TK-0002/focused.trx`.
 - `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15
+
+Verified finding (remediation review P1, item 2, persistence half): `CommitSortieOutcome` copied only hull/armor/ammo/jam/decoy. `TacticalDroneStatus.Disabled` and per-engine `TacticalEngineState.Factor` had no persisted fields in `OwnedDroneData`, so the next sortie rebuilt intact engines and an Air drone — damage was lost between battles.
+
+Fix (schema 1 stays, optional members, absent = Air/intact):
+- `OwnedDroneData` appends `disabled` (bool, default false) and `engineFactors` (`IReadOnlyList<double>?`, default null = all intact, in `EngineIds` order).
+- `CommitSortieOutcome` survivor update writes `Disabled = drone.Status == TacticalDroneStatus.Disabled` and `EngineFactors = drone.Engines.Select(e => e.Factor).ToArray()`. Destroyed drones stay tombstones with their previous values.
+- `BuildOwnedWingProjection` populates `OwnedDroneSnapshot.EngineDamage` (index/engineId/`Ok` when the factor is intact, `Damaged` otherwise) and adds readiness reason `disabled`; `destroyed` still takes precedence.
+- `OwnedWingValidator` validates persisted factors against the installed engines (count <= engines, each in `(0,1]`), so a corrupted save is rejected at load.
+- Allowlist amendment (process-only, still 5 files): `SimulationEngine.Carrier.cs` (not needed by this remediation) is replaced by `SimulationEngine.OwnedWing.cs`, which owns the wing projection the fix must change.
+
+Named tests (`Ep0029Us0006Tk0002Tests`): `SettlementPersistsDisabledAndEngineDamage` (saved carrierState `disabled=true`, `engineFactors=[1.0,0.5]`; snapshot readiness `disabled`, not `destroyed`; `EngineDamage` = index 0 `Ok`, index 1 `Damaged`), `DisabledDroneSurvivesRoundTrip` (CaptureSaveState → `LoadScenario(isSave:true)` keeps the flag, the factors, the revision 1 and the settlement receipt — no re-settlement), `WingRejectsInvalidEngineFactors` (0.0, 1.5 and an extra factor are rejected; `[1.0,0.5]` accepted).
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0006Tk0002Tests"` → 3 failed / 5 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-043-us0006tk0002/red.stdout.txt`.
+- Green: same filter → 8/8 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-043-us0006tk0002/US-0006-TK-0002/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
 
 Status: automated PASS (engine layer); native/product acceptance remains OPEN.

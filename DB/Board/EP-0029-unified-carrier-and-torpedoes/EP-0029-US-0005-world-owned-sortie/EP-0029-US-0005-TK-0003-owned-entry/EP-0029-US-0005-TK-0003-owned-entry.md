@@ -114,3 +114,36 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 - `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
 
 Status: automated PASS (engine layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15
+
+Verified finding (remediation review P1, item 3): the owned-sortie ready-wing filter in `StartOwnedTacticalBattle` excluded only `Destroyed`. A drone stored in a hangar that was Off/damaged still launched, and a `Disabled` survivor was deployed as if healthy.
+
+Fix: the ready wing is now `!Destroyed && !Disabled && IsHangarReady(d.HangarModuleId)`, ordered by `DroneId` (ordinal) so the assembled order stays deterministic. `IsHangarReady` requires a drone-capable module that is structurally intact, powered `On` and operationally `Ready`. An empty ready wing still rejects with `NoReadyDrones` — never a diagnostic fallback.
+
+Named tests (`Ep0029Us0005Tk0003Tests`):
+- `OfflineHangarDronesCannotLaunch` — BAY-01 `Off`: only BAY-02's DRN-PLAYER-03/04 are assembled; both bays `Off` → `NoReadyDrones` and no session.
+- `DisabledDroneIsNotDeployed` — a wing with DRN-PLAYER-02 disabled assembles only DRN-PLAYER-01/03/04.
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0005Tk0003Tests"` → 2 failed / 4 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-044-us0005tk0003/red.stdout.txt`.
+- Green: same filter → 6/6 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-044-us0005tk0003/US-0005-TK-0003/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15 (follow-up: stable encounter slots on the production path)
+
+Verified finding (validation P1 after Batch R-A): the ready-wing filter added for finding 3 compacted the wing before it reached `OwnedBattleAssembly`. Destroying DRN-PLAYER-01 therefore shifted DRN-PLAYER-02 onto encounter slot 0 — a legacy zero-skill wing then received `pilots.json` vera's 55/52 instead of yun's 53/55, and the pose moved from the yun start (145/275) to the vera start (145/228). The direct-assembly test could not catch this because it consumed the full wing including the tombstone.
+
+Fix: `StartOwnedTacticalBattle` still computes the deployable set (`!Destroyed && !Disabled && IsHangarReady(HangarModuleId)`) and still rejects `NoReadyDrones` when it is empty, but now passes the FULL wing in stable `DroneId` order plus that `deployableDroneIds` set to `OwnedBattleAssembly.Create`. The assembly leaves an undeployable drone's encounter slot unused, so survivors keep their aliases, skills, initiative and deployment positions. Existing ready-hangar and disabled-entry tests are unchanged and still pass.
+
+Named test: `Ep0029Us0005Tk0003Tests.LegacyWingKeepsEncounterSlotAfterLoss` — legacy zero-skill 4-drone wing; sortie 1 destroys DRN-PLAYER-01 and settles; sortie 2 (revision from settlement) asserts DRN-01 absent, DRN-02 keeps `CHR-PILOT-2`/yun 53/55 at 145/275 ± scatter, DRN-03 marta 59/54 at 138/212 ± scatter, DRN-04 oleg 50/51 at 135/288 ± scatter.
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0005Tk0003Tests"` → 1 failed / 6 passed; `LegacyWingKeepsEncounterSlotAfterLoss` expected 53, actual 55 (vera's alias) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-049-us0005tk0003-followup/red.stdout.txt`.
+- Production-path probe after the fix: same test asserts DRN-02 = yun 53/55 at x133..157 / y263..287 (the pre-fix pose was y216.3, i.e. vera's slot) — green.
+- Green: same filter → 7/7 passed — `.../run-049-us0005tk0003-followup/US-0005-TK-0003/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

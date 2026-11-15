@@ -8,7 +8,7 @@ approval_kind: workflow-only
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0029-US-0009-TK-0002-ship-layout]
-files_touched: 4
+files_touched: 6
 serves: [AC-02]
 created: 2026-11-14T19:42:24Z
 revision: 1
@@ -38,7 +38,11 @@ implementation_status: implemented
 | [src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipWingPanel.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipWingPanel.cs) | Новый проектируемый файл; до выполнения отсутствует. | Только «Выбор количества и подтверждение перезарядки» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipScreen.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipScreen.cs) | `src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipScreen.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Выбор количества и подтверждение перезарядки» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipLayout.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipLayout.cs) | `src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipLayout.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Выбор количества и подтверждение перезарядки» по шагам ниже, без соседних историй. |
+| [src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipViewModel.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipViewModel.cs) | `src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipViewModel.cs:25` — DroneRow без признака `disabled` и без ShipId для запроса. | Прокинуть `ShipId` и `Disabled` из `ReadinessReasons`; без соседних историй. |
+| [src/DeepSpaceSaga.Client/UI/SkiaWindow.cs](../../../../../src/DeepSpaceSaga.Client/UI/SkiaWindow.cs) | `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs:1299` — `OpenShipAsync` подаёт только view model, без топлива/транспорта. | Передать cargo-остаток торпед и `RearmDroneAsync` в экран; без соседних историй. |
 | [tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0009Tk0003Tests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0009Tk0003Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0009Tk0003Tests ниже с независимым oracle. |
+
+Allowlist amendment (2026-11-15, process-only): расширено с 4 до 6 файлов. `ShipViewModel.cs` несёт `ShipId`/`disabled` состояние строки дрона, `SkiaWindow.cs` — реальный cargo-остаток торпед и транспорт `RearmDroneAsync`; без них экран не мог бы отправить команду. Product scope не менялся.
 
 ## Public API after the change
 
@@ -109,5 +113,41 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 - `dotnet test --filter "FullyQualifiedName~Ep0029Us0009Tk0003Tests"` — **3/3 passed** (`DoubleClickSendsOneRequest`, `PartialQuantityIsPassedExactly`, `RejectedStaleRefreshesWithoutOptimisticSpend`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-031-us0009tk0003/US-0009-TK-0003/focused.trx`.
 - `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15
+
+**Finding (review, P1 #1):** перезарядка была не подключена — `ShipScreen` обрабатывал только закрытие, `ShipRearmController` и `ShipWingPanel` использовались лишь тестами, вызова `RearmDroneAsync` из экрана не существовало.
+
+**Fix:** `ShipViewModel.DroneRow.Disabled` из `ReadinessReasons.Contains("disabled")`, `ShipId` из carrier surface; `ShipWingPanel.DroneStateLabel(destroyed, disabled)`, `MaxSelectableQuantity(gap, stock)`, `PreviewText` («magazine 2→6, hold 42→38», перенос ограничен и магазином, и трюмом). `ShipLayout` — append `ShipButton.DroneRow/QuantityMinus/QuantityPlus/ConfirmRearm`, `WingRowLocalRect` (28 px), `RearmControlsLocalRect` и `RearmHitTest`; Close/background hit-test не менялся, геометрия влезает в панель. `ShipScreen` сохранил legacy-конструкторы и получил `(model, torpedoStock, rearm, commandId?)`: выбор строки (destroyed — нельзя, disabled — можно), default quantity `min(gap, stock)`, ноль объясняется и confirm disabled, pending-барьер, ровно один request, accept обновляет магазин/трюм только из `Transferred`/`Revision` (+`Snapshot`), reject не тратит локально и показывает причину, `controller.End()` в finally. `SkiaWindow.OpenShipAsync` суммирует cargo `item.drone-torpedo.t1` из авторитетного snapshot и передаёт `session.RearmDroneAsync`; legacy/unsupported — stock 0, rearm null.
+
+**Tests:** `Ep0029Us0009Tk0003Tests` — 10/10 passed: `ConfirmSendsSelectedQuantityThroughScreen` (quantity 4, revision 7 → accept: магазин 6, трюм 38, revision 8), `DoubleConfirmWhilePendingSendsOneRequest`, `RejectedRearmDoesNotSpendLocally` (магазин 2, трюм 42, snapshot revision 9), `PreviewShowsMagazineAndHoldTransition`, `DestroyedDroneCannotBeSelectedForRearm`, `DisabledDroneIsSelectableForRearm`, `RearmGeometryFitsInsideTheWingPanel`; прежние controller-тесты обновлены под `MaxSelectableQuantity(gap, stock)`. Guards: `ShipScreenTests` + `Ep0029Us0009Tk0001Tests` + `Ep0029Us0009Tk0002Tests` — 12/12 passed.
+
+**Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-052-us0009tk0003/US-0009-TK-0003/focused.trx` (22/22 focused+guards), `guards.trx` (12/12), `client-build.log` (0 warnings/0 errors), `format.log` (clean). Native gate (мышь/клавиатура, 1280×720/1920×1080, RU/EN) остаётся OPEN — headless не закрывает.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
+
+### Validation follow-up 2026-11-15 (P2)
+
+**Finding:** `ShipScreen.SubmitAsync` присваивал `_revision` только при accept. Реальный stale-revision reject приходит без `Snapshot` и несёт текущую ревизию (`SimulationEngine.Rearm.cs` `RejectRearm` → `new(Accepted:false, Reason, Revision)`); экран сохранял устаревшую ревизию и повторял заведомо stale-запрос. Тестовая заглушка reject ошибочно содержала `Snapshot`, маскируя дефект.
+
+**Fix:** `_revision = response.Revision` на каждом авторитетном ответе (accept и reject); `Rebuild` — только при `Snapshot != null`. Транспортное исключение перехватывается: статус заменяется на явную ошибку, pending-барьер освобождается в `finally`; локальный магазин/трюм не меняются.
+
+**Tests:** `Ep0029Us0009Tk0003Tests` — 12/12 passed. `RejectedRearmDoesNotSpendLocally` переведён на снапшот-лесс reject из движка; добавлены `StaleRevisionRejectionAdoptsRevisionWithoutSnapshot` (первый ExpectedRevision 7 → reject Revision 9 без Snapshot → retry ExpectedRevision 9, без локального расхода) и `TransportExceptionShowsErrorAndClearsPending`.
+
+**Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-054-us0009tk0003-followup/US-0009-TK-0003/{red.trx,green.trx,client-build.log,format.log}`; build 0 warnings/0 errors, format clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
+
+### Validation follow-up 2026-11-15 (P3 hardening)
+
+**Finding:** расчёт остатка торпед в `SkiaWindow` суммировал `long` без насыщения и лишь затем клампил; две стопки по `long.MaxValue` переполнялись в отрицательное значение и давали 0.
+
+**Fix:** вычисление вынесено в `internal static int TorpedoStock(AuthoritativeSnapshot?)` с насыщающим сложением (кап на `int.MaxValue`, неположительные/чужие стеки игнорируются). Транспортная лямбда `RearmDroneAsync` остаётся inspection-verified (сетевой/локальный handle — вне allowlist).
+
+**Tests:** `Ep0029Us0009Tk0003Tests` — 13/13 passed; добавлен `TorpedoStockSumsCargoAndSaturates` (null snapshot и snapshot без модулей → 0, нормальные стопки 42+6=48 с игнором ore, `long.MaxValue`×2 и `int.MaxValue`+1 → `int.MaxValue`).
+
+**Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-056-us0009tk0003-hardening/US-0009-TK-0003/{red.log,green.trx,final-followup.trx,client-build.log,format.log}`; `red.log` — compile-red доступа к `TorpedoStock` (CS0117; упавшая сборка TRX не создаёт), `green.trx` — 13/13, `final-followup.trx` — 34/34 по пяти запрошенным классам; build 0 warnings/0 errors, format clean.
 
 Status: automated PASS (client layer); native/product acceptance remains OPEN.

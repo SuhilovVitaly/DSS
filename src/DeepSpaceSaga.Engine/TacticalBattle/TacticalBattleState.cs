@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.TacticalBattle.Content;
 using DeepSpaceSaga.Engine.TacticalBattle.Ai;
 using DeepSpaceSaga.Motion.TacticalBattle;
@@ -39,6 +40,15 @@ internal sealed class TacticalDrone(string id, string side, TacticalPose pose, i
     : TacticalUnit(id, side, pose, hull, armor, maneuver)
 {
     public string PilotId { get; } = pilotId;
+    /// <summary>
+    /// Persistent pilot identity for an owned drone (EP-0029 US-0005): display name, gender, portrait
+    /// and role from the same crew record as <see cref="PilotId"/> (a CrewId). Null for scenario /
+    /// diagnostic drones, whose <see cref="PilotId"/> is the catalog alias.
+    /// </summary>
+    public string? PilotName { get; init; }
+    public CrewGender? PilotGender { get; init; }
+    public string? PilotPortraitAssetId { get; init; }
+    public CrewRole? PilotRole { get; init; }
     public BattleLayout Layout { get; } = layout;
     public BattleFrame Frame { get; } = frame;
     public BattleWeapon Weapon { get; } = weapon;

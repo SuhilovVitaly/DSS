@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Подключение Tutorial и F8 к собственному кораблю
@@ -107,4 +107,24 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implemented 2026-11-15. Создание planning-документа не является implementation, build, test или game launch.
+
+## Execution evidence 2026-11-15
+
+Implementation status: **implemented**. Automated tests are **NOT RUN** in this batch по прямому указанию пользователя (no `dotnet test`, no TDD red/green, no validation agent); named tests written and deferred to the final suite run. Единственная проверка батча — компиляция:
+
+```powershell
+dotnet build DeepSpaceSaga.sln --no-restore
+# -> Build succeeded. 0 Warning(s), 0 Error(s).
+```
+
+Изменено (allowlist):
+- `src/DeepSpaceSaga.Client/GameSessionHandle.TacticalBattle.cs` — internal `WaitForCarrierOperationsAsync(timeout)`: bounded polling первого авторитетного `CarrierOperations` снапшота; null при таймауте/сбое сессии, без фабрикации carrier surface.
+- `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` — `StartTutorialAsync` ждёт первый авторитетный carrier snapshot (bounded `TutorialCarrierSnapshotTimeout`), при отсутствии surface/пустом крыле атомарно возвращается в меню, затем строит `StartTacticalBattleRequest` с `ScenarioId="initial"`, seed `TutorialBattleSeed`, `SourceShipId=carrier.ShipId`, `ExpectedCarrierRevision=carrier.Revision` и пустым Loadout. Существующий cleanup/dispose path сохранён.
+- `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSetupScreen.cs` — F8 рисует owned ready wing (`OwnedDrones` с пустыми `ReadinessReasons`) read-only (id/frame/weapon/armor/shield); per-drone dropdown-контролы не создаются; `CanStart` требует готовое крыло; отсутствующий/legacy carrier показывает объяснение NoReadyWing/UnsupportedWing и блокирует старт; `BuildStartRequest` читает свежую ревизию и оставляет `Loadout` пустым; scenario/seed/tactics доступны.
+- `tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0012Tk0002Tests.cs` — `TutorialStartsOwnedShip`, `F8UsesSurvivorsNotFourDefaults`, `SetupCannotGrantWeapon`, `StartFailureReturnsMenuWithoutPartialSession`.
+
+Named-test focus: owned ShipId/revision/`initial`/seed1/empty loadout на Tutorial пути; survivor wing (2 из 4) вместо encounter defaults; ноль редактируемых equipment-контролов и пустой Loadout; legacy/no-carrier блокируется без fallback; missing carrier, empty wing и rejected start возвращают в меню с disposed session и без частичного боя.
+
+Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; native RU/EN UI gate **OPEN**; product/human acceptance **OPEN**.
+
