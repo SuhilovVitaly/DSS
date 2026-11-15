@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.TacticalBattle.Content;
 
 namespace DeepSpaceSaga.Engine;
 
@@ -147,6 +148,52 @@ internal static class OwnedWingValidator
                 throw new ScenarioException($"Drone '{drone.DroneId}' has invalid ammo bounds.");
             if (drone.DecoyCharges < 0 || drone.DecoyMaxCharges < 0 || drone.DecoyCharges > drone.DecoyMaxCharges)
                 throw new ScenarioException($"Drone '{drone.DroneId}' has invalid decoy bounds.");
+
+            // Catalogue-reference and slot-capacity validation (US-0003 TK-0002): numeric bounds alone
+            // would accept a wing that cannot be assembled from real tactical content. A registry
+            // without tactical content keeps the legacy numeric-only behaviour.
+            if (registry.TacticalBattle.Catalog is { } catalog)
+                ValidateCatalogReferences(drone, catalog);
         }
+    }
+
+    private static void ValidateCatalogReferences(OwnedDroneData drone, TacticalBattleCatalog catalog)
+    {
+        if (!catalog.Layouts.Contains(drone.FrameId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' references unknown layout '{drone.FrameId}'.");
+        var layout = catalog.Layouts[drone.FrameId];
+        if (!catalog.Frames.Contains(layout.Class))
+            throw new ScenarioException(
+                $"Drone '{drone.DroneId}' layout '{drone.FrameId}' references unknown frame '{layout.Class}'.");
+        var frame = catalog.Frames[layout.Class];
+
+        if (!catalog.Weapons.Contains(drone.WeaponId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' references unknown weapon '{drone.WeaponId}'.");
+        if (!catalog.Armor.Contains(drone.ArmorId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' references unknown armor '{drone.ArmorId}'.");
+        if (drone.ShieldId is { } shieldId && !catalog.Shields.Contains(shieldId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' references unknown shield '{shieldId}'.");
+        if (drone.DecoyId is { } decoyId && !catalog.Decoys.Contains(decoyId))
+            throw new ScenarioException($"Drone '{drone.DroneId}' references unknown decoy '{decoyId}'.");
+
+        var engineIds = drone.EngineIds ?? [];
+        foreach (string engineId in engineIds)
+            if (!catalog.Engines.Contains(engineId))
+                throw new ScenarioException($"Drone '{drone.DroneId}' references unknown engine '{engineId}'.");
+        if (engineIds.Count > frame.EngineSlots)
+            throw new ScenarioException(
+                $"Drone '{drone.DroneId}' mounts {engineIds.Count} engines but frame '{frame.Id}' has {frame.EngineSlots} engine slots.");
+        if (drone.ShieldCount > frame.ShieldSlots)
+            throw new ScenarioException(
+                $"Drone '{drone.DroneId}' mounts {drone.ShieldCount} shields but frame '{frame.Id}' has {frame.ShieldSlots} shield slots.");
+        if (drone.ShieldSlots > frame.ShieldSlots)
+            throw new ScenarioException(
+                $"Drone '{drone.DroneId}' declares {drone.ShieldSlots} shield slots but frame '{frame.Id}' has {frame.ShieldSlots}.");
+        if (drone.DecoyId is { } decoy && drone.DecoyMaxCharges > catalog.Decoys[decoy].Charges)
+            throw new ScenarioException(
+                $"Drone '{drone.DroneId}' decoy '{decoy}' carries {drone.DecoyMaxCharges} charges but the catalogue allows {catalog.Decoys[decoy].Charges}.");
+        if (drone.AmmoCapacity > frame.AmmoCapacity)
+            throw new ScenarioException(
+                $"Drone '{drone.DroneId}' magazine {drone.AmmoCapacity} exceeds frame '{frame.Id}' capacity {frame.AmmoCapacity}.");
     }
 }

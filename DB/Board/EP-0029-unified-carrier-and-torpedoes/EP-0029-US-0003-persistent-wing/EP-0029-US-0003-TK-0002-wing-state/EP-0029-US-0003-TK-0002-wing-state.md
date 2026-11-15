@@ -112,3 +112,22 @@ Added `OwnedDroneData` + `CarrierStateData.OwnedDrones` (save schema), `OwnedWin
 - `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
 
 Status: automated PASS (engine layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15
+
+Verified finding (remediation review P1, item 5): `OwnedWingValidator.Validate` checked numeric bounds only. Unknown layout/frame/weapon/armor/shield/decoy/engine references and over-capacity magazines, engine slots, shield slots/count and decoy charges were accepted, so a wing that cannot be assembled from the shipped tactical content passed every load gate (`SetOwnedWingForTests`, `ValidateCarrierStateForLoad`).
+
+Fix: after the numeric bounds, `OwnedWingValidator.Validate` resolves `registry.TacticalBattle.Catalog` and validates every drone against it — `FrameId` exists in `Layouts`, the layout class exists in `Frames`, `WeaponId`/`ArmorId` exist, optional `ShieldId`/`DecoyId` exist, every `EngineIds` entry exists, and frame capacities bound the engine count, shield count, shield slots, decoy charges and magazine (`AmmoCapacity <= frame.AmmoCapacity`; `AmmoCurrent <= AmmoCapacity` stays in the numeric block). When the registry has no tactical content the validator keeps the legacy numeric-only behaviour, so worlds without battle content still load. Persisted engine-factor validation (`EngineFactors` count/range) was added together with the field in US-0006 TK-0002.
+
+Named tests (`Ep0029Us0003Tk0002Tests`):
+- `WingRejectsUnknownLayoutWeaponEngine` — baseline starter-shaped wing accepted; each unknown layout/weapon/armor/shield/decoy/engine reference rejected.
+- `WingRejectsOverCapacityMagazineAndSlots` — magazine 13 on a 12-capacity frame, 3 shields on a 2-slot frame, shieldSlots 3, 3 decoy charges on a 2-charge decoy and 3 engines on a 2-slot frame are rejected.
+- `ValidStarterWingPassesCatalogValidation` — the four starter drones pass with no readiness reasons.
+
+Evidence (real content through `EngineContentLoader.CreateEngineFromScenarioFile(src/DeepSpaceSaga.Client/Settings.json, <temp scenario>)`):
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0003Tk0002Tests"` → 2 failed / 4 passed (rejection paths threw nothing) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-042-us0003tk0002/red.stdout.txt`.
+- Green: same filter → 6/6 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-042-us0003tk0002/US-0003-TK-0002/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
+
