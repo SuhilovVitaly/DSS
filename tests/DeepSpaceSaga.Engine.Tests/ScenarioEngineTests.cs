@@ -161,13 +161,13 @@ public class ScenarioEngineTests
         var playerShip = scenario.GameState.SpaceObjects
             .Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
 
-        // Tetrarch-class hull (requirements §57): 9x9 grid, 12 structural cells.
+        // EP-0029 starter carrier manifest: 9x9 hull, 24 structural cells (Documentation.md:102).
         Assert.NotNull(playerShip.HullLayout);
         Assert.Equal(9, playerShip.HullLayout!.Width);
         Assert.Equal(9, playerShip.HullLayout.Height);
-        Assert.Equal(12, playerShip.HullLayout.Cells.Count);
+        Assert.Equal(24, playerShip.HullLayout.Cells.Count);
 
-        Assert.Equal(6, playerShip.Modules?.Count);
+        Assert.Equal(9, playerShip.Modules?.Count);
         Assert.Equal("ship.tetrarch", playerShip.ShipClassId);
         var cargoModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         Assert.Equal("module.container.basic", cargoModule.ModuleTypeId);
@@ -181,9 +181,21 @@ public class ScenarioEngineTests
         var bridgeModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
         Assert.Equal("module.bridge.navigation.computer.basic", bridgeModule.ModuleTypeId);
         Assert.Equal([new HullCellCoordinate(4, 0)], bridgeModule.OccupiedCells);
-        var livingQuartersModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
-        Assert.Equal("living.quarters.mk1", livingQuartersModule.ModuleTypeId);
-        Assert.Equal([new HullCellCoordinate(4, 1)], livingQuartersModule.OccupiedCells);
+        var livingQuarters = (playerShip.Modules ?? [])
+            .Where(m => m.ModuleTypeId == "living.quarters.mk1.four-cabins").ToArray();
+        Assert.Equal(2, livingQuarters.Length);
+        Assert.Equal([new HullCellCoordinate(3, 1)],
+            Assert.Single(livingQuarters, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01").OccupiedCells);
+        Assert.Equal([new HullCellCoordinate(5, 1)],
+            Assert.Single(livingQuarters, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-02").OccupiedCells);
+        var bays = (playerShip.Modules ?? []).Where(m => m.ModuleTypeId == "module.drone-bay.medium").ToArray();
+        Assert.Equal(2, bays.Length);
+        Assert.Equal([new HullCellCoordinate(1, 2), new HullCellCoordinate(2, 2),
+            new HullCellCoordinate(1, 3), new HullCellCoordinate(2, 3)],
+            Assert.Single(bays, m => m.ModuleId == "MOD-PLAYER-BAY-01").OccupiedCells);
+        Assert.Equal([new HullCellCoordinate(6, 2), new HullCellCoordinate(7, 2),
+            new HullCellCoordinate(6, 3), new HullCellCoordinate(7, 3)],
+            Assert.Single(bays, m => m.ModuleId == "MOD-PLAYER-BAY-02").OccupiedCells);
         var generatorModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Equal("module.generator.basic", generatorModule.ModuleTypeId);
         Assert.Equal([new HullCellCoordinate(4, 4)], generatorModule.OccupiedCells);
@@ -197,17 +209,25 @@ public class ScenarioEngineTests
         Assert.DoesNotContain(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-HABITATION-01");
         Assert.DoesNotContain(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-COMBAT-LASER-01");
 
-        Assert.Equal(2, cargoModule.Cargo?.Count);
+        // Hold: energy/food are unchanged; the starter manifest adds exactly 42 torpedoes (36 are
+        // already loaded in the four magazines, A-01).
+        Assert.Equal(3, cargoModule.Cargo?.Count);
         var energyCells = Assert.Single(cargoModule.Cargo ?? [], c => c.ItemTypeId == "item.energy-cells");
         Assert.Equal(1_000, energyCells.Quantity);
         var foodRations = Assert.Single(cargoModule.Cargo ?? [], c => c.ItemTypeId == "item.food-rations");
         Assert.Equal(200, foodRations.Quantity);
+        var torpedoes = Assert.Single(cargoModule.Cargo ?? [], c => c.ItemTypeId == "item.drone-torpedo.t1");
+        Assert.Equal(42, torpedoes.Quantity);
 
-        // story-20260901-112254 (Batch A, U4): a single crew member, "Dunkan Su".
-        Assert.Equal(2, playerShip.Crew!.Count);
+        // Six crew: Dunkan Su + Irina Volskaya + the four own pilots (EP-0029 US-0011 TK-0002).
+        Assert.Equal(6, playerShip.Crew!.Count);
         var crewMember = Assert.Single(playerShip.Crew, c => c.CrewId == "CHR-0001");
         Assert.Equal("CHR-0001", crewMember.CrewId);
         Assert.Equal("Dunkan Su", crewMember.DisplayName);
+        Assert.Equal(
+            ["CHR-0001", "CHR-PLAYER-DEFENSE", "CHR-PLAYER-EVELYN", "CHR-PLAYER-AUDREY",
+                "CHR-PLAYER-CLAIRE", "CHR-PLAYER-RACHEL"],
+            playerShip.Crew.Select(c => c.CrewId));
     }
 
     [Fact]
@@ -228,7 +248,7 @@ public class ScenarioEngineTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(6, playerShip.Modules.Length);
+        Assert.Equal(9, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         // Module type registry order follows the deterministic (ordinal) sort of
@@ -238,24 +258,26 @@ public class ScenarioEngineTests
         Assert.Equal("module.container.basic", actualRegistry.ModuleTypes.GetDefinition(cargoModule.ModuleTypeIndex).TypeId);
         Assert.Null(engineModule.ActiveCycle);
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
-        Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
+        Assert.Equal(2, playerShip.Modules.Count(m => m.ModuleTypeId == "module.drone-bay.medium"));
+        Assert.Equal(2, playerShip.Modules.Count(m => m.ModuleTypeId == "living.quarters.mk1.four-cabins"));
+        Assert.Equal(2, playerShip.Modules.Count(m => m.ModuleId is "MOD-PLAYER-LIVING-QUARTERS-01" or "MOD-PLAYER-LIVING-QUARTERS-02"));
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
-        // item.energy-cells is index 2, item.food-rations is index 5, in the real 10-entry
-        // catalog. Item-catalog registry order follows the deterministic (ordinal) sort of
-        // Data/Items/<Category>/*.json file paths (Good < Resource alphabetically), not the
-        // historical flat item-types.json order — so Good entries (Water/Steel/Energy
-        // Cells/Fuel/Protein mass/Food Rations, in that array order) sort first at indices
-        // 0-5, then Resource (Ice/Iron Ore/Silicon/Magnesium Ore) at indices 6-9.
-        Assert.Equal(2, cargoModule.Cargo.Length);
-        var energyCells = Assert.Single(cargoModule.Cargo, c => c.ItemTypeIndex == 2);
-        Assert.Equal(1_000, energyCells.Quantity);
-        var foodRations = Assert.Single(cargoModule.Cargo, c => c.ItemTypeIndex == 5);
-        Assert.Equal(200, foodRations.Quantity);
+        // Item-catalog registry order follows the deterministic (ordinal) sort of
+        // Data/Items/<Category>/*.json file paths, not the historical flat item-types.json order.
+        // Resolve the type ids through the loaded registry instead of hardcoding indices.
+        Assert.Equal(3, cargoModule.Cargo.Length);
+        Assert.Equal(1_000, CargoQuantity(cargoModule, actualRegistry, "item.energy-cells"));
+        Assert.Equal(200, CargoQuantity(cargoModule, actualRegistry, "item.food-rations"));
+        Assert.Equal(42, CargoQuantity(cargoModule, actualRegistry, "item.drone-torpedo.t1"));
     }
 
+    private static long CargoQuantity(InstalledModuleRuntime module, GameDataRegistry registry, string itemTypeId) =>
+        Assert.Single(module.Cargo,
+            stack => registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).TypeId == itemTypeId).Quantity;
+
     [Fact]
-    public void Real_default_scenario_occupies_6_of_12_hull_cells()
+    public void Real_default_scenario_occupies_15_of_24_hull_cells()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
@@ -271,24 +293,24 @@ public class ScenarioEngineTests
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(6, playerShip.Modules.Length);
+        Assert.Equal(9, playerShip.Modules.Length);
         Assert.NotNull(playerShip.HullLayout);
-        Assert.Equal(12, playerShip.HullLayout!.Cells.Count);
+        Assert.Equal(24, playerShip.HullLayout!.Cells.Count);
 
-        // Each module occupies exactly 1 hull cell (requirements §57: all real module
-        // types are slotSize 1), and no two modules share a cell.
+        // Seven 1-cell modules plus two 2x2 medium bays occupy 15 distinct hull cells
+        // (Documentation.md:102: «Всего 9 установленных модулей, 15 занятых клеток»).
         var occupiedCells = playerShip.Modules.SelectMany(m => m.OccupiedCells).ToArray();
-        Assert.Equal(6, occupiedCells.Length);
+        Assert.Equal(15, occupiedCells.Length);
         Assert.DoesNotContain((3, 2), occupiedCells);
-        Assert.Equal(6, occupiedCells.Distinct().Count());
+        Assert.Equal(15, occupiedCells.Distinct().Count());
 
         // Every occupied cell must belong to the object's hull layout.
         var hullCells = playerShip.HullLayout.Cells.Select(c => (c.X, c.Y)).ToHashSet();
         Assert.All(occupiedCells, cell => Assert.Contains(cell, hullCells));
 
-        // Six hull cells, including both former weapon positions, remain unoccupied.
+        // Nine authored hull cells, including both former weapon positions, remain unoccupied.
         int freeCells = hullCells.Count - occupiedCells.Distinct().Count();
-        Assert.Equal(6, freeCells);
+        Assert.Equal(9, freeCells);
     }
 
     // --- story-20260901-112254 (Batch A, U3): AuthoritativeSnapshot.PlayerCrewCount / ---
@@ -302,11 +324,25 @@ public class ScenarioEngineTests
 
         var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
 
-        Assert.Equal(2, snapshot.PlayerCrewCount);
+        Assert.Equal(6, snapshot.PlayerCrewCount);
 
-        var livingQuarters = Assert.Single(
-            snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
-        Assert.Equal(2, livingQuarters.CabinesCount);
+        // Two four-cabin living quarters: 8 cabins total, 6 occupied, 2 reserved for (future)
+        // prisoners, no free bed (EP-0029 A-01).
+        var livingQuarters = snapshot.InstalledModules
+            .Where(m => m.ModuleTypeId == "living.quarters.mk1.four-cabins").ToArray();
+        Assert.Equal(2, livingQuarters.Length);
+        Assert.Equal(
+            ["MOD-PLAYER-LIVING-QUARTERS-01", "MOD-PLAYER-LIVING-QUARTERS-02"],
+            livingQuarters.Select(m => m.ModuleId));
+        Assert.All(livingQuarters, module => Assert.Equal(4, module.CabinesCount!.Value));
+        Assert.Equal(8, livingQuarters.Sum(module => module.CabinesCount!.Value));
+
+        var cabins = snapshot.CarrierOperations!.CabinReservation!;
+        Assert.Equal(8, cabins.TotalCabins);
+        Assert.Equal(6, cabins.OccupiedCabins);
+        Assert.Equal(2, cabins.ReservedCabins);
+        Assert.Equal(0, cabins.FreeCabins);
+        Assert.Equal(0, cabins.PrisonerCount);
 
         // A module type that does not house crew must project CabinesCount == null.
         var engineModule = Assert.Single(snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
