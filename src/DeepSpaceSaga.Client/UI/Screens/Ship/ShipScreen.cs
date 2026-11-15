@@ -84,16 +84,26 @@ public sealed class ShipScreen : IScreen
         else
         {
             canvas.DrawText($"{_model.Name} ({_model.ShipClassId}) — hull {_model.HullCurrent}/{_model.HullMax}",
-                cx, textY, MenuStyle.TextStatus);
-            textY += ShipLayout.BodyLineHeight;
-            canvas.DrawText($"Crew: {_model.Cabins.OccupiedCabins} occupied, {_model.Cabins.ReservedCabins} reserved",
-                cx, textY, MenuStyle.TextStatus);
-            textY += ShipLayout.BodyLineHeight;
+                cx, pt + ShipLayout.BodyStartY, MenuStyle.TextStatus);
+
+            // Wing panel (left half): one line per owned drone, destroyed/disabled never shown ready.
+            var (wl, wt, _, _) = ShipLayout.WingPanelLocalRect();
+            float wingY = pt + wt;
             foreach (var drone in _model.Drones)
             {
-                canvas.DrawText($"{drone.Id}: ammo {drone.AmmoCurrent}/{drone.AmmoCapacity}",
-                    cx, textY, MenuStyle.TextStatus);
-                textY += ShipLayout.BodyLineHeight;
+                string state = ShipWingPanel.DroneStateLabel(drone.Destroyed);
+                canvas.DrawText($"{drone.Id} — ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
+                    pl + wl, wingY, MenuStyle.TextStatus);
+                wingY += ShipLayout.BodyLineHeight;
+            }
+
+            // Crew panel (right half): one line per crew member.
+            var (cl, ct, _, _) = ShipLayout.CrewPanelLocalRect();
+            float crewY = pt + ct;
+            foreach (var member in _model.Crew)
+            {
+                canvas.DrawText($"{member.DisplayName} ({member.Role})", pl + cl, crewY, MenuStyle.TextStatus);
+                crewY += ShipLayout.BodyLineHeight;
             }
         }
 

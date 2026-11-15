@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Панели модулей, крыла и людей
@@ -106,4 +106,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`ShipWingPanel` (state label + card state: destroyed/disabled/ready), `ShipCrewPanel` (portrait asset ids) и `ShipLayout` (wing/crew panel rects + FitsInsidePanel) добавлены; `ShipScreen` рендерит wing-карточки (ammo + state) слева и crew справа из read model. Hull diagram/full module list и фактические портретные PNG требуют native-проверки (OPEN).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0009Tk0002Tests"` — **3/3 passed** (`LayoutAt1280And1920KeepsControlsInside`, `FourPortraitsAndOfficerAreDistinct`, `DestroyedDroneNotShownReady`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-030-us0009tk0002/US-0009-TK-0002/focused.trx`; `ShipScreenTests` 6/6 зелёный.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
