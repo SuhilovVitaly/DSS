@@ -108,3 +108,21 @@ public sealed record OwnedDroneSnapshot(
 
 /// <summary>One engine slot state on an owned drone; State is a stable code (Ok/Jammed/Damaged).</summary>
 public sealed record DroneEngineStateSnapshot(int Index, string EngineId, string State);
+
+/// <summary>How a sortie ended; drives campaign-lifecycle routing (map vs terminal).</summary>
+public enum SortieExitKind { Completed = 0, Aborted = 1, Timeout = 2, Stalemate = 3 }
+
+/// <summary>
+/// Immutable receipt of applied battle consequences, returned after the engine settles the
+/// world (US-0006). It is a summary, not a copy of the mutable world state, and it does not
+/// promise a disk write — that belongs to the local-client checkpoint.
+/// </summary>
+public sealed record SortieSettlementSnapshot(
+    string BattleId,
+    string ShipId,
+    int CarrierRevision,
+    bool ShipDestroyed,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
+    ImmutableArray<string> LostDroneIds,
+    int ConsumedTorpedoes,
+    SortieExitKind ExitKind);

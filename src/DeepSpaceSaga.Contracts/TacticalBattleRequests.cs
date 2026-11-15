@@ -32,7 +32,11 @@ public enum TacticalBattleRejectionCode
 /// <summary>NewEvents is a delta for this command. State.Log, when present, is the full journal.</summary>
 public sealed record TacticalBattleResponse(string CommandId, bool Accepted, TacticalBattleRejectionCode Code,
     TacticalBattlePhase? CurrentPhase, TacticalBattleSnapshot? State, ImmutableArray<TacticalBattleLogEvent> NewEvents,
-    TacticalContentIssue? ContentError = null);
+    TacticalContentIssue? ContentError = null)
+{
+    /// <summary>Applied consequences of an owned sortie (US-0006); null for a diagnostic battle.</summary>
+    public SortieSettlementSnapshot? Settlement { get; init; }
+}
 
 /// <summary>Default arrays write as empty; explicit malformed/null arrays and null elements fail instead of becoming commands.</summary>
 public sealed class TacticalArrayJsonConverter<T> : JsonConverter<ImmutableArray<T>>

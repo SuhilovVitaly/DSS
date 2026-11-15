@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Квитанция последствий и исход кампании
@@ -103,4 +103,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `SortieSettlementSnapshot`(BattleId/ShipId/CarrierRevision/ShipDestroyed/LostDroneIds/ConsumedTorpedoes/ExitKind) and `SortieExitKind` (Completed/Aborted/Timeout/Stalemate); `TacticalBattleResponse.Settlement` carries the receipt after commit (null for diagnostic battles).
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests --filter "FullyQualifiedName~Ep0029Us0006Tk0001Tests"` — **2/2 passed** (`SettlementReceiptRoundTrip`, `DestroyedIsNotNoDrones`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-019-us0006tk0001/US-0006-TK-0001/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `git diff --check` clean.
+
+Status: automated PASS (contracts layer); native/product acceptance remains OPEN.
