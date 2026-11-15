@@ -19,4 +19,32 @@ public static class ShipWingPanel
             return "destroyed";
         return "disabled";
     }
+
+    /// <summary>The largest quantity the player may select for this drone (never negative).</summary>
+    public static int MaxSelectableQuantity(int current, int capacity) => Math.Max(0, capacity - current);
+
+    /// <summary>Clamp a chosen quantity into [0, max]; the chosen value is preserved, never auto-raised to max.</summary>
+    public static int ClampQuantity(int selected, int max) => Math.Clamp(selected, 0, Math.Max(0, max));
+}
+
+/// <summary>
+/// Confirmation gate for a rearm request. A double-click (or a click while a request is already in
+/// flight) starts exactly one request; the selected quantity is carried through unchanged and the
+/// client never mutates the drone's magazine locally.
+/// </summary>
+public sealed class ShipRearmController
+{
+    private bool _pending;
+    public bool IsPending => _pending;
+    public int SelectedQuantity { get; private set; }
+
+    public bool TryBegin(int selectedQuantity)
+    {
+        if (_pending) return false;
+        _pending = true;
+        SelectedQuantity = selectedQuantity;
+        return true;
+    }
+
+    public void End() => _pending = false;
 }

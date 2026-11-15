@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-02]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Выбор количества и подтверждение перезарядки
@@ -105,4 +105,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`ShipWingPanel.MaxSelectableQuantity`/`ClampQuantity` (max выбранного, без авто-подъёма до max) и `ShipRearmController` (pending-барьер: double-click → один запрос, выбранный quantity проходит как есть, локальный magazine не мутируется) добавлены.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0009Tk0003Tests"` — **3/3 passed** (`DoubleClickSendsOneRequest`, `PartialQuantityIsPassedExactly`, `RejectedStaleRefreshesWithoutOptimisticSpend`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-031-us0009tk0003/US-0009-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.
