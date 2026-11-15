@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0026-vacuous-tests
 title: Тесты, которые не могут упасть
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Тесты, которые не могут упасть
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -39,6 +40,7 @@ revision: 1
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/TabletopPanelProbeTests.cs:49-50` | То же. |
 | `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialHintsPreferenceTests.cs:96` | Молчаливый выход на не-Windows. |
 | `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialLessonFlowTests.cs:46` | Зашитый сид. |
+| `tests/DeepSpaceSaga.Client.Tests/WindowsOnlyFactAttribute.cs` | Добавлено при исполнении: `[WindowsOnlyFact]` — пропуск по платформе виден в отчёте как Skipped. |
 
 ## Implementation steps
 
@@ -57,4 +59,11 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Все четыре теста на текущем main оставались в пустом виде; ни EP-0029, ни предыдущие тикеты истории их не меняли. Код продукта не менялся.
+
+- `TabletopPlateTests`: удалены проверки отсутствия ключей `plate:damage:*`, которые код не пишет с 91dc15bc; тест переименован в `Plates_show_name_armor_and_hull_boxes_without_callouts`, остальные проверки сохранены. Пиксельная проверка золотой рамки не добавлялась: рядом с плашками шаблоны Tabletop рисуют тот же золотой цвет. Возврат рамки урона на плашки этот тест больше не ловит.
+- `TabletopPanelProbeTests`: удалены проверки отсутствия `pilot-damage-armor:*` и `plate:damage:armor:*`; проверки цвета полосы брони и текста итога сохранены.
+- `TutorialHintsPreferenceTests`: Windows-часть вынесена в отдельный `LockedFileWriteFailureKeepsOriginalFileAndLeavesNoTemp` с новым атрибутом `[WindowsOnlyFact]` — вне Windows он виден в отчёте как Skipped, а не как молча пройденный.
+- `TutorialLessonFlowTests`: стартовый запрос использует `SkiaWindow.TutorialBattleSeed` вместо литерала `1`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
