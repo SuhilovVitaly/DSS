@@ -209,7 +209,7 @@ internal sealed class PilotCardColumn
             if (Recording is { } layout) layout.Rects["pilot:" + card.UnitId] = visible;
             if (Layout.Slim) { DrawSlimCard(c, card, r, portraits); continue; }
             PanelBox(c, r, card.Selected, 5, card.Selected ? "ui.pilot-card.selected" : "ui.pilot-card");
-            Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 6, 34, 34));
+            Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 6, 34, 34), card.PortraitAssetId);
             DrawChip(c, card, r);
             T(c, BuildCardModel.Ellipsize(card.Name, 108, 11.5f), r.Left + 6, r.Top + 51, 11.5f, Text, true);
             DrawWeapon(c, card, r.Left + 6, r.Top + 62, 8.5f, 108, Muted);
@@ -243,9 +243,9 @@ internal sealed class PilotCardColumn
                 .2126f, .7152f, .0722f, 0, 0, .2126f, .7152f, .0722f, 0, 0,
                 .2126f, .7152f, .0722f, 0, 0, 0, 0, 0, 1, 0]);
             using var layer = new SKPaint { ColorFilter = filter };
-            c.SaveLayer(layer); Portrait(c, portraits, card.PilotId, card.Name, portrait); c.Restore();
+            c.SaveLayer(layer); Portrait(c, portraits, card.PilotId, card.Name, portrait, card.PortraitAssetId); c.Restore();
         }
-        else Portrait(c, portraits, card.PilotId, card.Name, portrait);
+        else Portrait(c, portraits, card.PilotId, card.Name, portrait, card.PortraitAssetId);
         var light = Skin.Color("ui.panel.bevel", "fill", SKColor.Parse("#4C5764"));
         var dark = Skin.Color("ui.panel.bevel", "stroke", SKColor.Parse("#0A0E12"));
         Stroke(c, new(portrait.Left, portrait.Bottom), new(portrait.Left, portrait.Top), dark, 1.6f);
@@ -452,14 +452,15 @@ internal sealed class PilotCardColumn
         Recording?.Texts.Add(new(card.PhaseText, Muted));
     }
 
-    internal static void Portrait(SKCanvas c, PilotPortraitCatalog catalog, string id, string name, SKRect r)
+    internal static void Portrait(SKCanvas c, PilotPortraitCatalog catalog, string id, string name, SKRect r,
+        string? portraitAssetId = null)
     {
         Round(c, r, PortraitBg);
-        if (catalog.TryGet(id, out var image))
+        if (catalog.TryGet(id, portraitAssetId, out var image))
         {
             c.Save(); using var clip = new SKRoundRect(r, Skin.Steel ? 0 : 3, Skin.Steel ? 0 : 3); c.ClipRoundRect(clip, antialias: true);
             using var p = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
-            c.DrawBitmap(image, catalog.SourceRect(id), r, p); c.Restore();
+            c.DrawBitmap(image, catalog.SourceRect(id, portraitAssetId), r, p); c.Restore();
         }
         else T(c, string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[..1])), r.MidX, r.MidY + 4, 11, Text, true, SKTextAlign.Center);
     }

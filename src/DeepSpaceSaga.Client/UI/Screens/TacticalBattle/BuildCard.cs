@@ -34,7 +34,8 @@ internal static class BuildCard
         PanelBox(c, r, false, 6, "ui.panel.build");
         if (model.Hovered) CursorGlyph(c, r.Left + 9, r.Top + 8, .6f);
         T(c, model.Heading, r.Left + (model.Hovered ? 24 : 9), r.Top + 18, 10.5f, Muted, true);
-        PilotCardColumn.Portrait(c, portraits, u.Build?.PilotId ?? "", PilotCardModel.Name(u), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32));
+        PilotCardColumn.Portrait(c, portraits, u.Build?.PilotId ?? "", PilotCardModel.Name(u), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32),
+            u.Build?.PilotPortraitAssetId);
         T(c, PilotCardModel.Name(u), r.Left + 48, r.Top + 38, 14, Cyan, true, role: "ui.build.name");
         T(c, model.Frame, r.Right - 8, r.Top + 38, 10.5f, Muted, align: SKTextAlign.Right);
         T(c, U("HullValue", u.Hull, u.MaxHull), r.Left + 48, r.Top + 56, 10.5f, Text);

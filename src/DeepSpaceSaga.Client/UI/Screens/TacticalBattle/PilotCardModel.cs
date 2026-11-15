@@ -14,6 +14,8 @@ internal sealed record PilotCard(string UnitId, string Name, string Weapon, stri
     IReadOnlyList<PilotStat> Stats, string Chip, bool ChipAccent, IReadOnlyList<PilotSegment> Segments)
 {
     public string PhaseText => string.Concat(Segments.Select(s => s.Text));
+    /// <summary>Portrait asset id from the shared crew record; null for legacy alias-only cards.</summary>
+    public string? PortraitAssetId { get; init; }
     public bool Evading { get; init; }
     public bool Decoy { get; init; }
     public int? AvailableTargets { get; init; }
@@ -120,6 +122,7 @@ internal static class PilotCardModel
                      (u.Consciousness ?? 100) / (double)PyMath.Max(1, f.Battle.Rules.Evasion?.MaxConsciousness ?? 100))
                  { ValueTone = u.Consciousness < (f.Battle.Rules.Evasion?.MinConsciousness ?? 0) ? Red : null }], chip, accent, segments)
             {
+                PortraitAssetId = u.Build?.PilotPortraitAssetId,
                 AvailableTargets = availableTargets,
                 Decoy = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Decoy) == true,
                 Evading = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Evade) == true

@@ -8,7 +8,7 @@ approval_kind: workflow-only
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0029-US-0005-TK-0003-owned-entry, EP-0029-US-0006-TK-0003-post-battle-state, EP-0029-US-0009-TK-0004-ship-localization]
-files_touched: 4
+files_touched: 6
 serves: [AC-01]
 created: 2026-11-14T19:42:24Z
 revision: 1
@@ -38,7 +38,11 @@ implementation_status: implemented
 | [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotPortraitCatalog.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotPortraitCatalog.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotPortraitCatalog.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Портреты и имена из общей записи экипажа» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardModel.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardModel.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardModel.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Портреты и имена из общей записи экипажа» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardColumn.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardColumn.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardColumn.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Портреты и имена из общей записи экипажа» по шагам ниже, без соседних историй. |
+| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BuildCard.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BuildCard.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BuildCard.cs:37` — обязательный вызов `PilotCardColumn.Portrait` для карточки build. | Передать `u.Build?.PilotPortraitAssetId` в портрет; без соседних историй. |
+| [src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/HoverCard.cs](../../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/HoverCard.cs) | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/HoverCard.cs:58` — обязательный вызов `PilotCardColumn.Portrait` для hover-карточки. | Передать `unit.Build?.PilotPortraitAssetId` в портрет; без соседних историй. |
 | [tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0010Tk0001Tests.cs](../../../../../tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0010Tk0001Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0010Tk0001Tests ниже с независимым oracle. |
+
+Allowlist amendment (2026-11-15, process-only): расширено с 4 до 6 файлов. `BuildCard.cs` и `HoverCard.cs` — обязательные production call sites общего портрета (remediation finding 4); без них `PilotPortraitAssetId` доходил бы только до колонки пилотов. Product scope не менялся.
 
 ## Public API after the change
 
@@ -113,3 +117,15 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 - `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
 
 Status: automated PASS (client layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15
+
+**Finding (review, P1 #4):** owned pilot identity was taken from the encounter slot, and the client never read `TacticalBuildSnapshot.PilotPortraitAssetId`; tactical cards always resolved the legacy `pilots.json` alias even when the shared crew record carried a real portrait.
+
+**Fix:** `PilotCard.PortraitAssetId` проекция из `u.Build?.PilotPortraitAssetId`; `PilotPortraitCatalog.TryGet(pilotId, portraitAssetId, out bitmap)` декодирует общий asset с проверкой пути (rooted path, `..`, выход за baseDir и не-`.png` отклоняются; wildcard — только `.png`), кэширует по asset id и освобождает bitmap в `Dispose`; при отсутствии/ошибке asset используется прежний alias. `SourceRect(pilotId, portraitAssetId)` возвращает raw W4 crop `(170,70,854,754)` для asset-портрета и прежний composed/raw crop для alias. `PilotCardColumn.Portrait` получил optional `portraitAssetId`; main card, BuildCard и HoverCard передают его.
+
+**Tests:** `Ep0029Us0010Tk0001Tests` — 6/6 passed, включая `SharedCrewPortraitAssetWinsOverLegacyAlias` (реальный W4 asset 1024×1536 против 2×2 alias, raw crop, card carries id), `LegacyAliasStillWorksWhenAssetMissing`, `AssetPathTraversalIsRejectedAndFallsBack`; прежние `OwnedPortraitOverridesLegacyAlias`, `MissingPortraitKeepsIdentity`, `SessionSwitchDropsOldPortraitBindings` зелёные. `PilotPortraitCatalogTests` — 2/2 passed. `BuildCardRenderTests` — 9/9 passed (extra guard).
+
+**Evidence:** `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-051-us0010tk0001/US-0010-TK-0001/focused.trx` (8/8 ticket+catalog), `guards.trx` (12 passed, 3 ambient EP-0019 `HoverCardTests` starter-manifest failures, unrelated to portrait code), `client-build.log` (0 warnings/0 errors), `format.log` (clean).
+
+Status: automated PASS (client layer); native RU/EN remains OPEN.
