@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0011-save-screen-accents
 title: Окно сохранения без акцентов окна загрузки
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Окно сохранения без акцентов окна загрузки
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -55,4 +56,11 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: в `SaveScreen.DrawBottomButtons` подтверждение удаления рисовалось обычными чернилами, кнопка «Сохранить» не была основной (в `LoadScreen` — `TabletopStyle.Danger` и `primary: true`).
+
+- `SaveScreen`: подпись подтверждения удаления окрашена `TabletopStyle.Danger`, кнопка сохранения/перезаписи рисуется с `primary: true`. Оранжевая подпись «Перезаписать» сохранена.
+- Для визуальной проверки: оранжевая подпись «Перезаписать» на золотой основной кнопке может читаться слабо.
+
+Тесты (`SaveScreenVisualTests`): `Delete_confirmation_label_uses_the_danger_color_like_the_load_window`, `Plain_delete_label_does_not_use_the_danger_color`, `Save_button_uses_the_primary_style_like_the_load_button`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.

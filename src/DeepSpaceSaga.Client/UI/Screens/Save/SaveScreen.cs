@@ -315,11 +315,12 @@ public sealed class SaveScreen : IScreen
             CombinedRect(panelLeft, panelTop, SaveLayout.DeleteButtonRect()),
             isConfirming ? "CONFIRM?" : "DELETE",
             !hasSelection ? ButtonState.Disabled
-                : isConfirming ? ButtonState.Hovered : StateFor(SaveZone.Delete));
+                : isConfirming ? ButtonState.Hovered : StateFor(SaveZone.Delete),
+            isConfirming ? TabletopStyle.Danger : null);
         GenericButtonTypeA.Draw(canvas,
             CombinedRect(panelLeft, panelTop, SaveLayout.SaveButtonRect()),
             SaveActionLabel, StateFor(SaveZone.Save),
-            isOverwrite ? XenonStyle.OrangeAccent : null);
+            isOverwrite ? XenonStyle.OrangeAccent : null, primary: true);
     }
 
     private ButtonState StateFor(SaveZone zone) =>
