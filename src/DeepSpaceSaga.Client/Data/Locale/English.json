@@ -742,6 +742,7 @@
   "TacticalBattle.Ui.Armor": "Armor",
   "TacticalBattle.Ui.Hull": "Hull",
   "TacticalBattle.Ui.Mind": "Mind",
+  "TacticalBattle.Ui.Ammo": "Ammo",
   "TacticalBattle.Ui.Ai": "AI",
   "TacticalBattle.Ui.MoveStats": "Movement: speed {0} · turn {1}",
   "TacticalBattle.Ui.FireStats": "Fire: targets {0} · damage {1} · init. {2}",

@@ -742,6 +742,7 @@
   "TacticalBattle.Ui.Armor": "Броня",
   "TacticalBattle.Ui.Hull": "Корпус",
   "TacticalBattle.Ui.Mind": "Сознание",
+  "TacticalBattle.Ui.Ammo": "Боезапас",
   "TacticalBattle.Ui.Ai": "ИИ",
   "TacticalBattle.Ui.MoveStats": "Движение: скорость {0} · поворот {1}",
   "TacticalBattle.Ui.FireStats": "Стрельба: целей {0} · урон {1} · иниц. {2}",

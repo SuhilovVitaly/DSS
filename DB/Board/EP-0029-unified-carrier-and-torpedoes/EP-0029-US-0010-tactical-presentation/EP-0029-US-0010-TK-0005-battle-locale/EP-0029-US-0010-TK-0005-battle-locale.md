@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-02, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Локализация торпед и последствий
@@ -104,4 +104,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Добавлен `TacticalBattle.Ui.Ammo` (RU/EN) к аммо-стату; `TacticalBattle.Ui.NoCombatCapability` уже добавлен в TK-0004. Проверена parity аммо/battle-ключей, влезание 4 женских имён (baseline width ≤150px) и перевод новых enum (нет raw enum на экране).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0010Tk0005Tests"` — **3/3 passed** (`BattleAmmoLocaleParity`, `FemaleNamesFitCard`, `NewEnumsHaveTranslation`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-037-us0010tk0005/US-0010-TK-0005/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (content-data layer); native/product acceptance remains OPEN.
