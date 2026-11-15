@@ -55,12 +55,12 @@ Workflow approval автоматический по поручению созд�
 
 ## Completion evidence
 
-- AC-01: тикеты TK-0001, TK-0002, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-02: тикеты TK-0001, TK-0002, TK-0003; named tests и наблюдаемый результат внутри тикетов.
-- AC-03: тикеты TK-0001, TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- AC-04: тикеты TK-0001, TK-0002; named tests и наблюдаемый результат внутри тикетов.
-- Future evidence: уникальный run под D:/DeepSpaceSaga/artifacts/validation/ep-0029/; после реализации сюда записать результаты и ссылки.
-- Сейчас implementation/automated/native/product: **NOT RUN / OPEN**.
+- AC-01: TK-0001/0002/0003 — `SettlementReceiptRoundTrip`, `FinishThenExitSettlesOnce` (settled once, revision+1) — PASS.
+- AC-02: TK-0001/0002/0003 — `DestroyedIsNotNoDrones`, `HullZeroMarksWorldDestroyed`, `WorldCoordinatesUnchangedAfterSortie` — PASS.
+- AC-03: TK-0001/0002 — `DisabledReturnsDamaged`, `WorldSnapshotMatchesTacticalFinal` (hull/ammo/crew preserved) — PASS.
+- AC-04: TK-0001/0002/0003 — `LostDroneAmmoNotRecovered`, `AbortPreservesSpentAmmo`, `DestroyedShipCannotResumeCommands` — PASS.
+- Artifacts: `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-019..021-*`.
+- Implementation/automated: **PASS**. Native/product: **OPEN**.
 
 ## Decisions and review log
 
