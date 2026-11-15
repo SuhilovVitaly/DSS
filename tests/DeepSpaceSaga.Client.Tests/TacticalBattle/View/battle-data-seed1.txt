@@ -9802,6 +9802,7 @@
         "TargetEvading": false,
         "Decoyed": true,
         "ChanceWithoutDecoy": 0.5547857106633658,
+        "ConditionalChance": 0.3405844100960087,
         "HitRoll": 0.8542386966291815,
         "AbsorptionRoll": 0.8079907614737749,
         "Factors": {
@@ -9845,6 +9846,7 @@
         "TargetEvading": false,
         "Decoyed": true,
         "ChanceWithoutDecoy": 0.7275239408769401,
+        "ConditionalChance": 0.5912859113154101,
         "HitRoll": 0.2727865446358919,
         "AbsorptionRoll": null,
         "Factors": {
@@ -9888,6 +9890,7 @@
         "TargetEvading": false,
         "Decoyed": false,
         "ChanceWithoutDecoy": null,
+        "ConditionalChance": 0.7107185957176699,
         "HitRoll": 0.30325650586746633,
         "AbsorptionRoll": null,
         "Factors": {
@@ -9931,6 +9934,7 @@
         "TargetEvading": false,
         "Decoyed": false,
         "ChanceWithoutDecoy": null,
+        "ConditionalChance": 0.38264531334833024,
         "HitRoll": 0.2899394116830081,
         "AbsorptionRoll": null,
         "Factors": {
@@ -12997,6 +13001,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.5547857106633658,
+            "ConditionalChance": 0.3405844100960087,
             "HitRoll": 0.8542386966291815,
             "AbsorptionRoll": 0.8079907614737749,
             "Factors": {
@@ -13101,6 +13106,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.7275239408769401,
+            "ConditionalChance": 0.5912859113154101,
             "HitRoll": 0.2727865446358919,
             "AbsorptionRoll": null,
             "Factors": {
@@ -13191,6 +13197,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7107185957176699,
             "HitRoll": 0.30325650586746633,
             "AbsorptionRoll": null,
             "Factors": {
@@ -13325,6 +13332,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.38264531334833024,
             "HitRoll": 0.2899394116830081,
             "AbsorptionRoll": null,
             "Factors": {
@@ -15069,6 +15077,7 @@
           "TargetEvading": false,
           "Decoyed": true,
           "ChanceWithoutDecoy": 0.5547857106633658,
+          "ConditionalChance": 0.3405844100960087,
           "HitRoll": 0.8542386966291815,
           "AbsorptionRoll": 0.8079907614737749,
           "Factors": {
@@ -16477,6 +16486,7 @@
                 "TargetEvading": false,
                 "Decoyed": true,
                 "ChanceWithoutDecoy": 0.5547857106633658,
+                "ConditionalChance": 0.3405844100960087,
                 "HitRoll": 0.8542386966291815,
                 "AbsorptionRoll": 0.8079907614737749,
                 "Factors": {
@@ -19289,6 +19299,7 @@
           "TargetEvading": false,
           "Decoyed": true,
           "ChanceWithoutDecoy": 0.7275239408769401,
+          "ConditionalChance": 0.5912859113154101,
           "HitRoll": 0.2727865446358919,
           "AbsorptionRoll": null,
           "Factors": {
@@ -20697,6 +20708,7 @@
                 "TargetEvading": false,
                 "Decoyed": true,
                 "ChanceWithoutDecoy": 0.7275239408769401,
+                "ConditionalChance": 0.5912859113154101,
                 "HitRoll": 0.2727865446358919,
                 "AbsorptionRoll": null,
                 "Factors": {
@@ -20779,6 +20791,7 @@
           "TargetEvading": false,
           "Decoyed": false,
           "ChanceWithoutDecoy": null,
+          "ConditionalChance": 0.7107185957176699,
           "HitRoll": 0.30325650586746633,
           "AbsorptionRoll": null,
           "Factors": {
@@ -22187,6 +22200,7 @@
                 "TargetEvading": false,
                 "Decoyed": false,
                 "ChanceWithoutDecoy": null,
+                "ConditionalChance": 0.7107185957176699,
                 "HitRoll": 0.30325650586746633,
                 "AbsorptionRoll": null,
                 "Factors": {
@@ -23671,6 +23685,7 @@
           "TargetEvading": false,
           "Decoyed": false,
           "ChanceWithoutDecoy": null,
+          "ConditionalChance": 0.38264531334833024,
           "HitRoll": 0.2899394116830081,
           "AbsorptionRoll": null,
           "Factors": {
@@ -25079,6 +25094,7 @@
                 "TargetEvading": false,
                 "Decoyed": false,
                 "ChanceWithoutDecoy": null,
+                "ConditionalChance": 0.38264531334833024,
                 "HitRoll": 0.2899394116830081,
                 "AbsorptionRoll": null,
                 "Factors": {
@@ -30786,6 +30802,7 @@
         "TargetEvading": false,
         "Decoyed": false,
         "ChanceWithoutDecoy": null,
+        "ConditionalChance": 0.6552003192041193,
         "HitRoll": 0.906352398218587,
         "AbsorptionRoll": null,
         "Factors": {
@@ -30829,6 +30846,7 @@
         "TargetEvading": false,
         "Decoyed": false,
         "ChanceWithoutDecoy": null,
+        "ConditionalChance": 0.7937294827982535,
         "HitRoll": 0.4241334544494748,
         "AbsorptionRoll": null,
         "Factors": {
@@ -33963,6 +33981,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.5547857106633658,
+            "ConditionalChance": 0.3405844100960087,
             "HitRoll": 0.8542386966291815,
             "AbsorptionRoll": 0.8079907614737749,
             "Factors": {
@@ -34067,6 +34086,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.7275239408769401,
+            "ConditionalChance": 0.5912859113154101,
             "HitRoll": 0.2727865446358919,
             "AbsorptionRoll": null,
             "Factors": {
@@ -34157,6 +34177,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7107185957176699,
             "HitRoll": 0.30325650586746633,
             "AbsorptionRoll": null,
             "Factors": {
@@ -34291,6 +34312,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.38264531334833024,
             "HitRoll": 0.2899394116830081,
             "AbsorptionRoll": null,
             "Factors": {
@@ -34666,6 +34688,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.575123186251289,
             "HitRoll": 0.25234164693392813,
             "AbsorptionRoll": 0.7921984903514385,
             "Factors": {
@@ -34756,6 +34779,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.6567962778699244,
             "HitRoll": 0.8700099086854607,
             "AbsorptionRoll": 0.9540082972962409,
             "Factors": {
@@ -35145,6 +35169,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7125454339991798,
             "HitRoll": 0.79182173544541,
             "AbsorptionRoll": null,
             "Factors": {
@@ -35211,6 +35236,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.4779485591537116,
+            "ConditionalChance": 0.2169228387305674,
             "HitRoll": 0.22080625081434846,
             "AbsorptionRoll": null,
             "Factors": {
@@ -35277,6 +35303,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.34711591447956286,
             "HitRoll": 0.09626300842501223,
             "AbsorptionRoll": null,
             "Factors": {
@@ -35367,6 +35394,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.4341516297664547,
+            "ConditionalChance": 0.7769165581366315,
             "HitRoll": null,
             "AbsorptionRoll": 0.4086632030084729,
             "Factors": {
@@ -35433,6 +35461,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.8897010528349594,
             "HitRoll": 0.28729558805935085,
             "AbsorptionRoll": 0.542554419953376,
             "Factors": {
@@ -35909,6 +35938,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.794708332737309,
             "HitRoll": 0.3296615306753665,
             "AbsorptionRoll": null,
             "Factors": {
@@ -35999,6 +36029,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.759945131331689,
             "HitRoll": 0.036594506120309234,
             "AbsorptionRoll": null,
             "Factors": {
@@ -36089,6 +36120,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.2663879697494283,
             "HitRoll": 0.38715033838525414,
             "AbsorptionRoll": null,
             "Factors": {
@@ -36497,6 +36529,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7426959043323771,
             "HitRoll": 0.20862703607417643,
             "AbsorptionRoll": null,
             "Factors": {
@@ -36587,6 +36620,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.6144310144628934,
+            "ConditionalChance": 0.42164652169434014,
             "HitRoll": 0.6459614059422165,
             "AbsorptionRoll": null,
             "Factors": {
@@ -36919,6 +36953,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7415781953831382,
             "HitRoll": 0.1414734951686114,
             "AbsorptionRoll": null,
             "Factors": {
@@ -37009,6 +37044,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7467420498798044,
             "HitRoll": 0.2764220417011529,
             "AbsorptionRoll": null,
             "Factors": {
@@ -37536,6 +37572,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.2930130868792357,
             "HitRoll": 0.9984868622850627,
             "AbsorptionRoll": null,
             "Factors": {
@@ -37602,6 +37639,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.6560961938832709,
             "HitRoll": 0.9777017233427614,
             "AbsorptionRoll": null,
             "Factors": {
@@ -37668,6 +37706,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.6410568443925706,
             "HitRoll": 0.014685939531773329,
             "AbsorptionRoll": null,
             "Factors": {
@@ -38043,6 +38082,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.42135461138996727,
+            "ConditionalChance": 0.26609929343630423,
             "HitRoll": null,
             "AbsorptionRoll": 0.1636333386413753,
             "Factors": {
@@ -38413,6 +38453,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.42972995063589137,
             "HitRoll": 0.9194338403176516,
             "AbsorptionRoll": 0.8675420086365193,
             "Factors": {
@@ -38935,6 +38976,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.6532622095547802,
             "HitRoll": null,
             "AbsorptionRoll": 0.49689756869338453,
             "Factors": {
@@ -39001,6 +39043,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.6315989162600478,
             "HitRoll": null,
             "AbsorptionRoll": 0.7670733970589936,
             "Factors": {
@@ -39105,6 +39148,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7813609877971761,
             "HitRoll": 0.06542236171662807,
             "AbsorptionRoll": null,
             "Factors": {
@@ -39214,6 +39258,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.5621252257716624,
             "HitRoll": null,
             "AbsorptionRoll": 0.735370195703581,
             "Factors": {
@@ -39527,6 +39572,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.6980831465465401,
+            "ConditionalChance": 0.5471247198198101,
             "HitRoll": 0.46827786369249225,
             "AbsorptionRoll": null,
             "Factors": {
@@ -39642,6 +39688,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.6299553205262057,
             "HitRoll": 0.2050837732385844,
             "AbsorptionRoll": null,
             "Factors": {
@@ -39751,6 +39798,7 @@
             "TargetEvading": true,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.45766130197268606,
             "HitRoll": 0.9383958915714175,
             "AbsorptionRoll": null,
             "Factors": {
@@ -39817,6 +39865,7 @@
             "TargetEvading": true,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.3545712659752452,
             "HitRoll": 0.6462549108546227,
             "AbsorptionRoll": null,
             "Factors": {
@@ -40111,6 +40160,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.5207028094252264,
+            "ConditionalChance": 0.2810542141378396,
             "HitRoll": 0.17920685792341828,
             "AbsorptionRoll": null,
             "Factors": {
@@ -40245,6 +40295,7 @@
             "TargetEvading": true,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.4926123803583411,
             "HitRoll": 0.885790403932333,
             "AbsorptionRoll": null,
             "Factors": {
@@ -40330,6 +40381,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.5986160699309033,
             "HitRoll": 0.5889332592487335,
             "AbsorptionRoll": null,
             "Factors": {
@@ -40648,6 +40700,7 @@
             "TargetEvading": true,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.27790003220791265,
             "HitRoll": 0.11125145829282701,
             "AbsorptionRoll": 0.4298311718739569,
             "Factors": {
@@ -41523,6 +41576,7 @@
             "TargetEvading": false,
             "Decoyed": true,
             "ChanceWithoutDecoy": 0.5850366340853735,
+            "ConditionalChance": 0.37755495112806026,
             "HitRoll": 0.9158274980727583,
             "AbsorptionRoll": null,
             "Factors": {
@@ -41798,6 +41852,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7899823141466128,
             "HitRoll": 0.9079621478449553,
             "AbsorptionRoll": null,
             "Factors": {
@@ -41864,6 +41919,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.5777985250319054,
             "HitRoll": 0.3675118521787226,
             "AbsorptionRoll": null,
             "Factors": {
@@ -42074,6 +42130,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.6552003192041193,
             "HitRoll": 0.906352398218587,
             "AbsorptionRoll": null,
             "Factors": {
@@ -42140,6 +42197,7 @@
             "TargetEvading": false,
             "Decoyed": false,
             "ChanceWithoutDecoy": null,
+            "ConditionalChance": 0.7937294827982535,
             "HitRoll": 0.4241334544494748,
             "AbsorptionRoll": null,
             "Factors": {
@@ -43946,6 +44004,7 @@
           "TargetEvading": false,
           "Decoyed": false,
           "ChanceWithoutDecoy": null,
+          "ConditionalChance": 0.6552003192041193,
           "HitRoll": 0.906352398218587,
           "AbsorptionRoll": null,
           "Factors": {
@@ -45354,6 +45413,7 @@
                 "TargetEvading": false,
                 "Decoyed": false,
                 "ChanceWithoutDecoy": null,
+                "ConditionalChance": 0.6552003192041193,
                 "HitRoll": 0.906352398218587,
                 "AbsorptionRoll": null,
                 "Factors": {
@@ -45412,6 +45472,7 @@
           "TargetEvading": false,
           "Decoyed": false,
           "ChanceWithoutDecoy": null,
+          "ConditionalChance": 0.7937294827982535,
           "HitRoll": 0.4241334544494748,
           "AbsorptionRoll": null,
           "Factors": {
@@ -46820,6 +46881,7 @@
                 "TargetEvading": false,
                 "Decoyed": false,
                 "ChanceWithoutDecoy": null,
+                "ConditionalChance": 0.7937294827982535,
                 "HitRoll": 0.4241334544494748,
                 "AbsorptionRoll": null,
                 "Factors": {

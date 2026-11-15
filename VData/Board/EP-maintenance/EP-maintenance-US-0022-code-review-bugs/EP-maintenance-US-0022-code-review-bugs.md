@@ -38,7 +38,7 @@ revision: 1
 
 ## Acceptance criteria
 
-- **AC1.** [Бросок попадания показан рядом с другим шансом](./EP-maintenance-US-0022-TK-0001-hit-roll-chance/EP-maintenance-US-0022-TK-0001-hit-roll-chance.md). Подпись итога выстрела показывает тот шанс, с которым движок сравнил бросок попадания: при неудачном броске он не меньше шанса, при попадании меньше шанса.
+- **AC1.** [Бросок попадания показан рядом с другим шансом](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0001-hit-roll-chance/EP-maintenance-US-0022-TK-0001-hit-roll-chance.md). Подпись итога выстрела показывает тот шанс, с которым движок сравнил бросок попадания: при неудачном броске он не меньше шанса, при попадании меньше шанса.
 - **AC2.** [«Новая игра» без сохранений не должна застревать при сбое обучения](./EP-maintenance-US-0022-TK-0002-tutorial-start-fallback/EP-maintenance-US-0022-TK-0002-tutorial-start-fallback.md). Если обучающий бой не стартовал, игрок без сохранений всё равно может начать игру: «Новая игра» открывает выбор сценария (или карту), причина сбоя пишется в InterfaceLog.
 - **AC3.** [Ввод в главном меню во время запуска обучения](./EP-maintenance-US-0022-TK-0003-tutorial-start-input/EP-maintenance-US-0022-TK-0003-tutorial-start-input.md). Пока запускается обучение, главное меню не принимает повторные команды, а «Выход» выполняется. После открытия боя не появляется плашка «действия мира заблокированы» из-за кликов, сделанных до старта.
 - **AC4.** [Синхронное чтение сохранений и сценариев при нажатии «Новая игра»](./EP-maintenance-US-0022-TK-0004-new-game-io/EP-maintenance-US-0022-TK-0004-new-game-io.md). «Новая игра» не читает содержимое сохранений и чужих сценариев в потоке окна: наличие сохранения проверяется по списку файлов, путь обучения ищется без загрузки остальных сценариев, ошибка ввода-вывода не превращает кнопку в бездействие.
@@ -78,7 +78,7 @@ revision: 1
 
 | Порядок | Тикет | Серьёзность | Слой | Источник | Критерии |
 |---|---|---|---|---|---|
-| 1 | [EP-maintenance-US-0022-TK-0001-hit-roll-chance](./EP-maintenance-US-0022-TK-0001-hit-roll-chance/EP-maintenance-US-0022-TK-0001-hit-roll-chance.md) | major | engine | EP-maintenance-US-0016-TK-0004/TK-0005 (вошло в merge #113) | AC1 |
+| 1 | [EP-maintenance-US-0022-TK-0001-hit-roll-chance](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0001-hit-roll-chance/EP-maintenance-US-0022-TK-0001-hit-roll-chance.md) | major | engine | EP-maintenance-US-0016-TK-0004/TK-0005 (вошло в merge #113) | AC1 |
 | 2 | [EP-maintenance-US-0022-TK-0002-tutorial-start-fallback](./EP-maintenance-US-0022-TK-0002-tutorial-start-fallback/EP-maintenance-US-0022-TK-0002-tutorial-start-fallback.md) | major | client | EP-0027-US-0001-TK-0001 (AC2, AC6) | AC2 |
 | 3 | [EP-maintenance-US-0022-TK-0003-tutorial-start-input](./EP-maintenance-US-0022-TK-0003-tutorial-start-input/EP-maintenance-US-0022-TK-0003-tutorial-start-input.md) | minor | client | EP-0027-US-0001-TK-0001 | AC3 |
 | 4 | [EP-maintenance-US-0022-TK-0004-new-game-io](./EP-maintenance-US-0022-TK-0004-new-game-io/EP-maintenance-US-0022-TK-0004-new-game-io.md) | minor | client | EP-0027-US-0001-TK-0001 | AC4 |

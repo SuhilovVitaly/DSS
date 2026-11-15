@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0001-hit-roll-chance
 title: Бросок попадания показан рядом с другим шансом
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: major
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Бросок попадания показан рядом с другим шансом
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -37,6 +38,10 @@ revision: 1
 |---|---|
 | `src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSalvo.cs:172-189` | Условный `chance`, `hit = hitRoll < chance`, в снимок идёт `effectiveChance`. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.FireTemplates.cs:178-185` | Подпись `Map.ResultChance` по `shot.Chance` плюс `Map.HitRoll`. |
+| `src/DeepSpaceSaga.Contracts/TacticalBattleSnapshot.cs` | Добавлено при исполнении (allowlist расширен с согласия пользователя): `TacticalShotSnapshot.ConditionalChance`. |
+| `src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSnapshotBuilder.cs` | Добавлено при исполнении: перенос `ConditionalChance` в снимок. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleResults.cs` | Добавлено при исполнении: для выстрела, отклонённого чужой ловушкой, `ConditionalChance` скрывается, чтобы подпись не раскрывала ловушку. |
+| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/battle-data-seed1.txt` | Добавлено при исполнении: эталон дополнен полем `ConditionalChance` у каждого выстрела. |
 
 ## Implementation steps
 
@@ -55,4 +60,13 @@ Engine.Tests: снимок выстрела с Absorption > 0 содержит �
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs` (от main `d67d538e`). Дефект на `d67d538e` подтверждён.
+
+- Engine: `TacticalShot.ConditionalChance` — шанс с учётом ловушки и без поглощения, с которым сравнивается `HitRoll`; порядок бросков не изменён.
+- Contracts: `TacticalShotSnapshot.ConditionalChance` (`double?`, null в старых снимках).
+- Client: подпись итога печатает `ConditionalChance` рядом с броском; у поглощённого выстрела остаётся эффективный шанс. Для выстрела, отклонённого чужой ловушкой, поле скрывается вместе с `ChanceWithoutDecoy`.
+- Эталон `battle-data-seed1.txt` дополнен полем вручную; при расхождении перегенерировать через `DSS_EP0019_CAPTURE_REFERENCE=1`.
+
+Тесты: `AnomalySalvoTests.Hit_roll_is_compared_with_published_conditional_chance`, `TabletopSalvoTests.Hit_roll_is_printed_next_to_the_conditional_chance_it_was_compared_with`.
+
+Проверки: `dotnet build` для Engine.Tests, Client.Tests, Contracts.Tests — 0 предупреждений, 0 ошибок. Тесты по решению пользователя запускаются один раз после завершения истории; результат записан в документе истории.

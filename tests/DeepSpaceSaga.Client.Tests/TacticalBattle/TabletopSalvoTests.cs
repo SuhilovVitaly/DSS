@@ -320,6 +320,35 @@ public sealed class TabletopSalvoTests
     }
 
     [Fact]
+    public async Task Hit_roll_is_printed_next_to_the_conditional_chance_it_was_compared_with()
+    {
+        // US-0022-TK-0001: Absorption .2, conditional .50, effective .40, roll .45 -> hit.
+        await using var scene = await Ep0019Scenes.Create("4-salvo-results");
+        using var locale = Localization.UseLocaleForTests("Russian");
+        var frame = scene.Frame;
+        var original = frame.Salvo!.Flights.First(flight => frame.Battle.Units.Any(unit =>
+            unit.Id == flight.Shot.ShooterId && unit.State != DeepSpaceSaga.Contracts.TacticalUnitState.Destroyed));
+        var shot = original.Shot with
+        {
+            Absorption = .2, Absorbed = false, AbsorptionRoll = .9,
+            Chance = .40, ConditionalChance = .50, HitRoll = .45,
+            Hit = true, Killed = false, Kill = false
+        };
+        Assert.True(shot.HitRoll >= shot.Chance && shot.HitRoll < shot.ConditionalChance);
+        frame = frame with
+        {
+            HoverUnitId = shot.ShooterId,
+            Salvo = frame.Salvo with { Flights = [original with { Shot = shot }], PlaybackSkipped = true }
+        };
+        var texts = Draw(frame).Texts.Select(entry => entry.Text).ToArray();
+        string roll = Localization.Get("TacticalBattle.Map.HitRoll").Replace("{0}", BattleFormat.Probability(.45, 2), StringComparison.Ordinal);
+        string line = Assert.Single(texts, text => text.Contains(roll, StringComparison.Ordinal));
+        Assert.Contains(Localization.Get("TacticalBattle.Map.ResultChance").Replace("{0}", "50%", StringComparison.Ordinal), line, StringComparison.Ordinal);
+        Assert.DoesNotContain("40%", line, StringComparison.Ordinal);
+        Assert.Contains(texts, text => text.Contains("попадание", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Tabletop_doubles_torpedo_flight_duration()
     {
         using var profile = new TabletopTestProfile();

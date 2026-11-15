@@ -96,6 +96,9 @@ public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string Tar
     public bool TargetEvading { get; init; }
     public bool Decoyed { get; init; }
     public double? ChanceWithoutDecoy { get; init; }
+    /// <summary>Chance the HitRoll was compared with (decoy applied, absorption not); Chance is the effective chance.
+    /// Null only in snapshots written before this field existed.</summary>
+    public double? ConditionalChance { get; init; }
     /// <summary>The zero-to-one accuracy roll. An absorbed shot never reaches this check.</summary>
     public double? HitRoll { get; init; }
     public double? AbsorptionRoll { get; init; }

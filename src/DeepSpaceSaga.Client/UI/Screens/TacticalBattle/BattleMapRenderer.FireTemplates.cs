@@ -176,7 +176,9 @@ internal static partial class TacticalBattleMapRenderer
             : M(flight.InterceptedByDecoy ? "Map.ShotDecoyMiss" : "Map.ShotMiss");
         if (hit && shot.Rear) outcome = M("Map.RearHit", outcome);
         string detail = $"{PilotCardModel.Name(shooter)} → {(target is null ? shot.TargetId : PilotCardModel.Name(target))} · {outcome}";
-        string chance = M("Map.ResultChance", Pct(shot.Chance));
+        // HitRoll is compared with the conditional (pre-absorption) chance, so print that one next to it;
+        // an absorbed shot shows its absorption roll and keeps the effective chance.
+        string chance = M("Map.ResultChance", Pct(shot.Absorbed ? shot.Chance : shot.ConditionalChance ?? shot.Chance));
         if (!salvo.InFlight)
         {
             var roll = shot.Absorbed ? shot.AbsorptionRoll : shot.HitRoll;
