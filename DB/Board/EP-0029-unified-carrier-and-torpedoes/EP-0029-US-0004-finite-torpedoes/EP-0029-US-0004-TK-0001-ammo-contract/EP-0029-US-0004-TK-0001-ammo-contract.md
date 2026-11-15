@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Боезапас и причины отказа в DTO
@@ -103,4 +103,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added nullable `AmmoCurrent`/`AmmoCapacity` to `TacticalUnitSnapshot` (null = unknown legacy payload, 0 = empty magazine), appended `TacticalFireSkipReason.NoAmmo=10`, `TacticalOutcomeReasonCode.NoCombatCapability=3` and `TacticalBattleRejectionCode.NoAmmo=26` (append-only, no renumbering).
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests --filter "FullyQualifiedName~Ep0029Us0004Tk0001Tests"` — **2/2 passed** (`NoAmmoEnumsAppendWithoutRenumbering`, `StepAmmoRoundTrip`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-011-us0004tk0001/US-0004-TK-0001/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (contracts layer); native/product acceptance remains OPEN.

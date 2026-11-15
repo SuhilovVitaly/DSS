@@ -7,7 +7,7 @@ public enum TacticalBattlePhase { Move = 0, Fire = 1, Over = 2 }
 public enum TacticalUnitKind { Drone = 0, Carrier = 1 }
 public enum TacticalUnitState { Air = 0, Disabled = 1, Destroyed = 2, Alive = 3 }
 public enum TacticalBattleOutcomeCode { A = 0, B = 1, Draw = 2, Timeout = 3 }
-public enum TacticalOutcomeReasonCode { CarrierDestroyed = 0, NoDrones = 1, Timeout = 2 }
+public enum TacticalOutcomeReasonCode { CarrierDestroyed = 0, NoDrones = 1, Timeout = 2, NoCombatCapability = 3 }
 public enum TacticalBattleLogKind
 {
     Started = 0, RoleChanged = 1, FighterBreak = 2, NoTargets = 3, ShotMissed = 4, ShotHit = 5,
@@ -18,7 +18,8 @@ public enum TacticalBattleLogKind
 public enum TacticalFireSkipReason
 {
     None = 0, NoTarget = 1, Withheld = 2, ShooterDestroyed = 3, ShooterDisabled = 4,
-    WeaponJammed = 5, TargetUnavailable = 6, BattleEnded = 7, Evading = 8, InDust = 9
+    WeaponJammed = 5, TargetUnavailable = 6, BattleEnded = 7, Evading = 8, InDust = 9,
+    NoAmmo = 10
 }
 public sealed record TacticalFireQueueEntry(int Index, string ShooterId, int Initiative);
 public sealed record TacticalFireStepSnapshot(int Index, string ShooterId, string? TargetId, TacticalFireSkipReason SkipReason,
@@ -61,6 +62,9 @@ public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKi
     public string? SourceDroneId { get; init; }
     /// <summary>World ship id this unit originates from (carrier or drone).</summary>
     public string? SourceShipId { get; init; }
+    /// <summary>Remaining torpedoes. Null for legacy payloads = unknown, not infinite; 0 is an empty magazine.</summary>
+    public int? AmmoCurrent { get; init; }
+    public int? AmmoCapacity { get; init; }
 }
 public sealed record TacticalDroneOrder(string DroneId, double Speed, double Turn);
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);
