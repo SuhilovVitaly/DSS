@@ -24,6 +24,25 @@ public sealed partial class GameSessionHandle
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception error) { WriteDiagnostic($"TACTICAL state failed: {error}"); return null; }
     }
+    /// <summary>
+    /// Wait for the first authoritative carrier surface on the snapshot stream. The owned
+    /// Tutorial/F8 entry needs the player's own <c>ShipId</c>/revision before it may build a start
+    /// request. A producer without the carrier surface never publishes one, so the bounded wait
+    /// returns null instead of hanging or fabricating an owned wing.
+    /// </summary>
+    internal async ValueTask<CarrierOperationsSnapshot?> WaitForCarrierOperationsAsync(
+        TimeSpan timeout, CancellationToken cancellationToken = default)
+    {
+        long deadline = Environment.TickCount64 + Math.Max(0, (long)timeout.TotalMilliseconds);
+        while (true)
+        {
+            if (CarrierOperations is { } carrier) return carrier;
+            if (Failure is not null) return null;
+            long remaining = deadline - Environment.TickCount64;
+            if (remaining <= 0) return null;
+            await Task.Delay((int)Math.Min(remaining, 25), cancellationToken).ConfigureAwait(false);
+        }
+    }
     public ValueTask<TacticalBattleResponse> StartTacticalBattleAsync(StartTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
         SendTactical("start", request.CommandId, request, () => _connection.StartTacticalBattleAsync(request, cancellationToken), cancellationToken);
     public ValueTask<TacticalBattleResponse> MoveTacticalBattleAsync(MoveTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
