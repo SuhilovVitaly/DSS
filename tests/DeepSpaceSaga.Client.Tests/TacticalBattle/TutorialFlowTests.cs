@@ -119,6 +119,54 @@ public sealed class TutorialFlowTests
         Assert.Contains("Tutorial start failed: " + reason, LogTailReader.ReadTail(logLength));
     }
 
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0003: a second New Game clicked while the tutorial is still starting is a stale main-menu
+    /// command; it is dropped instead of reaching the opened battle's gate, so no «world actions blocked» notice appears.
+    /// </summary>
+    [Fact]
+    public async Task DoubleNewGameDuringTutorialStartOpensOneBattleWithoutBlockedNotice()
+    {
+        await using var fixture = new TutorialFixture();
+        var menu = Assert.IsType<MainMenuScreen>(fixture.Screens.Current);
+
+        var first = fixture.Route(ScreenEvent.NewGame);
+        var second = fixture.Route(ScreenEvent.NewGame);
+        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(30));
+
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.Equal("", battle.BlockedNotice);
+        Assert.Equal(1, fixture.Proxy!.Starts);
+        Assert.Single(fixture.CreatedPaths);
+        Assert.Equal(2, fixture.Screens.Count);
+        Assert.DoesNotContain(menu, fixture.Screens.VisibleBottomToTop());
+        Assert.False(fixture.ExitRequested);
+    }
+
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0003: Exit clicked while the tutorial is still starting is executed (not lost behind the transition
+    /// lock and not swallowed by the battle gate); the tutorial battle is never opened and its session is disposed.
+    /// </summary>
+    [Fact]
+    public async Task ExitDuringTutorialStartIsExecutedAndNoBattleOpens()
+    {
+        await using var fixture = new TutorialFixture();
+        var menu = Assert.IsType<MainMenuScreen>(fixture.Screens.Current);
+
+        var start = fixture.Route(ScreenEvent.NewGame);
+        var exit = fixture.Route(ScreenEvent.Exit);
+        await Task.WhenAll(start, exit).WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.True(fixture.ExitRequested);
+        Assert.Same(menu, fixture.Screens.Current);
+        Assert.Equal(1, fixture.Screens.Count);
+        Assert.DoesNotContain(fixture.Screens.VisibleBottomToTop(), screen => screen is TacticalBattleModalScreen);
+        Assert.Null(fixture.Session);
+        Assert.Equal(0, fixture.Depth);
+        await fixture.LastSessionDisposal.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.True(fixture.Proxy!.Disposed);
+    }
+
     [Fact]
     public async Task TutorialMainMenuEventEndsTheBattleSessionCleanly()
     {
@@ -457,6 +505,7 @@ public sealed class TutorialFlowTests
         internal int Depth => Field<int>(Window, "_modalDepth");
         internal GameSessionHandle? Session => Field<GameSessionHandle?>(Window, "_session");
         internal Task LastSessionDisposal => Field<Task>(Window, "_lastSessionDisposal");
+        internal bool ExitRequested => Field<bool>(Window, "_exitRequested");
 
         /// <param name="installTabletop">Copies the shipped <c>Skins/tabletop</c> pack next to the profile (otherwise the profile has no packs).</param>
         internal TutorialFixture(SaveSlotInfo[]? saves = null, StartFailure failure = StartFailure.None, bool? tutorialHints = null,

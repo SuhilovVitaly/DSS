@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0003-tutorial-start-input
 title: Ввод в главном меню во время запуска обучения
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Ввод в главном меню во время запуска обучения
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -55,4 +56,12 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: события меню, поставленные в очередь за `_transitionLock` во время запуска обучения, выполнялись уже в бою и давали плашку блокировки, «Выход» поглощался.
+
+- `SkiaWindow.HandleScreenEvent` запоминает экран-источник события до ожидания блокировки. «Выход» из главного меню выполняется без ожидания (`_exitRequested`, закрытие окна). Событие главного меню, которое пришло после смены экрана, пишется в InterfaceLog и отбрасывается до проверки боя.
+- `StartTutorialAsync` не открывает бой после запрошенного выхода и освобождает сессию.
+- Выбран вариант «отбросить устаревшие клики меню», а не экран загрузки: инвариант «движок вызывается при открытом главном меню» сохранён.
+
+Тесты (`TutorialFlowTests`): `DoubleNewGameDuringTutorialStartOpensOneBattleWithoutBlockedNotice`, `ExitDuringTutorialStartIsExecutedAndNoBattleOpens`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.

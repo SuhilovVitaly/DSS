@@ -73,6 +73,8 @@ public sealed class SkiaWindow : IDisposable
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
+    // Set by main-menu Exit, which bypasses _transitionLock: an in-flight tutorial start must not open its battle afterwards.
+    private bool _exitRequested;
     private bool _isFocused = true;
     // Leave room for the elapsed-time diagnostic before the first focus event.
     private long _focusRegainedAtMs = long.MinValue / 2;
@@ -805,10 +807,28 @@ public sealed class SkiaWindow : IDisposable
                 $"DIAG HandleScreenEvent evt={evt} screen={_screens.Current.GetType().Name} depth={_screens.Count}");
         }
 
+        // The screen that produced this event, captured at dispatch time (before waiting for the lock).
+        var origin = _screens.Current;
+        if (evt == ScreenEvent.Exit && origin is MainMenuScreen && !_closing)
+        {
+            // Main-menu Exit never waits behind an in-flight transition (e.g. a tutorial start holding the lock
+            // across several awaits) — otherwise it would run only after the battle opened and be blocked there.
+            _exitRequested = true;
+            _window?.Close();
+            return;
+        }
+
         await _transitionLock.WaitAsync();
         try
         {
             if (_closing) return;
+            if (evt != ScreenEvent.None && origin is MainMenuScreen && !ReferenceEquals(_screens.Current, origin))
+            {
+                // A main-menu click queued while a transition (e.g. the tutorial start) replaced the menu is stale:
+                // drop it instead of letting the new screen (the tutorial battle's gate) reject it with a notice.
+                InterfaceLog.Write($"HandleScreenEvent evt={evt} ignored: issued by a main menu that is no longer shown");
+                return;
+            }
             if (EnsureShipDestroyedScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or ScreenEvent.Exit or
                 ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
@@ -1143,7 +1163,7 @@ public sealed class SkiaWindow : IDisposable
                 fallBackToScenarioSelect = started is { Accepted: false, Code: TacticalBattleRejectionCode.Unavailable };
                 throw new InvalidOperationException("Tutorial battle was rejected: " + (started?.Code.ToString() ?? "no response"));
             }
-            if (_closing)
+            if (_closing || _exitRequested)
             {
                 await session.DisposeAsync();
                 return;
