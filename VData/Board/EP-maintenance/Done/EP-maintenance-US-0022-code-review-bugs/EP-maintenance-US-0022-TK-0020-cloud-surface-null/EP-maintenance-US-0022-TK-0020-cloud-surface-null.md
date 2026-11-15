@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0020-cloud-surface-null
 title: Облака Tabletop: нет проверки SKSurface.Create на null
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Облака Tabletop: нет проверки SKSurface.Create на null
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -54,4 +55,11 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `PaintedCloudLayer.Draw` использовал результат `SKSurface.Create` без проверки на null.
+
+- `PaintedCloudLayer`: если поверхность не создалась, пересборка пропускается, состояние кэша не меняется (следующий кадр пробует снова). Рисуется прежнее изображение; если его нет или оно принадлежит другому GPU-контексту — кадр без облаков.
+- Внутренний конструктор с фабрикой поверхности для тестов; публичный конструктор и вызывающие места не изменились.
+
+Тесты (`TabletopCloudTests`): `Null_surface_without_previous_image_draws_nothing_and_does_not_throw`, `Null_surface_keeps_previous_image_and_retries_on_next_frame`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.

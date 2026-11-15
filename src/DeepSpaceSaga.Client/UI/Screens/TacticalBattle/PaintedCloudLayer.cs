@@ -14,6 +14,15 @@ internal sealed class PaintedCloudLayer : IDisposable
     private ImmutableArray<TacticalAnomalySnapshot> _source = [];
     internal int BuildCount { get; private set; }
     internal bool HasImage => _image is not null;
+    private readonly Func<SKImageInfo, GRContext?, SKSurface?> _createSurface;
+
+    public PaintedCloudLayer() : this(CreateSurface) { }
+
+    /// <summary>Test seam: SKSurface.Create returns null for a lost GRContext or an oversized texture.</summary>
+    internal PaintedCloudLayer(Func<SKImageInfo, GRContext?, SKSurface?> createSurface) => _createSurface = createSurface;
+
+    private static SKSurface? CreateSurface(SKImageInfo size, GRContext? context) =>
+        context is null ? SKSurface.Create(size) : SKSurface.Create(context, false, size);
 
     public void Draw(SKCanvas canvas, TacticalBattleFrame frame, GRContext? context = null)
     {
@@ -24,14 +33,23 @@ internal sealed class PaintedCloudLayer : IDisposable
             !AnomalyFieldLayer.Same(_source, frame.Battle.Anomalies))
         {
             var size = new SKImageInfo((int)MathF.Ceiling(frame.View.PixelWidth * scale), (int)MathF.Ceiling(frame.View.PixelHeight * scale), SKColorType.Rgba8888, SKAlphaType.Premul);
-            using var surface = context is null ? SKSurface.Create(size) : SKSurface.Create(context, false, size);
-            surface.Canvas.Clear(SKColors.Transparent);
-            surface.Canvas.Scale(scale);
-            Paint(surface.Canvas, frame);
-            var next = surface.Snapshot();
-            _image?.Dispose(); _image = next;
-            _view = frame.View; _scale = scale; _context = context; _source = frame.Battle.Anomalies;
-            BuildCount++;
+            using var surface = _createSurface(size, context);
+            if (surface is null)
+            {
+                // Skip the rebuild and keep the cache state so the next frame retries; reuse the
+                // previous image unless it is texture-backed by a different GPU context.
+                if (_image is null || (_context is not null && !ReferenceEquals(_context, context))) return;
+            }
+            else
+            {
+                surface.Canvas.Clear(SKColors.Transparent);
+                surface.Canvas.Scale(scale);
+                Paint(surface.Canvas, frame);
+                var next = surface.Snapshot();
+                _image?.Dispose(); _image = next;
+                _view = frame.View; _scale = scale; _context = context; _source = frame.Battle.Anomalies;
+                BuildCount++;
+            }
         }
         using var paint = new SKPaint { FilterQuality = SKFilterQuality.None };
         canvas.DrawImage(_image, SKRect.Create(frame.View.PixelWidth, frame.View.PixelHeight), paint);
