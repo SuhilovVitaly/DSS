@@ -146,12 +146,14 @@ internal sealed class TutorialSession
 
     /// <summary>
     /// Records a confirmed exit from the unfinished tutorial battle to the main menu; pending step events come first.
-    /// Nothing is recorded before the first observation (no metrics file yet).
+    /// Nothing is recorded before the first observation (no metrics file yet). Waits for the background write (a menu
+    /// transition, not a render frame) so the journal is complete before the battle is left (US-0022-TK-0024).
     /// </summary>
     internal void RecordAbandoned()
     {
         RecordEvents();
         if (LastObservation is { } at) Metrics?.RecordAbandoned(at.Phase, at.Turn, at.NowMs);
+        Metrics?.Flush();
     }
 
     /// <summary>H toggles the comms log (also with hints off); Esc closes an open log first. Everything else is the battle's.</summary>

@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0024-tutorial-metrics-io
 title: Журнал обучения пишется синхронно в кадре и повторяет сбойную запись
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Журнал обучения пишется синхронно в кадре и повторяет сбойную запись
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -55,4 +56,12 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Реализован 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Дефект на текущем main подтверждён: `TutorialMetrics.Add` на каждое событие выполнял `CreateDirectory`/`WriteAllText`/`Move` в кадре отрисовки и после ошибки продолжал пытаться писать.
+
+- `TutorialMetrics.Add` не трогает диск: снимок списка событий пишется фоновой задачей (`Background`), события, пришедшие во время записи, объединяются в одну запись последнего снимка. Формат файла и атомарная запись через временный файл не изменились.
+- Первая ошибка записи (или непредвиденное исключение фоновой задачи) отключает запись (`WritesDisabled`) и даёт одно предупреждение; дальше события хранятся только в памяти.
+- `Flush()` дожидается текущей записи; `TutorialSession.RecordAbandoned` вызывает его, чтобы событие `abandoned` (TK-0005) было на диске к моменту возврата в меню. При обычном выходе из приложения запись не дожидается — в худшем случае остаётся более старый, но целый файл.
+
+Тесты (`TutorialMetricsTests`): `AfterFirstWriteFailureNewEventsAreNotWrittenToDisk`, `RecordingDoesNoFileIoAndCoalescesPendingEvents`; в четырёх существующих тестах перед проверками добавлен `Flush()`.
+
+Проверки: `dotnet build tests/DeepSpaceSaga.Client.Tests` — 0 предупреждений, 0 ошибок. Тесты запускаются один раз после завершения истории; результат записан в документе истории.
