@@ -218,14 +218,57 @@ public sealed class Ep0029Us0005Tk0002Tests : IDisposable
                 EngineFactors = [1.0, 0.5],
             });
 
+        // An explicit deployable set is the only way a disabled drone is built — the world sortie
+        // filter never launches one; this keeps the persisted-state restore path reachable.
         var battle = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 400, 35, wing, FourCrew(),
-            Catalog().Scenarios["initial"], "initial", 1);
+            Catalog().Scenarios["initial"], "initial", 1,
+            deployableDroneIds: ImmutableHashSet.Create(StringComparer.Ordinal, "DRN-PLAYER-01"));
         var drone = battle.Drones.Single(d => d.Id == "DRN-PLAYER-01");
 
         Assert.Equal(TacticalDroneStatus.Disabled, drone.Status);
         Assert.Equal(0, drone.Speed);
         Assert.Equal(1.0, drone.Engines[0].Factor);
         Assert.Equal(0.5, drone.Engines[1].Factor);
+    }
+
+    [Fact]
+    public void DestroyedDroneKeepsItsEncounterSlotInAssembly()
+    {
+        // Legacy zero-skill wing: tactical values come from the encounter alias bound to the slot.
+        var crew = ImmutableArray.Create(
+            Pilot("CHR-PILOT-1", accuracy: 0, maneuver: 0, initiative: 0),
+            Pilot("CHR-PILOT-2", accuracy: 0, maneuver: 0, initiative: 0),
+            Pilot("CHR-PILOT-3", accuracy: 0, maneuver: 0, initiative: 0),
+            Pilot("CHR-PILOT-4", accuracy: 0, maneuver: 0, initiative: 0));
+        var wing = FourWing();
+        wing = wing.SetItem(0, wing[0] with { Destroyed = true });
+
+        // The full wing is passed in stable DroneId order; the destroyed tombstone keeps slot 0.
+        var battle = OwnedBattleAssembly.Create(Catalog(), "SPC-0001", 400, 35, wing, crew,
+            Catalog().Scenarios["initial"], "initial", 1,
+            deployableDroneIds: ImmutableHashSet.Create(StringComparer.Ordinal,
+                "DRN-PLAYER-02", "DRN-PLAYER-03", "DRN-PLAYER-04"));
+        var units = TacticalBattleSnapshotBuilder.Units(battle)
+            .Where(u => u.Kind == TacticalUnitKind.Drone && u.Side == "A")
+            .ToDictionary(u => u.Id, StringComparer.Ordinal);
+
+        Assert.DoesNotContain("DRN-PLAYER-01", units.Keys);
+
+        // Slot 1 is yun (53/55, start 145/275), not vera (55/52, start 145/228).
+        var second = units["DRN-PLAYER-02"];
+        Assert.Equal("CHR-PILOT-2", second.Build!.PilotId);
+        Assert.Equal(53, second.Accuracy);
+        Assert.Equal(55, second.Maneuver);
+        Assert.InRange(second.Pose.X, 145 - 12, 145 + 12);
+        Assert.InRange(second.Pose.Y, 275 - 12, 275 + 12);
+
+        // Slot 2 is marta (59/54, start 138/212); slot 3 is oleg (50/51, start 135/288).
+        Assert.Equal(59, units["DRN-PLAYER-03"].Accuracy);
+        Assert.Equal(54, units["DRN-PLAYER-03"].Maneuver);
+        Assert.InRange(units["DRN-PLAYER-03"].Pose.Y, 212 - 12, 212 + 12);
+        Assert.Equal(50, units["DRN-PLAYER-04"].Accuracy);
+        Assert.Equal(51, units["DRN-PLAYER-04"].Maneuver);
+        Assert.InRange(units["DRN-PLAYER-04"].Pose.Y, 288 - 12, 288 + 12);
     }
 
     private static JsonObject HullLayout()

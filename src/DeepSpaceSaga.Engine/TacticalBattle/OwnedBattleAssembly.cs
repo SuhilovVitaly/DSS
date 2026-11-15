@@ -16,7 +16,8 @@ internal static class OwnedBattleAssembly
 {
     public static TacticalBattle Create(TacticalBattleCatalog catalog, string shipId, int hullCurrent, int maneuver,
         ImmutableArray<OwnedDroneData> wing, ImmutableArray<CrewMemberRuntime> crew, BattleScenario encounter,
-        string scenarioId, long seed, string playerSide = "A")
+        string scenarioId, long seed, string playerSide = "A",
+        ImmutableHashSet<string>? deployableDroneIds = null)
     {
         var random = new Mulberry32(seed);
         var drones = ImmutableArray.CreateBuilder<TacticalDrone>();
@@ -35,17 +36,20 @@ internal static class OwnedBattleAssembly
                 carriers.Add(new(shipId, playerSide, new(carrierStart.X, carrierStart.Y, carrierStart.Course),
                     hullCurrent, catalog.Armor[carrierLayout.Armor].Armor, maneuver));
 
-                // The encounter slot is pinned to the wing's stable DroneId index: a destroyed or
-                // disabled drone consumes its slot (it keeps its pilot and place) and never shifts
-                // survivors onto another alias. Destroyed tombstones are not built; a disabled
-                // drone is built at its slot with the persisted disabled/engine-damage state (the
-                // world sortie filter already refuses to launch one, this keeps direct assembly
-                // honest).
+                // The encounter slot is pinned to the FULL wing's stable DroneId index. A drone that
+                // cannot deploy leaves its slot unused and never shifts a survivor onto another
+                // alias (a destroyed tombstone or a disabled/offline-hangar drone keeps its place).
+                // deployableDroneIds null means the default rule (non-destroyed, non-disabled);
+                // disabling a drone is always a caller decision, so the persisted disabled restore
+                // stays reachable only through an explicit direct-caller set.
                 var ordered = wing.OrderBy(d => d.DroneId, StringComparer.Ordinal).ToArray();
                 for (int i = 0; i < ordered.Length && i < side.Drones.Length; i++)
                 {
                     var owned = ordered[i];
-                    if (owned.Destroyed) continue;
+                    bool deployable = !owned.Destroyed && (deployableDroneIds is null
+                        ? !owned.Disabled
+                        : deployableDroneIds.Contains(owned.DroneId));
+                    if (!deployable) continue;
                     drones.Add(BuildOwnedDrone(catalog, owned, side.Drones[i], playerSide, crewById));
                 }
             }

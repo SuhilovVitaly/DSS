@@ -137,3 +137,19 @@ Evidence:
   - Client: `--filter "FullyQualifiedName~Ep0029Us0011Tk0002|TetrarchLoadoutTests|ScenarioModuleCleanupTests"` → **7 failed / 25 passed**; the 7 are exactly the known baseline (`TetrarchLoadoutTests` 5 cases / 3 methods + pre-existing `ScenarioModuleCleanupTests` ×2). `Ep0029Us0011Tk0002Tests` all green. No new failure. (`.../broad-client.stdout.txt`, `.../broad-client/broad.trx`.)
 
 Status: automated PASS (engine layer); native/product acceptance remains OPEN.
+
+## Remediation 2026-11-15 (follow-up: stable encounter slots)
+
+Verified finding (validation P1 after Batch R-A): the assembly consumed a compacted wing. On the production path `StartOwnedTacticalBattle` filtered unavailable drones before calling the assembly, so the assembly's index `i` pointed into the compacted list and a destroyed DRN-PLAYER-01 shifted DRN-PLAYER-02 onto encounter slot 0 (validator probe: DRN-02 pose moved from x141.5/y275.5 to x137.5/y216.3; a legacy zero-skill wing then received vera's 55/52 instead of yun's 53/55). The direct-assembly test passed only because it passed the full wing including the tombstone.
+
+Fix: `OwnedBattleAssembly.Create` now takes the FULL wing (ordered internally by `DroneId`) plus an optional `ImmutableHashSet<string> deployableDroneIds` (null = default rule: not destroyed and not disabled). The loop walks the full ordered wing with a stable index `i`, stops at `side.Drones.Length`, leaves `side.Drones[i]` unused when the drone is not deployable, and never renumbers survivors. A destroyed tombstone is never built; a disabled drone is built with its persisted state only when an explicit deployable set names it, so the US-0006 restore path stays reachable for direct callers while the world path stays grounded. Cross-ticket dependency: the engine call site that must pass the full wing and the deployable set lives in `SimulationEngine.TacticalBattle.cs`, owned by US-0005 TK-0003 — no change to this ticket's allowlist.
+
+Named test: `Ep0029Us0005Tk0002Tests.DestroyedDroneKeepsItsEncounterSlotInAssembly` (full wing with a destroyed DRN-PLAYER-01; DRN-02 keeps slot 1 = yun/Audrey 53/55 at 145/275 ± scatter, DRN-03 marta 59/54, DRN-04 oleg 50/51; `DisabledAndEngineDamageRestoredOnNextSortie` now passes an explicit deployable set to keep exercising the restore path).
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0005Tk0002Tests"` → compile error CS1739 (missing `deployableDroneIds`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-048-us0005tk0002-followup/red.stdout.txt`.
+- Green: same filter → 9/9 passed — `.../run-048-us0005tk0002-followup/US-0005-TK-0002/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+- Doc correction in the same commit: the remediation story's Board-amendment line now states the actual US-0006 TK-0002 swap (Carrier.cs -> OwnedWing.cs, 5 files) instead of the inaccurate "adds CarrierStateData/OwnedBattleAssembly".
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
