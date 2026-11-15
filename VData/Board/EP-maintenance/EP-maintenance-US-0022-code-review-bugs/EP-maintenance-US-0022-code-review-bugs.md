@@ -64,7 +64,7 @@ revision: 1
 - **AC24.** [Журнал обучения пишется синхронно в кадре и повторяет сбойную запись](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0024-tutorial-metrics-io/EP-maintenance-US-0022-TK-0024-tutorial-metrics-io.md). Запись метрик обучения не выполняет файловый ввод-вывод в кадре отрисовки и после первой ошибки записи больше не пытается писать.
 - **AC25.** [Свёрнутая панель связи ловит клики шире кнопок](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0025-comms-chip-hit/EP-maintenance-US-0022-TK-0025-comms-chip-hit.md). Свёрнутая панель связи перехватывает клики только по значку и кнопке «Подсказки»; зазор между ними и полосы над и под кнопкой пропускают клик на карту.
 - **AC26.** [Тесты, которые не могут упасть](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0026-vacuous-tests/EP-maintenance-US-0022-TK-0026-vacuous-tests.md). Перечисленные тесты проверяют текущее поведение и могут упасть при регрессии; пропуск по платформе виден в отчёте.
-- **AC27.** [UiSpec EP-0024 расходится с кодом после исправлений](./EP-maintenance-US-0022-TK-0027-ep24-uispec-drift/EP-maintenance-US-0022-TK-0027-ep24-uispec-drift.md). UiSpec EP-0024 описывает действующее поведение Tabletop или явно отмечает пункты, заменённые исправлениями EP-maintenance, со ссылками на них.
+- **AC27.** [UiSpec EP-0024 расходится с кодом после исправлений](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0027-ep24-uispec-drift/EP-maintenance-US-0022-TK-0027-ep24-uispec-drift.md). UiSpec EP-0024 описывает действующее поведение Tabletop или явно отмечает пункты, заменённые исправлениями EP-maintenance, со ссылками на них.
 
 ## Non-goals
 
@@ -104,7 +104,7 @@ revision: 1
 | 24 | [EP-maintenance-US-0022-TK-0024-tutorial-metrics-io](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0024-tutorial-metrics-io/EP-maintenance-US-0022-TK-0024-tutorial-metrics-io.md) | minor | client | EP-0028-US-0006-TK-0001 | AC24 |
 | 25 | [EP-maintenance-US-0022-TK-0025-comms-chip-hit](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0025-comms-chip-hit/EP-maintenance-US-0022-TK-0025-comms-chip-hit.md) | minor | client | EP-0028-US-0006-TK-0004 | AC25 |
 | 26 | [EP-maintenance-US-0022-TK-0026-vacuous-tests](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0026-vacuous-tests/EP-maintenance-US-0022-TK-0026-vacuous-tests.md) | minor | client | EP-0024-US-0003-TK-0001, EP-0024-US-0009-TK-0002, EP-0028-US-0004-TK-0001, EP-0028-US-0005-TK-0002 | AC26 |
-| 27 | [EP-maintenance-US-0022-TK-0027-ep24-uispec-drift](./EP-maintenance-US-0022-TK-0027-ep24-uispec-drift/EP-maintenance-US-0022-TK-0027-ep24-uispec-drift.md) | minor | docs | EP-0024 UiSpec; EP-maintenance 91dc15bc, 09a7c2ae, 42c8082b, 63db8c1e | AC27 |
+| 27 | [EP-maintenance-US-0022-TK-0027-ep24-uispec-drift](../Done/EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-TK-0027-ep24-uispec-drift/EP-maintenance-US-0022-TK-0027-ep24-uispec-drift.md) | minor | docs | EP-0024 UiSpec; EP-maintenance 91dc15bc, 09a7c2ae, 42c8082b, 63db8c1e | AC27 |
 
 ## Gaps and backlog
 

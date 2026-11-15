@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0027-ep24-uispec-drift
 title: UiSpec EP-0024 расходится с кодом после исправлений
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: docs
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # UiSpec EP-0024 расходится с кодом после исправлений
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -37,6 +38,7 @@ UiSpec EP-0024 описывает действующее поведение Tabl
 |---|---|
 | `DB/Board/EP-0024-battle-field-redesign/UiSpec.md` | §2.3, §3.5, §7.1, §8.2, §11.5. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleCamera.cs:33-43` | Масштаб и камера при смене фазы. |
+| `DB/Board/EP-0024-battle-field-redesign/UiSpec.md` | Добавлено при исполнении: идентичная копия UiSpec обновлена так же, как в `VData/Board`. |
 
 ## Implementation steps
 
@@ -55,4 +57,13 @@ UiSpec EP-0024 описывает действующее поведение Tabl
 
 ## Статус
 
-Не начат.
+Выполнен 2026-11-16 на ветке `maintenance/US-0022-code-review-bugs`. Все четыре расхождения на текущем main подтверждены; обе копии UiSpec (`VData/Board` и `DB/Board`) до правки были идентичны и остались идентичными.
+
+- §7.1 / D-06: в Tabletop всплывает только урон непоглощённого попадания, без пометки «в тыл»; промах и поглощение показывает эффект `puff`. Ссылка на EP-maintenance-US-0016-TK-0002.
+- §2.3: целые пиксели и f×f точны только при `UnitScale = 1`; при других масштабах это открытый вопрос. Ссылка на EP-maintenance-US-0015-TK-0001.
+- §8.2: камера подгоняется один раз на новый бой; фаза, ход, залп и изменение размера сохраняют центр и масштаб. Ссылка на EP-maintenance-US-0009-TK-0003.
+- §3.5, §7.6, §11.5, §11.13: рамок потерь нет; в узких карточках полосы корпуса и брони вместо ячеек; проба 3 проверяет пиксель полосы брони. Ссылка на EP-maintenance-US-0018-TK-0002.
+
+Проверки: все 4 относительные ссылки существуют из обеих копий; `git diff --check` чист; `diff` копий пуст.
+
+Остаток (вне четырёх пунктов тикета): §8.1 не описывает открывающую подгонку первого хода; §7.2/§7.3 не отражают показ стрелки и значка итога только при наведении на стрелявшего (US-0016-TK-0002); §2.6/§3.1/§11.5 не описывают вид выведенного из строя дрона (US-0012-TK-0001).
