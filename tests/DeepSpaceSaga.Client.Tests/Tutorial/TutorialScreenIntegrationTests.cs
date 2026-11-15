@@ -234,7 +234,10 @@ public sealed class TutorialScreenIntegrationTests
         Render(screen);
         Assert.False(screen.Layout.Rects.ContainsKey("tutorial:panel"));
         var chip = screen.Layout.Rects["tutorial:chip"];
-        Assert.Contains(SKRect.Union(chip, screen.Layout.Rects["tutorial:hints"]), screen.PanelRects); // chip + «Hints: off»
+        // EP-maintenance-US-0022-TK-0025: the chip and «Hints: off» are captured separately, not their union.
+        Assert.Contains(chip, screen.PanelRects);
+        Assert.Contains(screen.Layout.Rects["tutorial:hints"], screen.PanelRects);
+        Assert.DoesNotContain(SKRect.Union(chip, screen.Layout.Rects["tutorial:hints"]), screen.PanelRects);
         Assert.DoesNotContain(panel, screen.PanelRects);
     }
 

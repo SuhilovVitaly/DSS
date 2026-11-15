@@ -16,7 +16,7 @@ revision: 1
 
 # Лист спрайтов с числом кадров не 32 проходит проверку
 
-[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
+[История](../EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 

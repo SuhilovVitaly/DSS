@@ -16,7 +16,7 @@ revision: 1
 
 # Обучение на узком экране: журнал залезает на правую колонку, реплики обрезаются
 
-[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
+[История](../EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 

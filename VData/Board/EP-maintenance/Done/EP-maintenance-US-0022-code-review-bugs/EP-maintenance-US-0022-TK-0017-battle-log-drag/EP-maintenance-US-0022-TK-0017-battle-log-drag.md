@@ -16,7 +16,7 @@ revision: 1
 
 # Перетаскивание прокрутки журнала боя прерывается
 
-[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
+[История](../EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 

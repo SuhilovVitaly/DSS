@@ -16,7 +16,7 @@ revision: 1
 
 # Колесо мыши над картой у узкой колонки прокручивает колонку
 
-[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
+[История](../EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 

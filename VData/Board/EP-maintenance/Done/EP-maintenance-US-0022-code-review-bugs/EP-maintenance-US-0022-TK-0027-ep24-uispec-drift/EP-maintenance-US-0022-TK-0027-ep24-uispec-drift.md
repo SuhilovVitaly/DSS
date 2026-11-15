@@ -16,7 +16,7 @@ revision: 1
 
 # UiSpec EP-0024 расходится с кодом после исправлений
 
-[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
+[История](../EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 

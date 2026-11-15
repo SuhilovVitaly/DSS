@@ -16,7 +16,7 @@ revision: 1
 
 # Брошенное обучение оставляет отчёт боя в статусе active
 
-[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
+[История](../EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 

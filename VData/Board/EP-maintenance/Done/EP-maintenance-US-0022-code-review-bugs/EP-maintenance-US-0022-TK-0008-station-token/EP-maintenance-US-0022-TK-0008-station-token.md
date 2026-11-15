@@ -16,7 +16,7 @@ revision: 1
 
 # Карта мира: жетон станции стал мелким и почти без цвета
 
-[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
+[История](../EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 

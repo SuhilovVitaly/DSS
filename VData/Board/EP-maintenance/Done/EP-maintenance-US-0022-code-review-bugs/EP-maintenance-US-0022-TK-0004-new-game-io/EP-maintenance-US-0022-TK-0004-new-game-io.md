@@ -16,7 +16,7 @@ revision: 1
 
 # Синхронное чтение сохранений и сценариев при нажатии «Новая игра»
 
-[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
+[История](../EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
