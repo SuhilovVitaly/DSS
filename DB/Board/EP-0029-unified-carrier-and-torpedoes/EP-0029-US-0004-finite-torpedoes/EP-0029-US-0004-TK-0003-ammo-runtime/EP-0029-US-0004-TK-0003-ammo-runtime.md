@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-02]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Загрузка, сборка и проекция магазинов
@@ -106,4 +106,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Wired finite magazines into the tactical runtime: `TacticalBattleContentLoader` requires `ammoCapacity > 0` for armed frames; `TacticalBattleAssembly` starts every drone at full magazine (`AmmoCurrent = frame.AmmoCapacity`, `AmmoUnitMassKg = 1.0`) and rejects a loadout override outside `0..capacity` (`ArgumentOutOfRangeException`); `TacticalBattleSnapshotBuilder` projects current `AmmoCurrent`/`AmmoCapacity` (no refill on capture). `BattleFrame.AmmoCapacity` was already added in TK-0002.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0004Tk0003Tests"` — **3/3 passed** (`RepeatedCaptureDoesNotReload`, `FrameCapacityAndOwnedAmmoValidated`, `EnemyThugStartsWithSix`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-013-us0004tk0003/US-0004-TK-0003/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `git diff --check` clean.
+- `dotnet format --verify-no-changes` flags pre-existing whitespace at `TacticalBattleSnapshotBuilder.cs:20-22` (untouched by this change); my touched line is conformant and the diff is clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
