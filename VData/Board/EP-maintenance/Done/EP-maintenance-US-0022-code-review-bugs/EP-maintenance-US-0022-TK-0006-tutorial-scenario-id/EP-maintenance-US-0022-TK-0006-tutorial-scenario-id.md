@@ -3,8 +3,9 @@ epic: EP-maintenance
 story: EP-maintenance-US-0022-code-review-bugs
 ticket: EP-maintenance-US-0022-TK-0006-tutorial-scenario-id
 title: Сценарий обучающего боя задан неявно
-stage: draft
-implementation_status: not_started
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
 severity: minor
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
@@ -15,7 +16,7 @@ revision: 1
 
 # Сценарий обучающего боя задан неявно
 
-[История](../EP-maintenance-US-0022-code-review-bugs.md)
+[История](../../../EP-maintenance-US-0022-code-review-bugs/EP-maintenance-US-0022-code-review-bugs.md)
 
 ## Ожидаемый результат
 
@@ -55,4 +56,8 @@ revision: 1
 
 ## Статус
 
-Не начат.
+Закрыт 2026-11-16 без изменений кода: дефект устранён до начала истории коммитом `8fab806b` (EP-0029-US-0012-TK-0002).
+
+- `SkiaWindow` передаёт в `StartTacticalBattleRequest` явный `TutorialBattleScenarioId = "initial"` вместе с `TutorialBattleSeed`.
+- Регрессию ловит существующий тест `Ep0029Us0012Tk0002Tests.TutorialStartsOwnedShip`: проверяет `request.ScenarioId == "initial"` и `request.Seed == SkiaWindow.TutorialBattleSeed` у запроса, дошедшего до движка. Дублирующий тест не добавлялся.
+- Запасной выбор первого сценария в `TacticalBattleSession` при пустом `ScenarioId` остаётся; путь обучения до него не доходит.
