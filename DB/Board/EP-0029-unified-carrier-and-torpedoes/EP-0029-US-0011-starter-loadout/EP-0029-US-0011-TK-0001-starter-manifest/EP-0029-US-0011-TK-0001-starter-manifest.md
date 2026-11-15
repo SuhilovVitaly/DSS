@@ -123,3 +123,20 @@ Implementation status: **implemented** (automated PASS; native/product OPEN).
 - Owning build PASS: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --no-restore` → 0 warnings, 0 errors (`run-038-us0011tk0001/engine-build.stdout.txt`).
 - Scoped format PASS: `dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include <the 5 allowlisted files>` → exit 0 (`run-038-us0011tk0001/format.stdout.txt`).
 - Serves AC-01/AC-04 (partially; story coverage across TK-0001…TK-0003). Native/UI and product acceptance: **OPEN** — no native run was performed for this engine ticket.
+
+## Remediation 2026-11-15
+
+Verified finding (remediation review P1, item 4, scale half): `ScenarioLoader.ValidateCrewAssignments` capped world crew `accuracySkill`/`maneuverabilitySkill` at the legacy module-operation range 0..30. The tactical skill scale is 0..100 (`Data/TacticalBattle/pilots.json` carries 55/52/53/55/59/54/50/51), so the starter manifest could not record the Board-approved pilot skills without a loader change.
+
+Fix (narrow, reversible): the two range checks widen to 0..100 and the rejection messages say so; no other validation rule changed. Values above 100 and below 0 are still rejected. The starter manifest then carries the Board table (TK-0002 remediation), and owned drones read those values from the persistent crew record (US-0005 TK-0002 remediation).
+
+Named tests (`Ep0029Us0011Tk0001Tests`, temp New Game scenarios):
+- `CrewSkillsUpToHundredAreAccepted` — 100/100 (boundary) and 55/52 load and preserve the values.
+- `CrewSkillAboveHundredIsRejected` — 101 on either skill still throws `ScenarioException`.
+
+Evidence:
+- TDD red: `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~Ep0029Us0011Tk0001Tests"` → 1 failed / 8 passed (`CrewSkillsUpToHundredAreAccepted` rejected 100/100 under the 0..30 cap) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-045-us0011tk0001/red.stdout.txt`.
+- Green: same filter → 9/9 passed — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-045-us0011tk0001/US-0011-TK-0001/focused.trx`, `.../focused.stdout.txt`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` → 0 warnings, 0 errors (`.../engine-build.stdout.txt`); scoped `dotnet format --verify-no-changes` → exit 0 (`.../format.stdout.txt`).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

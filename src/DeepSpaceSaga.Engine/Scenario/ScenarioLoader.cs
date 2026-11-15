@@ -628,10 +628,11 @@ public static class ScenarioLoader
             if (crew is null)
                 throw new ScenarioException($"Ship '{obj.ObjectId}' has a null crew member.");
             crewIds.Add(crew.CrewId);
-            if (crew.AccuracySkill is < 0 or > 30)
-                throw new ScenarioException($"Crew '{crew.CrewId}' accuracySkill must be in 0..30.");
-            if (crew.ManeuverabilitySkill is < 0 or > 30)
-                throw new ScenarioException($"Crew '{crew.CrewId}' maneuverabilitySkill must be in 0..30.");
+            // World crew skills use the tactical 0..100 scale (EP-0029 US-0011 remediation).
+            if (crew.AccuracySkill is < 0 or > 100)
+                throw new ScenarioException($"Crew '{crew.CrewId}' accuracySkill must be in 0..100.");
+            if (crew.ManeuverabilitySkill is < 0 or > 100)
+                throw new ScenarioException($"Crew '{crew.CrewId}' maneuverabilitySkill must be in 0..100.");
         }
         var assigned = new HashSet<string>(StringComparer.Ordinal);
         foreach (var module in obj.Modules ?? [])

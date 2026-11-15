@@ -194,6 +194,51 @@ public sealed class Ep0029Us0011Tk0001Tests : IDisposable
         Assert.Contains("starterCarrierManifest", exception.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>Minimal New Game scenario carrying one pilot with the given world skills.</summary>
+    private string WriteCrewScenario(int accuracySkill, int maneuverabilitySkill)
+    {
+        string path = Path.Combine(_root, $"crew-{accuracySkill}-{maneuverabilitySkill}.json");
+        File.WriteAllText(path, $$"""
+        {
+          "scenarioMetadata": { "scenarioId": "crew", "name": "crew" },
+          "gameState": {
+            "gameTimeMs": 0, "currentSpeed": "Speed0", "playerShipObjectId": "SPC-0001",
+            "spaceObjects": [
+              { "objectId": "SPC-0001", "objectType": "PlayerShip", "persistenceType": "Permanent",
+                "positionX": 0, "positionY": 0, "speedMps": 0, "directionDegrees": 0,
+                "movementType": "Stationary",
+                "crew": [
+                  { "crewId": "CHR-PLAYER-EVELYN", "displayName": "Evelyn Ward", "role": "Pilot",
+                    "accuracySkill": {{accuracySkill}}, "maneuverabilitySkill": {{maneuverabilitySkill}},
+                    "initiative": 55 }
+                ] }
+            ]
+          }
+        }
+        """);
+        return path;
+    }
+
+    [Fact]
+    public void CrewSkillsUpToHundredAreAccepted()
+    {
+        // The tactical scale is 0..100, not the legacy module-operation 0..30 cap.
+        var crew = PlayerShip(ScenarioLoader.LoadFromFile(WriteCrewScenario(100, 100))).Crew!.Single();
+        Assert.Equal(100, crew.AccuracySkill);
+        Assert.Equal(100, crew.ManeuverabilitySkill);
+
+        crew = PlayerShip(ScenarioLoader.LoadFromFile(WriteCrewScenario(55, 52))).Crew!.Single();
+        Assert.Equal(55, crew.AccuracySkill);
+        Assert.Equal(52, crew.ManeuverabilitySkill);
+    }
+
+    [Fact]
+    public void CrewSkillAboveHundredIsRejected()
+    {
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromFile(WriteCrewScenario(101, 50)));
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromFile(WriteCrewScenario(50, 101)));
+    }
+
     private static SpaceObjectData PlayerShip(ScenarioFile scenario) =>
         scenario.GameState.SpaceObjects.Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
 
