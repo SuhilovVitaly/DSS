@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Отчёт о потерях и причины пропуска
@@ -105,4 +105,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`PhasePanel.Outcome` теперь различает `NoCombatCapability` (stalemate) от `CarrierDestroyed` и от `TurnLimit`; добавлен locale `TacticalBattle.Ui.NoCombatCapability` (RU/EN). Причина — append-only enum (NoCombatCapability=3, без ренумерации).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0010Tk0004Tests"` — **3/3 passed** (`StalemateIsNotCarrierDestruction`, `LostMagazineNotListedAsFired`, `ReplayCannotRepeatSettlement`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-036-us0010tk0004/US-0010-TK-0004/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Client --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+
+Status: automated PASS (client layer); native/product acceptance remains OPEN.

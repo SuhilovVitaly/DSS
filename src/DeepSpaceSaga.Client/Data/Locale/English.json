@@ -729,6 +729,7 @@
   "TacticalBattle.Ui.EnemyNoDrones": "the enemy has no drones left",
   "TacticalBattle.Ui.OwnNoDrones": "you have no drones left",
   "TacticalBattle.Ui.TurnLimit": "turn limit {0} reached",
+  "TacticalBattle.Ui.NoCombatCapability": "neither side can fire — stalemate",
   "TacticalBattle.Ui.Turns": "Turns",
   "TacticalBattle.Ui.Shots": "Shots",
   "TacticalBattle.Ui.Hits": "Hits",

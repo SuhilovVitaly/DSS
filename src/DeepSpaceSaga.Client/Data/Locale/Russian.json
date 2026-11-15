@@ -729,6 +729,7 @@
   "TacticalBattle.Ui.EnemyNoDrones": "у противника не осталось дронов",
   "TacticalBattle.Ui.OwnNoDrones": "у вас не осталось дронов",
   "TacticalBattle.Ui.TurnLimit": "достигнут лимит {0} ходов",
+  "TacticalBattle.Ui.NoCombatCapability": "ни одна сторона не может вести огонь — патовая ситуация",
   "TacticalBattle.Ui.Turns": "Ходов",
   "TacticalBattle.Ui.Shots": "Выстрелов",
   "TacticalBattle.Ui.Hits": "Попаданий",
