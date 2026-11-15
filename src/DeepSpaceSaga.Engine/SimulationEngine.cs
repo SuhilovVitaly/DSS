@@ -493,6 +493,7 @@ public sealed partial class SimulationEngine : IDisposable
         var restoredTrading = StageTradingContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
+        ValidateCarrierStateForLoad(gs, runtimeObjects);
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
@@ -530,6 +531,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
+            RestoreCarrierState(gs);
             _appliedMotionTimeMs = gs.MotionTimeMs;
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
@@ -1185,6 +1187,7 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketRevision: isStation && obj.MarketProfileId is not null ? obj.MarketRevision : null,
                 RelationToPlayer: obj.RelationToPlayer,
                 ShipClassId: obj.ShipClassId,
+                CarrierState: isPlayerShip ? BuildCarrierStateData(obj) : null,
                 Orbit: obj.IsDocked ? null : obj.InitialMotion.Orbit,
                 WorldOffsetX: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetY));
         }

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine;
 
@@ -9,6 +10,7 @@ public partial class SimulationEngine
     // Absence of an entry means the hull is full (derived from the ship class profile), never a
     // fabricated carrier. Later stories extend this with hangar drones, crew and magazines.
     private readonly Dictionary<string, CarrierHullRuntime> _carrierHull = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SortieSettlementData> _carrierSettlement = new(StringComparer.Ordinal);
 
     private sealed record CarrierHullRuntime(int HullCurrent, int Revision);
 
@@ -42,6 +44,32 @@ public partial class SimulationEngine
             Crew: BuildCrewProjection(ship),
             OwnedDrones: BuildOwnedWingProjection(ship),
             CabinReservation: BuildCabinReservationProjection(ship));
+    }
+
+    /// <summary>
+    /// Persisted carrier surface for the player ship (EP-0029 US-0007). Null for a ship without a
+    /// carrier hull profile — a legacy ship is never granted a fabricated carrier. Owned wing is the
+    /// authoritative persistent wing (tombstones included); the last settlement receipt is kept so a
+    /// reload never re-applies its delta.
+    /// </summary>
+    private CarrierStateData? BuildCarrierStateData(SpaceObjectRuntime ship)
+    {
+        if (ship.ShipClassId is null || !_registry.ShipClasses.Contains(ship.ShipClassId))
+            return null;
+        var shipClass = _registry.ShipClasses.GetDefinition(_registry.ShipClasses.GetIndex(ship.ShipClassId));
+        if (shipClass.HullMax is not { } hullMax)
+            return null;
+
+        string shipId = ship.InitialMotion.ObjectId;
+        var hull = _carrierHull.TryGetValue(shipId, out var stored) ? stored : new CarrierHullRuntime(hullMax, Revision: 0);
+        var wing = GetOwnedWing(shipId);
+        return new CarrierStateData(
+            SchemaVersion: CarrierStateData.CurrentSchemaVersion,
+            Revision: hull.Revision,
+            HullCurrent: hull.HullCurrent,
+            ReservedCabins: ReservedPrisonerCabins,
+            OwnedDrones: wing.IsDefaultOrEmpty ? null : wing.ToArray(),
+            LastSettlement: _carrierSettlement.TryGetValue(shipId, out var settlement) ? settlement : null);
     }
 
     private ImmutableArray<HangarSlotSnapshot> BuildHangarSlots(SpaceObjectRuntime ship)
@@ -175,5 +203,63 @@ public partial class SimulationEngine
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == shipId);
         if (ship?.ShipClassId is null || !_registry.ShipClasses.Contains(ship.ShipClassId)) return 0;
         return _registry.ShipClasses.GetDefinition(_registry.ShipClasses.GetIndex(ship.ShipClassId)).TacticalManeuver ?? 0;
+    }
+
+    /// <summary>
+    /// Validate the stored carrier surface against the candidate world before the running session is
+    /// replaced (AC-03). Rejects an unknown schema, a hull outside the class profile, or an invalid
+    /// persistent wing (duplicate ids/slots, unknown hangar, non-pilot, bad hull/ammo/decoy bounds).
+    /// </summary>
+    private void ValidateCarrierStateForLoad(GameStateData gs, IReadOnlyList<SpaceObjectRuntime> runtimeObjects)
+    {
+        var data = gs.SpaceObjects.FirstOrDefault(o =>
+            string.Equals(o.ObjectId, gs.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase));
+        if (data?.CarrierState is not { } carrier)
+            return;
+
+        if (carrier.SchemaVersion != CarrierStateData.CurrentSchemaVersion)
+            throw new ScenarioException($"Unsupported carrierState schemaVersion {carrier.SchemaVersion}.");
+        if (carrier.Revision < 0)
+            throw new ScenarioException("Carrier revision must be nonnegative.");
+        if (carrier.LastSettlement is { } settlement && settlement.ConsumedTorpedoes < 0)
+            throw new ScenarioException("Settlement consumedTorpedoes must be nonnegative.");
+
+        var ship = runtimeObjects.FirstOrDefault(o =>
+            string.Equals(o.InitialMotion.ObjectId, gs.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase));
+        if (ship is null)
+            throw new ScenarioException("Player ship not found for carrier state.");
+        int hullMax = ShipHullMax(ship);
+        if (hullMax <= 0)
+            throw new ScenarioException("Carrier state is attached to a ship without a carrier hull profile.");
+        if (carrier.HullCurrent < 0 || carrier.HullCurrent > hullMax)
+            throw new ScenarioException($"Carrier hullCurrent {carrier.HullCurrent} outside 0..{hullMax}.");
+
+        OwnedWingValidator.Validate(ship, _registry, carrier.OwnedDrones ?? Array.Empty<OwnedDroneData>());
+    }
+
+    /// <summary>Restore the carrier surface from the loaded save; call with the world lock held.</summary>
+    private void RestoreCarrierState(GameStateData gs)
+    {
+        _carrierHull.Clear();
+        _ownedWing.Clear();
+        _carrierSettlement.Clear();
+
+        var data = gs.SpaceObjects.FirstOrDefault(o =>
+            string.Equals(o.ObjectId, gs.PlayerShipObjectId, StringComparison.OrdinalIgnoreCase));
+        if (data?.CarrierState is not { } carrier)
+            return;
+
+        string shipId = gs.PlayerShipObjectId;
+        _carrierHull[shipId] = new CarrierHullRuntime(carrier.HullCurrent, carrier.Revision);
+        if (carrier.OwnedDrones is { Count: > 0 } drones)
+            _ownedWing[shipId] = drones.ToImmutableArray();
+        if (carrier.LastSettlement is { } settlement)
+            _carrierSettlement[shipId] = settlement;
+    }
+
+    private int ShipHullMax(SpaceObjectRuntime ship)
+    {
+        if (ship.ShipClassId is null || !_registry.ShipClasses.Contains(ship.ShipClassId)) return 0;
+        return _registry.ShipClasses.GetDefinition(_registry.ShipClasses.GetIndex(ship.ShipClassId)).HullMax ?? 0;
     }
 }

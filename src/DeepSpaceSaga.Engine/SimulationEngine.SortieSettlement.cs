@@ -66,12 +66,21 @@ public sealed partial class SimulationEngine
                         _objects[i] = _objects[i] with { IsDestroyed = true };
             }
 
+            var lostIdsArray = lostIds.ToImmutable();
+            _carrierSettlement[shipId] = new SortieSettlementData(
+                BattleId: session.Id,
+                CarrierRevision: revision,
+                ShipDestroyed: shipDestroyed,
+                LostDroneIds: lostIdsArray.IsEmpty ? null : lostIdsArray.ToArray(),
+                ConsumedTorpedoes: consumedTorpedoes,
+                ExitKind: exitKind.ToString());
+
             return new SortieSettlementSnapshot(
                 BattleId: session.Id,
                 ShipId: shipId,
                 CarrierRevision: revision,
                 ShipDestroyed: shipDestroyed,
-                LostDroneIds: lostIds.ToImmutable(),
+                LostDroneIds: lostIdsArray,
                 ConsumedTorpedoes: consumedTorpedoes,
                 ExitKind: exitKind);
         }

@@ -13,10 +13,24 @@ public sealed record CarrierStateData(
     [property: JsonPropertyName("revision")] int Revision,
     [property: JsonPropertyName("hullCurrent")] int HullCurrent,
     [property: JsonPropertyName("reservedCabins")] int ReservedCabins = 2,
-    [property: JsonPropertyName("ownedDrones")] IReadOnlyList<OwnedDroneData>? OwnedDrones = null)
+    [property: JsonPropertyName("ownedDrones")] IReadOnlyList<OwnedDroneData>? OwnedDrones = null,
+    [property: JsonPropertyName("lastSettlement")] SortieSettlementData? LastSettlement = null)
 {
     public const int CurrentSchemaVersion = 1;
 }
+
+/// <summary>
+/// Durable receipt of the last committed sortie settlement (EP-0029 US-0006/0007). Persisted so a
+/// reload never re-applies the settlement delta and so the client's outcome log can be restored.
+/// ShipId is implicit (the carrier this is attached to); ExitKind is a stable enum name string.
+/// </summary>
+public sealed record SortieSettlementData(
+    [property: JsonPropertyName("battleId")] string BattleId,
+    [property: JsonPropertyName("carrierRevision")] int CarrierRevision,
+    [property: JsonPropertyName("shipDestroyed")] bool ShipDestroyed,
+    [property: JsonPropertyName("lostDroneIds")] IReadOnlyList<string>? LostDroneIds,
+    [property: JsonPropertyName("consumedTorpedoes")] int ConsumedTorpedoes,
+    [property: JsonPropertyName("exitKind")] string ExitKind);
 
 /// <summary>
 /// One owned drone of the persistent wing (EP-0029 US-0003). Stable ids are never derived

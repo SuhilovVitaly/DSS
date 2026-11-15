@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Запись и восстановление постоянного состояния
@@ -107,4 +107,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`CarrierStateData` расширен полем `lastSettlement` (durable BattleId receipt: battleId, carrierRevision, shipDestroyed, lostDroneIds, consumedTorpedoes, exitKind). `CaptureSaveStateCore` теперь прикрепляет `carrierState` к мировому кораблю (hull, revision, reserved cabins, persistent wing с tombstones + ammo, последний settlement receipt); `LoadScenarioCore` валидирует сохранённый carrier state до замены сессии (`ValidateCarrierStateForLoad`) и восстанавливает его под world lock (`RestoreCarrierState`). `CommitSortieOutcome` записывает `_carrierSettlement`. Save во время активного боя уже отклонялся `ThrowIfTacticalBattleActive`; после Load replay settlement невозможен — battle session не персистится (NoBattle).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0007Tk0002Tests"` — **4/4 passed** (`RoundTripAfterLossAndFiveShots`, `TerminalDestroyedRoundTrip`, `SettlementReplayAfterLoadNoOp`, `DuringBattleSaveStillRejected`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-023-us0007tk0002/US-0007-TK-0002/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean.
+- Регрессия (SaveMigration20/GeneratedWorldPersistence/LocalWorldSaveRoundtrip + все carrier-тесты US-0001..0007): 86/87 passed; единственное падение — `SaveMigration20Tests.MigratedSave19WithStationDialogue…` по «Incompatible catalogVersion… fingerprint» (scope US-0007 TK-0003, не этого тикета).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.
