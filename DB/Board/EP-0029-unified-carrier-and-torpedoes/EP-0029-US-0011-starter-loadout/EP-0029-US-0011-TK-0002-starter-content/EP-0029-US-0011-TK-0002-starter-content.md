@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Раскладка модулей, экипаж и 78 торпед
@@ -106,4 +106,20 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implementation status: **implemented** (automated PASS; native/product OPEN).
+
+- TDD red: focused run before the manifest/scenario content existed failed 4/4 (missing `Data/Ships/starter-carrier.json`; old 12-cell/6-module/2-crew stubs) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-039-us0011tk0002/red.stdout.txt`.
+- Content: new `Data/Ships/starter-carrier.json` — 24-cell 9×9 hull, 9 modules (2× four-cabin quarters, 2× medium bay), 6 crew, reservedCabins 2, 4 owned drones (12/12/6/6), container cargo energy 1000 / food 200 / `item.drone-torpedo.t1` 42; all SP at type max (bays 250, others 150), power On, Ready, no active cycle, no cargo cost metadata. `Tutorial` and `Default` scenario stubs now carry `scenarioMetadata.starterCarrierManifest`, name `Skitalets`, explicit Dunkan Su captain identity, and no inline hull/modules/crew; bodies remain byte-identical apart from metadata.
+- Focused tests (4/4 passed, 0 failed):
+  `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~Ep0029Us0011Tk0002Tests" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-039-us0011tk0002/US-0011-TK-0002" --logger "trx;LogFileName=focused.trx"`
+  Evidence: `run-039-us0011tk0002/focused.stdout.txt`, `run-039-us0011tk0002/US-0011-TK-0002/focused.trx`.
+  Named: `StarterHasExactlySeventyEightTorpedoes` (12+12+6+6+42; literal per-drone oracle + production loader), `EightCabinsSixCrewTwoReserved` (2 real four-cabin modules = 8, crew 6, reserved 2), `StarterFootprintsDoNotOverlap` (independent 24-cell/15-occupied/9-free oracle, anchors exact), `SameCrewPortraitsAsApproved` (five exact W4 asset paths, files exist in source and output, captain keeps default-male portrait).
+- Owning build PASS: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore` → 0 warnings, 0 errors (`run-039-us0011tk0002/client-build.stdout.txt`).
+- Scoped format PASS: `dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0011Tk0002Tests.cs` → exit 0 (`run-039-us0011tk0002/format.stdout.txt`).
+- Protect check: `TutorialScenarioTests` passed (28 passed in the boundary run); Tutorial/Default bodies remain identical apart from metadata.
+- Expected boundary reds caused by the intentional starter change (recorded, not fixed here; owned by US-0013):
+  `ScenarioEngineTests` 4 failures (`Can_load_real_scenario_file`, `Can_create_engine_from_real_settings_file`, `Real_default_scenario_occupies_6_of_12_hull_cells`, `Real_default_scenario_snapshot_has_player_crew_and_living_quarters_cabin_count`); `ModuleHealthBootstrapTests.Default_modules_have_structure`; `TetrarchLoadoutTests` 4 failures; pre-existing `ScenarioModuleCleanupTests.CurrentContentHasOnlyWorldShipIdentityAndNoLegacyDefinitions` ×2.
+
+  `dotnet test tests/DeepSpaceSaga.Engine.Tests --filter "FullyQualifiedName~ScenarioEngineTests|FullyQualifiedName~ModuleHealthBootstrapTests"` → 5 failed / 70 passed (`run-039-us0011tk0002/engine-boundary.stdout.txt`).
+  `dotnet test tests/DeepSpaceSaga.Client.Tests --filter "FullyQualifiedName~TutorialScenarioTests|FullyQualifiedName~TetrarchLoadoutTests|FullyQualifiedName~ScenarioModuleCleanupTests"` → 7 failed / 28 passed (`run-039-us0011tk0002/client-boundary.stdout.txt`).
+- Serves AC-01…AC-04 (partially; full story coverage across TK-0001…TK-0003). Native/UI and product acceptance: **OPEN** — no native run was performed for this content ticket.
