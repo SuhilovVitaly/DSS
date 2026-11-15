@@ -8,11 +8,11 @@ approval_kind: workflow-only
 layer: engine
 test_project: DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0029-US-0006-TK-0003-post-battle-state]
-files_touched: 5
+files_touched: 6
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
-revision: 1
-implementation_status: not-started
+revision: 2
+implementation_status: implemented
 ---
 
 # Версия 21 и безопасная миграция
@@ -39,6 +39,7 @@ implementation_status: not-started
 | [src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs) | `src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Версия 21 и безопасная миграция» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Engine/Scenario/SaveMigration20.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/SaveMigration20.cs) | `src/DeepSpaceSaga.Engine/Scenario/SaveMigration20.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Версия 21 и безопасная миграция» по шагам ниже, без соседних историй. |
 | [src/DeepSpaceSaga.Engine/Scenario/SaveMigration21.cs](../../../../../src/DeepSpaceSaga.Engine/Scenario/SaveMigration21.cs) | Новый проектируемый файл; до выполнения отсутствует. | Только «Версия 21 и безопасная миграция» по шагам ниже, без соседних историй. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.cs](../../../../../src/DeepSpaceSaga.Engine/SimulationEngine.cs) | `src/DeepSpaceSaga.Engine/SimulationEngine.cs:1` — существующий owning file; сверить сигнатуру с Grounding перед изменением. | Только «Версия 21 и безопасная миграция»: `LoadScenario` должен цепочкой SaveMigration20→SaveMigration21 принимать v21 (после разделения SaveMigration20 на фиксированный TargetVersion). |
 | [tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0007Tk0001Tests.cs](../../../../../tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0007Tk0001Tests.cs) | Новый проектируемый файл; до выполнения отсутствует. | Named tests Ep0029Us0007Tk0001Tests ниже с независимым oracle. |
 
 ## Public API after the change
@@ -107,4 +108,10 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Введён Save21 (`SaveFormat.CurrentSaveFormatVersion=21`), `SpaceObjectData.CarrierState` (null у legacy), `SaveMigration21` (20→21), `SaveMigration20` зафиксирован на `TargetVersion=20` (не зависит от постоянно меняющегося `CurrentSaveFormatVersion`); reader 18/19/20/21 сохранён. Цепочка миграции добавлена и в `ScenarioLoader.LoadFromJson`, и в `SimulationEngine.LoadScenario` (6-й файл — следствие разделения SaveMigration20, отражён в Code context).
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0007Tk0001Tests"` — **4/4 passed** (`Save20UpgradesWithoutGrant`, `Save18And19StillRemoveLegacyProjectiles`, `NewTorpedoesSurviveSave21`, `FutureVersionAndInvalidRefsReject`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-022-us0007tk0001/US-0007-TK-0001/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+- Save-migration regression (`SaveMigration20Tests|SaveFixturesTests|…`): 16/17 focused pass; единственное падение — `SaveMigration20Tests.MigratedSave19WithStationDialogue…` по «Incompatible catalogVersion… fingerprint». Это следствие нового SKU `item.drone-torpedo.t1` (US-0004 TK-0002), меняющего economic fingerprint; allowlist старого fingerprint — scope US-0007 TK-0003 (catalog-compatibility), не этого тикета. Отдельно — доэпиковый solar-system corpus failure (`CatalogCompatibilityTests`, invalid distance scale/offset).
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

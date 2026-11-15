@@ -88,13 +88,18 @@ public static class ScenarioLoader
         }
 
         if (isSave || legacyActors is not null)
-            scenario = SaveMigration20.Upgrade(scenario, allowNonZeroGameTime, legacyActors);
+        {
+            if (scenario.SaveFormatVersion <= SaveMigration20.TargetVersion)
+                scenario = SaveMigration20.Upgrade(scenario, allowNonZeroGameTime, legacyActors);
+        }
+        if (scenario.SaveFormatVersion == SaveMigration21.PreviousVersion)
+            scenario = SaveMigration21.Upgrade(scenario, allowNonZeroGameTime);
         return ValidateAndNormalize(scenario, allowNonZeroGameTime);
     }
 
     internal static void RequireSupportedSaveVersion(int version)
     {
-        if (version is not (18 or SaveMigration20.PreviousVersion or SaveFormat.CurrentSaveFormatVersion))
+        if (version is not (18 or SaveMigration20.PreviousVersion or SaveMigration20.TargetVersion or SaveFormat.CurrentSaveFormatVersion))
             throw new ScenarioException($"incompatible_save_version: expected {SaveFormat.CurrentSaveFormatVersion}, found {version}. Save was not modified.");
     }
 

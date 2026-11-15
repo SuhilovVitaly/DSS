@@ -32,7 +32,12 @@ public static class SaveFormat
     /// Version 18 adds point flights, scatter/dodge RNG, evasion and encounter continuation; Save17 is rejected.
     /// Version20 keeps only world state; versions 18 and 19 are validated and migrated on load.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 20;
+    /// <summary>
+    /// Current save format version written by <see cref="SimulationEngine.CaptureSaveState"/>.
+    /// Bump when the save schema changes incompatibly (see requirements §3891 migration policy).
+    /// Version 21 adds the persisted carrier surface (hull + owned wing) on the player ship.
+    /// </summary>
+    public const int CurrentSaveFormatVersion = 21;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -324,6 +329,8 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("relationToPlayer")] string? RelationToPlayer = null,
     /// <summary>Explicit ship class identity; never inferred from image, name or hull geometry.</summary>
     [property: JsonPropertyName("shipClassId")] string? ShipClassId = null,
+    /// <summary>Persisted carrier surface (hull + owned wing + reserved cabins); null for legacy ships.</summary>
+    [property: JsonPropertyName("carrierState")] CarrierStateData? CarrierState = null,
     [property: JsonPropertyName("orbit")] DeepSpaceSaga.Contracts.OrbitalElements? Orbit = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
     [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);

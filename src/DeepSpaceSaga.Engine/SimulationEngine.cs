@@ -226,7 +226,12 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     public void LoadScenario(ScenarioFile scenario, bool isSave = false, SolarSystemGenerationConfig? generation = null)
     {
-        if (isSave) scenario = SaveMigration20.Upgrade(scenario);
+        if (isSave && scenario.SaveFormatVersion <= SaveMigration20.TargetVersion)
+        {
+            scenario = SaveMigration20.Upgrade(scenario);
+            if (scenario.SaveFormatVersion == SaveMigration21.PreviousVersion)
+                scenario = SaveMigration21.Upgrade(scenario);
+        }
         if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
         var tuning = new DebugTuningState(_catalogRegistry);
         if (scenario.GameState.DebugTuning is { } values && !tuning.TryApply(new([.. values]), out tuning, out var reason))
