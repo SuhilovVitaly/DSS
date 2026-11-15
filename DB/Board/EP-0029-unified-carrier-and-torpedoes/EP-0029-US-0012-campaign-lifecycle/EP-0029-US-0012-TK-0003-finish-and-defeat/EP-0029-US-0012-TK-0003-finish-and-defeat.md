@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-02, AC-03, AC-04]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Маршруты завершения, гибели и retry
@@ -107,4 +107,26 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implemented 2026-11-15. Создание planning-документа не является implementation, build, test или game launch.
+
+## Execution evidence 2026-11-15
+
+Implementation status: **implemented**. Automated tests are **NOT RUN** in this batch по прямому указанию пользователя (no `dotnet test`, no TDD red/green, no validation agent); named tests written and deferred to the final suite run. Единственная проверка батча — компиляция:
+
+```powershell
+dotnet build DeepSpaceSaga.sln --no-restore
+# -> Build succeeded. 0 Warning(s), 0 Error(s).
+```
+
+Изменено (allowlist):
+- `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFlow.cs` — `ExitAsync` больше не считает mapped `Unavailable` успехом при null `GetTacticalBattleStateAsync`: запоминает attempted BattleId (`CheckpointPending`), следующий exit напрямую повторяет `ExitTacticalBattleAsync(new(NewIdentity("exit"), pendingBattleId))` (LocalClient отдаёт cached accepted receipt без re-settlement), успех очищает pending, повторный storage failure оставляет modal открытым с видимым `Error`; metrics на retry не дублируются.
+- `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` — `EnsureShipDestroyedScreen` и polling destroyed-перехода не заменяют активный battle screen (`IsSetup:false`); после успешного Close/New выполнения exit/settlement ставят terminal при HP0 (и map при live carrier); confirmed MainMenu во время tutorial battle сначала выполняет `ExitAsync` (settlement + checkpoint), и только при успехе dispose/переход в меню; при провале остаётся battle modal с Retry. Manual Load на terminal screen не блокируется.
+- `src/DeepSpaceSaga.Client/UI/Screens/ShipDestroyed/ShipDestroyedScreen.cs` — terminal defeat line `ShipDestroyed.Defeat` (без изменения hit-rect Load/MainMenu и без воскрешения корабля повторными событиями).
+- `tests/DeepSpaceSaga.Client.Tests/Carrier/Ep0029Us0012Tk0003Tests.cs` — `ShipDeathCannotNavigateToLiveMap`, `NoDronesWithLiveShipReturnsMap`, `AbortToMenuWritesLossesFirst`, `FailedWriteKeepsRetryVisible`.
+
+Board-only correction (traceability): в `US-0012 TK-0001` добавлена секция `Traceability correction 2026-11-15` с фактическими именами тестов и явной пометкой пропущенного destroyed-checkpoint load варианта; production не менялся.
+
+Named-test focus: destroyed player не заменяет battle UI и после exit ведёт на terminal, не на map; только потерянные дроны при живом носителе ведут на map; подтверждённый abort пишет continuation checkpoint (settlement BattleId, revision 1) до dispose; failed write оставляет battle modal, `CheckpointPending`, непустой `Error`, второй exit использует тот же BattleId и после разблокировки пишет ровно один settlement.
+
+Statuses: implementation **implemented**; automated **NOT RUN (deferred to final suite)**; native RU/EN UI gate **OPEN**; product/human acceptance **OPEN**.
+

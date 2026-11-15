@@ -59,6 +59,18 @@ public sealed class ShipDestroyedScreen : IScreen
         float measured = title.MeasureText(text), available = _layout.Panel.Width - 48 * _layout.Scale;
         if (measured > available) title.TextSize *= available / measured;
         canvas.DrawText(text, _layout.Panel.MidX, _layout.Panel.Top + 70 * _layout.Scale, title);
+        using var defeat = new SKPaint
+        {
+            Color = MenuStyle.ColorText.WithAlpha(200),
+            TextSize = 14 * _layout.Scale,
+            IsAntialias = true,
+            TextAlign = SKTextAlign.Center,
+            Typeface = MenuStyle.TextStatus.Typeface
+        };
+        string defeatText = Localization.Get("ShipDestroyed.Defeat");
+        float defeatMeasured = defeat.MeasureText(defeatText);
+        if (defeatMeasured > available) defeat.TextSize *= available / defeatMeasured;
+        canvas.DrawText(defeatText, _layout.Panel.MidX, _layout.Panel.Bottom - 12 * _layout.Scale, defeat);
         Draw(_layout.Load, "ShipDestroyed.Load", ScreenEvent.OpenLoadWindow);
         Draw(_layout.MainMenu, "ShipDestroyed.MainMenu", ScreenEvent.MainMenu);
         canvas.Restore();

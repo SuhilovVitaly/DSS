@@ -464,6 +464,9 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_session?.IsPlayerShipDestroyed == true)
         {
+            // The battle modal owns the screen until its authoritative exit/settlement/checkpoint
+            // completes; replacing it here would hide a pending retry and lose the result.
+            if (_screens.Current is TacticalBattleModalScreen { IsSetup: false }) return;
             if (!ReferenceEquals(_shipDestroyedSession, _session) && (_shipDestroyedTransitionTask?.IsCompleted ?? true))
                 _shipDestroyedTransitionTask = HandleScreenEvent(ScreenEvent.None);
             return;
@@ -863,6 +866,10 @@ public sealed class SkiaWindow : IDisposable
                         if (!await modal.Flow.ExitAsync()) break;
                         if (evt == ScreenEvent.NewTacticalBattle) _screens.Replace(CreateTacticalSetupView(modal.Flow));
                         else await PopModalAsync();
+                        // HP0 routes to the terminal screen; only drones lost keeps the live map.
+                        // Ensure runs after the battle screen is gone, so a destroyed ship can never
+                        // be resurrected by a repeat New/Close event or an animation tick.
+                        EnsureShipDestroyedScreen();
                     }
                     break;
                 case ScreenEvent.NewGame:
@@ -882,6 +889,10 @@ public sealed class SkiaWindow : IDisposable
                     await CloseOverlayAsync();
                     break;
                 case ScreenEvent.MainMenu:
+                    // A confirmed mid-tutorial abort must write the real losses/checkpoint before the
+                    // session is disposed. A failed write keeps the battle modal and its Retry visible.
+                    if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } abortingBattle &&
+                        !await abortingBattle.Flow.ExitAsync()) break;
                     await ReturnToMainMenuAsync();
                     break;
                 case ScreenEvent.Exit:
@@ -1208,6 +1219,9 @@ public sealed class SkiaWindow : IDisposable
     private bool EnsureShipDestroyedScreen()
     {
         if (_session?.IsPlayerShipDestroyed != true) return false;
+        // The battle screen is authoritative until its exit/settlement/checkpoint (and any retry)
+        // succeeds. Only after the battle screen is gone may the terminal screen replace the world.
+        if (_screens.Current is TacticalBattleModalScreen { IsSetup: false }) return false;
         if (ReferenceEquals(_shipDestroyedSession, _session)) return true;
         _shipDestroyedSession = _session;
         _modalDepth = 0;

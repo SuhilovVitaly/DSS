@@ -14,6 +14,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     private BattleObservation? _observed;
     private string _error = "";
     private int _pending;
+    private string? _pendingCheckpointBattleId;
     private CancellationTokenSource? _optionsCancellation;
     public GameSessionHandle Session { get; } = session;
     public TacticalBattleOptions? Options => Volatile.Read(ref _options);
@@ -21,6 +22,12 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     internal TacticalBattleSnapshot? PresentationState => Volatile.Read(ref _observed)?.Presentation;
     public string Error => Volatile.Read(ref _error);
     public bool Pending => Volatile.Read(ref _pending) != 0;
+    /// <summary>
+    /// The engine settled the battle, but the campaign-continuation write failed. The battle modal
+    /// must stay open (navigation would silently lose the result); the next exit retries only the
+    /// storage phase through the LocalClient's cached accepted receipt.
+    /// </summary>
+    public bool CheckpointPending => Volatile.Read(ref _pendingCheckpointBattleId) is not null;
     public Task? OptionsTask { get; private set; }
     public StartTacticalBattleRequest? LastStart { get; private set; }
     /// <summary>Client-only tutorial mode: mid-battle exit leads to the main menu and a finished battle only returns to the map.</summary>
@@ -62,19 +69,46 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {
+        // A mapped Unavailable after the engine committed means the engine no longer has a battle
+        // but the continuation checkpoint was not written. Retry only that pending BattleId: the
+        // LocalClient cache replays the accepted settlement receipt and writes the file without
+        // settling the losses a second time.
+        if (Volatile.Read(ref _pendingCheckpointBattleId) is { } checkpointBattleId)
+        {
+            var retry = await Submit(() => Session.ExitTacticalBattleAsync(
+                new(NewIdentity("exit"), checkpointBattleId)), exiting: true, exportMetrics: false);
+            if (retry is null) return false;
+            if (retry.Accepted)
+            {
+                Volatile.Write(ref _pendingCheckpointBattleId, null);
+                return true;
+            }
+            SetCheckpointError();
+            return false;
+        }
         for (int attempt = 0; attempt < 2; attempt++)
         {
             var state = State ?? await Session.GetTacticalBattleStateAsync();
             if (state is null) return Forget();
-            var response = await Submit(() => Session.ExitTacticalBattleAsync(new(NewIdentity("exit"), state.BattleId)), exiting: true);
+            string battleId = state.BattleId;
+            var response = await Submit(() => Session.ExitTacticalBattleAsync(new(NewIdentity("exit"), battleId)), exiting: true);
             if (response is null) return false;
             if (response.Accepted) return true;
             if (response.Code == TacticalBattleRejectionCode.NoBattle) return Forget();
             if (response.Code == TacticalBattleRejectionCode.WrongBattle && response.State is not null) continue; // Submit adopted the live battle
+            if (response.Code == TacticalBattleRejectionCode.Unavailable &&
+                await Session.GetTacticalBattleStateAsync() is null)
+            {
+                Volatile.Write(ref _pendingCheckpointBattleId, battleId);
+                SetCheckpointError();
+                return false;
+            }
             return await Session.GetTacticalBattleStateAsync() is null && Forget();
         }
         return false;
     }
+    private void SetCheckpointError() =>
+        Volatile.Write(ref _error, BattleFormat.Localize("CheckpointSaveFailed") + " " + BattleFormat.Localize("CheckpointRetry"));
     private bool Forget()
     {
         Volatile.Write(ref _observed, null);
@@ -82,7 +116,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     }
     private static bool IsLiveBattleRefusal(TacticalBattleResponse response) => !response.Accepted &&
         response.Code is TacticalBattleRejectionCode.AlreadyActive or TacticalBattleRejectionCode.WrongBattle;
-    private async Task<TacticalBattleResponse?> Submit(Func<ValueTask<TacticalBattleResponse>> send, bool starting = false, bool exiting = false)
+    private async Task<TacticalBattleResponse?> Submit(Func<ValueTask<TacticalBattleResponse>> send, bool starting = false, bool exiting = false, bool exportMetrics = true)
     {
         if (Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return null;
         try
@@ -91,7 +125,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
             var previous = Volatile.Read(ref _observed);
             if (response.Accepted && exiting)
             {
-                if (previous is not null) ExportMetrics(previous.State, exited: true);
+                if (previous is not null && exportMetrics) ExportMetrics(previous.State, exited: true);
                 Forget();
             }
             else if (response.State is { } state && (starting && response.Accepted || IsLiveBattleRefusal(response) || previous is not null && state.BattleId == previous.State.BattleId && state.Revision >= previous.State.Revision))

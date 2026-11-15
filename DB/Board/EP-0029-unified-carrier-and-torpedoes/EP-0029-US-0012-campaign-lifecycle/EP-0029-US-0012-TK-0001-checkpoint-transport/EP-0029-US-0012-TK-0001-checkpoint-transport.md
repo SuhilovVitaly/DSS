@@ -147,3 +147,16 @@ dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/D
 
 Evidence mapping: checkpoint exists + display name + expanded carrier state after exit (`focused.trx`, `ExitWritesContinuationCheckpoint`); failed write keeps the cached accepted receipt, one carrier revision increment and a retry without re-settlement (`CheckpointFailureKeepsRetryWithoutResettlement`); repeated exit returns the same receipt and revision (`RetryAfterSuccessReturnsCachedSettlement`); manual save during battle still rejected and no manual file (`ManualSaveDuringBattleRejected`); continuation slot listable and loadable through `CreateFromSaveFile` without re-granting the manifest (`ContinuationSlotIsListedAndLoadable`); old BattleId on a reloaded session is `NoBattle` and the file is byte/timestamp unchanged (`DuplicateExitAfterReloadIsNoBattle`). No full-suite claim; known baseline reds and other EP-0019-era Client.Tests failures are unchanged. Native/human acceptance: OPEN.
 
+## Traceability correction 2026-11-15
+
+Planning `Tests` выше перечисляет имена, которые execution заменил. Фактическое соответствие:
+
+| Planned name | Actual implemented test (same ticket) |
+|---|---|
+| `CheckpointAfterBattleContainsActualAmmo` | `ExitWritesContinuationCheckpoint` + `ContinuationSlotIsListedAndLoadable` |
+| `DiskFailureKeepsSessionAndRetryId` | `CheckpointFailureKeepsRetryWithoutResettlement` |
+| `ManualSlotsUntouched` | `ManualSaveDuringBattleRejected` (continuation-only slot checks inside the same class) |
+| `DestroyedCheckpointLoadsAsDestroyed` | **explicitly skipped in TK-0001** — the checkpoint transport is outcome-agnostic. The destroyed-terminal routing variant is covered by the independent US-0012 TK-0003 test `Ep0029Us0012Tk0003Tests.ShipDeathCannotNavigateToLiveMap`; a destroyed-checkpoint load/reload test is not claimed here. |
+
+Board-only correction: production code and already-implemented tests were not changed by this note.
+
