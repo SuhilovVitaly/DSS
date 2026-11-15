@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-02, AC-03]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Атомарное списание при фактическом выстреле
@@ -106,4 +106,12 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+`TacticalBattleSalvo.Candidates` now returns no candidates for `AmmoCurrent <= 0` (fire unavailable, movement/evade/decoy still allowed), and the salvo loop decrements `shooter.AmmoCurrent--` exactly once per actual candidate, before any absorption/hit RNG — hit, miss and absorption all spend one; skip/no-candidate never does. Whole-packet validation runs before the loop, so a mixed valid+invalid packet is rejected atomically with no spend/consciousness/log/revision/RNG changes.
+
+**Scope note:** `TacticalBattleAssembly.cs` (initial-speed clamp) was also touched — a TK-0003 follow-up fix: TK-0003 added ammo mass to `TacticalDrone.Limits` but the assembly still clamped start speed with the no-ammo limits; now the clamp uses the same ammo-inclusive mass. Caught by `AssemblyTests.EqualSkillRangeConsumesDrawAndInitialSpeedUsesCurrentLimits`.
+
+- `dotnet test --filter "FullyQualifiedName~Ep0029Us0004Tk0004Tests"` — **4/4 passed** (`HitMissAbsorptionEachConsumeOne`, `KilledBeforeInitiativeConsumesZero`, `DeadTargetAndJamConsumeZero`, `InvalidMixedPacketIsAtomic`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-014-us0004tk0004/US-0004-TK-0004/focused.trx`.
+- Salvo/Assembly/Golden/SeriesParity regression — **130/131 passed**; the single failure (`EqualSkillRangeConsumesDrawAndInitialSpeedUsesCurrentLimits`) was the initial-clamp mismatch above, fixed and re-verified (`AssemblyTests` 8/8).
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `git diff --check` clean.
+
+Status: automated PASS (engine layer); native/product acceptance remains OPEN.

@@ -58,7 +58,8 @@ internal sealed partial class TacticalBattle
                 int shieldCount = shield is null ? 0 : layout.ShieldCount ?? TacticalBattleConstants.DefaultShieldCount;
                 var engines = layout.Engines.Select(id => new TacticalEngineState(catalog.Engines[id])).ToImmutableArray();
                 var limits = TacticalLimits.Of(new(frame.FrameMassKg, frame.ReferenceMassKg, frame.MinSpeed, frame.MaxSpeedCap, frame.TurnCapDeg),
-                    armor.MassKg, weapon.MassKg, shield?.MassKg ?? 0, shieldCount, engines.Select(e => e.Motion).ToArray(), moduleMass: decoy?.MassKg ?? 0);
+                    armor.MassKg, weapon.MassKg, shield?.MassKg ?? 0, shieldCount, engines.Select(e => e.Motion).ToArray(),
+                    moduleMass: (decoy?.MassKg ?? 0) + ammo * 1.0); // loaded torpedoes count toward the initial speed clamp (A-02)
                 double speed = PyMath.Clamp(start.Speed, limits.MinSpeed, limits.MaxSpeed);
                 var pilot = catalog.Pilots[start.Pilot];
                 int accuracy = Skill(pilot.Accuracy), maneuver = Skill(pilot.Maneuver);
