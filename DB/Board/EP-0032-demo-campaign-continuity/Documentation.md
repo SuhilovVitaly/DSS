@@ -12,7 +12,7 @@ epic_approval_utc: 2026-11-16T19:49:59Z
 priority: P0
 workstream: feature
 dependencies: [EP-0031-board-and-demo-scope]
-implementation_status: in-progress
+implementation_status: implemented
 ---
 
 # EP-0032 — Непрерывная кампания и последствия боя
@@ -25,7 +25,7 @@ implementation_status: in-progress
 
 Запрос разрешает создание/уточнение Board. Ранее приложенный расширенный план — продуктовый материал, заменённый одобренной сокращённой версией; он не разрешает исполнение или публикацию. Исходное поручение ограничивало этап историями. Текущее поручение ниже разрешает тикеты и дополнительные истории; реализация и публикация не запрашивались.
 
-## Grounding
+## Historical planning grounding (superseded by current execution)
 
 `src/DeepSpaceSaga.Engine/SimulationEngine.SortieSettlement.cs:17` — CommitSortieOutcome переносит потери дронов и корпус; ветка destroyed на строке 35 не изменяет roster экипажа. `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:40` — writer версии 21. EP-0029 Documentation.md отмечает implementation implemented, native/owner acceptance открыты.
 
@@ -81,7 +81,7 @@ Aggregate dependencies в frontmatter — перечень внешних ист
 
 2026-11-16T19:49:59Z — состав сопоставлен с Д2, сокращённым объёмом и существующими EP-0021/0029. Тикеты не созданы. Проверка ID, локальных ссылок и ацикличности выполняется для всего набора; результаты фиксируются в [общем плане](../EP-0031-board-and-demo-scope/DemoPlan.md).
 
-## Статусы поставки
+## Исторический статус на этапе планирования
 
 Planning: подготовлено по одобренному плану. Implementation: NOT STARTED. Automated/runtime/native/product acceptance: NOT RUN / OPEN. Никаких новых свидетельств готовности игры этот документ не создаёт.
 
@@ -107,3 +107,7 @@ Planning: подготовлено по одобренному плану. Imple
 ## Текущее исполнение — 2026-11-17
 
 Поручение пользователя: выполнить EP-0032 автономно, новая ветка, тесты в конце user story, отдельный commit и немедленный push каждого тикета. Ветка codex/ep-0032-demo-campaign-continuity, origin https://github.com/SuhilovVitaly/DSS. Prerequisite EP-0031-US-0005 опубликован: bdfb09e1 и c5e4610c. Порядок: US-0007 → 0001 → 0002 → 0003 → 0004 → 0005 → 0006. US-0006 выполняется последней; runtime/native/product gates остаются открытыми до фактических проверок.
+
+## Current delivery
+
+Implementation: 7 stories / 28 tickets implemented. Automated checks and publication: [ExecutionStatus](ExecutionStatus.md), [ticket-to-SHA](Tickets.md), [coverage](AcceptanceCoverage.md), [documentation impact](DocumentationImpact.md). Manual/product acceptance OPEN, explicitly deferred to the user; no further game launches. Historical NOT STARTED statements above describe the planning date.

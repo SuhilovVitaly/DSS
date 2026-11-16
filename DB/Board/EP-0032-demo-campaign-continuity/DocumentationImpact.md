@@ -22,3 +22,5 @@ Current contracts were checked against the final source diff; dated Board planni
 Repository root has no README.md. AGENTS/CLAUDE routing remains valid. Source/tool READMEs describe unrelated build/asset workflows and were not changed. Board README, DemoPlan, ticket index/publication mapping are handled in TK-0002. Historical EP-0029/EP-0031 execution evidence is retained; current contracts above supersede earlier Save21/pilot-loss descriptions.
 
 Link check: PASS after correcting migration owner to ScenarioLoader and removing stale V4 archive links. Documentation remains Markdown-only.
+
+Final tooling impact: GraphifyRebuild.md and tools/graphify/rebuild.py now include EP-0032 Board corpus. Test source-path helper changes do not alter game contracts. Existing Fixtures/Saves/README.md remains a dated Save18/19 capture record; its hashes were not regenerated.

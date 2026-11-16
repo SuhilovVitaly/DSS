@@ -5,7 +5,7 @@ ticket: EP-0032-US-0006-TK-0002-board-status
 title: Board, реестр и состояние демо
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0032-US-0006-TK-0001-current-contracts]
@@ -87,3 +87,11 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Scope expansion
+
+Include Tickets.md, ExecutionStatus.md, AcceptanceCoverage.md, story status synchronization, tools/graphify/rebuild.py and GraphifyRebuild.md. Existing graph corpus omits EP-0032: add its Board source to the maintained extractor, then generate evidence only under workspace artifacts. No UI launch; user reserves manual acceptance.
+
+## Execution — 2026-11-17
+
+28 ticket / 7 story IDs, dependency existence and acyclicity, epic/changed Markdown links PASS (final/documentation-check.log). Release solution build PASS; final correction Client126 PASS. Ticket ledger includes every published implementation/correction. Graph rebuilt offline with fresh reviewed campaign semantics; structural parser warning remains for ModulePanelLocalizationTests (not a compiler failure). Generated graph evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-final/graph/GRAPH_REPORT.md. Disposable builds/test results/cache removed after verification; logs and graph evidence retained. Manual acceptance explicitly deferred by user; no more game launches.
