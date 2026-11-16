@@ -139,6 +139,37 @@ internal sealed class TacticalBattleSession
         return Accepted(request.CommandId, events);
     }
 
+    /// <summary>
+    /// Debug-console force destroy (EP-0030 US-0003 TK-0002). Bypasses hit/armor/shields and spends no
+    /// shot, torpedo or RNG draw and does not advance the turn, but applies the same destroy consequences
+    /// as a lethal salvo hit (<see cref="TacticalBattleSalvo"/>): Hull 0, Destroyed, Speed 0, FirstLoss,
+    /// Destroyed journal event and the normal victory check. Planned paths/shots/fire steps are left as
+    /// is; a destroyed drone is skipped by movement, target candidates and the fire queue.
+    /// Valid in Move and Fire; any drone of either side that is not already destroyed (Disabled allowed).
+    /// </summary>
+    public TacticalBattleResponse DebugDestroy(DebugDestroyTacticalUnitRequest request)
+    {
+        var error = request.BattleId != Id ? TacticalBattleRejectionCode.WrongBattle
+            : request.ExpectedRevision != Revision ? TacticalBattleRejectionCode.StaleRevision
+            : Phase == TacticalBattlePhase.Over ? TacticalBattleRejectionCode.WrongPhase
+            : TacticalBattleRejectionCode.None;
+        if (error != TacticalBattleRejectionCode.None) return Reject(request.CommandId, error);
+        var drone = Battle.Drones.FirstOrDefault(d => string.Equals(d.Id, request.UnitId, StringComparison.Ordinal));
+        if (drone is null || drone.Status == TacticalDroneStatus.Destroyed)
+            return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidTarget);
+        int events = _log.Count;
+        var phase = Phase;
+        bool wasActive = drone.IsActive;
+        drone.Hull = 0;
+        drone.Status = TacticalDroneStatus.Destroyed;
+        drone.Speed = 0;
+        if (wasActive) Battle.Statistics.FirstLoss ??= drone.Side;
+        Add(TacticalBattleLogKind.Destroyed, phase, target: drone.Id, unit: Describe(drone));
+        if (Battle.CheckVictory() is not null) AddOutcome(phase);
+        Revision++;
+        return Accepted(request.CommandId, events);
+    }
+
     private void ResolveFire(IReadOnlyList<(string DroneId, TacticalFirePlan Plan)> targets)
     {
         _beforeSalvo = TacticalBattleSnapshotBuilder.Units(Battle);

@@ -5,6 +5,7 @@ ticket: EP-0030-US-0003-TK-0002-engine-force-destroy
 title: Engine — авторитетное принудительное уничтожение юнита
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0030-US-0003-TK-0001-destroy-contract]
@@ -88,3 +89,20 @@ dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj -
 ## Self-containment check
 
 Порядок проверок, мутации, коды и точки кода заданы; детерминизм защищён запретом трогать RNG/пути/выстрелы.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы (3, в пределах Code context):
+
+- `src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSession.cs` — `public TacticalBattleResponse DebugDestroy(DebugDestroyTacticalUnitRequest request)`. Порядок отказов без мутации: `BattleId` ≠ `Id` → `WrongBattle`; ревизия → `StaleRevision`; `Phase == Over` → `WrongPhase`; юнит не найден среди `Battle.Drones` (в т.ч. id носителя, пустой id) или уже `Destroyed` → `InvalidTarget`. Применение (как летальное попадание залпа `TacticalBattleSalvo.cs:236`/`:263`): `wasActive = drone.IsActive`; `Hull = 0`, `Status = Destroyed`, `Speed = 0`; при `wasActive` — `Statistics.FirstLoss ??= drone.Side`; событие `Destroyed` (target = id, `Describe(drone)`, фаза до команды); `Battle.CheckVictory()` → при исходе `AddOutcome(phase)`; `Revision++`; `Accepted`. RNG (`Random`, `InitiativeRandom`), боезапас, ловушки, номер хода, `_paths`/`_shots`/`_fireSteps`/`_fireQueue`/`_beforeSalvo` не трогаются; `Statistics` (кроме `FirstLoss`) не меняется. Disabled-дрон допустим.
+- `src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs` — `public TacticalBattleResponse DebugDestroyTacticalUnit(DebugDestroyTacticalUnitRequest request)`: `null` → `InvalidRequest`; иначе `ExecuteTactical(request.CommandId, request, …)` (идемпотентность по fingerprint CommandId, `IdentityConflict` при другом содержимом); нет сессии → `NoBattle`.
+- `tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/DebugDestroyTests.cs` (новый) — 10 названных тестов: `DestroysEnemyDroneWithoutRngAmmoOrTurnAdvance`, `DestroysOwnDisabledDrone`, `LogsDestroyedEvent`, `RejectsCarrierUnknownAndDestroyedUnchanged`, `RejectsWrongBattleStaleRevisionOverPhase` (+ `NoBattle`/`InvalidRequest`), `SameCommandIdReturnsCachedReceipt` (+ `IdentityConflict`), `LastEnemyDroneEndsBattleWithOutcome`, `KilledDroneNeitherMovesNorFires`, `FirePhaseKillRemovesItFromTargets`, `AbortedOwnedSortieTombstonesKilledDrone`. Используется `SessionTests.CloseFireEngine` (internal static, read-only); owned-sortie fixture скопирован (не вынесен) из `Carrier/Ep0029Us0006Tk0002Tests`.
+
+Сверка с settlement: `SimulationEngine.SortieSettlement.cs:35` превращает в tombstone дрона со `Status == Destroyed` — принудительно уничтоженный свой дрон попадает в `LostDroneIds` и при прерванном бою; `ConsumedTorpedoes` не растёт (боезапас не тронут).
+
+Команды и результаты:
+
+- `dotnet build tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj` — до реализации: только CS1061 `DebugDestroyTacticalUnit` отсутствует (red по правильной причине); после — 0 Warning(s), 0 Error(s).
+- `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSession.cs tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/DebugDestroyTests.cs` — exit 0 (новый файл переведён на CRLF).
+- `git diff --check` (включая staged) — exit 0.
+- Тесты: NOT RUN — по инструкции оператора тесты запускаются в конце истории (после TK-0005).
