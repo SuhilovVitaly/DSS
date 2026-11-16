@@ -12,7 +12,7 @@ epic_approval_utc: 2026-11-16T19:49:59Z
 priority: P0
 workstream: feature
 dependencies: [EP-0031-board-and-demo-scope]
-implementation_status: not-started
+implementation_status: in-progress
 ---
 
 # EP-0032 — Непрерывная кампания и последствия боя
@@ -103,3 +103,7 @@ Planning: подготовлено по одобренному плану. Imple
 Порядок ниже — локальная проекция глобального dependency order (не числовая сортировка): EP-0032-US-0007-consistent-campaign-actions → EP-0032-US-0001-campaign-roundtrip → EP-0032-US-0002-permanent-pilot-loss → EP-0032-US-0003-persistent-outcomes → EP-0032-US-0004-demo-campaign-start → EP-0032-US-0005-autosave-and-continue → EP-0032-US-0006-documentation. Документационная история исполняется после всех функциональных, включая добавленные с большим ID.
 
 [Глобальная карта, полные пути, release gates и открытые допущения](../EP-0041-demo-validation-and-release/TicketPlan.md). Новые API/файлы в тикетах — проект, а не текущая реализация.
+
+## Текущее исполнение — 2026-11-17
+
+Поручение пользователя: выполнить EP-0032 автономно, новая ветка, тесты в конце user story, отдельный commit и немедленный push каждого тикета. Ветка codex/ep-0032-demo-campaign-continuity, origin https://github.com/SuhilovVitaly/DSS. Prerequisite EP-0031-US-0005 опубликован: bdfb09e1 и c5e4610c. Порядок: US-0007 → 0001 → 0002 → 0003 → 0004 → 0005 → 0006. US-0006 выполняется последней; runtime/native/product gates остаются открытыми до фактических проверок.

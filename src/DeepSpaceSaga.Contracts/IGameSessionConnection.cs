@@ -9,6 +9,13 @@ namespace DeepSpaceSaga.Contracts;
 /// </summary>
 public interface IGameSessionConnection : IAsyncDisposable
 {
+    ValueTask<DemoCampaignResponse> ExecuteDemoCampaignAsync(DemoCampaignCommand command,
+        CancellationToken cancellationToken = default) =>
+        cancellationToken.IsCancellationRequested
+            ? ValueTask.FromCanceled<DemoCampaignResponse>(cancellationToken)
+            : ValueTask.FromResult(new DemoCampaignResponse(command?.CommandId ?? "", false,
+                DemoCampaignReasons.Unsupported, 0));
+
     ValueTask<TacticalBattleOptions> GetTacticalBattleOptionsAsync(CancellationToken cancellationToken = default) =>
         cancellationToken.IsCancellationRequested ? ValueTask.FromCanceled<TacticalBattleOptions>(cancellationToken)
         : ValueTask.FromResult(new TacticalBattleOptions(new(false, new("", "connection", "Tactical battle is unsupported.")), [], [], [], [], []));

@@ -74,7 +74,8 @@ public sealed record AuthoritativeSnapshot(
     /// producers and for snapshots where there is no player ship — the absence means
     /// "carrier surface unsupported", never "player owns a free ship".
     /// </summary>
-    CarrierOperationsSnapshot? CarrierOperations = null)
+    CarrierOperationsSnapshot? CarrierOperations = null,
+    DemoCampaignSnapshot? DemoCampaign = null)
 {
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]
