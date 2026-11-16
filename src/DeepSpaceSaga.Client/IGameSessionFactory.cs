@@ -17,7 +17,8 @@ public interface IGameSessionFactory
 
     /// <summary>
     /// Full path of the hidden Tutorial scenario file (passed to <see cref="CreateSessionFromScenario"/>),
-    /// or null when this factory has no tutorial. Default null keeps factories without tutorial support unchanged.
+    /// or null when this factory has no tutorial. With null, New Game without saves logs the missing
+    /// tutorial and opens the scenario picker instead of the tutorial battle.
     /// </summary>
     string? GetTutorialScenarioPath() => null;
 
@@ -26,6 +27,12 @@ public interface IGameSessionFactory
 
     /// <summary>List every save slot currently on disk, most recently saved first.</summary>
     SaveSlotInfo[] ListSaveSlots();
+
+    /// <summary>
+    /// Whether any save slot exists (New Game's «no saves → tutorial» check). Implementations should answer from the file
+    /// list without reading slot contents; may throw IOException/UnauthorizedAccessException on file-system errors.
+    /// </summary>
+    bool HasAnySaveSlot() => ListSaveSlots().Length > 0;
 
     /// <summary>Delete a save slot's file, if present. No-op if the slot doesn't exist.</summary>
     void DeleteSaveSlot(string slotId);

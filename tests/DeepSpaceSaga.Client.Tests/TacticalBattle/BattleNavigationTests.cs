@@ -49,10 +49,15 @@ public sealed class BattleNavigationTests
         Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
     }
 
-    [Fact]
-    public async Task RealBattleAndNewBattleReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed()
+    /// <summary>Hard limit for one skin-parameterized battle route, so a stalled route fails instead of hanging the run.</summary>
+    private const int RouteTimeoutMs = 60_000;
+
+    [Theory(Timeout = RouteTimeoutMs)]
+    [InlineData("classic")]
+    [InlineData(null)] // a new profile has no saved skin and opens Tabletop
+    public async Task RealBattleAndNewBattleReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed(string? savedSkinId)
     {
-        await using var fixture = await Fixture.Create();
+        await using var fixture = await Fixture.ForSkin(savedSkinId);
         var camera = Field<CameraState>(fixture.Game, "_camera");
         camera.SetFocus(14326.5, -4987.25); camera.SetZoom(0.002345);
         var captured = (fixture.Game.CameraFocusX, fixture.Game.CameraFocusY, fixture.Game.CameraPixelsPerWorldUnit);
@@ -70,6 +75,7 @@ public sealed class BattleNavigationTests
         await fixture.Route(setup.OnKeyDown(Key.Enter));
         var battle = Assert.IsAssignableFrom<TacticalBattleModalScreen>(fixture.Screens.Current);
         Assert.False(battle.IsSetup); Assert.Same(setup.Flow, battle.Flow);
+        Assert.Equal(Fixture.ExpectedSkin(savedSkinId), Assert.IsType<TacticalBattleScreen>(battle).SkinId);
         Assert.Equal(TacticalBattlePhase.Move, battle.Flow.State!.Phase);
         Assert.Equal(1, fixture.Depth);
         Assert.Same(battle, Assert.Single(fixture.Screens.VisibleBottomToTop()));
@@ -182,15 +188,18 @@ public sealed class BattleNavigationTests
         Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
     }
 
-    [Fact]
-    public async Task ActiveEscapeRequiresConfirmationAndActualExitPrecedesResume()
+    [Theory(Timeout = RouteTimeoutMs)]
+    [InlineData("classic")]
+    [InlineData(null)]
+    public async Task ActiveEscapeRequiresConfirmationAndActualExitPrecedesResume(string? savedSkinId)
     {
-        await using var fixture = await Fixture.Create();
+        await using var fixture = await Fixture.ForSkin(savedSkinId);
         await fixture.Route(ScreenEvent.OpenTacticalBattle);
         var setup = (TacticalBattleModalScreen)fixture.Screens.Current;
         await setup.Flow.OptionsTask!;
         await fixture.Route(setup.OnKeyDown(Key.Enter));
         var battle = (TacticalBattleModalScreen)fixture.Screens.Current;
+        Assert.Equal(Fixture.ExpectedSkin(savedSkinId), Assert.IsType<TacticalBattleScreen>(battle).SkinId);
         Assert.Equal(ScreenEvent.None, battle.OnKeyDown(Key.Escape));
         Assert.True(battle.ConfirmExit);
         Assert.True(fixture.Engine.IsTacticalBattleActive);
@@ -204,10 +213,12 @@ public sealed class BattleNavigationTests
         Assert.Same(fixture.Game, fixture.Screens.Current);
     }
 
-    [Fact]
-    public async Task ClosingWhileOptionsArePendingCancelsQueryAndRestoresSpeed()
+    [Theory(Timeout = RouteTimeoutMs)]
+    [InlineData("classic")]
+    [InlineData(null)]
+    public async Task ClosingWhileOptionsArePendingCancelsQueryAndRestoresSpeed(string? savedSkinId)
     {
-        await using var fixture = await Fixture.Create();
+        await using var fixture = await Fixture.ForSkin(savedSkinId);
         fixture.Proxy.DelayOptions = true;
         await fixture.Route(ScreenEvent.OpenTacticalBattle);
         var setup = (TacticalBattleModalScreen)fixture.Screens.Current;
@@ -220,6 +231,63 @@ public sealed class BattleNavigationTests
         Assert.Null(fixture.Engine.GetTacticalBattleState());
         Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
         Assert.Same(fixture.Game, fixture.Screens.Current);
+    }
+
+    [Theory(Timeout = RouteTimeoutMs)]
+    [InlineData("classic")]
+    [InlineData(null)]
+    public async Task SalvoSkipReplayAndContinueSendOneShotAndExitReturnsToTheWorld(string? savedSkinId)
+    {
+        await using var fixture = await Fixture.ForSkin(savedSkinId);
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = (TacticalBattleModalScreen)fixture.Screens.Current;
+        await setup.Flow.OptionsTask!;
+        await fixture.Route(setup.OnKeyDown(Key.Enter));
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.Equal(Fixture.ExpectedSkin(savedSkinId), battle.SkinId);
+        for (int i = 0; i < 30 && battle.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
+            await fixture.Route(ScreenEvent.MoveTacticalBattle);
+        Assert.Equal(TacticalBattlePhase.Fire, battle.Flow.State?.Phase);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
+        Assert.False(battle.TurnBusy);
+
+        fixture.ManualAnimation = true;
+        await fixture.Route(ScreenEvent.FireTacticalBattle);
+        var fired = battle.Flow.State!;
+        Assert.NotEmpty(fired.Shots);
+        Assert.True(battle.HasSalvoPresentation);
+        fixture.AdvanceAnimation((long)TacticalBattleResults.InitialDelayMs + 200);
+        Assert.Equal(TacticalBattlePresentation.SalvoFlight, battle.CaptureFrame(1280, 720)!.Presentation);
+        Assert.Equal(ScreenEvent.None, battle.OnKeyDown(Key.Enter));
+        Assert.Equal(TacticalBattlePresentation.SalvoResults, battle.CaptureFrame(1280, 720)!.Presentation);
+        using (var bitmap = new SKBitmap(1280, 720))
+        using (var canvas = new SKCanvas(bitmap))
+            battle.Render(canvas, 1280, 720);
+        var replay = battle.ReplaySalvoBounds;
+        Assert.False(replay.IsEmpty);
+        Assert.Equal(ScreenEvent.None, battle.OnMouseDown(replay.MidX, replay.MidY, MouseButton.Left));
+        Assert.Equal(TacticalBattlePresentation.SalvoFlight, battle.CaptureFrame(1280, 720)!.Presentation);
+        Assert.Equal(ScreenEvent.None, battle.OnKeyDown(Key.Enter));
+        Assert.True(battle.HasSalvoPresentation);
+        Assert.Equal(ScreenEvent.None, battle.OnKeyDown(Key.Enter));
+        Assert.False(battle.HasSalvoPresentation);
+        Assert.Equal(TacticalBattlePresentation.Current, battle.CaptureFrame(1280, 720)!.Presentation);
+        Assert.Equal(1, fixture.Proxy.Fires);
+        Assert.Same(fired, battle.Flow.State);
+
+        fixture.ManualAnimation = false;
+        var exit = battle.OnKeyDown(Key.Escape);
+        if (exit == ScreenEvent.None)
+        {
+            Assert.True(battle.ConfirmExit);
+            exit = battle.OnKeyDown(Key.Enter);
+        }
+        Assert.Equal(ScreenEvent.CloseTacticalBattle, exit);
+        await fixture.Route(exit);
+        Assert.False(fixture.Engine.IsTacticalBattleActive);
+        Assert.Same(fixture.Game, fixture.Screens.Current);
+        Assert.Equal(0, fixture.Depth);
+        Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
     }
 
     [Fact]
@@ -321,7 +389,8 @@ public sealed class BattleNavigationTests
         }
         internal ScreenStack Screens => Field<ScreenStack>(Window, "_screens");
         internal int Depth => Field<int>(Window, "_modalDepth");
-        private Fixture(TacticalBattleInputSettings? inputs, float uiScale, string? saveDirectory, SimulationSpeed initialSpeed, string? settingsPath, string? engineSettingsPath)
+        private Fixture(TacticalBattleInputSettings? inputs, float uiScale, string? saveDirectory, SimulationSpeed initialSpeed, string? settingsPath,
+            string? engineSettingsPath, bool newProfile)
         {
             string settings = engineSettingsPath ?? Path.Combine(AppContext.BaseDirectory, "Settings.json");
             Engine = SimulationEngine.CreateFromSettingsFile(settings);
@@ -331,7 +400,27 @@ public sealed class BattleNavigationTests
             Proxy.Inner = new LocalGameSessionConnection(Engine, saveDirectory);
             Handle = new GameSessionHandle(connection, deferDebugTuningWrites: true);
             Game = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle, uiScale: uiScale, tacticalBattleInputs: inputs);
-            if (settingsPath is null)
+            if (settingsPath is null && newProfile)
+            {
+                // A new profile: no saved skin, shipped packs next to Settings.json, as in an installed client.
+                string validationRoot = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath();
+                _ownedSettingsDirectory = Path.Combine(validationRoot, $"new-profile-{Guid.NewGuid():N}");
+                Directory.CreateDirectory(_ownedSettingsDirectory);
+                settingsPath = Path.Combine(_ownedSettingsDirectory, "Settings.json");
+                try
+                {
+                    File.WriteAllText(settingsPath, """{"gameSettings":{}}""");
+                    string source = Path.Combine(AppContext.BaseDirectory, "Skins", "tabletop");
+                    foreach (string file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+                    {
+                        string target = Path.Combine(_ownedSettingsDirectory, "Skins", "tabletop", Path.GetRelativePath(source, file));
+                        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                        File.Copy(file, target);
+                    }
+                }
+                catch { Directory.Delete(_ownedSettingsDirectory, recursive: true); throw; }
+            }
+            else if (settingsPath is null)
             {
                 string validationRoot = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath();
                 _ownedSettingsDirectory = Path.Combine(validationRoot, $"classic-profile-{Guid.NewGuid():N}");
@@ -343,9 +432,10 @@ public sealed class BattleNavigationTests
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);
         }
         internal static async Task<Fixture> Create(TacticalBattleInputSettings? inputs = null, float uiScale = 1,
-            string? saveDirectory = null, SimulationSpeed initialSpeed = SimulationSpeed.Speed2, string? settingsPath = null, string? engineSettingsPath = null)
+            string? saveDirectory = null, SimulationSpeed initialSpeed = SimulationSpeed.Speed2, string? settingsPath = null, string? engineSettingsPath = null,
+            bool newProfile = false)
         {
-            var fixture = new Fixture(inputs, uiScale, saveDirectory, initialSpeed, settingsPath, engineSettingsPath);
+            var fixture = new Fixture(inputs, uiScale, saveDirectory, initialSpeed, settingsPath, engineSettingsPath, newProfile);
             try
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
@@ -358,6 +448,14 @@ public sealed class BattleNavigationTests
             }
             catch { await fixture.DisposeAsync(); throw; }
         }
+        /// <summary>"classic" forces the Classic profile; null is a new profile whose default skin is Tabletop.</summary>
+        internal static Task<Fixture> ForSkin(string? savedSkinId) => savedSkinId switch
+        {
+            null => Create(newProfile: true),
+            "classic" => Create(),
+            _ => throw new ArgumentOutOfRangeException(nameof(savedSkinId), savedSkinId, "Only classic or a new profile is supported."),
+        };
+        internal static string ExpectedSkin(string? savedSkinId) => savedSkinId ?? "tabletop";
         internal async Task Route(ScreenEvent evt)
         {
             if (!ManualAnimation)

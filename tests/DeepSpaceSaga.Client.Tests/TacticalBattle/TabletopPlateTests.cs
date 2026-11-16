@@ -52,7 +52,7 @@ public sealed class TabletopPlateTests
     [InlineData("1-move-no-hover")]
     [InlineData("2-fire-hover-own")]
     [InlineData("4-salvo-results")]
-    public async Task Plates_show_current_values_and_only_damaged_boxes_are_highlighted(string sceneName)
+    public async Task Plates_show_name_armor_and_hull_boxes_without_callouts(string sceneName)
     {
         await using var scene = await Ep0019Scenes.Create(sceneName, withoutAnomalies: true);
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
@@ -73,8 +73,6 @@ public sealed class TabletopPlateTests
             Assert.Equal(armor.Right, hull.Left);
             Assert.Equal(27, layout.Rects["label:" + unit.Id].Height, .001f);
             Assert.Contains(layout.Texts, t => t.Text == PilotCardModel.Name(unit) && t.Color == SKColor.Parse("#F6EFD8"));
-            Assert.DoesNotContain("plate:damage:armor:" + unit.Id, layout.Rects.Keys);
-            Assert.DoesNotContain("plate:damage:hull:" + unit.Id, layout.Rects.Keys);
             Assert.False(layout.Rects.ContainsKey("callout:" + unit.Id));
         }
     }

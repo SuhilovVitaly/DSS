@@ -109,6 +109,49 @@ public sealed class TabletopCloudTests
     }
 
     [Fact]
+    public async Task Null_surface_without_previous_image_draws_nothing_and_does_not_throw()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        var frame = scene.Frame with { View = new(320, 240, 0, 0, 1) };
+        using var bitmap = new SKBitmap(320, 240);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+        int calls = 0;
+        using var clouds = new PaintedCloudLayer((_, _) => { calls++; return null; });
+        clouds.Draw(canvas, frame);
+        clouds.Draw(canvas, frame);
+        Assert.Equal(2, calls);
+        Assert.Equal(0, clouds.BuildCount);
+        Assert.False(clouds.HasImage);
+        Assert.All(bitmap.Pixels, c => Assert.Equal(0, c.Alpha));
+    }
+
+    [Fact]
+    public async Task Null_surface_keeps_previous_image_and_retries_on_next_frame()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        var frame = scene.Frame with { View = new(320, 240, 0, 0, 1) };
+        using var bitmap = new SKBitmap(320, 240);
+        using var canvas = new SKCanvas(bitmap);
+        bool fail = false;
+        using var clouds = new PaintedCloudLayer((size, _) => fail ? null : SKSurface.Create(size));
+        canvas.Clear(SKColors.Transparent);
+        clouds.Draw(canvas, frame);
+        var built = bitmap.Bytes;
+        Assert.Equal(1, clouds.BuildCount);
+        fail = true;
+        canvas.Clear(SKColors.Transparent);
+        var moved = frame with { View = frame.View with { CenterX = 1 } };
+        clouds.Draw(canvas, moved);
+        Assert.Equal(1, clouds.BuildCount);
+        Assert.True(clouds.HasImage);
+        Assert.Equal(built, bitmap.Bytes);
+        fail = false;
+        clouds.Draw(canvas, moved);
+        Assert.Equal(2, clouds.BuildCount);
+    }
+
+    [Fact]
     public async Task Raster_rebuild_timing_is_recorded_separately_from_native_gpu_acceptance()
     {
         await using var scene = await Ep0019Scenes.Create("2-anomaly-absorption");

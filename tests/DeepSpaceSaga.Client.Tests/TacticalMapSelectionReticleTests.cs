@@ -41,6 +41,42 @@ public sealed class TacticalMapSelectionReticleTests
         Assert.True(ringPixel.Red > ringPixel.Green);
         Assert.True(ringPixel.Green > ringPixel.Blue);
         Assert.True(ringPixel.Alpha > 0);
+
+        // Orange, not a warm yellow: hue stays well below the selection gold (~45 deg).
+        ringPixel.ToHsv(out float hue, out _, out _);
+        Assert.InRange(hue, 15f, 32f);
+    }
+
+    [Fact]
+    public void Selected_and_active_reticles_differ_in_hue_on_a_still_frame()
+    {
+        const float MinimumHueDifferenceDegrees = 15f;
+
+        SKColor selectedRing = DrawRingPixel(active: false);
+        SKColor activeRing = DrawRingPixel(active: true);
+
+        Assert.True(selectedRing.Alpha > 0);
+        Assert.True(activeRing.Alpha > 0);
+        selectedRing.ToHsv(out float selectedHue, out _, out _);
+        activeRing.ToHsv(out float activeHue, out _, out _);
+        float hueDifference = Math.Abs(selectedHue - activeHue);
+        hueDifference = Math.Min(hueDifference, 360f - hueDifference);
+        Assert.True(
+            hueDifference >= MinimumHueDifferenceDegrees,
+            $"Selected hue {selectedHue:F1} and active hue {activeHue:F1} differ by only {hueDifference:F1} deg.");
+
+        static SKColor DrawRingPixel(bool active)
+        {
+            using var bitmap = new SKBitmap(80, 80);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.Transparent);
+
+            var renderer = new TacticalMapDepthRenderer();
+            if (active) renderer.DrawActiveObjectReticle(canvas, 40f, 40f, markerRadius: 5f);
+            else renderer.DrawSelectionReticle(canvas, 40f, 40f, markerRadius: 5f);
+
+            return bitmap.GetPixel(52, 52);
+        }
     }
 
 

@@ -24,7 +24,9 @@ internal static class TacticalBattleSkinRenderScope
         string role = $"field.unit.sprite.{model}.{side}";
         var image = _skin.Image(role);
         float columns = _skin.Metric(role, "columns", 0), frames = _skin.Metric(role, "frames", 0);
-        if (image is null || !PositiveInteger(columns) || !PositiveInteger(frames) ||
+        // Course frames always index TacticalShipSprites.Directions headings; any other frame count
+        // would draw a wrong heading or leave frames unused, so the sheet is rejected.
+        if (image is null || !PositiveInteger(columns) || frames != TacticalShipSprites.Directions ||
             frames % columns != 0 || image.Width % (int)columns != 0) return null;
         int cell = image.Width / (int)columns;
         return cell > 0 && image.Height == cell * ((int)frames / (int)columns)

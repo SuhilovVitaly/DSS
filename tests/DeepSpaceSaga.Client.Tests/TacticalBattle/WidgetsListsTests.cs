@@ -121,6 +121,44 @@ public sealed class WidgetsListsTests
         }
     }
 
+    [Theory]
+    [InlineData(1f, false)]
+    [InlineData(1f, true)]
+    [InlineData(1.5f, true)]
+    public void DropDownCaptionStaysClearOfChevronInBattleSkinWithoutDropdownRole(float scale, bool focused)
+    {
+        const string longLabel = "Тяжёлый крейсер противника с очень длинным названием цели для панели огня";
+        var bounds = SKRect.Create(10, 10, 300 * scale, 33 * scale);
+        var withText = new DropDown<string>([longLabel], s => s) { HasFocus = focused };
+        var blank = new DropDown<string>([""], s => s) { HasFocus = focused };
+        withText.Layout(bounds, Viewport, scale);
+        blank.Layout(bounds, Viewport, scale);
+
+        using var scope = TacticalBattleSkinRenderScope.Enter(TacticalBattleSkin.Classic);
+        using var role = TacticalBattleSkinRenderScope.EnterRole("orders.fire.dropdown");
+        var caption = withText.CaptionBounds();
+        var chevron = withText.FallbackChevronBounds();
+        Assert.False(caption.IntersectsWith(chevron), $"caption {caption} overlaps chevron {chevron}");
+        Assert.True(caption.Right <= chevron.Left);
+        Assert.True(caption.Left < bounds.Left + 44 * scale, "fallback caption must not leave the left 44 px empty");
+
+        using var textBitmap = Draw(withText);
+        using var blankBitmap = Draw(blank);
+        var pixels = SKRectI.Round(chevron);
+        for (int y = pixels.Top; y < pixels.Bottom; y++)
+            for (int x = pixels.Left; x < pixels.Right; x++)
+                Assert.Equal(blankBitmap.GetPixel(x, y), textBitmap.GetPixel(x, y));
+
+        SKBitmap Draw(DropDown<string> list)
+        {
+            var bitmap = new SKBitmap((int)Math.Ceiling(bounds.Right) + 10, (int)Math.Ceiling(bounds.Bottom) + 10);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.Black);
+            list.Draw(canvas);
+            return bitmap;
+        }
+    }
+
     [Fact]
     public void DropDownKeyboardMouseOutsideClickAndReloadPreserveRealSelection()
     {
@@ -251,6 +289,28 @@ public sealed class WidgetsListsTests
         panel.OnKeyDown(Key.End); Assert.Equal(panel.MaximumScroll, panel.ScrollOffset);
         panel.OnMouseWheel(20, 20, 10000); Assert.Equal(panel.MaximumScroll, panel.ScrollOffset);
         panel.OnKeyDown(Key.Home); Assert.Equal(0, panel.ScrollOffset);
+    }
+
+    [Fact]
+    public void HeightOnlyLayoutKeepsDragAndWrappedLinesButWidthChangeResetsThem()
+    {
+        var panel = new ScrollTextPanel { AutoScroll = false };
+        panel.Layout(new(0, 0, 300, 180));
+        panel.SetText(string.Join('\n', Enumerable.Range(0, 100)));
+        var lines = panel.Lines;
+        var thumb = panel.ScrollThumb;
+        Assert.True(panel.OnMouseDown(thumb.MidX, thumb.MidY, MouseButton.Left));
+        Assert.True(panel.IsDragging);
+
+        panel.Layout(new(0, 16, 300, 180));
+        Assert.True(panel.IsDragging);
+        Assert.True(lines == panel.Lines);
+        panel.OnMouseMove(thumb.MidX, 100000);
+        Assert.Equal(panel.MaximumScroll, panel.ScrollOffset);
+
+        panel.Layout(new(0, 16, 280, 180));
+        Assert.False(panel.IsDragging);
+        Assert.False(lines == panel.Lines);
     }
 
     [Fact]

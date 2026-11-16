@@ -1100,6 +1100,39 @@ public class TradeUxTests
         Assert.Equal(0, projected.ExecutableQuantity);
     }
 
+    // ── US-0022 TK-0007: thin trade fills keep their colour ──────────────────────────────
+
+    [Fact]
+    public async Task Selected_row_strip_is_drawn_in_gold()
+    {
+        await using var f = new Fixture();
+        int row = Array.FindIndex(f.Screen.Model.Rows, r => r.ItemTypeId == f.Screen.Model.SelectedItemId) - f.Screen.ScrollOffset;
+        Assert.InRange(row, 0, TradeLayout.VisibleRows - 1);
+        using var rendered = Render(f.Screen);
+        var rect = TradeLayout.Row(row);
+        // The strip is local (rect.Left, rect.Top + 3, 3 px wide); the panel is placed at (160, 140).
+        int y = 140 + (int)rect.MidY;
+        for (int x = 160 + (int)rect.Left; x < 160 + (int)rect.Left + 3; x++)
+            Assert.Equal(TabletopStyle.Gold, rendered.GetPixel(x, y));
+    }
+
+    [Fact]
+    public void Thin_bar_fills_full_height_and_shows_a_small_preview_change()
+    {
+        using var bitmap = new SKBitmap(600, 20); bitmap.Erase(SKColors.Transparent);
+        using var canvas = new SKCanvas(bitmap);
+        using (var p = new TradePainter(canvas)) p.Bar(SKRect.Create(40, 5, 520, 5), 0.5, 0.508);
+        // 0.8 % of 520 px is ~4 px: the change starts at x = 300 and must be visible in colour across every row.
+        for (int y = 5; y < 10; y++)
+        {
+            Assert.Equal(TabletopStyle.Gold, bitmap.GetPixel(100, y));
+            Assert.Equal(TabletopStyle.Success, bitmap.GetPixel(302, y));
+            Assert.Equal(TabletopStyle.Edge, bitmap.GetPixel(500, y));
+        }
+        Assert.Equal(0, bitmap.GetPixel(302, 4).Alpha);
+        Assert.Equal(0, bitmap.GetPixel(302, 10).Alpha);
+    }
+
     private static void Export(TradeScreen screen, string state)
     {
         using var bitmap = Render(screen);

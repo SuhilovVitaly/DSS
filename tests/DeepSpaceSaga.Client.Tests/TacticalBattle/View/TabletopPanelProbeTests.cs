@@ -46,8 +46,6 @@ public sealed class TabletopPanelProbeTests
         {
             var armor = layout.Rects["pilot-armor:Юн"];
             Assert.InRange(Distance(Pixel(armor.Left + 6, armor.MidY), SKColor.Parse("#5A7CA8")), 0, 50);
-            Assert.DoesNotContain("pilot-damage-armor:Юн", layout.Rects.Keys);
-            Assert.DoesNotContain("plate:damage:armor:Юн", layout.Rects.Keys);
             Assert.Contains(layout.Texts, text => text.Text is "ПОПАДАНИЕ" or "ПРОМАХ" or "ПОГЛОЩЁН" or "УКЛОНЕНИЕ");
         }
         var phase = layout.Rects["phase"];

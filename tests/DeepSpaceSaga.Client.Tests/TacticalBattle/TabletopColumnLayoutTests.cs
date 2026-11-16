@@ -42,6 +42,42 @@ public sealed class TabletopColumnLayoutTests
     }
 
     [Fact]
+    public void Slim_overflowing_column_scrolls_only_over_cards_and_panels_and_keeps_track_off_the_panel()
+    {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop"));
+        var column = new PilotCardColumn();
+        PilotCard[] cards = Enumerable.Range(0, 8).Select(i => new PilotCard(
+            $"drone{i}", "Pilot", "", "missing", i == 0, [], "", false, [])).ToArray();
+        column.Arrange(cards, _ => 400);
+        Assert.True(column.Layout.Slim);
+        Assert.True(column.Layout.MaxScroll > 0);
+        Assert.Equal(new SKRect(51, 49, 201, 449), column.Layout.Panel);
+
+        // Map to the right of the cards and below the panel: the wheel must reach the camera.
+        Assert.False(column.Scroll(new(175, 600), -1));
+        Assert.False(column.Scroll(new(195, 600), -1));
+        column.Arrange(cards, _ => 400);
+        Assert.Equal(0, column.Layout.Scroll);
+
+        Assert.True(column.Scroll(new(175, 300), -1));
+        column.Arrange(cards, _ => 400);
+        Assert.Equal(40, column.Layout.Scroll);
+        Assert.True(column.Scroll(new(100, 600), 1));
+        column.Arrange(cards, _ => 400);
+        Assert.Equal(0, column.Layout.Scroll);
+
+        var track = column.ScrollTrack;
+        Assert.Equal(158, track.Left);
+        Assert.True(track.Left >= column.Layout.Cards[0].Right);
+        using var bitmap = new SKBitmap(300, 720); using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+        column.Draw(canvas, PilotPortraitCatalog.Default);
+        Assert.NotEqual(0, bitmap.GetPixel(159, 600).Alpha);
+        Assert.Equal(0, bitmap.GetPixel(199, 600).Alpha);
+    }
+
+    [Fact]
     public async Task Column_uses_skin_flag_and_leaves_classic_geometry_intact()
     {
         await using var scene = await Ep0019Scenes.Create("1-move-no-hover");

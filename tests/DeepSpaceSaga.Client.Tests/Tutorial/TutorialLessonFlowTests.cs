@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Client.Tests.TacticalBattle;
+using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
@@ -13,7 +14,7 @@ namespace DeepSpaceSaga.Client.Tests.Tutorial;
 
 /// <summary>
 /// EP-0028-US-0003: the shipped lessons in a live Tabletop tutorial battle — the same start request as the New Game tutorial
-/// (default scenario «initial», seed 1, default loadout, <see cref="TacticalBattleFlow.IsTutorial"/>) with the shipped script.
+/// (default scenario «initial», seed <see cref="SkiaWindow.TutorialBattleSeed"/>, default loadout, <see cref="TacticalBattleFlow.IsTutorial"/>) with the shipped script.
 /// Shared by TK-0001…TK-0005.
 /// </summary>
 [Collection("InterfaceLog")]
@@ -43,9 +44,9 @@ public sealed class TutorialLessonFlowTests
             var skins = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
             try
             {
-                // Same request as SkiaWindow.StartTutorialAsync: seed 1, default scenario and loadout.
+                // Same request as SkiaWindow.StartTutorialAsync: the production tutorial seed, default scenario and loadout.
                 var flow = new TacticalBattleFlow(fixture.Handle) { IsTutorial = true };
-                var started = await flow.StartAsync(new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), 1));
+                var started = await flow.StartAsync(new StartTacticalBattleRequest(TacticalBattleFlow.NewIdentity("start"), SkiaWindow.TutorialBattleSeed));
                 Assert.True(started?.Accepted, "tutorial battle start rejected: " + started?.Code);
                 Assert.Equal("initial", flow.State!.ScenarioId);
                 var skin = skins.GetOrClassic("tabletop");

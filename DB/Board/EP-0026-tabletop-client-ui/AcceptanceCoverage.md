@@ -20,7 +20,7 @@
 
 ## Evidence
 
-Растр: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/raster-verify-20261113-141527/`.
+Растр: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/raster-verify-20261113-141527/`. В этом прогоне `firstMs` уровней карты — второй рендер после смены масштаба; исправленный замер с полем `cache` (cold/warm): `D:/DeepSpaceSaga/artifacts/validation/US-0022/final-20261116-012634/raster/raster.json` (EP-maintenance-US-0022-TK-0014).
 Полный Client, диалог и торговые кадры: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/final-client-20261113-141105/`.
 Нативный исходный и итоговый бой: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/native-baseline-20261113-134750/native.json` и `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/native-final-20261113-141254/native.json`.
 Миграции: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/engine-save-20261113-141505/`.

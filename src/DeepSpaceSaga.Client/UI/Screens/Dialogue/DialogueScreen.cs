@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Portraits;
 using DeepSpaceSaga.Contracts;
@@ -17,11 +18,22 @@ internal sealed class DialogueScreen : IScreen
     private Task? _sendTask;
     private string? _error;
     private int _width, _height, _hover = -1, _scroll;
+    // Speech field scroll: first visible wrapped line, plus the line counts measured by the last render.
+    private int _speechScroll, _speechLineCount, _speechVisibleLines = int.MaxValue;
+    private ImmutableArray<string> _visibleSpeechLines = [];
     private SKBitmap? _speakerPortrait, _captainPortrait;
     private (string? Path, string Person)? _speakerKey, _captainKey;
     internal bool IsPending => _pendingCommandId is not null;
     internal DialogueState State => _state;
     internal string? Error => _error;
+    internal int SpeechScroll => _speechScroll;
+    internal int SpeechLineCount => _speechLineCount;
+    internal ImmutableArray<string> VisibleSpeechLines => _visibleSpeechLines;
+    internal bool SpeechHasMoreAbove => _speechScroll > 0;
+    internal bool SpeechHasMoreBelow => _speechScroll + _speechVisibleLines < _speechLineCount;
+    private int MaxSpeechScroll => Math.Max(0, _speechLineCount - _speechVisibleLines);
+    internal static SKRect SpeechField(int width, int height) => SpeechField(DialogueLayout.Panel(width, height));
+    private static SKRect SpeechField(SKRect panel) => new(panel.Left + 410, panel.Top + 155, panel.Left + 990, panel.Top + 435);
     public DialogueScreen(SnapshotBuffer buffer, GameSessionHandle? handle, DialogueState state)
     { _buffer = buffer; _handle = handle; _state = state; _instanceId = state.InstanceId; }
     public void OnActivated() { }
@@ -49,7 +61,7 @@ internal sealed class DialogueScreen : IScreen
             }
         }
         if (snapshot.ActiveDialogue?.InstanceId != _instanceId) return ScreenEvent.CloseDialogue;
-        if (snapshot.ActiveDialogue.Revision != _state.Revision) { _scroll = 0; _pendingCommandId = null; }
+        if (snapshot.ActiveDialogue.Revision != _state.Revision) { _scroll = 0; _speechScroll = 0; _pendingCommandId = null; }
         _state = snapshot.ActiveDialogue;
         return ScreenEvent.None;
     }
@@ -67,6 +79,17 @@ internal sealed class DialogueScreen : IScreen
     {
         if (Poll() == ScreenEvent.CloseDialogue) return ScreenEvent.CloseDialogue;
         if (key == Key.Escape && _state.CanAbort) Send(DialogueAction.Abort);
+        else if (key is Key.Up or Key.Down or Key.PageUp or Key.PageDown or Key.Home or Key.End)
+        {
+            int page = _speechVisibleLines == int.MaxValue ? 1 : Math.Max(1, _speechVisibleLines - 1);
+            int target = key switch
+            {
+                Key.Up => _speechScroll - 1, Key.Down => _speechScroll + 1,
+                Key.PageUp => _speechScroll - page, Key.PageDown => _speechScroll + page,
+                Key.Home => 0, _ => MaxSpeechScroll,
+            };
+            _speechScroll = Math.Clamp(target, 0, MaxSpeechScroll);
+        }
         return ScreenEvent.None;
     }
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
@@ -89,6 +112,11 @@ internal sealed class DialogueScreen : IScreen
     }
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (SpeechField(_width, _height).Contains(x, y))
+        {
+            _speechScroll = Math.Clamp(_speechScroll - Math.Sign(delta), 0, MaxSpeechScroll);
+            return ScreenEvent.None;
+        }
         _scroll = Math.Clamp(_scroll - Math.Sign(delta), 0, Math.Max(0, _state.Choices.Length - DialogueLayout.VisibleChoices));
         return ScreenEvent.None;
     }
@@ -130,10 +158,10 @@ internal sealed class DialogueScreen : IScreen
         DrawPortrait(canvas, DialogueLayout.Operator(width, height), _speakerPortrait, _state.SpeakerDisplayName);
         DrawPortrait(canvas, DialogueLayout.Captain(width, height), _captainPortrait, captain?.CaptainDisplayName);
         using var paint = new SKPaint { Color = MenuStyle.ColorText, TextSize = 18, Typeface = MenuStyle.TypefaceRegular, IsAntialias = true };
-        var speech = new SKRect(panel.Left + 410, panel.Top + 155, panel.Left + 990, panel.Top + 435);
+        var speech = SpeechField(panel);
         TabletopStyle.Field(canvas, speech);
         speech.Inflate(-18, -14);
-        DrawWrapped(canvas, Text(_state.TextKey), speech, paint);
+        DrawSpeech(canvas, Text(_state.TextKey), speech, paint);
         for (int i = 0; i < DialogueLayout.VisibleChoices && i + _scroll < _state.Choices.Length; i++)
         {
             var choice = _state.Choices[i + _scroll];
@@ -170,18 +198,40 @@ internal sealed class DialogueScreen : IScreen
                 name, MenuStyle.TextButton);
     }
 
-    private static void DrawWrapped(SKCanvas canvas, string text, SKRect bounds, SKPaint paint)
+    /// <summary>Draws only whole lines (descenders included) from the scroll offset and marks hidden text above/below.</summary>
+    private void DrawSpeech(SKCanvas canvas, string text, SKRect bounds, SKPaint paint)
     {
-        float y = bounds.Top - paint.FontMetrics.Ascent;
+        var lines = ControlText.Wrap(text, bounds.Width, paint);
+        var metrics = paint.FontMetrics;
+        float lineHeight = Math.Max(27, paint.FontSpacing);
+        float firstLineHeight = metrics.Descent - metrics.Ascent;
+        _speechLineCount = lines.Length;
+        _speechVisibleLines = Math.Max(1, 1 + (int)Math.Floor((bounds.Height - firstLineHeight) / lineHeight));
+        _speechScroll = Math.Clamp(_speechScroll, 0, MaxSpeechScroll);
+        var visible = ImmutableArray.CreateBuilder<string>();
+        float y = bounds.Top - metrics.Ascent;
         canvas.Save();
         canvas.ClipRect(bounds);
-        foreach (string line in ControlText.Wrap(text, bounds.Width, paint))
+        for (int i = _speechScroll; i < lines.Length && visible.Count < _speechVisibleLines; i++)
         {
-            if (y > bounds.Bottom)
-                break;
-            canvas.DrawText(line, bounds.Left, y, paint);
-            y += Math.Max(27, paint.FontSpacing);
+            canvas.DrawText(lines[i], bounds.Left, y, paint);
+            visible.Add(lines[i]);
+            y += lineHeight;
         }
         canvas.Restore();
+        _visibleSpeechLines = visible.ToImmutable();
+        // Overflow markers sit in the field padding, outside the text clip, at the right edge.
+        if (SpeechHasMoreAbove) DrawMarker(canvas, bounds.Right - 6, bounds.Top - 11, bounds.Top - 3, paint.Color);
+        if (SpeechHasMoreBelow) DrawMarker(canvas, bounds.Right - 6, bounds.Bottom + 11, bounds.Bottom + 3, paint.Color);
+    }
+    private static void DrawMarker(SKCanvas canvas, float midX, float tipY, float baseY, SKColor color)
+    {
+        using var path = new SKPath();
+        path.MoveTo(midX - 6, baseY);
+        path.LineTo(midX + 6, baseY);
+        path.LineTo(midX, tipY);
+        path.Close();
+        using var fill = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Fill };
+        canvas.DrawPath(path, fill);
     }
 }

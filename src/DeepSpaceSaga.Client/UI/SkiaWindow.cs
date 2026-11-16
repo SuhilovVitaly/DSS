@@ -73,6 +73,8 @@ public sealed class SkiaWindow : IDisposable
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
+    // Set by main-menu Exit, which bypasses _transitionLock: an in-flight tutorial start must not open its battle afterwards.
+    private bool _exitRequested;
     private bool _isFocused = true;
     // Leave room for the elapsed-time diagnostic before the first focus event.
     private long _focusRegainedAtMs = long.MinValue / 2;
@@ -805,10 +807,28 @@ public sealed class SkiaWindow : IDisposable
                 $"DIAG HandleScreenEvent evt={evt} screen={_screens.Current.GetType().Name} depth={_screens.Count}");
         }
 
+        // The screen that produced this event, captured at dispatch time (before waiting for the lock).
+        var origin = _screens.Current;
+        if (evt == ScreenEvent.Exit && origin is MainMenuScreen && !_closing)
+        {
+            // Main-menu Exit never waits behind an in-flight transition (e.g. a tutorial start holding the lock
+            // across several awaits) — otherwise it would run only after the battle opened and be blocked there.
+            _exitRequested = true;
+            _window?.Close();
+            return;
+        }
+
         await _transitionLock.WaitAsync();
         try
         {
             if (_closing) return;
+            if (evt != ScreenEvent.None && origin is MainMenuScreen && !ReferenceEquals(_screens.Current, origin))
+            {
+                // A main-menu click queued while a transition (e.g. the tutorial start) replaced the menu is stale:
+                // drop it instead of letting the new screen (the tutorial battle's gate) reject it with a notice.
+                InterfaceLog.Write($"HandleScreenEvent evt={evt} ignored: issued by a main menu that is no longer shown");
+                return;
+            }
             if (EnsureShipDestroyedScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or ScreenEvent.Exit or
                 ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
@@ -873,7 +893,7 @@ public sealed class SkiaWindow : IDisposable
                     }
                     break;
                 case ScreenEvent.NewGame:
-                    if (_session is null && _sessionFactory.ListSaveSlots().Length == 0)
+                    if (_session is null && !HasAnySaveSlotForNewGame())
                         await StartTutorialAsync();
                     else
                         OpenScenarioSelect();
@@ -891,8 +911,14 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.MainMenu:
                     // A confirmed mid-tutorial abort must write the real losses/checkpoint before the
                     // session is disposed. A failed write keeps the battle modal and its Retry visible.
-                    if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } abortingBattle &&
-                        !await abortingBattle.Flow.ExitAsync()) break;
+                    if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } abortingBattle)
+                    {
+                        bool unfinished = abortingBattle.Flow.State is { Outcome: null };
+                        if (!await abortingBattle.Flow.ExitAsync()) break;
+                        // The exit wrote the battle report as "exited"; the tutorial journal marks the abandonment too.
+                        if (unfinished && abortingBattle is TacticalBattleScreen { Tutorial: { } tutorial })
+                            tutorial.RecordAbandoned();
+                    }
                     await ReturnToMainMenuAsync();
                     break;
                 case ScreenEvent.Exit:
@@ -1083,11 +1109,31 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>
+    /// New Game's «is there any save?» check: asks the factory for the file list only (no slot is parsed). A file-system
+    /// error is logged and treated as «no saves», so the button still starts a game instead of doing nothing.
+    /// </summary>
+    private bool HasAnySaveSlotForNewGame()
+    {
+        try
+        {
+            return _sessionFactory.HasAnySaveSlot();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            InterfaceLog.Write($"New Game: save list unavailable, treating as no saves: {error.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// NEW GAME without any save: start the hidden Tutorial scenario and go straight into its
     /// tactical battle (default request, seed 1, no setup screen). The whole sequence runs under
     /// <see cref="_transitionLock"/> while the main menu stays on screen; the world map is only
     /// placed under the battle modal once the battle has been accepted, so it never becomes the
-    /// current screen or receives input. Any failure disposes the session and returns to the main menu.
+    /// current screen or receives input. Any failure is logged to InterfaceLog and disposes the session.
+    /// When the tutorial itself is unavailable (no tutorial scenario, or the engine rejects the battle as
+    /// <see cref="TacticalBattleRejectionCode.Unavailable"/>) the player falls back to the scenario picker,
+    /// so a fresh install without saves can always start a game; any other failure returns to the main menu.
     /// </summary>
     private async Task StartTutorialAsync()
     {
@@ -1098,11 +1144,21 @@ public sealed class SkiaWindow : IDisposable
         if (_closing) return;
 
         GameSessionHandle? session = null;
+        bool fallBackToScenarioSelect = false;
         try
         {
-            string scenarioPath = _sessionFactory.GetTutorialScenarioPath()
-                ?? throw new FileNotFoundException("Tutorial scenario is not available.");
-            var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
+            // The tutorial lookup scans the scenarios on disk, so it runs on the loader's background task together with
+            // the session creation instead of on the window thread.
+            var connection = await _connectionLoader.CreateAsync(() =>
+            {
+                string? scenarioPath = _sessionFactory.GetTutorialScenarioPath();
+                if (scenarioPath is null)
+                {
+                    fallBackToScenarioSelect = true;
+                    throw new FileNotFoundException("Tutorial scenario is not available.");
+                }
+                return _sessionFactory.CreateSessionFromScenario(scenarioPath);
+            });
             if (!_connectionLoader.TryAdopt(connection)) return;
 
             session = new GameSessionHandle(connection, deferDebugTuningWrites: true);
@@ -1131,8 +1187,11 @@ public sealed class SkiaWindow : IDisposable
                 ExpectedCarrierRevision = carrier.Revision,
             });
             if (started?.Accepted != true || flow.State is null)
+            {
+                fallBackToScenarioSelect = started is { Accepted: false, Code: TacticalBattleRejectionCode.Unavailable };
                 throw new InvalidOperationException("Tutorial battle was rejected: " + (started?.Code.ToString() ?? "no response"));
-            if (_closing)
+            }
+            if (_closing || _exitRequested)
             {
                 await session.DisposeAsync();
                 return;
@@ -1154,7 +1213,10 @@ public sealed class SkiaWindow : IDisposable
             _gameSessionScreen = null;
             _modalDepth = 0;
             _savedSpeed = SimulationSpeed.Speed1;
-            if (!_closing) _screens.ReplaceAll(new MainMenuScreen());
+            if (!_closing)
+                _screens.ReplaceAll(fallBackToScenarioSelect
+                    ? new ScenarioSelectScreen(() => _sessionFactory.ListScenarios())
+                    : new MainMenuScreen());
             if (session is not null)
             {
                 _lastSessionDisposal = session.DisposeAsync().AsTask();

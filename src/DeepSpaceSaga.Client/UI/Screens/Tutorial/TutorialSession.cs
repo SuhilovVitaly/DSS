@@ -62,7 +62,7 @@ internal sealed class TutorialSession
     {
         get
         {
-            if (!Panel.Bounds.IsEmpty) yield return Panel.Bounds;
+            foreach (var area in Panel.Areas) yield return area;
             if (Journal.IsOpen) yield return Journal.Bounds;
         }
     }
@@ -115,14 +115,14 @@ internal sealed class TutorialSession
             TutorialHighlight.Target(layout, TutorialHighlight.ResolveKey(anchor, layout, observation, line.SignalUnitId)) is { } target)
             TutorialHighlight.Draw(canvas, layout, target, nowMs); // under the panel; not part of Bounds
         Panel.Draw(canvas, layout, designWidth, line, Director.Enabled, _portrait, Script.Officer);
-        Journal.Draw(canvas, layout, HeardSteps);
+        Journal.Draw(canvas, layout, designWidth, HeardSteps);
     }
 
     internal bool OnMouseDown(SKPoint designPoint, MouseButton button)
     {
         if (button != MouseButton.Left) return false; // right/middle pass through: the battle pans the camera from here too
         if (Journal.OnMouseDown(designPoint)) return true;
-        if (!Panel.Bounds.Contains(designPoint)) return false;
+        if (!Panel.Contains(designPoint)) return false;
         switch (Panel.Hit(designPoint))
         {
             case "ack": Director.Acknowledge(); break;
@@ -142,6 +142,18 @@ internal sealed class TutorialSession
         if (changed && LastObservation is { } at) Metrics?.RecordHints(enabled, at.Phase, at.Turn, at.NowMs);
         try { PersistHints?.Invoke(enabled); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // the battle goes on
+    }
+
+    /// <summary>
+    /// Records a confirmed exit from the unfinished tutorial battle to the main menu; pending step events come first.
+    /// Nothing is recorded before the first observation (no metrics file yet). Waits for the background write (a menu
+    /// transition, not a render frame) so the journal is complete before the battle is left (US-0022-TK-0024).
+    /// </summary>
+    internal void RecordAbandoned()
+    {
+        RecordEvents();
+        if (LastObservation is { } at) Metrics?.RecordAbandoned(at.Phase, at.Turn, at.NowMs);
+        Metrics?.Flush();
     }
 
     /// <summary>H toggles the comms log (also with hints off); Esc closes an open log first. Everything else is the battle's.</summary>

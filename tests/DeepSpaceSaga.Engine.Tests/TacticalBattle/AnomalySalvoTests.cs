@@ -44,6 +44,34 @@ public sealed class AnomalySalvoTests
     }
 
     [Fact]
+    public void Hit_roll_is_compared_with_published_conditional_chance()
+    {
+        // US-0022-TK-0001: Absorption .17, conditional .47, effective .47 * .83 = .3901.
+        int unabsorbed = 0, betweenChances = 0;
+        for (int skip = 0; skip < 300; skip++)
+        {
+            var (battle, a, b) = Arena(TacticalAnomalyKind.Heat, 1, 47);
+            for (int i = 0; i < skip; i++) battle.Random.Random();
+            var shot = Assert.Single(TacticalBattleSalvo.Fire(battle, (d, _) => new(d == a ? b.Id : null, false)).Shots);
+            var dto = TacticalBattleSnapshotBuilder.Shot(shot, 1);
+            Assert.Equal(.17, dto.Absorption, 12);
+            Assert.Equal(.47, dto.ConditionalChance!.Value, 12);
+            Assert.Equal(.47 * .83, dto.Chance, 12);
+            if (dto.Absorbed) { Assert.Null(dto.HitRoll); Assert.False(dto.Hit); continue; }
+            unabsorbed++;
+            double roll = dto.HitRoll!.Value;
+            Assert.Equal(roll < dto.ConditionalChance.Value, dto.Hit);
+            if (roll >= dto.Chance && roll < dto.ConditionalChance.Value)
+            {
+                betweenChances++;
+                Assert.True(dto.Hit);
+            }
+        }
+        Assert.InRange(unabsorbed, 1, 299);
+        Assert.True(betweenChances > 0, "seeded sweep must cover effective <= HitRoll < conditional");
+    }
+
+    [Fact]
     public void No_extra_random_without_crossing()
     {
         var (battle, a, b) = Arena(TacticalAnomalyKind.Heat, .001);

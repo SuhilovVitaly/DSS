@@ -23,6 +23,7 @@ internal static class TacticalBattleSnapshotBuilder
         TargetEvading = shot.TargetEvading,
         Decoyed = shot.Decoyed,
         ChanceWithoutDecoy = shot.ChanceWithoutDecoy,
+        ConditionalChance = shot.ConditionalChance,
         HitRoll = shot.HitRoll,
         AbsorptionRoll = shot.AbsorptionRoll,
         Factors = shot.Factors

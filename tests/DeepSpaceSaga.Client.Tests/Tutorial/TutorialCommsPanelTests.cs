@@ -96,10 +96,10 @@ public sealed class TutorialCommsPanelTests
         var chip = layout.Rects["tutorial:chip"];
         Assert.Equal(new SKRect(TutorialCommsPanel.Left, TutorialCommsPanel.Bottom - 30, TutorialCommsPanel.Left + 190,
             TutorialCommsPanel.Bottom), chip);
-        // US-0006-TK-0004: a small «Hints: off» button right of the chip; the chip area covers both.
+        // US-0006-TK-0004: a small «Hints: off» button right of the chip; US-0022-TK-0025: chip and button capture separately.
         var off = layout.Rects["tutorial:hints"];
         Assert.True(off.Left > chip.Right && off.Top >= chip.Top && off.Bottom <= chip.Bottom, off.ToString());
-        Assert.Equal([SKRect.Union(chip, off)], session.Bounds);
+        Assert.Equal([chip, off], session.Bounds);
         Assert.False(layout.Rects.ContainsKey("tutorial:panel"));
         Assert.Contains(ControlText.SafeSymbols(Localization.Get("Tutorial.Panel.Title") + " · " + Localization.Get("Tutorial.Panel.JournalHint")),
             layout.Texts.Select(t => t.Text));
@@ -219,6 +219,38 @@ public sealed class TutorialCommsPanelTests
         Assert.False(session.OnMouseDown(new SKPoint(panel.Left - 1, panel.MidY), MouseButton.Left));
         Assert.False(session.OnMouseDown(new SKPoint(panel.MidX, panel.Top - 1), MouseButton.Left));
         Assert.False(session.OnMouseDown(new SKPoint(640, 300), MouseButton.Left));
+    }
+
+    /// <summary>
+    /// US-0022-TK-0025: the collapsed panel captures only the chip and its «Hints: off» button; the gap between them and the
+    /// strips above and below the shorter button pass the click (and hover) through to the battle.
+    /// </summary>
+    [Fact]
+    public void CollapsedChipCapturesOnlyChipAndHintsButtonNotTheGapAround()
+    {
+        using var locale = Localization.UseLocaleForTests("Russian");
+        var session = new TutorialSession(Script(null, Step("later", phase: "Fire")));
+        session.Observe(Move());
+        var layout = Draw(session);
+        var chip = layout.Rects["tutorial:chip"];
+        var off = layout.Rects["tutorial:hints"];
+        Assert.True(off.Left > chip.Right + 2 && off.Top > chip.Top + 2 && off.Bottom < chip.Bottom - 2, off.ToString());
+
+        var gap = new SKPoint((chip.Right + off.Left) / 2, chip.MidY);
+        var above = new SKPoint(off.MidX, (chip.Top + off.Top) / 2);
+        var below = new SKPoint(off.MidX, (off.Bottom + chip.Bottom) / 2);
+        foreach (var point in new[] { gap, above, below })
+        {
+            Assert.DoesNotContain(session.Bounds, b => b.Contains(point));
+            Assert.False(session.OnMouseDown(point, MouseButton.Left), point.ToString());
+        }
+        Assert.True(session.Director.Enabled);
+        Assert.Equal(TutorialStepState.Waiting, session.Director.StateOf("later"));
+
+        Assert.True(session.OnMouseDown(Center(chip), MouseButton.Left)); // the chip itself is still captured
+        Assert.True(session.Director.Enabled);
+        Assert.True(session.OnMouseDown(Center(off), MouseButton.Left)); // and the button still acts
+        Assert.False(session.Director.Enabled);
     }
 
     [Fact]

@@ -75,7 +75,7 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
     private TacticalShotSnapshot DisplayShot(TacticalShotSnapshot shot) => shot.Decoyed && !Own(shot.TargetId)
         ? shot with
         {
-            Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false, ChanceWithoutDecoy = null,
+            Chance = shot.ChanceWithoutDecoy ?? shot.Chance, ConditionalChance = null, Decoyed = false, ChanceWithoutDecoy = null,
             Factors = shot.Factors is { } factors ? factors with { Decoy = 0 } : null
         } : shot;
     private ImmutableArray<TacticalUnitSnapshot> DisplayUnits(ImmutableArray<TacticalUnitSnapshot> units) => units.Select(unit =>

@@ -77,6 +77,52 @@ public class SaveSlotRepositoryTests
         }
     }
 
+    /// <summary>EP-maintenance-US-0022-TK-0004: «is there any save?» is answered from the file list alone.</summary>
+    [Fact]
+    public void HasAnySlot_is_false_for_a_missing_directory_or_one_without_json_files()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-slots-any-empty-{Guid.NewGuid():N}");
+        Assert.False(SaveSlotRepository.HasAnySlot(dir));
+
+        Directory.CreateDirectory(dir);
+        try
+        {
+            Assert.False(SaveSlotRepository.HasAnySlot(dir));
+            File.WriteAllText(Path.Combine(dir, "notes.txt"), "not a save");
+            Assert.False(SaveSlotRepository.HasAnySlot(dir));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0004: HasAnySlot never opens a slot file — a corrupt save that is also locked against reading
+    /// (FileShare.None) still counts as an existing save.
+    /// </summary>
+    [Fact]
+    public void HasAnySlot_answers_from_the_file_list_without_reading_slot_contents()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), $"dss-slots-any-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            string path = Path.Combine(dir, "broken.json");
+            File.WriteAllText(path, "{ this is not json");
+            using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                Assert.Throws<IOException>(() => File.ReadAllText(path));
+
+                Assert.True(SaveSlotRepository.HasAnySlot(dir));
+            }
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
     [Fact]
     public void DeleteSlot_removes_the_slots_file()
     {

@@ -3,5 +3,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj" />
     <ProjectReference Include="../../src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj" />
+    <InternalsVisibleTo Include="DeepSpaceSaga.Performance.Tests" />
   </ItemGroup>
 </Project>

@@ -68,8 +68,7 @@ public static class XenonComboBox
         var labelRect = new SKRect(fieldRect.Left + 10, fieldRect.Top - LabelHeight, fieldRect.Right - 10, fieldRect.Top);
         ControlVisuals.DrawLabel(canvas, ControlText.Ellipsize(label, labelRect.Width, LabelText), labelRect, LabelText);
         TabletopStyle.Field(canvas, fieldRect, highlighted);
-        var valueRect = new SKRect(fieldRect.Left + 10, fieldRect.Top, fieldRect.Right - 28, fieldRect.Bottom);
-        TabletopStyle.Label(canvas, valueRect, value, highlighted ? ActiveValueText : ValueText);
+        TabletopStyle.Label(canvas, ValueBounds(fieldRect), value, highlighted ? ActiveValueText : ValueText);
 
         using var chevron = new SKPaint { Color = highlighted ? TabletopStyle.Gold : TabletopStyle.Secondary, StrokeWidth = 2, IsAntialias = true };
         float x = fieldRect.Right - 14;
@@ -77,6 +76,14 @@ public static class XenonComboBox
         canvas.DrawLine(x - 4, y - 2, x, y + 2, chevron);
         canvas.DrawLine(x, y + 2, x + 4, y - 2, chevron);
     }
+
+    /// <summary>Value text area; the right 28 px stay reserved for the chevron.</summary>
+    internal static SKRect ValueBounds(SKRect fieldRect) =>
+        new(fieldRect.Left + 10, fieldRect.Top, fieldRect.Right - 28, fieldRect.Bottom);
+
+    /// <summary>Area covered by the 2 px chevron strokes drawn by <see cref="DrawClosed"/>.</summary>
+    internal static SKRect ChevronBounds(SKRect fieldRect) =>
+        new(fieldRect.Right - 19, fieldRect.MidY - 3, fieldRect.Right - 9, fieldRect.MidY + 3);
 
     public static void DrawListBackground(SKCanvas canvas, SKRect bounds) => TabletopStyle.Panel(canvas, bounds);
 

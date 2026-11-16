@@ -89,6 +89,88 @@ public class SaveScreenVisualTests
         Assert.True(ContainsColor(bitmap, button, XenonStyle.OrangeAccent));
     }
 
+    [Fact]
+    public void Delete_confirmation_label_uses_the_danger_color_like_the_load_window()
+    {
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        var slots = new[]
+        {
+            new SaveSlotInfo("slot-1", "Existing Save", DateTime.UtcNow)
+        };
+        long now = 0;
+        var screen = new SaveScreen(() => slots, _ => { }, _ => { }, () => now);
+        var panel = SaveLayout.PanelRect(bitmap.Width, bitmap.Height);
+        var delete = ScreenRect(panel, SaveLayout.DeleteButtonRect());
+
+        bitmap.Erase(SKColors.Transparent);
+        screen.Render(canvas, bitmap.Width, bitmap.Height);
+        canvas.Flush();
+        var row = ScreenRect(panel, SaveLayout.RowRect(0));
+        screen.OnMouseDown(row.MidX, row.MidY);
+        screen.OnMouseDown(delete.MidX, delete.MidY);
+
+        bitmap.Erase(SKColors.Transparent);
+        screen.Render(canvas, bitmap.Width, bitmap.Height);
+        canvas.Flush();
+
+        Assert.True(ContainsColor(bitmap, delete, TabletopStyle.Danger));
+    }
+
+    [Fact]
+    public void Plain_delete_label_does_not_use_the_danger_color()
+    {
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        var slots = new[]
+        {
+            new SaveSlotInfo("slot-1", "Existing Save", DateTime.UtcNow)
+        };
+        var screen = new SaveScreen(() => slots, _ => { }, _ => { }, () => 0);
+        var panel = SaveLayout.PanelRect(bitmap.Width, bitmap.Height);
+        var delete = ScreenRect(panel, SaveLayout.DeleteButtonRect());
+
+        bitmap.Erase(SKColors.Transparent);
+        screen.Render(canvas, bitmap.Width, bitmap.Height);
+        canvas.Flush();
+        var row = ScreenRect(panel, SaveLayout.RowRect(0));
+        screen.OnMouseDown(row.MidX, row.MidY);
+
+        bitmap.Erase(SKColors.Transparent);
+        screen.Render(canvas, bitmap.Width, bitmap.Height);
+        canvas.Flush();
+
+        Assert.False(ContainsColor(bitmap, delete, TabletopStyle.Danger));
+    }
+
+    [Fact]
+    public void Save_button_uses_the_primary_style_like_the_load_button()
+    {
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        var slots = new[]
+        {
+            new SaveSlotInfo("slot-1", "Existing Save", DateTime.UtcNow)
+        };
+        var screen = new SaveScreen(() => slots, _ => { }, _ => { });
+        var panel = SaveLayout.PanelRect(bitmap.Width, bitmap.Height);
+        var save = ScreenRect(panel, SaveLayout.SaveButtonRect());
+        var close = ScreenRect(panel, SaveLayout.CloseButtonRect());
+
+        bitmap.Erase(SKColors.Transparent);
+        screen.Render(canvas, bitmap.Width, bitmap.Height);
+        canvas.Flush();
+
+        // Primary buttons draw their marker and label in PrimaryInk on the gold fill;
+        // secondary buttons (CLOSE) never use that ink.
+        Assert.True(ContainsColor(bitmap, save, TabletopStyle.PrimaryInk));
+        Assert.False(ContainsColor(bitmap, close, TabletopStyle.PrimaryInk));
+    }
+
+    private static SKRect ScreenRect(SKRect panel, (float X, float Y, float W, float H) local) =>
+        new(panel.Left + local.X, panel.Top + local.Y,
+            panel.Left + local.X + local.W, panel.Top + local.Y + local.H);
+
     private static bool ContainsColor(SKBitmap bitmap, SKRect bounds, SKColor color)
     {
         for (int y = (int)bounds.Top; y < (int)bounds.Bottom; y++)

@@ -62,13 +62,12 @@ public sealed class TutorialFlowTests
     }
 
     [Theory]
-    [InlineData(StartFailure.NoTutorial)]
-    [InlineData(StartFailure.SessionThrows)]
-    [InlineData(StartFailure.BattleRejected)]
-    [InlineData(StartFailure.BattleThrows)]
-    public async Task TutorialStartFailureReturnsToMainMenuAndDisposesSession(StartFailure failure)
+    [InlineData(StartFailure.SessionThrows, "tutorial scenario is broken")]
+    [InlineData(StartFailure.BattleRejected, "Tutorial battle was rejected: Unsupported")]
+    public async Task TutorialStartFailureReturnsToMainMenuAndDisposesSession(StartFailure failure, string reason)
     {
         await using var fixture = new TutorialFixture(failure: failure);
+        long logLength = File.Exists(InterfaceLog.FileName) ? new FileInfo(InterfaceLog.FileName).Length : 0;
 
         await fixture.Route(ScreenEvent.NewGame);
 
@@ -82,6 +81,136 @@ public sealed class TutorialFlowTests
             Assert.True(proxy.Disposed);
             Assert.All(proxy.ScreensAtCalls, screen => Assert.Equal(typeof(MainMenuScreen), screen));
         }
+        Assert.Contains("Tutorial start failed: " + reason, LogTailReader.ReadTail(logLength));
+    }
+
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0002: when the tutorial itself is unavailable (no tutorial scenario, or the engine refuses the
+    /// battle as <see cref="TacticalBattleRejectionCode.Unavailable"/>, which is also what a transport failure maps to), New Game
+    /// without saves logs the reason and opens the scenario picker instead of leaving the player on the main menu.
+    /// </summary>
+    [Theory]
+    [InlineData(StartFailure.NoTutorial, "Tutorial scenario is not available.")]
+    [InlineData(StartFailure.BattleUnavailable, "Tutorial battle was rejected: Unavailable")]
+    [InlineData(StartFailure.BattleThrows, "Tutorial battle was rejected: Unavailable")]
+    public async Task UnavailableTutorialFallsBackToScenarioSelect(StartFailure failure, string reason)
+    {
+        await using var fixture = new TutorialFixture(failure: failure);
+        long logLength = File.Exists(InterfaceLog.FileName) ? new FileInfo(InterfaceLog.FileName).Length : 0;
+
+        await fixture.Route(ScreenEvent.NewGame);
+
+        Assert.IsType<ScenarioSelectScreen>(fixture.Screens.Current);
+        Assert.Equal(1, fixture.Screens.Count);
+        Assert.Null(fixture.Session);
+        Assert.Equal(0, fixture.Depth);
+        await fixture.LastSessionDisposal.WaitAsync(TimeSpan.FromSeconds(10));
+        if (failure == StartFailure.NoTutorial)
+        {
+            Assert.Empty(fixture.CreatedPaths);
+            Assert.Null(fixture.Proxy);
+        }
+        else
+        {
+            Assert.Equal(1, fixture.Proxy!.Starts);
+            Assert.True(fixture.Proxy.Disposed);
+            Assert.False(fixture.Engine!.IsTacticalBattleActive);
+        }
+        Assert.Contains("Tutorial start failed: " + reason, LogTailReader.ReadTail(logLength));
+    }
+
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0004: New Game asks only whether any save exists (never lists/parses the saves) and looks the
+    /// tutorial scenario up off the window thread: while the lookup is still running the dispatching call has already returned
+    /// with the main menu on screen, and the tutorial battle opens once the lookup completes.
+    /// </summary>
+    [Fact]
+    public async Task NewGameChecksSavesWithoutParsingAndLooksUpTutorialOffTheWindowThread()
+    {
+        await using var fixture = new TutorialFixture();
+        using var lookupGate = new ManualResetEventSlim(false);
+        fixture.TutorialLookupGate = lookupGate;
+
+        var start = fixture.Route(ScreenEvent.NewGame);
+        bool menuShownDuringLookup = fixture.Screens.Current is MainMenuScreen;
+        lookupGate.Set();
+        await start.WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.False(fixture.TutorialLookupBlockedCaller);
+        Assert.True(menuShownDuringLookup);
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.Equal(TutorialPath, Assert.Single(fixture.CreatedPaths));
+        Assert.Equal(1, fixture.HasAnySaveSlotCalls);
+        Assert.Equal(0, fixture.ListSaveSlotsCalls);
+    }
+
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0004: an I/O error while checking for saves is logged and treated as «no saves», so New Game
+    /// still starts the tutorial instead of doing nothing.
+    /// </summary>
+    [Fact]
+    public async Task NewGameTreatsSaveCheckIoErrorAsNoSavesAndStartsTutorial()
+    {
+        await using var fixture = new TutorialFixture(failure: StartFailure.SaveListThrows);
+        long logLength = File.Exists(InterfaceLog.FileName) ? new FileInfo(InterfaceLog.FileName).Length : 0;
+
+        await fixture.Route(ScreenEvent.NewGame);
+
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.Equal(TutorialPath, Assert.Single(fixture.CreatedPaths));
+        Assert.Equal(0, fixture.ListSaveSlotsCalls);
+        Assert.Contains("New Game: save list unavailable, treating as no saves: saves directory unavailable",
+            LogTailReader.ReadTail(logLength));
+    }
+
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0003: a second New Game clicked while the tutorial is still starting is a stale main-menu
+    /// command; it is dropped instead of reaching the opened battle's gate, so no «world actions blocked» notice appears.
+    /// </summary>
+    [Fact]
+    public async Task DoubleNewGameDuringTutorialStartOpensOneBattleWithoutBlockedNotice()
+    {
+        await using var fixture = new TutorialFixture();
+        var menu = Assert.IsType<MainMenuScreen>(fixture.Screens.Current);
+
+        var first = fixture.Route(ScreenEvent.NewGame);
+        var second = fixture.Route(ScreenEvent.NewGame);
+        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(30));
+
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.True(battle.Flow.IsTutorial);
+        Assert.Equal("", battle.BlockedNotice);
+        Assert.Equal(1, fixture.Proxy!.Starts);
+        Assert.Single(fixture.CreatedPaths);
+        Assert.Equal(2, fixture.Screens.Count);
+        Assert.DoesNotContain(menu, fixture.Screens.VisibleBottomToTop());
+        Assert.False(fixture.ExitRequested);
+    }
+
+    /// <summary>
+    /// EP-maintenance-US-0022-TK-0003: Exit clicked while the tutorial is still starting is executed (not lost behind the transition
+    /// lock and not swallowed by the battle gate); the tutorial battle is never opened and its session is disposed.
+    /// </summary>
+    [Fact]
+    public async Task ExitDuringTutorialStartIsExecutedAndNoBattleOpens()
+    {
+        await using var fixture = new TutorialFixture();
+        var menu = Assert.IsType<MainMenuScreen>(fixture.Screens.Current);
+
+        var start = fixture.Route(ScreenEvent.NewGame);
+        var exit = fixture.Route(ScreenEvent.Exit);
+        await Task.WhenAll(start, exit).WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.True(fixture.ExitRequested);
+        Assert.Same(menu, fixture.Screens.Current);
+        Assert.Equal(1, fixture.Screens.Count);
+        Assert.DoesNotContain(fixture.Screens.VisibleBottomToTop(), screen => screen is TacticalBattleModalScreen);
+        Assert.Null(fixture.Session);
+        Assert.Equal(0, fixture.Depth);
+        await fixture.LastSessionDisposal.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.True(fixture.Proxy!.Disposed);
     }
 
     [Fact]
@@ -164,6 +293,7 @@ public sealed class TutorialFlowTests
             battle.Render(canvas, 1280, 720);
         // The confirm button of the tabletop exit dialog (left button of the centred 520x180 box at 1280x720).
         Assert.Equal(ScreenEvent.MainMenu, battle.OnMouseDown(380 + 24 + 110, 270 + 180 - 68 + 20, MouseButton.Left));
+        string battleId = battle.Flow.State!.BattleId;
 
         await fixture.PressKey(Key.Enter);
 
@@ -172,6 +302,20 @@ public sealed class TutorialFlowTests
         Assert.Null(fixture.Session);
         await fixture.LastSessionDisposal.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.True(fixture.Proxy!.Disposed);
+
+        // US-0022-TK-0005: the abandoned tutorial battle is told apart from a crash — the report says "exited"
+        // and the tutorial journal ends with an "abandoned" event.
+        string report = TacticalBattleMetrics.ReportPath(battleId, TacticalBattleMetrics.DirectoryPath);
+        using (var json = JsonDocument.Parse(File.ReadAllText(report)))
+            Assert.Equal("exited", json.RootElement.GetProperty("status").GetString());
+        var tutorial = battle.Tutorial!;
+        using (var journal = JsonDocument.Parse(File.ReadAllText(tutorial.Metrics!.FilePath)))
+        {
+            var last = journal.RootElement.GetProperty("events").EnumerateArray().Last();
+            Assert.Equal("abandoned", last.GetProperty("kind").GetString());
+            Assert.Equal(JsonValueKind.Null, last.GetProperty("step").ValueKind);
+        }
+        Assert.Equal(battleId, tutorial.Metrics.BattleId);
     }
 
     [Fact]
@@ -375,7 +519,7 @@ public sealed class TutorialFlowTests
         Assert.Equal(expected, json.RootElement.GetProperty("TacticalBattle.ConfirmExitToMenu").GetString());
     }
 
-    public enum StartFailure { None, NoTutorial, SessionThrows, BattleRejected, BattleThrows }
+    public enum StartFailure { None, NoTutorial, SessionThrows, BattleRejected, BattleUnavailable, BattleThrows, SaveListThrows }
 
     public class TutorialProxy : DispatchProxy
     {
@@ -397,6 +541,8 @@ public sealed class TutorialFlowTests
                 var request = (StartTacticalBattleRequest)args![0]!;
                 if (Failure == StartFailure.BattleRejected)
                     return ValueTask.FromResult(new TacticalBattleResponse(request.CommandId, false, TacticalBattleRejectionCode.Unsupported, null, null, []));
+                if (Failure == StartFailure.BattleUnavailable)
+                    return ValueTask.FromResult(new TacticalBattleResponse(request.CommandId, false, TacticalBattleRejectionCode.Unavailable, null, null, []));
                 if (Failure == StartFailure.BattleThrows)
                     return ValueTask.FromException<TacticalBattleResponse>(new InvalidOperationException("tutorial battle start failed"));
             }
@@ -420,6 +566,7 @@ public sealed class TutorialFlowTests
         internal int Depth => Field<int>(Window, "_modalDepth");
         internal GameSessionHandle? Session => Field<GameSessionHandle?>(Window, "_session");
         internal Task LastSessionDisposal => Field<Task>(Window, "_lastSessionDisposal");
+        internal bool ExitRequested => Field<bool>(Window, "_exitRequested");
 
         /// <param name="installTabletop">Copies the shipped <c>Skins/tabletop</c> pack next to the profile (otherwise the profile has no packs).</param>
         internal TutorialFixture(SaveSlotInfo[]? saves = null, StartFailure failure = StartFailure.None, bool? tutorialHints = null,
@@ -482,7 +629,30 @@ public sealed class TutorialFlowTests
                 battle.ClockMilliseconds = () => Interlocked.Read(ref _clockMilliseconds);
         }
 
-        public string? GetTutorialScenarioPath() => _failure == StartFailure.NoTutorial ? null : TutorialPath;
+        /// <summary>When set, the tutorial lookup waits for it (bounded) so a test can observe where the lookup runs.</summary>
+        internal ManualResetEventSlim? TutorialLookupGate { get; set; }
+
+        /// <summary>True when the gated lookup timed out, i.e. it blocked the caller that was supposed to release the gate.</summary>
+        internal bool TutorialLookupBlockedCaller { get; private set; }
+
+        private int _hasAnySaveSlotCalls;
+        private int _listSaveSlotsCalls;
+        internal int HasAnySaveSlotCalls => Volatile.Read(ref _hasAnySaveSlotCalls);
+        internal int ListSaveSlotsCalls => Volatile.Read(ref _listSaveSlotsCalls);
+
+        public string? GetTutorialScenarioPath()
+        {
+            if (TutorialLookupGate is { } gate && !gate.Wait(TimeSpan.FromSeconds(5)))
+                TutorialLookupBlockedCaller = true;
+            return _failure == StartFailure.NoTutorial ? null : TutorialPath;
+        }
+
+        public bool HasAnySaveSlot()
+        {
+            Interlocked.Increment(ref _hasAnySaveSlotCalls);
+            if (_failure == StartFailure.SaveListThrows) throw new IOException("saves directory unavailable");
+            return _saves.Length > 0;
+        }
 
         public IGameSessionConnection CreateSessionFromScenario(string scenarioPath)
         {
@@ -500,7 +670,12 @@ public sealed class TutorialFlowTests
         public IGameSessionConnection CreateSession() => throw new NotSupportedException();
         public IGameSessionConnection CreateSessionFromSave(string slotId) => throw new NotSupportedException();
         public ScenarioInfo[] ListScenarios() => [];
-        public SaveSlotInfo[] ListSaveSlots() => _saves;
+        public SaveSlotInfo[] ListSaveSlots()
+        {
+            Interlocked.Increment(ref _listSaveSlotsCalls);
+            if (_failure == StartFailure.SaveListThrows) throw new IOException("saves directory unavailable");
+            return _saves;
+        }
         public bool HasQuickSave() => false;
         public void DeleteSaveSlot(string slotId) { }
 

@@ -14,7 +14,15 @@ internal static class TacticalBattleMetrics
         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
     };
 
-    internal static string DirectoryPath => Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } root
+    /// <summary>Battle reports kept per directory; older reports (and their tutorial journals) are pruned after each write.</summary>
+    internal const int MaxReports = 50;
+
+    /// <summary>Test hook: when set, replaces the export directory (Client tests point it at a temporary directory).</summary>
+    internal static string? DirectoryOverride { get; set; }
+
+    internal static string DirectoryPath => DirectoryOverride is { Length: > 0 } overridden
+        ? overridden
+        : Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } root
         && Path.IsPathFullyQualified(root)
         ? Path.Combine(root, "battle-metrics")
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeepSpaceSaga", "BattleMetrics");
@@ -55,8 +63,38 @@ internal static class TacticalBattleMetrics
             File.Move(temporary, path, overwrite: true);
         }
         finally { File.Delete(temporary); }
+        Prune(directory, path);
         return path;
     }
+
+    /// <summary>
+    /// Keeps the newest <see cref="MaxReports"/> battle reports (<c>&lt;sha256&gt;.json</c>) in <paramref name="directory"/>, never the
+    /// just-written <paramref name="current"/>; a pruned report takes its <c>.tutorial.json</c> journal with it. Delete failures are skipped.
+    /// </summary>
+    private static void Prune(string directory, string current)
+    {
+        string kept = Path.GetFullPath(current);
+        var reports = new DirectoryInfo(directory).EnumerateFiles("*.json")
+            .Where(file => IsReportName(file.Name))
+            .OrderByDescending(file => string.Equals(file.FullName, kept, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(file => file.LastWriteTimeUtc)
+            .ThenBy(file => file.Name, StringComparer.Ordinal)
+            .Skip(MaxReports)
+            .ToArray();
+        foreach (var report in reports)
+        {
+            try
+            {
+                report.Delete();
+                File.Delete(Path.ChangeExtension(report.FullName, ".tutorial.json"));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
+    private static bool IsReportName(string name) =>
+        name.Length == 64 + ".json".Length && name.EndsWith(".json", StringComparison.Ordinal)
+        && name.AsSpan(0, 64).IndexOfAnyExcept("0123456789ABCDEF") < 0;
 
     internal static string ReportPath(string battleId, string directory)
     {

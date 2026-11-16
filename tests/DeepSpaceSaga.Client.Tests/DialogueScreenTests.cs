@@ -142,6 +142,59 @@ public class DialogueScreenTests
         screen.OnDeactivated();
     }
 
+    [Fact]
+    public void Long_speech_shows_overflow_and_its_last_word_is_reachable_by_wheel_and_keys()
+    {
+        // A parameterized line far longer than the ~9 lines the speech field holds.
+        string longText = string.Join(' ', Enumerable.Range(1, 160).Select(i => $"word{i:D3}")) + " FINALWORD";
+        var state = State() with { TextKey = "{speech}",
+            Parameters = ImmutableDictionary<string, string>.Empty.Add("speech", longText) };
+        var buffer = new SnapshotBuffer(); buffer.Update(Snapshot(state));
+        var screen = new DialogueScreen(buffer, null, state);
+        using var bitmap = new SKBitmap(1600, 900); using var canvas = new SKCanvas(bitmap);
+        var field = DialogueScreen.SpeechField(1600, 900);
+        var marker = (X: (int)field.Right - 24, Y: (int)field.Bottom - 8);
+        bitmap.Erase(SKColors.Black); screen.Render(canvas, 1600, 900);
+        Assert.True(screen.SpeechLineCount > screen.VisibleSpeechLines.Length);
+        Assert.DoesNotContain(screen.VisibleSpeechLines, line => line.Contains("FINALWORD"));
+        Assert.True(screen.SpeechHasMoreBelow); Assert.False(screen.SpeechHasMoreAbove);
+        var markerShown = bitmap.GetPixel(marker.X, marker.Y);
+
+        // Wheel over the choices still scrolls only the choices.
+        var choice = DialogueLayout.Choice(0, 1600, 900);
+        screen.OnMouseWheel(choice.MidX, choice.MidY, -1);
+        Assert.Equal(0, screen.SpeechScroll);
+        // Wheel over the speech field scrolls the text down to its end and clamps there.
+        for (int i = 0; i < screen.SpeechLineCount + 5; i++) screen.OnMouseWheel(field.MidX, field.MidY, -1);
+        bitmap.Erase(SKColors.Black); screen.Render(canvas, 1600, 900);
+        Assert.Contains("FINALWORD", screen.VisibleSpeechLines[^1]);
+        Assert.Equal(screen.SpeechLineCount - screen.VisibleSpeechLines.Length, screen.SpeechScroll);
+        Assert.False(screen.SpeechHasMoreBelow); Assert.True(screen.SpeechHasMoreAbove);
+        Assert.NotEqual(markerShown, bitmap.GetPixel(marker.X, marker.Y));
+
+        // Keys reach both ends as well.
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Home));
+        Assert.Equal(0, screen.SpeechScroll);
+        screen.OnKeyDown(Key.Down); Assert.Equal(1, screen.SpeechScroll);
+        screen.OnKeyDown(Key.Up); Assert.Equal(0, screen.SpeechScroll);
+        screen.OnKeyDown(Key.End); screen.Render(canvas, 1600, 900);
+        Assert.Contains("FINALWORD", screen.VisibleSpeechLines[^1]);
+        screen.OnDeactivated();
+    }
+    [Fact]
+    public void Short_speech_fits_without_overflow_marker()
+    {
+        var state = State() with { TextKey = "Dialogue.Docking.PirateWarning" };
+        var buffer = new SnapshotBuffer(); buffer.Update(Snapshot(state));
+        var screen = new DialogueScreen(buffer, null, state);
+        Render(screen);
+        Assert.Equal(screen.SpeechLineCount, screen.VisibleSpeechLines.Length);
+        Assert.False(screen.SpeechHasMoreBelow); Assert.False(screen.SpeechHasMoreAbove);
+        screen.OnMouseWheel(DialogueScreen.SpeechField(1600, 900).MidX, DialogueScreen.SpeechField(1600, 900).MidY, -1);
+        Assert.Equal(0, screen.SpeechScroll);
+        screen.OnDeactivated();
+    }
+
     private sealed class RecordingConnection : IGameSessionConnection
     {
         public List<DialogueCommand> Commands { get; } = [];

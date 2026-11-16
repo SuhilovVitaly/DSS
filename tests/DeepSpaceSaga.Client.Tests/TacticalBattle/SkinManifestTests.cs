@@ -55,6 +55,8 @@ public sealed class SkinManifestTests
     [InlineData(8, 31, 512, 256)]
     [InlineData(8, 32, 511, 256)]
     [InlineData(8, 32, 512, 255)]
+    [InlineData(8, 16, 512, 128)]
+    [InlineData(8, 64, 512, 512)]
     public void Invalid_sheet_geometry_is_ignored(float columns, int frames, int width, int height)
     {
         string json = System.Text.Json.JsonSerializer.Serialize(new

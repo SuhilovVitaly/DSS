@@ -121,6 +121,32 @@ public sealed class OverlayShellTests
     }
 
     [Fact]
+    public async Task BattleLogDragSurvivesSalvoFlightToResultsTransition()
+    {
+        await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
+        using (var flight = scene.Render()) { }
+        var screen = scene.Screen;
+        var panel = screen.LogTab.Panel;
+        Assert.True(screen.CaptureFrame(1920, 1080)!.Salvo!.InFlight);
+        Assert.True(panel.MaximumScroll > 0);
+        var before = panel.Bounds;
+        var thumb = panel.ScrollThumb;
+        screen.OnMouseDown(thumb.MidX * 1.5f, thumb.MidY * 1.5f, MouseButton.Left);
+        Assert.True(panel.IsDragging);
+
+        screen.OnKeyDown(Key.Enter);
+        using (var results = scene.Render()) { }
+        Assert.False(screen.CaptureFrame(1920, 1080)!.Salvo!.InFlight);
+        Assert.NotEqual(before.Top, panel.Bounds.Top);
+        Assert.True(panel.IsDragging);
+
+        screen.OnMouseMove(thumb.MidX * 1.5f, 0);
+        Assert.Equal(0, panel.ScrollOffset);
+        screen.OnMouseUp(thumb.MidX * 1.5f, 0, MouseButton.Left);
+        Assert.False(panel.IsDragging);
+    }
+
+    [Fact]
     public async Task MinimapShowsOnlySurvivingCarriersAndDrones()
     {
         await using var scene = await Ep0019Scenes.Create("1-move-no-hover");

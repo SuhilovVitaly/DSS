@@ -27,6 +27,35 @@ internal sealed class TutorialCommsPanel
     internal bool Expanded { get; private set; }
     private bool _hintsEnabled = true;
 
+    /// <summary>
+    /// Areas that capture input, as last drawn: the expanded panel, or the chip and (with hints on) its «Hints: off» button as
+    /// separate rects, so the gap between them and the strips above and below the shorter button pass through (US-0022-TK-0025).
+    /// </summary>
+    internal IEnumerable<SKRect> Areas
+    {
+        get
+        {
+            if (!Bounds.IsEmpty) yield return Bounds;
+            if (!Expanded && !HintsBounds.IsEmpty) yield return HintsBounds;
+        }
+    }
+
+    /// <summary>True when <paramref name="point"/> lies in one of the <see cref="Areas"/>.</summary>
+    internal bool Contains(SKPoint point) => Bounds.Contains(point) || (!Expanded && HintsBounds.Contains(point));
+
+    /// <summary>
+    /// Width of the panel (and of the comms log above it) in a window <paramref name="designWidth"/> wide: <see cref="Width"/>,
+    /// narrowed so it ends before the right column (<c>designWidth - 240</c>) with a gap.
+    /// </summary>
+    internal static float WidthFor(float designWidth)
+    {
+        float available = designWidth - RightReserve - Left;
+        return available < Width ? available : Width;
+    }
+
+    /// <summary>Row width of a line in a panel <paramref name="width"/> wide (<see cref="TextWidth"/> at full size).</summary>
+    internal static float TextWidthFor(float width) => width - TextLeft - Pad - 10;
+
     /// <summary>Wraps a line into rows of <see cref="TextWidth"/> with the panel font (glyph-safe).</summary>
     internal static ImmutableArray<string> Wrap(string text) => Wrap(text, TextWidth);
 
@@ -67,9 +96,7 @@ internal sealed class TutorialCommsPanel
     private void DrawExpanded(SKCanvas c, BattleLayout layout, float designWidth, TutorialLine line, SKBitmap? portrait,
         TutorialOfficer? officer)
     {
-        float available = designWidth - RightReserve - Left;
-        float width = available < Width ? available : Width;
-        var r = new SKRect(Left, Bottom - Height, Left + width, Bottom);
+        var r = new SKRect(Left, Bottom - Height, Left + WidthFor(designWidth), Bottom);
         Bounds = r;
         layout.Rects["tutorial:panel"] = r;
         PanelBox(c, r);
@@ -80,7 +107,7 @@ internal sealed class TutorialCommsPanel
         layout.Rects["tutorial:portrait"] = face;
         DrawPortrait(c, face, portrait, officer is null ? name : Localization.Get(officer.NameKey));
 
-        float x = r.Left + TextLeft, textWidth = r.Right - Pad - 10 - x;
+        float x = r.Left + TextLeft, textWidth = TextWidthFor(r.Width);
         using (var header = BattleTypography.TextPaint(11, true))
             T(c, ControlText.Ellipsize(name, textWidth, header), x, r.Top + 19, 11, Cyan, true);
         var rows = Rows(Localization.Get(line.Step.LineKey), textWidth);
@@ -99,7 +126,8 @@ internal sealed class TutorialCommsPanel
 
     /// <summary>
     /// The chip; with hints on it also carries a small «Hints: off» button to its right, so the switch stays reachable while
-    /// no line is shown (<see cref="Bounds"/> then spans chip and button). With hints off the chip itself is «Hints: on».
+    /// no line is shown (<see cref="Bounds"/> stays the chip; the button is a separate <see cref="Areas"/> rect). With hints off
+    /// the chip itself is «Hints: on».
     /// </summary>
     private void DrawChip(SKCanvas c, BattleLayout layout, bool hintsEnabled)
     {
@@ -119,7 +147,6 @@ internal sealed class TutorialCommsPanel
             float top = r.MidY - ButtonHeight * .5f;
             HintsBounds = SKRect.Create(r.Right + ChipGap, top, ButtonWidth(off), ButtonHeight);
             layout.Rects["tutorial:hints"] = HintsBounds;
-            Bounds = SKRect.Union(r, HintsBounds);
             Button(c, HintsBounds, off);
         }
         else Button(c, r, text);

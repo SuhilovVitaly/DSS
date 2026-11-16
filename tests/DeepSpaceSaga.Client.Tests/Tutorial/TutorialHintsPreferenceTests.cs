@@ -92,11 +92,19 @@ public sealed class TutorialHintsPreferenceTests
             Assert.Single(Directory.EnumerateFiles(fixture.Root));
         }
         Assert.Equal(4, warnings.Count);
+    }
 
-        if (!OperatingSystem.IsWindows()) return;
+    /// <summary>
+    /// A reader holding the file with <see cref="FileShare.Read"/> blocks the atomic replace only on Windows;
+    /// on other platforms the test is reported as skipped instead of passing silently.
+    /// </summary>
+    [WindowsOnlyFact]
+    public void LockedFileWriteFailureKeepsOriginalFileAndLeavesNoTemp()
+    {
+        using var fixture = new SettingsFile();
+        List<string> warnings = [];
         const string original = """{"gameSettings":{"tutorialHints":true}}""";
         File.WriteAllText(fixture.Path, original);
-        warnings.Clear();
         using (File.Open(fixture.Path, FileMode.Open, FileAccess.Read, FileShare.Read)) // the atomic replace cannot win
             Assert.False(TutorialHintsPreference.TryWrite(fixture.Path, false, warnings.Add));
         Assert.Equal(original, File.ReadAllText(fixture.Path));

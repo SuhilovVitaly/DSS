@@ -343,6 +343,50 @@ public sealed class TutorialDirectorTests
         Assert.Equal(2, director.Current!.ShownAtMs);
     }
 
+    /// <summary>
+    /// US-0022-TK-0023 (AC23): «under fire» points at one drone ({signal}); protecting another drone does not close it.
+    /// </summary>
+    [Fact]
+    public void UnderFireClosesOnlyWhenTheSignalledDroneIsProtected()
+    {
+        var underFire = FireBattle with { Turn = 2, Incoming = [new("tag-1", "vera", 0.5, 100, 0, false, 0)] };
+        TutorialObservation Frame(TacticalFirePlan plan, long now) => new("Fire", 2, underFire, plan.SelectedDroneId, null, plan, now);
+        var director = Director(
+            Step("ctx.under-fire", "Fire", TutorialCompletion.EvadeOrDecoy, priority: 79, minTurn: 2, signal: TutorialSignal.UnderFire));
+
+        director.Observe(Frame(TutorialTestBattle.Plan(underFire), 10));
+        Assert.Equal("ctx.under-fire", director.Current?.Step.Id);
+        Assert.Equal("vera", director.Current!.SignalUnitId);
+
+        director.Observe(Frame(TutorialTestBattle.Plan(underFire, decoy: "yun"), 20)); // decoy on the other drone
+        Assert.Equal(TutorialStepState.Shown, director.StateOf("ctx.under-fire"));
+        director.Observe(Frame(TutorialTestBattle.Plan(underFire, retarget: ("yun", null), evade: "yun"), 30)); // evade, other drone
+        Assert.Equal(TutorialStepState.Shown, director.StateOf("ctx.under-fire"));
+        Assert.DoesNotContain(director.DrainEvents(), e => e.State == TutorialStepState.Completed);
+
+        director.Observe(Frame(TutorialTestBattle.Plan(underFire, decoy: "vera"), 40)); // decoy on the signalled drone
+        Assert.Equal(TutorialStepState.Completed, director.StateOf("ctx.under-fire"));
+        Assert.Null(director.Current);
+    }
+
+    /// <summary>A waiting (not yet shown) «under fire» step is not completed silently by protecting another drone either.</summary>
+    [Fact]
+    public void WaitingUnderFireStepIgnoresProtectionOfAnotherDrone()
+    {
+        var underFire = FireBattle with { Turn = 2, Incoming = [new("tag-1", "vera", 0.5, 100, 0, false, 0)] };
+        TutorialObservation Frame(TacticalFirePlan plan, long now) => new("Fire", 2, underFire, plan.SelectedDroneId, null, plan, now);
+        var director = Director(
+            Step("first", "Fire", TutorialCompletion.Acknowledged, priority: 100),
+            Step("ctx.under-fire", "Fire", TutorialCompletion.EvadeOrDecoy, priority: 79, minTurn: 2, signal: TutorialSignal.UnderFire));
+
+        director.Observe(Frame(TutorialTestBattle.Plan(underFire), 10));
+        Assert.Equal("first", director.Current?.Step.Id);
+        director.Observe(Frame(TutorialTestBattle.Plan(underFire, decoy: "yun"), 20));
+        Assert.Equal(TutorialStepState.Waiting, director.StateOf("ctx.under-fire"));
+        director.Observe(Frame(TutorialTestBattle.Plan(underFire, retarget: ("vera", null), evade: "vera"), 30));
+        Assert.Equal(TutorialStepState.Completed, director.StateOf("ctx.under-fire"));
+    }
+
     [Fact]
     public void ObservationFromFrameCopiesFrameFacts()
     {

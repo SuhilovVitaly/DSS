@@ -23,10 +23,13 @@ internal static class TacticalShipSprites
         return true;
     }
 
+    /// <summary>Heading frames in every ship sheet (UiSpec EP-0024 section 2.1); 360 / 32 = 11.25 degrees each.</summary>
+    internal const int Directions = 32;
+
     internal static int Frame(double course)
     {
         double angle = (course % 360 + 360) % 360;
-        return (int)Math.Round((angle + 90) / 11.25) % 32;
+        return (int)Math.Round((angle + 90) / 11.25) % Directions;
     }
 
     internal static int Factor(float scale) => Math.Max(1, (int)MathF.Round(scale * 4 / 3));

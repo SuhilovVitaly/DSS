@@ -23,8 +23,9 @@ internal static class TabletopStyle
 
     internal static void Panel(SKCanvas canvas, SKRect rect) => Draw(canvas, rect, Steel);
 
-    internal static void Field(SKCanvas canvas, SKRect rect, bool focused = false, float scale = 1) =>
-        Draw(canvas, rect, Inset, recessed: true, highlighted: focused, scale: scale);
+    /// <summary>Recessed field; a disabled field gets the disabled fill and never the gold focus edge.</summary>
+    internal static void Field(SKCanvas canvas, SKRect rect, bool focused = false, float scale = 1, bool enabled = true) =>
+        Draw(canvas, rect, enabled ? Inset : Disabled, recessed: true, highlighted: focused && enabled, scale: scale);
 
     internal static void Button(SKCanvas canvas, SKRect rect, ButtonState state, bool primary = false)
     {
@@ -59,6 +60,17 @@ internal static class TabletopStyle
         canvas.DrawRect(rect.Left, rect.Bottom - line, rect.Width, line, paint);
         canvas.DrawRect(rect.Right - line, rect.Top, line, rect.Height, paint);
         rect.Inflate(-line, -line);
+        paint.Color = fill;
+        canvas.DrawRect(rect, paint);
+    }
+
+    /// <summary>Flat fill without edge or bevel, for strips too thin to keep colour after the double inset of <see cref="Draw"/>.</summary>
+    internal static void Fill(SKCanvas canvas, SKRect rect, SKColor fill)
+    {
+        if (rect.IsEmpty)
+            return;
+
+        var paint = _fillPaint ??= new SKPaint();
         paint.Color = fill;
         canvas.DrawRect(rect, paint);
     }

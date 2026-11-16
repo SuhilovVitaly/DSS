@@ -96,6 +96,11 @@ public static class Program
             return SaveSlotRepository.ListSlots(SaveDirectory);
         }
 
+        public bool HasAnySaveSlot()
+        {
+            return SaveSlotRepository.HasAnySlot(SaveDirectory);
+        }
+
         public void DeleteSaveSlot(string slotId)
         {
             SaveSlotRepository.DeleteSlot(SaveDirectory, slotId);

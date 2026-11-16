@@ -20,6 +20,8 @@ internal sealed record TacticalShot(TacticalDrone Shooter, TacticalUnit Target, 
     public bool TargetEvading { get; init; }
     public bool Decoyed { get; init; }
     public double? ChanceWithoutDecoy { get; init; }
+    /// <summary>Chance the HitRoll is compared with (decoy applied, absorption not); Chance is the effective chance.</summary>
+    public double ConditionalChance { get; init; }
     public double? HitRoll { get; init; }
     public double? AbsorptionRoll { get; init; }
     public TacticalHitFactors? Factors { get; init; }
@@ -194,6 +196,7 @@ internal static class TacticalBattleSalvo
                 {
                     Absorption = candidate.Absorption,
                     Absorbed = absorbed,
+                    ConditionalChance = chance,
                     HitRoll = hitRoll,
                     AbsorptionRoll = absorptionRoll,
                     Factors = TacticalBattleSnapshotBuilder.HitFactors(candidate, chance),

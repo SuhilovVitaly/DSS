@@ -13,9 +13,9 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
-internal static class TabletopClientRaster
+public static class TabletopClientRaster
 {
-    internal static void Run(string root, string output)
+    public static void Run(string root, string output)
     {
         string allowed = Path.GetFullPath(Path.Combine(root, "../artifacts/validation")) + Path.DirectorySeparatorChar;
         if (!Path.IsPathFullyQualified(output) || !Path.GetFullPath(output).StartsWith(allowed, StringComparison.OrdinalIgnoreCase))
@@ -31,8 +31,12 @@ internal static class TabletopClientRaster
         var buffer = new SnapshotBuffer();
         buffer.Update(snapshot);
         List<object> results = [];
+        bool coldPass = true;
         foreach (var (width, height, scale, language) in new[] { (1280, 720, 1f, "English"), (1920, 1080, 1.5f, "Russian") })
         {
+            // Only the first pass of the process renders on cold caches; later passes reuse them.
+            string cache = coldPass ? "cold" : "warm";
+            coldPass = false;
             using var locale = Localization.UseLocaleForTests(language);
             using var surface = SKSurface.Create(new SKImageInfo(width, height));
             Measure("menu", new MainMenuScreen());
@@ -47,18 +51,21 @@ internal static class TabletopClientRaster
             {
                 double ppu = height / (days * speed * 86400 / 300 * 10);
                 camera.SetZoom(ppu, Math.Min(CameraState.DefaultMinPpu, ppu), Math.Max(CameraState.DefaultMaxPpu, ppu));
-                screen.Render(surface.Canvas, width, height);
-                if (screen.MapDetail != detail)
-                    throw new InvalidOperationException($"Expected {detail}, rendered {screen.MapDetail}.");
-                Measure(detail.ToString().ToLowerInvariant(), screen);
+                // firstMs is the first render after the zoom change; the detail level is verified after it.
+                Measure(detail.ToString().ToLowerInvariant(), screen, () =>
+                {
+                    if (screen.MapDetail != detail)
+                        throw new InvalidOperationException($"Expected {detail}, rendered {screen.MapDetail}.");
+                });
             }
 
-            void Measure(string name, IScreen screen)
+            void Measure(string name, IScreen screen, Action? afterFirst = null)
             {
                 const int warmup = 30, samples = 120;
                 var first = Stopwatch.GetTimestamp();
                 Draw();
                 double firstMs = Stopwatch.GetElapsedTime(first).TotalMilliseconds;
+                afterFirst?.Invoke();
                 for (int frame = 0; frame < warmup; frame++)
                     Draw();
                 var times = new double[samples];
@@ -74,7 +81,7 @@ internal static class TabletopClientRaster
                 string path = Path.Combine(directory, $"{name}-{width}-{language}.png");
                 using var file = File.Create(path);
                 png.SaveTo(file);
-                results.Add(new { name, width, height, scale, language, firstMs, p95Ms = times[113], path });
+                results.Add(new { name, width, height, scale, language, cache, firstMs, p95Ms = times[113], path });
 
                 void Draw()
                 {
