@@ -9,6 +9,7 @@ internal static class DebugCommandCatalog
         registry.Register(new HelpDebugCommand());
         registry.Register(new ExitBattleDebugCommand());
         registry.Register(new KillDroneDebugCommand());
+        registry.Register(new ListUnitsDebugCommand());
         return registry;
     }
 }

@@ -5,6 +5,7 @@ ticket: EP-0030-US-0004-TK-0002-list-units
 title: Команда list_units — участники текущего боя
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0030-US-0004-TK-0001-help]
@@ -101,3 +102,21 @@ Test-процесс ограничить process-tree cap 300000 ms; stdout/stde
 ## Review log
 
 2026-11-16T06:50:00Z — revision 2: Code context и API синхронизированы с контрактом US-0001 (точка регистрации `DebugCommandCatalog.cs`; реестр/контроллер — read-only; `ExecuteAsync(context, arguments, cancellationToken)` вместо `isCurrentBattle`, актуальность через `context.IsCurrent`; `Format(TacticalBattleSnapshot)` сохранён; scope «текущий бой»); files_touched 4 → 3; обновлён format include; учтено решение G-04. approval_kind — autonomous-execution по разрешению оператора 2026-11-16.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы (3, в пределах Code context):
+
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/ListUnitsDebugCommand.cs` — новый: `ListUnitsDebugCommand : IDebugCommand`, descriptor `("list_units", "list_units", "Показать всех участников текущего боя", "текущий бой")`. Порядок: непустые аргументы → `Error("Синтаксис: list_units")` без запроса; `context.Session == null` → `Error("Нет активной сессии")`; один вызов `context.Session.GetTacticalBattleStateAsync(cancellationToken)`; после await — `ThrowIfCancellationRequested`, затем `!context.IsCurrent` → `Error(DebugConsoleController.StaleResultText)` (старый список не публикуется; контроллер дополнительно отбрасывает устаревший результат); null → `Error("Нет активного боя или данные недоступны")`; иначе `Ok(Format(snapshot))`. `internal static Format(TacticalBattleSnapshot)` — заголовок `Бой: … | ревизия: … | ход: … | фаза: …`, затем «Участников: N» и строки всех `Units` (не BeforeSalvoUnits/FireSteps) по Side, затем Id (Ordinal): `Id | пилот: PilotName или «—» | сторона | тип | состояние | корпус: Hull/MaxHull`; пустой Units → «Участников нет». Мутаций, RunExclusive, ActiveBattle, смены скорости нет.
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/DebugCommandCatalog.cs` — одна строка `registry.Register(new ListUnitsDebugCommand());`.
+- `tests/DeepSpaceSaga.Client.Tests/DebugConsole/ListUnitsDebugCommandTests.cs` — новый, 12 именованных тестов из списка Tests. Фикстура: перемешанные стороны, Carrier с null Build, два Drone с одинаковым PilotName «Alpha» и разными Id, Disabled и Destroyed; снимки через `TutorialTestBattle` (без Engine), сессия — настоящий `GameSessionHandle` над fake `IGameSessionConnection` с управляемым отложенным ответом (`TaskCompletionSource`, без wall-clock sleep) и записью любых не-read вызовов как мутаций.
+
+Допущения (исполнитель): смена боя внутри той же сессии не детектируется отдельно — каждый вывод строится из одного снимка, прочитанного в момент команды, и несёт его BattleId/Revision в заголовке; кэша прежнего снимка нет. `DiscardsOldSessionOrBattleResponse` проверяет смену сессии (на другую и на главное меню) во время запроса. Отмена (Dispose консоли) проверяется в `CancellationDoesNotPublishStaleList`.
+
+Команды и результаты:
+
+- `dotnet build tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj` — 0 Warning(s), 0 Error(s) (собирает и `DeepSpaceSaga.Client`).
+- `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Client/UI/DebugConsole/DebugCommandCatalog.cs src/DeepSpaceSaga.Client/UI/DebugConsole/ListUnitsDebugCommand.cs tests/DeepSpaceSaga.Client.Tests/DebugConsole/ListUnitsDebugCommandTests.cs` — exit 0.
+- `git diff --cached --check` — exit 0.
+- Тесты: запускаются в прогоне конца истории US-0004 сразу после этого тикета (см. story md, `## Story test evidence 2026-11-16`).
+- Native (help показывает list_units; учебный и обычный бой; после выхода из боя нет старого списка): NOT RUN — подтверждённый меньший монитор недоступен в автономном прогоне.
