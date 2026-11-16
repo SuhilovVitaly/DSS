@@ -5,7 +5,7 @@ ticket: EP-0032-US-0005-TK-0001-autosave-slots
 title: Очередь атомарных автосохранений
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: local-client
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0032-US-0003-TK-0004-terminal-save-policy, EP-0032-US-0004-TK-0004-client]
@@ -107,3 +107,11 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Scope correction before implementation — 2026-11-17
+
+Add Contracts/IGameSessionConnection.cs async autosave default and LocalGameSessionConnection.Autosave.cs partial. Request generations coalesce pending calls but a docking request arriving after capture requires another capture even at the same campaign sequence. SaveAsync keeps the existing gate and atomic writer; requested sequence is checked before write. Repository validates actual content through EngineContentLoader when settingsPath is supplied by the production factory.
+
+## Execution — 2026-11-17
+
+Autosave requests coalesce by request generation and minimum CommitSequence, using the same reserved continuation slot/_saveGate/atomic writer as settlement. Completion follows replace; manual slots untouched; active battle capture refused. Latest-valid selection validates candidates (including full content validation in production), skips corrupt newest. Tests cover durable ack, concurrent requests, active-battle refusal and older valid fallback. Shutdown awaiting belongs to handle integration TK-0002. Tests at story end.

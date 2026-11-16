@@ -9,6 +9,28 @@ namespace DeepSpaceSaga.Engine.LocalClient;
 /// </summary>
 public static class SaveSlotRepository
 {
+    /// <summary>Newest readable compatible world; a corrupt newer slot never hides an older valid slot.</summary>
+    public static SaveSlotInfo? GetLatestValidSlot(string saveDirectory, string? settingsPath = null)
+    {
+        foreach (var slot in ListSlots(saveDirectory).OrderByDescending(s => s.SavedAtUtc).ThenBy(s => s.SlotId, StringComparer.Ordinal))
+        {
+            string path = Path.Combine(saveDirectory, SaveSlotNaming.ToFileName(slot.SlotId));
+            try
+            {
+                if (settingsPath is null) Scenario.ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true, isSave: true);
+                else
+                {
+                    using var candidate = Content.EngineContentLoader.CreateEngineFromSaveFile(settingsPath, path);
+                }
+                return slot;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or
+                Scenario.ScenarioException or Content.ContentException or InvalidOperationException or ArgumentException)
+            { /* Candidate is never adopted; continue to the previous durable slot. */ }
+        }
+        return null;
+    }
+
     /// <summary>
     /// List every save slot currently on disk in saveDirectory, most recently saved
     /// first. Returns an empty array if the directory doesn't exist yet (e.g. no save

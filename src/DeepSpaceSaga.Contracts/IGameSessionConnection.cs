@@ -107,4 +107,8 @@ public interface IGameSessionConnection : IAsyncDisposable
     /// client always saves/loads through.
     /// </summary>
     ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default);
+
+    /// <summary>Completes only after a continuation capture at or beyond this commit is atomically written.</summary>
+    ValueTask RequestAutosaveAsync(long committedSequence, CancellationToken cancellationToken = default) =>
+        ValueTask.FromException(new NotSupportedException("Campaign autosave is unavailable."));
 }

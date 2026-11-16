@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Engine.LocalClient;
 /// Starts the engine loop and forwards snapshots to the client via Channel.
 /// Replaceable by NetworkGameSessionConnection without client changes.
 /// </summary>
-public sealed class LocalGameSessionConnection : IGameSessionConnection
+public sealed partial class LocalGameSessionConnection : IGameSessionConnection
 {
     private readonly SimulationEngine _engine;
     private readonly SnapshotMailbox _snapshots = new();
@@ -306,7 +306,10 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     /// writing and rename: a queued save captures the world only after its predecessor commits.
     /// Failed or cancelled writes remove their own temporary file.
     /// </summary>
-    public async ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
+    public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) =>
+        WriteSaveAsync(slotId, null, cancellationToken);
+
+    private async ValueTask WriteSaveAsync(string slotId, long? minimumSequence, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_saveDirectory))
             throw new InvalidOperationException(
@@ -322,6 +325,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
             // An immutable pre-death capture may still finish its atomic write afterwards.
             SaveStageForTests?.Invoke("before_capture");
             var saveState = _engine.CaptureSaveState();
+            if (minimumSequence is { } required && (saveState.GameState.DemoCampaign?.CommitSequence ?? 0) < required)
+                throw new InvalidOperationException("Requested campaign commit has not been captured.");
             string json = ScenarioLoader.Serialize(saveState);
             Directory.CreateDirectory(_saveDirectory);
             string targetPath = Path.Combine(_saveDirectory, SaveSlotNaming.ToFileName(slotId));
