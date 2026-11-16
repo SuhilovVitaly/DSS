@@ -5,7 +5,7 @@ ticket: EP-0032-US-0002-TK-0001-contracts
 title: Контракт: Необратимая гибель пилота
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0032-US-0001-TK-0003-client]
@@ -106,3 +106,7 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution — 2026-11-17
+
+Immutable PilotLossSnapshot exposes memorial entries with full captured CrewMemberSnapshot, BattleId, calendar GameTimeMs, and live IDs. Optional company section, no resurrection command. Captured record reuses crew DTO rather than another skills schema. Serialization test added; execution at story end per user. diff check PASS.
