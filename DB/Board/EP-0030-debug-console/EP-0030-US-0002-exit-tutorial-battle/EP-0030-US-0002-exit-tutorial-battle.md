@@ -2,7 +2,7 @@
 epic: EP-0030-debug-console
 story: EP-0030-US-0002-exit-tutorial-battle
 title: Выход из обучающего боя командой exit_battle
-stage: approved
+stage: implemented
 dependencies: [EP-0030-US-0001-global-console]
 revision: 2
 ---

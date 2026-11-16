@@ -2,7 +2,7 @@
 epic: EP-0030-debug-console
 story: EP-0030-US-0005-documentation
 title: Документация дебаг-консоли и синхронизация Board
-stage: approved
+stage: implemented
 dependencies: [EP-0030-US-0001-global-console, EP-0030-US-0002-exit-tutorial-battle, EP-0030-US-0003-kill-drone, EP-0030-US-0004-console-discovery]
 created: 2026-11-16T06:50:00Z
 source_request: "Создай новую ветку… выполни EP-0030… после каждого тикета коммит и пуш. Тесты только после окончания юзерстори"
@@ -52,3 +52,13 @@ Layer `documentation` отсутствует в таблице слоёв epic-w
 ## Review log
 
 2026-11-16T06:50:00Z — история и два тикета созданы при подготовке Board к автономному исполнению.
+
+2026-11-16 — TK-0001 (`c95ba2a7`) и TK-0002 реализованы, stage → implemented.
+
+## Story evidence 2026-11-16
+
+- **AC-01:** создан [`DebugConsole.md`](../../../Documentation/04-Engineering/DebugConsole.md) — Ctrl+Alt+P, оверлей вне `ScreenStack`, маршрутизация ввода и зеркалирование потери фокуса, реестр/`DebugCommandCatalog`, команды `help`, `list_units`, `exit_battle`, `kill_drone` с синтаксисом и сообщениями, правила занятости/устаревания (TK-0001, `c95ba2a7`).
+- **AC-02:** [`TacticalBattle.md`](../../../Documentation/04-Engineering/TacticalBattle.md#дебаг-уничтожение-дрона) — раздел о `DebugDestroyTacticalUnitRequest`; [экран боя](../../../Documentation/02-FirstRelease/Screens/TacticalBattle.md), [каталог экранов](../../../Documentation/02-FirstRelease/Screens/ScreenCatalog.md), [карта](../../../Documentation/02-FirstRelease/Screens/GameSession.md) и [оглавление](../../../Documentation/README.md) упоминают консоль; [EP-0027](../../EP-0027-tutorial-start/Documentation.md) получил датированное дополнение (TK-0001). Инвентаризация влияния — в [TK-0001](EP-0030-US-0005-TK-0001-canonical-docs/EP-0030-US-0005-TK-0001-canonical-docs.md#инвентаризация-влияния); allowlist TK-0001 расширен с 5 до 7 файлов до правки по §6 `EpicExecutionPrompt.md`.
+- **AC-03:** эпик [Documentation.md](../Documentation.md) — статус исполнения, таблица 5 историй со статусами, G-01/G-04 и решения 2026-11-16, review log; новый [Tickets.md](../Tickets.md) — 13 тикетов с SHA, статусы историй, валидация: полный build/test, native NOT RUN, Graphify NOT RUN (TK-0002).
+- **AC-04:** относительные ссылки и якоря изменённых документов разрешаются (perl-проверка вне репозитория), ID и количества (5 историй, 13 тикетов) согласованы, `git diff --check` чист — в обоих тикетах.
+- Production-код и тесты не менялись; полный прогон решения взят с `aff52cb0` (см. [Tickets.md](../Tickets.md#валидация-эпика)).

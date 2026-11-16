@@ -2,7 +2,7 @@
 epic: EP-0030-debug-console
 story: EP-0030-US-0001-global-console
 title: Глобальная дебаг-консоль
-stage: approved
+stage: implemented
 dependencies: []
 revision: 2
 ---

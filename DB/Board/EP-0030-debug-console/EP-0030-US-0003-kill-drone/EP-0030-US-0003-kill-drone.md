@@ -2,7 +2,7 @@
 epic: EP-0030-debug-console
 story: EP-0030-US-0003-kill-drone
 title: Уничтожение дрона или тэга по имени
-stage: approved
+stage: implemented
 dependencies: [EP-0030-US-0001-global-console]
 revision: 2
 ---

@@ -5,6 +5,7 @@ ticket: EP-0030-US-0005-TK-0002-board-sync
 title: Синхронизация Board эпика EP-0030
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: [EP-0030-US-0005-TK-0001-canonical-docs]
@@ -73,3 +74,26 @@ No API change.
 ## Self-containment check
 
 Файлы, источник SHA и формат записи NOT RUN заданы.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы (7, в пределах allowlist; плюс этот тикет):
+
+- `DB/Board/EP-0030-debug-console/Documentation.md` — `stage: implemented`, `current_review: complete`; раздел «Статус исполнения (2026-11-16)»; решения пользователя 2026-11-16 (G-01 «Штатный экран гибели», G-04 «Id или подпись на карте», «Декомпозировать сам»); пометка, что A-01..A-08 — допущения исполнителя, а не решения пользователя; таблица историй со статусами и итогом 5/13; недатированная сводка «Сборка, тесты и игра не запускались» помечена как состояние планирования со ссылкой на текущий результат; запись review log.
+- `DB/Board/EP-0030-debug-console/Tickets.md` (новый, по образцу EP-0004/EP-0029) — статусы историй, 13 тикетов с коммитами, валидация эпика.
+- Пять story-файлов US-0001..US-0005 — `stage: implemented`; в US-0005 — review log и story evidence.
+
+Карта SHA получена `git log --oneline 43a6fecf..HEAD` при HEAD `c95ba2a7`; все 17 упомянутых SHA проверены `git cat-file -e`. Собственный SHA коммита TK-0002 заранее не записывается — проверяется после публикации через `git log`.
+
+Валидация, записанная в `Tickets.md` (по данным оркестратора и артефактам, не повторялась в этом тикете):
+
+- Полный build/test на `aff52cb0`: 0 ошибок сборки; 810 падений, набор идентичен базе `43a6fecf` (Engine 630, Client 166, Performance 10, EconomyBalance 3, Motion 1); (a) регрессий 0, (b) новых падающих 0; 96 новых тестов проходят. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/full-20261116T075334Z/`, `full-base-43a6fecf-20261116T075945Z/diff.txt` (заголовок diff.txt подтверждает: «HEAD failed=810 base failed=810; failed rows identical: yes … tests new at HEAD: 96, all passed»).
+- Native/manual: NOT RUN — меньший монитор не подтверждён; продуктовая приёмка открыта.
+- Graphify: NOT RUN — `src/graphify-out/` игнорируется Git и содержит только исторический кеш (2026-11-05, без `graph.json`), корневого `graphify-out/` нет, `.graphifyignore` не включает EP-0030.
+- Независимая валидация (Phase 4): регрессий нет, ключевые утверждения подтверждены; остаточное — native не выполнен, открытие консоли сбрасывает выбор карты/ввод манёвра как потеря фокуса.
+
+Проверки этого тикета:
+
+- Ссылки и якоря в 8 изменённых/новых файлах Board — perl-скрипт вне репозитория: `problems: 0`.
+- ID и количества: 5 каталогов историй, 13 каталогов тикетов, 13 строк тикетов в `Tickets.md`, каждый каталог тикета упомянут.
+- `git diff --check` — exit 0.
