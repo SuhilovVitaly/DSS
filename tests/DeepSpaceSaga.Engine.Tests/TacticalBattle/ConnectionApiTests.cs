@@ -22,7 +22,8 @@ public sealed class ConnectionApiTests
         foreach (var task in new[]
         {
             connection.StartTacticalBattleAsync(new("start", 1)), connection.MoveTacticalBattleAsync(new("move", "start", 1)),
-            connection.FireTacticalBattleAsync(new("fire", "start", 1)), connection.ExitTacticalBattleAsync(new("exit", "start"))
+            connection.FireTacticalBattleAsync(new("fire", "start", 1)), connection.ExitTacticalBattleAsync(new("exit", "start")),
+            connection.DebugDestroyTacticalUnitAsync(new("debug-kill", "start", 1, "drone"))
         })
         {
             var response = await task;

@@ -64,6 +64,7 @@
 
 - [Базы ИИ, поля и точки интереса](04-Engineering/AiMapEnvironment.md).
 - [Approach: маршрут сближения](04-Engineering/ApproachRoutes.md).
+- [Дебаг-консоль Ctrl+Alt+P и её команды](04-Engineering/DebugConsole.md).
 - [Отладка двигателей](04-Engineering/DebugTuning.md) и [панель F12](04-Engineering/DebugTuningPanel.md).
 - [Ручное управление кораблём](04-Engineering/ManualManeuver.md).
 - [Каталог товаров и совместимость](04-Engineering/ItemCatalogSchema.md).

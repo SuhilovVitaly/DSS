@@ -2,12 +2,12 @@
 epic: EP-0030-debug-console
 story: EP-0030-US-0004-console-discovery
 title: Справка по командам и список участников боя
-stage: draft
+stage: implemented
 dependencies: [EP-0030-US-0001-global-console]
 created: 2026-11-16T06:21:45Z
 source_request: "`list_units`  help - показывает все команды дебага консоли - добавь тикеты на оба"
 current_review: complete
-revision: 1
+revision: 2
 ticket_map_approval: automatic-workflow
 ---
 
@@ -27,7 +27,7 @@ D-06 [эпика](../Documentation.md). Пользователь запроси�
 - `src/DeepSpaceSaga.Contracts/TacticalBattleSnapshot.cs:51` — юнит содержит Id, Side, Kind, Hull, MaxHull, State и Build; `:36` — Build содержит PilotName. Имя пилота не является отдельным доказанным именем юнита.
 - `src/DeepSpaceSaga.Contracts/TacticalBattleSnapshot.cs:7` — текущие виды Drone и Carrier; отдельного enum Tug нет. Список не должен фильтровать предполагаемые «тэги»: выводятся все Units.
 - `src/DeepSpaceSaga.Client/GameSessionHandle.TacticalBattle.cs:21` — существующий `GetTacticalBattleStateAsync(CancellationToken)` позволяет прочитать снимок через сессию; null не позволяет надёжно различить отсутствие боя и ошибку получения.
-- Файлы DebugConsole пока отсутствуют; реестр/контроллер — проектируемый контракт US-0001, не существующий API.
+- Файлы DebugConsole создаёт US-0001 (TK-0002: `DebugCommand.cs`, `DebugCommandRegistry.cs`, `DebugConsoleController.cs`; TK-0003: `DebugCommandCatalog.cs`, overlay). US-0001 исполняется в той же ветке раньше US-0004; единственная точка регистрации команд — `DebugCommandCatalog.CreateDefault()`.
 
 ## Acceptance criteria
 
@@ -39,11 +39,11 @@ D-06 [эпика](../Documentation.md). Пользователь запроси�
 
 ## Non-goals
 
-Изменение Contracts/Engine, новая модель имён, фильтры/экспорт, автодополнение, новые игровые команды и реализация оболочки консоли. Вывод пилота не меняет правила поиска `kill_drone` и не закрывает G-04 эпика.
+Изменение Contracts/Engine, новая модель имён, фильтры/экспорт, автодополнение, новые игровые команды и реализация оболочки консоли. Правила поиска `kill_drone` определены G-04 в US-0003; `list_units` их не меняет.
 
 ## Dependencies
 
-US-0001 предоставляет реестр, диспетчер, вывод и контекст текущей сессии. До готовности этой истории тикеты не исполняются. Детали предлагаемой границы закреплены в её документе; существующие исходники не изменены.
+US-0001 предоставляет реестр, диспетчер, вывод, контекст текущей сессии (`DebugCommandContext.IsCurrent`) и точку регистрации `DebugCommandCatalog.cs`; тикеты US-0004 только добавляют по одной строке регистрации. Порядок исполнения: US-0001 → US-0002 → US-0003 → US-0004.
 
 ## Approved ticket map
 
@@ -56,12 +56,27 @@ US-0001 предоставляет реестр, диспетчер, вывод 
 
 ## Invariants / assumptions
 
-Только чтение через публичную сессию, один immutable snapshot на результат, без чтения Engine или будущих FireSteps. Отображение Unit ID и PilotName раздельно исключает ложное обещание, что имя пилота принимается `kill_drone`. Список отражает подтверждённое состояние, а не промежуточный кадр анимации. Детальный inspect не входит в объём.
+Только чтение через публичную сессию, один immutable snapshot на результат, без чтения Engine или будущих FireSteps. Unit ID и PilotName отображаются раздельно; по G-04 оба являются допустимыми именами цели `kill_drone`. Список отражает подтверждённое состояние, а не промежуточный кадр анимации. Детальный inspect не входит в объём.
 
 ## Gaps and backlog
 
-US-0001 пока draft и не реализована; предложенные пути/API должны быть обеспечены этой зависимостью или явно синхронизированы в тикетах до исполнения. G-04 о названии тэга остаётся в US-0003 и не препятствует выводу всех Units. Справка перечисляет реализованные зарегистрированные команды, а не обещает выполнение ещё не реализованных команд.
+US-0001 декомпозирована на тикеты; тикеты US-0004 (revision 2) синхронизированы с её контрактом. G-04 решён пользователем 2026-11-16 («Id или подпись на карте»): `kill_drone` сопоставляет Unit Id или подпись `Build?.PilotName ?? Id`; `list_units` выводит оба значения раздельно. Справка перечисляет реализованные зарегистрированные команды, а не обещает выполнение ещё не реализованных команд.
 
 ## Review log
 
 2026-11-16T06:21:45Z — материализованы два запрошенных тикета; workflow approval означает готовность планирования с указанной зависимостью, не реализацию, не прохождение тестов и не утверждение всего эпика.
+
+2026-11-16T06:50:00Z — revision 2: тикеты TK-0001/TK-0002 синхронизированы с контрактом US-0001 (точка регистрации `DebugCommandCatalog.cs`, реестр/контроллер read-only, `ExecuteAsync(context, arguments, cancellationToken)`, files_touched 3). Зафиксировано решение пользователя по G-04. Разрешение на реализацию — оператор, 2026-11-16: «Создай новую ветку… выполни EP-0030… после каждого тикета коммит и пуш. Тесты только после окончания юзерстори» и «работай автономно».
+
+## Story test evidence 2026-11-16
+
+Прогон после последнего тикета истории (TK-0002), по инструкции оператора; код на `d37a7162`.
+
+```powershell
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~HelpDebugCommandTests|FullyQualifiedName~ListUnitsDebugCommandTests|FullyQualifiedName~DebugConsole" --results-directory D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0004-20261116T075239Z/ --logger trx
+```
+
+- Результат: Passed 76, Failed 0, Skipped 0 (exit 0, cap 300000 ms). TRX: `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0004-20261116T075239Z/sushi_VITA-CASTLE_2026-11-16_09_52_51_net8.0.trx`, stdout рядом (`stdout.txt`).
+- По классам: `HelpDebugCommandTests` 10 (8 именованных, `RejectsArguments` — 3 случая), `ListUnitsDebugCommandTests` 14 (12 именованных, `RejectsArgumentsBeforeQuery` — 3 случая); регрессия консоли US-0001..0003: `DebugConsoleControllerTests` 21, `DebugConsoleWindowTests` 8, `ExitBattleDebugCommandTests` 11, `KillDroneDebugCommandTests` 12.
+- Исправлений после прогона не потребовалось.
+- Native-проверка (help/list_units в меню и бою, прокрутка): NOT RUN — подтверждённый меньший монитор недоступен в автономном прогоне; продуктовая приёмка остаётся открытой.

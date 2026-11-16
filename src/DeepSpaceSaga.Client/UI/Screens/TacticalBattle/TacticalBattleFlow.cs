@@ -66,6 +66,8 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     }
     public Task<TacticalBattleResponse?> MoveAsync(MoveTacticalBattleRequest request) => Submit(() => Session.MoveTacticalBattleAsync(request));
     public Task<TacticalBattleResponse?> FireAsync(FireTacticalBattleRequest request) => Submit(() => Session.FireTacticalBattleAsync(request));
+    /// <summary>Debug console kill: adopts the accepted state like a turn; null while another request is pending.</summary>
+    public Task<TacticalBattleResponse?> DebugDestroyAsync(DebugDestroyTacticalUnitRequest request) => Submit(() => Session.DebugDestroyTacticalUnitAsync(request));
     /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {

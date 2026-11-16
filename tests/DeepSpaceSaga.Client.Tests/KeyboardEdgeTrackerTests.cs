@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI;
+using DeepSpaceSaga.Client.UI.Screens;
 using Silk.NET.Input;
 
 namespace DeepSpaceSaga.Client.Tests;
@@ -365,6 +366,54 @@ public class KeyboardEdgeTrackerTests
         tracker.ResyncToCurrentState(keys.Contains);
         PollBoth(tracker, keys, out pressed, out _);
         Assert.Empty(pressed); // a key held across focus regain is not a fresh press
+    }
+
+    [Theory]
+    [InlineData(Key.ControlLeft, Key.AltLeft)]
+    [InlineData(Key.ControlLeft, Key.AltRight)]
+    [InlineData(Key.ControlRight, Key.AltLeft)]
+    [InlineData(Key.ControlRight, Key.AltRight)]
+    public void Ctrl_Alt_P_reports_single_P_edge_with_modifiers(Key control, Key alt)
+    {
+        // EP-0030 US-0001: Ctrl+Alt+P toggles the debug console; the physical P key is layout-independent.
+        var tracker = new KeyboardEdgeTracker();
+        var keys = new HashSet<Key> { control, alt };
+        PollBoth(tracker, keys, out _, out _);
+        keys.Add(Key.P);
+        PollBoth(tracker, keys, out var pressed, out _);
+        Assert.Equal([Key.P], pressed);
+        Assert.True(tracker.Modifiers.HasFlag(KeyModifiers.Control));
+        Assert.True(tracker.Modifiers.HasFlag(KeyModifiers.Alt));
+        PollBoth(tracker, keys, out pressed, out _);
+        Assert.Empty(pressed);
+    }
+
+    [Fact]
+    public void Held_P_reports_no_second_edge()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var keys = new HashSet<Key> { Key.ControlLeft, Key.AltLeft, Key.P };
+        PollBoth(tracker, keys, out var pressed, out _);
+        Assert.Contains(Key.P, pressed);
+        for (int i = 0; i < 5; i++)
+        {
+            PollBoth(tracker, keys, out pressed, out _);
+            Assert.Empty(pressed); // held — not reported again
+        }
+        Assert.Equal(0, tracker.PollRepeats(long.MaxValue, new Key[21]));
+        keys.Remove(Key.P);
+        PollBoth(tracker, keys, out _, out var released);
+        Assert.Equal([Key.P], released);
+    }
+
+    [Fact]
+    public void Bare_P_reports_edge_without_modifiers()
+    {
+        var tracker = new KeyboardEdgeTracker();
+        var keys = new HashSet<Key> { Key.P };
+        PollBoth(tracker, keys, out var pressed, out _);
+        Assert.Equal([Key.P], pressed);
+        Assert.Equal(KeyModifiers.None, tracker.Modifiers);
     }
 
     private static Key[] Poll(KeyboardEdgeTracker tracker, HashSet<Key> pressed)

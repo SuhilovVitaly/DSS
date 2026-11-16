@@ -131,6 +131,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         TacticalCall(() => _engine.MoveTacticalBattle(request), cancellationToken);
     public ValueTask<TacticalBattleResponse> FireTacticalBattleAsync(FireTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
         TacticalCall(() => _engine.FireTacticalBattle(request), cancellationToken);
+    public ValueTask<TacticalBattleResponse> DebugDestroyTacticalUnitAsync(DebugDestroyTacticalUnitRequest request, CancellationToken cancellationToken = default) =>
+        TacticalCall(() => _engine.DebugDestroyTacticalUnit(request), cancellationToken);
 
     /// <summary>
     /// Exit the active battle and own the campaign-continuation storage phase (EP-0029 US-0012).

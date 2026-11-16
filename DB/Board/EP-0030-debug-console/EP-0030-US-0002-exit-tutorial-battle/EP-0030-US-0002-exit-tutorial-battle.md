@@ -2,8 +2,9 @@
 epic: EP-0030-debug-console
 story: EP-0030-US-0002-exit-tutorial-battle
 title: Выход из обучающего боя командой exit_battle
-stage: draft
+stage: implemented
 dependencies: [EP-0030-US-0001-global-console]
+revision: 2
 ---
 
 # US-0002 — Выход из обучающего боя
@@ -31,4 +32,51 @@ EP-0030-US-0001-global-console — глобальный вызов, ввод и 
 
 ## Ограничения и gaps
 
-**G-01 эпика блокирует готовность к реализации:** требуется определить поведение для погибшего носителя, поскольку безусловная карта пересекается с экраном гибели. Команда не воскрешает корабль. Предложения A-04–A-06 должны пройти review этой истории. Автоматические и native-проверки перечислены в эпике как будущие; их результаты не заявлены.
+**G-01 решён** пользователем 2026-11-16: «Штатный экран гибели». При уничтоженном носителе `exit_battle` прерывает бой, а существующий guard `EnsureShipDestroyedScreen` (`src/DeepSpaceSaga.Client/UI/SkiaWindow.cs:1281-1294`) показывает экран гибели вместо карты. Команда не воскрешает корабль. Предложения A-04–A-06 приняты исполнителем как технические допущения автономного исполнения 2026-11-16 (это не решение пользователя). Автоматические и native-проверки перечислены в эпике как будущие; их результаты не заявлены.
+
+## Решения 2026-11-16
+
+- **G-01** (пользователь): «Штатный экран гибели» — исключение из D-03 для погибшего носителя; guard не обходится.
+- Пользователь о декомпозиции: «Декомпозировать сам».
+- Оператор: «Создай новую ветку… выполни EP-0030… после каждого тикета коммит и пуш. Тесты только после окончания юзерстори» и «работай автономно».
+
+## Ticket map
+
+| Тикет | Layer | Depends on | Criteria |
+|---|---|---|---|
+| [TK-0001 — exit-battle](EP-0030-US-0002-TK-0001-exit-battle/EP-0030-US-0002-TK-0001-exit-battle.md) | client | none; prerequisite US-0001 | AC-01..AC-06 |
+
+## Review log
+
+2026-11-16T06:50:00Z — G-01 решён, история декомпозирована на один тикет, stage → approved (autonomous-execution).
+
+## Story test evidence 2026-11-16
+
+Тикет TK-0001 — единственный тикет истории; тесты запущены после реализации, до коммита тикета (коммит `EP-0030 US-0002 TK-0001: add exit_battle debug command` включает эту запись).
+
+Прогон тестов истории (process-tree cap 300000 ms):
+
+```powershell
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~ExitBattleDebugCommandTests|FullyQualifiedName~DebugConsole|FullyQualifiedName~Ep0029Us0012Tk0003Tests|FullyQualifiedName~BattleNavigationTests|FullyQualifiedName~KeyboardRoutingTests|FullyQualifiedName~TutorialFlowTests" --results-directory D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0002-20261116T071521Z/ --logger trx
+```
+
+Результат: Total 98, Passed 95, Failed 3, Skipped 0. TRX: `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0002-20261116T071521Z/sushi_VITA-CASTLE_2026-11-16_09_15_28_net8.0.trx`.
+
+| Класс | Passed | Failed |
+|---|---|---|
+| `ExitBattleDebugCommandTests` (TK-0001, 11 названных тестов, AC-01..AC-06) | 11 | 0 |
+| `DebugConsoleControllerTests` (регрессия US-0001) | 21 | 0 |
+| `DebugConsoleWindowTests` (регрессия US-0001) | 8 | 0 |
+| `Ep0029Us0012Tk0003Tests` (регрессия: settlement/checkpoint/гибель) | 4 | 0 |
+| `KeyboardRoutingTests` (регрессия) | 17 | 0 |
+| `BattleNavigationTests` (регрессия) | 14 | 1 |
+| `TutorialFlowTests` (регрессия) | 20 | 2 |
+
+Предыдущий прогон той же команды (`us0002-20261116T071327Z`, TRX `sushi_VITA-CASTLE_2026-11-16_09_13_38_net8.0.trx`): Total 98, Passed 94, Failed 4 — дополнительно падал `ExitBattleDebugCommandTests.FinishedTutorialClosesNormally` из-за слишком строгого сравнения журнала обучения (штатное событие `expired`); исправлено в тесте (проверяется отсутствие `abandoned`), код не менялся.
+
+Отказы, существующие до эпика (не связаны с консолью, не исправлялись — вне scope):
+
+- `BattleNavigationTests.ExitOfAStaleBattleExitsTheLiveEngineBattleInstead` (строка 145, Engine отклоняет повторный `StartTacticalBattle`) — известен с US-0001.
+- `TutorialFlowTests.TutorialBattleAlwaysUsesTabletopAndKeepsSkinPreference` и `TutorialFlowTests.TutorialBattleCarriesTutorialSessionAndF8BattleDoesNot` — после завершённого обучения обычный бой с карты не стартует (остаётся `TacticalBattleSetupScreen`). Воспроизводятся без кода US-0002 на `688c0ba5` (TRX `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0002-20261116T071327Z/baseline-688c0ba5/sushi_VITA-CASTLE_2026-11-16_09_14_46_net8.0.trx`, 3 отказа вместе с первым) и на до-эпиковом `43a6fecf` (TRX `.../us0002-20261116T071327Z/baseline-43a6fecf/sushi_VITA-CASTLE_2026-11-16_09_15_07_net8.0.trx`, те же 2 отказа). Передаются как остаточный риск.
+
+Native-проверка (консоль → `exit_battle` → карта той же системы): NOT RUN — меньший монитор для `DSS_VALIDATION_SMALL_MONITOR=1` в этой сессии не подтверждён.

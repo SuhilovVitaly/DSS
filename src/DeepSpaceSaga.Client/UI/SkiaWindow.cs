@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.DebugConsole;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Client.UI.Screens.Finance;
@@ -31,7 +32,7 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI;
 
-public sealed class SkiaWindow : IDisposable
+public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
 {
     private readonly IWindow _window;
     private readonly IGameSessionFactory _sessionFactory;
@@ -96,6 +97,12 @@ public sealed class SkiaWindow : IDisposable
     internal Action<IScreen?, double>? NativeFrameMeasured { get; set; }
     internal Action<IScreen?, long, double, double, double>? NativeFramePresented { get; set; }
 
+    // EP-0030 debug console: a window-level overlay, never a ScreenStack entry; it does not touch pause or speed.
+    private readonly DebugConsoleOverlay _debugConsoleOverlay = new();
+    private bool _debugConsoleShown;
+    private float _debugConsoleUiScale = 1;
+    internal DebugConsoleController DebugConsole { get; }
+
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
         : this(initialScreen, sessionFactory, startupStopwatch, createNativeWindow: true) { }
 
@@ -110,6 +117,7 @@ public sealed class SkiaWindow : IDisposable
         _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;
+        DebugConsole = new DebugConsoleController(DebugCommandCatalog.CreateDefault(), this);
 
         SettingsFilePath = Path.GetFullPath(settingsPath ?? Path.Combine(AppContext.BaseDirectory, "Settings.json"));
         _battleSkinCatalog = TacticalBattleSkinCatalog.Load(Path.Combine(Path.GetDirectoryName(SettingsFilePath)!, "Skins"), LogSkinWarning);
@@ -367,32 +375,7 @@ public sealed class SkiaWindow : IDisposable
         canvas.Save();
         canvas.Scale(scaleX, scaleY);
 
-        // Overlay: render the whole stack bottom-to-top so every overlay panel draws
-        // on top of the interactive root screen instead of a blank canvas. The dim
-        // rect itself is drawn exactly once, right before the first (bottom-most)
-        // overlay — individual screens no longer draw their own, so stacking overlays
-        // (e.g. Trade opened from Station) look exactly as dim as a single overlay
-        // instead of compounding darker with each nested level.
-        int index = 0;
-        GameSessionScreen? profiledScreen = null;
-        foreach (var screen in _screens.VisibleBottomToTop())
-        {
-            // A transition can be waiting for an authoritative speed acknowledgement.
-            // Do not paint an obsolete market while its serialized removal is pending.
-            if (screen is TradeScreen trade && (!ReferenceEquals(trade.OpenedForHandle, _session) || !trade.HasValidVisit) ||
-                screen is StationScreen station && (!ReferenceEquals(station.OpenedForHandle, _session) || !station.HasValidVisit))
-                continue;
-            if (index == 1)
-                MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
-
-            if (screen is TacticalBattleScreen battle) battle.RenderNative(canvas, windowSize.X, windowSize.Y, _grContext);
-            else screen.Render(canvas, windowSize.X, windowSize.Y);
-            if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
-            index++;
-        }
-        if (_session?.Failure is not null)
-            canvas.DrawText(Localization.Get("Session.ConnectionLost"), windowSize.X / 2f,
-                windowSize.Y - 20, MenuStyle.TextStatus);
+        int index = RenderScreenStack(canvas, windowSize.X, windowSize.Y, out var profiledScreen);
 
         if (isFirstFrame)
             InterfaceLog.Write($"STARTUP DIAG: first-frame screen.Render (recording) done — {diagSw!.ElapsedMilliseconds} ms into OnRender");
@@ -451,6 +434,41 @@ public sealed class SkiaWindow : IDisposable
             _isFocused, _window.VSync, index, fbSize.X, fbSize.Y,
             presentWaitMs, _graphicsRenderer, _graphicsVersion,
             gpuResources, gpuCacheBytes, _grContext.GetResourceCacheLimit()));
+    }
+
+    /// <summary>Draws the visible stack, the connection-lost status and, above everything, the open debug console.</summary>
+    /// <returns>The number of drawn screens.</returns>
+    internal int RenderScreenStack(SKCanvas canvas, int width, int height, out GameSessionScreen? profiledScreen)
+    {
+        // Overlay: render the whole stack bottom-to-top so every overlay panel draws
+        // on top of the interactive root screen instead of a blank canvas. The dim
+        // rect itself is drawn exactly once, right before the first (bottom-most)
+        // overlay — individual screens no longer draw their own, so stacking overlays
+        // (e.g. Trade opened from Station) look exactly as dim as a single overlay
+        // instead of compounding darker with each nested level.
+        int index = 0;
+        profiledScreen = null;
+        foreach (var screen in _screens.VisibleBottomToTop())
+        {
+            // A transition can be waiting for an authoritative speed acknowledgement.
+            // Do not paint an obsolete market while its serialized removal is pending.
+            if (screen is TradeScreen trade && (!ReferenceEquals(trade.OpenedForHandle, _session) || !trade.HasValidVisit) ||
+                screen is StationScreen station && (!ReferenceEquals(station.OpenedForHandle, _session) || !station.HasValidVisit))
+                continue;
+            if (index == 1)
+                MenuStyle.DrawDimOverlay(canvas, width, height);
+
+            if (screen is TacticalBattleScreen battle) battle.RenderNative(canvas, width, height, _grContext);
+            else screen.Render(canvas, width, height);
+            if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
+            index++;
+        }
+        if (_session?.Failure is not null)
+            canvas.DrawText(Localization.Get("Session.ConnectionLost"), width / 2f,
+                height - 20, MenuStyle.TextStatus);
+
+        _debugConsoleOverlay.Render(canvas, DebugConsole, width, height, _debugConsoleUiScale);
+        return index;
     }
 
     /// <summary>
@@ -613,6 +631,11 @@ public sealed class SkiaWindow : IDisposable
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false })
             return;
+        if (DebugConsole.IsOpen)
+        {
+            _debugConsoleOverlay.OnMouseDown(DebugConsole, mouse.Position.X, mouse.Position.Y, button);
+            return;
+        }
 
         // Capture the current screen and (if relevant) its click payload synchronously,
         // in this same call frame, before HandleScreenEvent's first await. This is what
@@ -638,6 +661,11 @@ public sealed class SkiaWindow : IDisposable
     {
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
+        if (DebugConsole.IsOpen)
+        {
+            _debugConsoleOverlay.OnMouseUp(DebugConsole, button);
+            return;
+        }
 
         if (!_closing && button is MouseButton.Left or MouseButton.Right or MouseButton.Middle)
             _screens.Current.OnMouseUp(mouse.Position.X, mouse.Position.Y, button);
@@ -650,7 +678,13 @@ public sealed class SkiaWindow : IDisposable
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
-        bool overInteractive = _screens.Current.OnMouseMove(position.X, position.Y);
+        bool overInteractive;
+        if (DebugConsole.IsOpen)
+        {
+            _debugConsoleOverlay.OnMouseMove(DebugConsole, position.X, position.Y);
+            overInteractive = false;
+        }
+        else overInteractive = _screens.Current.OnMouseMove(position.X, position.Y);
 
         var targetImage = overInteractive ? _interactiveCursorImage : _defaultCursorImage;
         if (targetImage is not null)
@@ -666,6 +700,11 @@ public sealed class SkiaWindow : IDisposable
             return;
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
+        if (DebugConsole.IsOpen)
+        {
+            _debugConsoleOverlay.OnMouseWheel(DebugConsole, mouse.Position.X, mouse.Position.Y, MouseWheelInput.NormalizeSilk(scroll.Y));
+            return;
+        }
 
         var screenEvent = _screens.Current.OnMouseWheel(
             mouse.Position.X,
@@ -682,6 +721,16 @@ public sealed class SkiaWindow : IDisposable
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
+        // The toggle chord itself may produce a character (AltGr layouts); it must reach neither the console nor the screen.
+        var modifiers = _keyboard is null ? _keyboardEdges.Modifiers : KeyboardEdgeTracker.ReadModifiers(_keyboard.IsKeyPressed);
+        bool chordHeld = modifiers.HasFlag(KeyModifiers.Control) && modifiers.HasFlag(KeyModifiers.Alt);
+        if (DebugConsole.IsOpen)
+        {
+            if (!chordHeld) DebugConsole.OnTextInput(c);
+            return;
+        }
+        if (chordHeld && _keyboard?.IsKeyPressed(Key.P) == true) return;
+
         _screens.Current.OnTextInput(c);
     }
 
@@ -689,6 +738,8 @@ public sealed class SkiaWindow : IDisposable
 
     private void PollKeyboard()
     {
+        // A command result may have closed the console since the last frame.
+        if (!_closing) SyncDebugConsoleState();
         if (_keyboard is null || _closing || !_isFocused)
             return;
         RequestStationCleanup();
@@ -712,15 +763,22 @@ public sealed class SkiaWindow : IDisposable
                 $"printScreenDown={_keyboard.IsKeyPressed(Key.PrintScreen)}");
         }
 
-        if (_screens.Current is GameSessionScreen game)
+        bool consoleOwnedKeys = DebugConsole.IsOpen;
+        if (_screens.Current is GameSessionScreen game && !consoleOwnedKeys)
         {
             game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight));
         }
         for (int i = 0; i < pressedCount; i++)
+        {
+            // Closing re-baselines held keys; the rest of this frame's edges must not leak to the screen.
+            if (consoleOwnedKeys && !DebugConsole.IsOpen) break;
             _handleKeyboardEdge(_keyboardPressedKeys[i]);
+        }
 
-        for (int i = 0; i < releasedCount; i++)
-            _screens.Current.OnKeyUp(_keyboardReleasedKeys[i]);
+        // While the console owns the keyboard the screen saw an input reset; releases stay with the console.
+        if (!consoleOwnedKeys && !DebugConsole.IsOpen)
+            for (int i = 0; i < releasedCount; i++)
+                _screens.Current.OnKeyUp(_keyboardReleasedKeys[i]);
         if (_screens.Current.WantsArrowRepeat && ReferenceEquals(_repeatScreen, _screens.Current))
         {
             int count = _keyboardEdges.PollRepeats(Environment.TickCount64, _keyboardRepeatedKeys);
@@ -731,6 +789,24 @@ public sealed class SkiaWindow : IDisposable
     private void HandleKeyboardEdge(Key key) => HandleKeyboardEvent(key, repeat: false);
     private void HandleKeyboardEvent(Key key, bool repeat)
     {
+        // EP-0030: Ctrl+Alt+P toggles the debug console over any screen; while open it consumes every key except F10.
+        if (DebugConsoleController.IsToggleChord(key, _keyboardEdges.Modifiers))
+        {
+            if (!repeat)
+            {
+                DebugConsole.Toggle();
+                SyncDebugConsoleState();
+            }
+            return;
+        }
+        if (DebugConsole.IsOpen)
+        {
+            if (key == Key.F10) CaptureScreenshot();
+            else DebugConsole.OnKeyDown(key, _keyboardEdges.Modifiers, repeat);
+            SyncDebugConsoleState();
+            return;
+        }
+
         if (key == Key.F10)
         {
             CaptureScreenshot();
@@ -750,6 +826,76 @@ public sealed class SkiaWindow : IDisposable
 
         var action = _screens.Current.OnKeyDown(key, _keyboardEdges.Modifiers, repeat);
         if (action != ScreenEvent.None) _pendingKeyboardTransition = HandleScreenEvent(action);
+    }
+
+    /// <summary>
+    /// Applies a console open/close (including one requested by a command result) to the screen beneath:
+    /// opening mirrors focus loss (no held input, no repeats), closing re-baselines held keys like focus regain.
+    /// Speed and pause are never touched.
+    /// </summary>
+    private void SyncDebugConsoleState()
+    {
+        bool open = DebugConsole.IsOpen;
+        if (open == _debugConsoleShown) return;
+        _debugConsoleShown = open;
+        if (open)
+        {
+            _debugConsoleUiScale = (float)GetUiScale();
+            _keyboardEdges.ResetRepeats();
+            _screens.Current.OnInputReset();
+            if (_screens.Current is GameSessionScreen game) game.OnDeactivated();
+            return;
+        }
+        DebugConsoleOverlay.ResetInput(DebugConsole);
+        if (!_isFocused) return;
+        _keyboardEdges.ResyncToCurrentState(_keyboard, _screens.Current is TacticalBattleModalScreen);
+        if (_screens.Current is GameSessionScreen activeGame) activeGame.OnActivated();
+    }
+
+    GameSessionHandle? IDebugConsoleHost.Session => _session;
+
+    bool IDebugConsoleHost.IsTransitionBusy => _transitionLock.CurrentCount == 0;
+
+    TacticalBattleScreen? IDebugConsoleHost.ActiveBattle => _screens.Current as TacticalBattleScreen;
+
+    async Task<DebugCommandResult> IDebugConsoleHost.RunExclusiveAsync(
+        Func<CancellationToken, Task<DebugCommandResult>> operation, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        // Never wait: a transition in progress answers "busy" instead of queueing behind it.
+        if (_closing || !await _transitionLock.WaitAsync(0, cancellationToken)) return DebugCommandResult.Busy();
+        try { return await operation(cancellationToken); }
+        finally { _transitionLock.Release(); }
+    }
+
+    /// <summary>
+    /// Debug-only exception to the EP-0027 "tutorial exits to the main menu" rule (EP-0030 D-03): the battle is
+    /// exited through the same flow/settlement/checkpoint path as <see cref="ScreenEvent.CloseTacticalBattle"/>, but
+    /// an animation in progress or an open exit confirmation does not block it. A destroyed carrier still routes to
+    /// the ship-destroyed screen (G-01).
+    /// </summary>
+    async Task<DebugCommandResult> IDebugConsoleHost.ExitTutorialBattleAsync(GameSessionHandle? expectedSession, CancellationToken cancellationToken)
+    {
+        if (!await _transitionLock.WaitAsync(0, cancellationToken)) return DebugCommandResult.Busy();
+        try
+        {
+            if (_closing || _session is null || !ReferenceEquals(expectedSession, _session) ||
+                _screens.Current is not TacticalBattleScreen { IsSetup: false, Flow.IsTutorial: true } battle)
+                return DebugCommandResult.Error(ExitBattleDebugCommand.NoTutorialBattleText);
+            // Only an in-flight battle request blocks the abort; TurnBusy (animation) deliberately does not.
+            if (battle.Flow.Pending) return DebugCommandResult.Busy();
+
+            bool unfinished = battle.Flow.State is { Outcome: null };
+            // A failed exit/checkpoint keeps the battle open; the next exit_battle retries without re-settling.
+            if (!await battle.Flow.ExitAsync())
+                return DebugCommandResult.Error("Не удалось завершить бой: " + battle.Flow.Error + ". Повторите exit_battle");
+            if (unfinished) battle.Tutorial?.RecordAbandoned();
+            await PopModalAsync();
+            bool destroyed = EnsureShipDestroyedScreen();
+            return new DebugCommandResult(
+                [destroyed ? "Бой прерван. Носитель уничтожен — экран гибели" : "Бой завершён, открыта карта"], CloseConsole: true);
+        }
+        finally { _transitionLock.Release(); }
     }
 
     private const string ScreenshotsDirectory = "Screenshots";
@@ -2006,6 +2152,7 @@ public sealed class SkiaWindow : IDisposable
             return;
 
         _disposed = true;
+        DebugConsole.Dispose();
         _ = _connectionLoader.DisposeAsync();
 
         // OnClosing might not have fired (e.g. unhandled shutdown).

@@ -135,6 +135,16 @@ public sealed partial class SimulationEngine
         return ExecuteTactical(request.CommandId, request, () => _tacticalBattleSession?.Fire(request)
             ?? RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoBattle));
     }
+    /// <summary>
+    /// Debug-console force destroy of one drone (EP-0030 US-0003 TK-0002). Idempotent by CommandId
+    /// like every tactical command; validation and the destroy rule live in <see cref="TacticalBattleSession.DebugDestroy"/>.
+    /// </summary>
+    public TacticalBattleResponse DebugDestroyTacticalUnit(DebugDestroyTacticalUnitRequest request)
+    {
+        if (request is null) { lock (_worldStateLock) return RejectTactical("", TacticalBattleRejectionCode.InvalidRequest); }
+        return ExecuteTactical(request.CommandId, request, () => _tacticalBattleSession?.DebugDestroy(request)
+            ?? RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoBattle));
+    }
     public TacticalBattleResponse ExitTacticalBattle(ExitTacticalBattleRequest request)
     {
         if (request is null) { lock (_worldStateLock) return RejectTactical("", TacticalBattleRejectionCode.InvalidRequest); }

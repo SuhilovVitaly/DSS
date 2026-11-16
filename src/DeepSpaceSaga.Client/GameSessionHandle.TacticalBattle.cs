@@ -51,6 +51,9 @@ public sealed partial class GameSessionHandle
         SendTactical("fire", request.CommandId, request, () => _connection.FireTacticalBattleAsync(request, cancellationToken), cancellationToken);
     public ValueTask<TacticalBattleResponse> ExitTacticalBattleAsync(ExitTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
         SendTactical("exit", request.CommandId, request, () => _connection.ExitTacticalBattleAsync(request, cancellationToken), cancellationToken);
+    /// <summary>Debug console (EP-0030): authoritative forced destruction of one tactical drone; transport failures map to Unavailable.</summary>
+    public ValueTask<TacticalBattleResponse> DebugDestroyTacticalUnitAsync(DebugDestroyTacticalUnitRequest request, CancellationToken cancellationToken = default) =>
+        SendTactical("debug-destroy", request.CommandId, request, () => _connection.DebugDestroyTacticalUnitAsync(request, cancellationToken), cancellationToken);
 
     private async ValueTask<TacticalBattleResponse> SendTactical<T>(string operation, string id, T request,
         Func<ValueTask<TacticalBattleResponse>> send, CancellationToken cancellationToken)

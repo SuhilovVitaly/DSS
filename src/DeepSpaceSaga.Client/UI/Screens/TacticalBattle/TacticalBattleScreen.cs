@@ -273,6 +273,15 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         return new(TacticalBattleFlow.NewIdentity("fire"), state.BattleId, state.Revision, _fireOrders.BuildTargets());
     }
 
+    /// <summary>
+    /// Shows the flow's confirmed state as-is, without movement or salvo playback (debug console kill, EP-0030).
+    /// Unlike <see cref="OnBattleUpdated"/> it never replays steps from the previous presentation.
+    /// </summary>
+    internal void ShowConfirmedState()
+    {
+        if (Flow.PresentationState is { } state) Volatile.Write(ref _presentation, new(state, null));
+    }
+
     public override void OnBattleUpdated(TacticalBattleSnapshot? before, TacticalBattleResponse response)
     {
         if (Flow.PresentationState is not { } state) return;

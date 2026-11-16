@@ -4,7 +4,7 @@
 
 | Слой | Ответственность |
 |---|---|
-| Contracts | Неизменяемые параметры сценария, запросы Start/Move/Fire/Exit, ревизия, результаты, журнал и снимок |
+| Contracts | Неизменяемые параметры сценария, запросы Start/Move/Fire/Exit и отладочный DebugDestroy, ревизия, результаты, журнал и снимок |
 | Engine | Валидация каталога, сборка боя, алгоритмы тактик, приказы, броски Mulberry32, урон, потери и победа |
 | Motion | Общая тактическая геометрия, кинематика движения, углы, пределы, вероятность и совместимая численная арифметика |
 | LocalClient | Передача запросов сессии; отдельная ветка от снимков мира |
@@ -78,6 +78,16 @@ Client хранит Before/After, но карта, карточки, загол�
 
 Move и Fire проверяют идентификатор боя и ожидаемую ревизию. Engine хранит до 16 последних ответов и освобождает прежние ответы при успешном выходе из боя. Повтор с теми же ID и данными получает сохранённый ответ либо код `ReceiptExpired` без снимка. Команда не применяется повторно в течение жизни Engine. Повторное использование ID для другого запроса возвращает `IdentityConflict`. Актуальный снимок доступен через `GetTacticalBattleState`. В клиентском прогнозе оценки движения и попаданий не потребляют RNG и не меняют приказы без ввода. Наблюдение за кадром или повтор анимации не вызывает Engine.
 
+### Дебаг-уничтожение дрона
+
+`DebugDestroyTacticalUnitRequest(CommandId, BattleId, ExpectedRevision, UnitId)` — отладочный запрос команды `kill_drone` [дебаг-консоли](DebugConsole.md). Путь: `GameSessionHandle.DebugDestroyTacticalUnitAsync` (операция `debug-destroy`, транспортный сбой → `Unavailable`) → `IGameSessionConnection.DebugDestroyTacticalUnitAsync` (член по умолчанию отвечает `Unsupported`) → `LocalGameSessionConnection` → `SimulationEngine.DebugDestroyTacticalUnit` → `TacticalBattleSession.DebugDestroy`. Запрос проходит через `ExecuteTactical`, как Move и Fire: повтор того же CommandId с теми же данными получает сохранённый ответ без повторного эффекта, другой запрос с тем же ID — `IdentityConflict`.
+
+Порядок проверки: null-запрос → `InvalidRequest`; нет боя → `NoBattle`; чужой BattleId → `WrongBattle`; ревизия не равна текущей → `StaleRevision`; фаза Over → `WrongPhase`; затем UnitId ищется Ordinal среди дронов боя. Неизвестный или пустой ID, носитель (носители не входят в список дронов) и уже уничтоженный дрон → `InvalidTarget`. Отказ атомарен: снимок, RNG и initiative stream не меняются, новых событий нет.
+
+Допустим любой не уничтоженный дрон любой стороны, включая отключённый (Disabled), в фазах Move и Fire. Принятый запрос обходит попадание, броню и щиты, не создаёт выстрела, не расходует торпеду, заряд или draw основного и initiative RNG и не продвигает ход. Применяются те же последствия гибели, что у смертельного попадания залпа: Hull 0, Destroyed, Speed 0, `FirstLoss` (только если дрон был активен), событие журнала Destroyed текущей фазы и обычная проверка `CheckVictory`; при достигнутой победе добавляется outcome и фаза становится Over. Ревизия увеличивается на 1. Запланированные пути, выстрелы и шаги огня не переписываются: уничтоженный дрон пропускается движением, списком кандидатов в цели и очередью огня.
+
+Потеря постоянна для собственного вылета: при последующем выходе, в том числе прерывании через `exit_battle` (`SortieExitKind.Aborted`), settlement включает уничтоженный дрон в `LostDroneIds` и помечает запись крыла носителя tombstone с причиной готовности `destroyed`; сама команда торпеды не списывает. Повтор выхода возвращает тот же ответ без второго settlement.
+
 Client разрешает [скин боя](TacticalBattleSkins.md) при создании активного окна. Каталог и предпочтение относятся к клиенту, отрисовка читает готовые ресурсы под синхронной областью стиля. Save20 хранит состояние мира.
 
 Границы кода: [Contracts](../../../src/DeepSpaceSaga.Contracts/TacticalBattleRequests.cs), [SimulationEngine](../../../src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs), [TacticalBattleSession](../../../src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSession.cs), [Motion](../../../src/DeepSpaceSaga.Motion/TacticalBattle/), [Client](../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/). Методика сверки — [источники и проверки V4](../06-Tooling/CarrierWingSim.md).
@@ -88,7 +98,7 @@ Client разрешает [скин боя](TacticalBattleSkins.md) при со�
 
 `SkiaWindow` при NewGame без сессии и без сохранений (`ListSaveSlots().Length == 0`) вызывает `StartTutorialAsync` под общим замком переходов. Порядок: сессия из Tutorial, `TacticalBattleFlow { IsTutorial = true }`, Speed0, `StartAsync` с `StartTacticalBattleRequest(NewIdentity("start"), TutorialBattleSeed)` без экрана подготовки; `SkiaWindow.TutorialBattleSeed = 1` закреплён тестом выигрываемости (`TutorialBattleWinnabilityTests`: на seed 1 побеждают и политика «только Enter», и политика «по подсказкам», детерминированно). Только после принятого старта карта ставится под модальный бой; сохранённая скорость мира — Speed0. Любая ошибка или отказ пишется в InterfaceLog, сессия закрывается, текущим экраном остаётся главное меню.
 
-`IsTutorial` — чисто клиентский признак, Engine и Save20 его не видят. До фазы Over подтверждение выхода отправляет `ScreenEvent.MainMenu` с текстом `TacticalBattle.ConfirmExitToMenu`; шлюз событий активного боя пропускает MainMenu только для такого потока. Сохранение блокируется тем же шлюзом и отказом Engine во время боя. На Over кнопки нового боя нет, единственная кнопка и Esc отправляют `CloseTacticalBattle`, после чего мир работает как после обычного боя. Бой по F8 создаёт поток без признака и не меняется.
+`IsTutorial` — чисто клиентский признак, Engine и Save20 его не видят. До фазы Over подтверждение выхода отправляет `ScreenEvent.MainMenu` с текстом `TacticalBattle.ConfirmExitToMenu`; шлюз событий активного боя пропускает MainMenu только для такого потока. Сохранение блокируется тем же шлюзом и отказом Engine во время боя. На Over кнопки нового боя нет, единственная кнопка и Esc отправляют `CloseTacticalBattle`, после чего мир работает как после обычного боя. Бой по F8 создаёт поток без признака и не меняется. Отладочное исключение — команда `exit_battle` [дебаг-консоли](DebugConsole.md#exit_battle): она прерывает незавершённое обучение тем же путём выхода и settlement и открывает карту (или экран гибели); штатные выходы не меняются.
 
 `SkiaWindow.CreateTacticalBattleView` для потока `IsTutorial` берёт скин `TutorialSkinId = "tabletop"` из каталога, не трогая `_battleSkin` и `gameSettings.tacticalBattleSkinId`; без пакета — предпочтённый скин и строка `TUTORIAL: skin 'tabletop' unavailable…` в InterfaceLog.
 
