@@ -868,5 +868,19 @@
   "TacticalBattle.ContinuationSaved": "The battle result was written to the campaign continuation.",
   "TacticalBattle.NoReadyWing": "No ready wing: no drone can launch.",
   "TacticalBattle.UnsupportedWing": "This ship does not support a drone wing — battle is unavailable.",
-  "TacticalBattle.ManualLoadHint": "An older manual save can be loaded, but it does not repair the ship or restore property."
+  "TacticalBattle.ManualLoadHint": "An older manual save can be loaded, but it does not repair the ship or restore property.",
+  "Demo.Roundtrip.Empty": "No sorties yet.",
+  "Demo.Roundtrip.Summary": "Last sortie: drones lost — {0}; torpedoes spent — {1}.",
+  "Demo.Roundtrip.Continue": "Damage is retained. Rearm surviving drones before the next battle.",
+  "Demo.Roundtrip.Terminal": "Carrier destroyed. Return to the menu to load a save or start a new game.",
+  "Demo.Rearm.Pending": "Rearming…",
+  "Demo.Rearm.Confirmed": "Torpedoes loaded: {0}.",
+  "Demo.Rearm.Action": "Rearm",
+  "Demo.Rearm.Rejected": "Rearming is unavailable. Reopen the ship screen to refresh its state.",
+  "Demo.Rearm.stale_revision": "The ship state changed. Reopen this screen.",
+  "Demo.Rearm.no_cargo": "Not enough torpedoes in the hold.",
+  "Demo.Rearm.destroyed_drone": "A destroyed drone cannot be rearmed.",
+  "Demo.Rearm.no_capacity": "Not enough magazine space. Reduce the quantity.",
+  "Demo.Rearm.battle_active": "Rearming is available after leaving battle.",
+  "Demo.Rearm.unavailable": "No response received. Check the ship state before retrying."
 }
