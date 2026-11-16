@@ -5,6 +5,7 @@ ticket: EP-0030-US-0003-TK-0001-destroy-contract
 title: Контракт DebugDestroyTacticalUnitRequest
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj
 depends_on: []
@@ -83,3 +84,19 @@ dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.cs
 ## Self-containment check
 
 Точные сигнатуры и места вставки заданы.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы (3, в пределах Code context):
+
+- `src/DeepSpaceSaga.Contracts/TacticalBattleRequests.cs` — `public sealed record DebugDestroyTacticalUnitRequest(string CommandId, string BattleId, ulong ExpectedRevision, string UnitId);` сразу после `ExitTacticalBattleRequest`. Новые коды отказа не добавлялись.
+- `src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs` — default-метод `DebugDestroyTacticalUnitAsync(DebugDestroyTacticalUnitRequest request, CancellationToken cancellationToken = default) => UnsupportedTactical(request?.CommandId, cancellationToken);` после `ExitTacticalBattleAsync`.
+- `tests/DeepSpaceSaga.Contracts.Tests/TacticalBattleContractTests.cs` — тест `DebugDestroyRequestRoundTrips` (JSON round-trip, равенство record, `ulong.MaxValue` ревизии, имя с пробелом, порядок и состав JSON-полей).
+
+Команды и результаты:
+
+- `dotnet build tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj` — до реализации: CS0246 `DebugDestroyTacticalUnitRequest` не найден (red по правильной причине); после — Build succeeded.
+- `dotnet build DeepSpaceSaga.sln` — 0 Warning(s), 0 Error(s): все реализации `IGameSessionConnection` (включая тестовые fake) компилируются без изменений благодаря default-методу.
+- `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Contracts/TacticalBattleRequests.cs src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs tests/DeepSpaceSaga.Contracts.Tests/TacticalBattleContractTests.cs` — exit 0.
+- `git diff --check` — exit 0.
+- Тесты: NOT RUN — по инструкции оператора тесты запускаются в конце истории (после TK-0005).

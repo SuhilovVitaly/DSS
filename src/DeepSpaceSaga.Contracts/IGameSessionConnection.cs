@@ -23,6 +23,9 @@ public interface IGameSessionConnection : IAsyncDisposable
         UnsupportedTactical(request?.CommandId, cancellationToken);
     ValueTask<TacticalBattleResponse> ExitTacticalBattleAsync(ExitTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
         UnsupportedTactical(request?.CommandId, cancellationToken);
+    /// <summary>Debug-console force destroy of one drone. The default rejects as unsupported.</summary>
+    ValueTask<TacticalBattleResponse> DebugDestroyTacticalUnitAsync(DebugDestroyTacticalUnitRequest request, CancellationToken cancellationToken = default) =>
+        UnsupportedTactical(request?.CommandId, cancellationToken);
     private static ValueTask<TacticalBattleResponse> UnsupportedTactical(string? id, CancellationToken token) =>
         token.IsCancellationRequested ? ValueTask.FromCanceled<TacticalBattleResponse>(token)
         : ValueTask.FromResult(new TacticalBattleResponse(id ?? "", false, TacticalBattleRejectionCode.Unsupported, null, null, []));

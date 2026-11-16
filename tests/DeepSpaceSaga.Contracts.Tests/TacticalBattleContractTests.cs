@@ -387,6 +387,20 @@ public sealed class TacticalBattleContractTests
         Assert.Empty(RoundTrip(new FireTacticalBattleRequest("empty", "battle", 1)).Targets);
     }
 
+    [Fact]
+    public void DebugDestroyRequestRoundTrips()
+    {
+        var request = new DebugDestroyTacticalUnitRequest("debug-kill-1", "battle", ulong.MaxValue, "Alpha 1");
+        var restored = RoundTrip(request);
+        Assert.Equal(request, restored);
+        Assert.Equal("debug-kill-1", restored.CommandId);
+        Assert.Equal("battle", restored.BattleId);
+        Assert.Equal(ulong.MaxValue, restored.ExpectedRevision);
+        Assert.Equal("Alpha 1", restored.UnitId);
+        var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(request))!.AsObject();
+        Assert.Equal(["CommandId", "BattleId", "ExpectedRevision", "UnitId"], node.Select(pair => pair.Key));
+    }
+
     [Theory]
     [InlineData("null")]
     [InlineData("true")]

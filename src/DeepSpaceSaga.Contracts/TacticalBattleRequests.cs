@@ -20,6 +20,8 @@ public sealed record TacticalFireTarget(string DroneId, string? TargetId, bool E
 public sealed record FireTacticalBattleRequest(string CommandId, string BattleId, ulong ExpectedRevision,
     [property: JsonConverter(typeof(TacticalArrayJsonConverter<TacticalFireTarget>))] ImmutableArray<TacticalFireTarget> Targets = default);
 public sealed record ExitTacticalBattleRequest(string CommandId, string BattleId);
+/// <summary>Debug-console force destroy of one drone; authoritative, idempotent by CommandId, no RNG/ammo/turn effects.</summary>
+public sealed record DebugDestroyTacticalUnitRequest(string CommandId, string BattleId, ulong ExpectedRevision, string UnitId);
 public enum TacticalBattleRejectionCode
 {
     None = 0, Unavailable = 1, NoBattle = 2, AlreadyActive = 3, WrongPhase = 4, WrongBattle = 5,
