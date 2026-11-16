@@ -5,7 +5,7 @@ ticket: EP-0032-US-0007-TK-0002-campaign-state
 title: Версионированное состояние и единый commit
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-pending-story-validation
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0032-US-0007-TK-0001-campaign-contract]
@@ -109,3 +109,7 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution — 2026-11-17
+
+Save22 writer, immutable metadata/receipts, identity+payload conflict, revision guard и candidate-state hooks подключены к LoadScenarioCore, snapshot и capture под world lock. Оба tick пути используют календарное время. Отказы сохраняют исходную квитанцию без изменения ресурсов; пустые sections не объявляют будущие функции реализованными. Save21 получает только additive metadata. Именованные тесты добавлены, запуск — в конце US-0007. Loader входа Save21/22 и проверки контента — следующий TK-0003; этот промежуточный коммит не является готовой историей. diff check PASS.

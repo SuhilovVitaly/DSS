@@ -232,6 +232,8 @@ public sealed partial class SimulationEngine : IDisposable
             if (scenario.SaveFormatVersion == SaveMigration21.PreviousVersion)
                 scenario = SaveMigration21.Upgrade(scenario);
         }
+        if (isSave && scenario.SaveFormatVersion == 21)
+            scenario = scenario with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion };
         if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
         var tuning = new DebugTuningState(_catalogRegistry);
         if (scenario.GameState.DebugTuning is { } values && !tuning.TryApply(new([.. values]), out tuning, out var reason))
@@ -494,6 +496,8 @@ public sealed partial class SimulationEngine : IDisposable
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
         ValidateCarrierStateForLoad(gs, runtimeObjects);
+        var restoredDemoCampaign = DemoCampaignData.Validate(gs.DemoCampaign, gs.GameTimeMs);
+        ValidateDemoCampaignSections(restoredDemoCampaign);
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
@@ -532,6 +536,7 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
             RestoreCarrierState(gs);
+            _demoCampaign = restoredDemoCampaign;
             _appliedMotionTimeMs = gs.MotionTimeMs;
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
@@ -706,6 +711,7 @@ public sealed partial class SimulationEngine : IDisposable
             // interaction state): if the selected/active object disappeared from the
             // world, the property and every subsequent snapshot must reflect that
             // immediately (§54 "Жизненный цикл объекта").
+            TickDemoCampaign(clockState.GameTimeMs);
             ActiveObjectId = NormalizeObjectId(ActiveObjectId);
             SelectedObjectId = NormalizeObjectId(SelectedObjectId);
 
@@ -817,6 +823,7 @@ public sealed partial class SimulationEngine : IDisposable
                 ShipEvents: shipEvents,
                 InstalledModules: installedModules,
                 CarrierOperations: BuildCarrierOperationsProjection(),
+                DemoCampaign: BuildDemoCampaignProjection(),
                 ActiveObjectId: ActiveObjectId,
                 SelectedObjectId: SelectedObjectId,
                 PlayerCredits: PlayerCredits,
@@ -1124,6 +1131,8 @@ public sealed partial class SimulationEngine : IDisposable
         ThrowIfStoppedByStationSecurity();
         ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
 
+        TickDemoCampaign(clockState.GameTimeMs);
+
         var spaceObjects = new List<SpaceObjectData>(_objects.Count);
         foreach (var obj in _objects)
         {
@@ -1200,6 +1209,7 @@ public sealed partial class SimulationEngine : IDisposable
             SpaceObjects: spaceObjects,
             MasterSeed: MasterSeed,
             PlayerTokens: PlayerCredits,
+            DemoCampaign: CaptureDemoCampaignState(),
             DialogueState: _dialogue.Save(),
             CommandReceipts: CaptureCommandReceipts(),
             PendingCommands: CapturePendingCommands(),
