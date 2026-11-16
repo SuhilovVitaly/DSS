@@ -5,6 +5,7 @@ ticket: EP-0030-US-0001-TK-0003-overlay-integration
 title: Overlay консоли и подключение к SkiaWindow
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0030-US-0001-TK-0002-console-core]
@@ -98,3 +99,33 @@ Native-проверка (главное меню, карта, бой, модал
 ## Self-containment check
 
 Все точки вставки в `SkiaWindow` указаны строками, контракт хоста задан, фикстуры названы.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы:
+
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/DebugConsoleOverlay.cs` (новый) — `Render(SKCanvas, DebugConsoleController, int width, int height, float uiScale)`: панель на верхние 45% окна, заголовок-подсказка, вывод через `ScrollTextPanel` (`controller.OutputPanel`), ввод через `TextInputBox`; `OnMouseDown/OnMouseMove/OnMouseUp/OnMouseWheel` принимают контроллер первым аргументом и работают только с прокруткой вывода.
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/DebugCommandCatalog.cs` (новый) — `CreateDefault()` возвращает пустой реестр.
+- `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs`:
+  - `SkiaWindow : IDisposable, IDebugConsoleHost` (явная реализация `Session`, `IsTransitionBusy`, `ActiveBattle`, `RunExclusiveAsync` через `_transitionLock.WaitAsync(0)`, иначе `Busy()`); `internal DebugConsoleController DebugConsole` создаётся в конструкторе (в т.ч. window-less), освобождается в `Dispose`.
+  - Шаг 1: `HandleKeyboardEvent` — до F10 сочетание (`!repeat`) переключает консоль; при открытой консоли F10 делает скриншот, остальные клавиши → `DebugConsole.OnKeyDown`.
+  - Шаг 2: `PollKeyboard` — при открытой консоли не вызывает `SynchronizeModifiers` и не пересылает `OnKeyUp`; если консоль закрылась посреди кадра, оставшиеся фронты кадра не уходят экрану.
+  - Шаг 3: `OnKeyChar` — при открытой консоли символы идут в консоль; при зажатых Ctrl+Alt отбрасываются; при закрытой консоли отбрасывается только символ самого сочетания (Ctrl+Alt+P зажаты).
+  - Шаг 4: мышь (down/up/move/wheel) при открытой консоли — только overlay, курсор по умолчанию, без `HandleScreenEvent`.
+  - Шаг 5: `SyncDebugConsoleState()` — открытие: `ResetRepeats`, `Current.OnInputReset()`, `GameSessionScreen.OnDeactivated()`; закрытие при фокусе: `ResyncToCurrentState(_keyboard, Current is TacticalBattleModalScreen)` и `OnActivated()`. Вызывается после переключения/клавиш консоли и в начале каждого `PollKeyboard` (ловит закрытие по `CloseConsole` из асинхронного результата). Скорость/пауза не затрагиваются.
+  - Шаги 6–7: цикл рендера стека, статус ConnectionLost и overlay вынесены без изменения логики в `internal int RenderScreenStack(SKCanvas, int, int, out GameSessionScreen?)`; overlay рисуется после ConnectionLost и до `canvas.Restore`.
+- `tests/DeepSpaceSaga.Client.Tests/DebugConsole/DebugConsoleWindowTests.cs` (новый) — 8 названных тестов. Read-only переиспользуются `BattleNavigationTests.Fixture`/`ConnectionProxy` (internal/public) и `KeyboardRoutingTests.KeyboardProxy` (public); собственный компактный tutorial-fixture скопирован по образцу `TutorialFlowTests` (приватный fixture не выносился).
+
+Технические допущения исполнителя:
+
+- Масштаб overlay — `(float)GetUiScale()`, читается один раз при открытии консоли (а не каждый кадр: `GetUiScale` читает Settings.json с диска).
+- Вынос `RenderScreenStack` нужен для window-less проверки `OverlayRendersAboveStack` (GL-поверхности в тестах нет); порядок отрисовки и условия пропуска Trade/Station не изменены.
+- Вне файлов тикета изменений нет; Code context не расширялся.
+
+Команды и результаты:
+
+- `dotnet build tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore` — Build succeeded, 0 warnings, 0 errors.
+- `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Client/UI/SkiaWindow.cs src/DeepSpaceSaga.Client/UI/DebugConsole/ tests/DeepSpaceSaga.Client.Tests/DebugConsole/` — exit 0.
+- `git diff --check` — exit 0.
+- Тесты тикета: запускаются в прогоне конца истории (см. `## Story test evidence 2026-11-16` в файле истории).
+- Native-проверка (главное меню, карта, бой, модальные окна, RU/EN): NOT RUN — меньший монитор для `DSS_VALIDATION_SMALL_MONITOR=1` не подтверждён в этой сессии.
