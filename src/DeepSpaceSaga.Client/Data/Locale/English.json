@@ -890,5 +890,8 @@
   "Demo.Outcome.Active": "The campaign continues. Damage and losses remain in the world.",
   "Demo.Outcome.NoWing": "No drones are ready. The carrier is intact: navigation, docking and trade remain available.",
   "Demo.Outcome.Terminal": "Carrier destroyed. Load a save or start a new game from the menu.",
-  "Demo.Outcome.Rollback": "If the game fails before the result is written, loading returns to the last saved checkpoint."
+  "Demo.Outcome.Rollback": "If the game fails before the result is written, loading returns to the last saved checkpoint.",
+  "Demo.Start.NewGame": "New demo campaign",
+  "Demo.Start.Scope": "One district, five stations. Training starts aboard your carrier.",
+  "Demo.Start.Unavailable": "Demo campaign unavailable: check the scenario files."
 }
