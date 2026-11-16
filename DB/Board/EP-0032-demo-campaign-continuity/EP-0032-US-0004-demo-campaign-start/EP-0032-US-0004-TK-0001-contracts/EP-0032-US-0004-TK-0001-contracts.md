@@ -5,7 +5,7 @@ ticket: EP-0032-US-0004-TK-0001-contracts
 title: Контракт: Новая кампания в демо-кластере
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0031-US-0005-reduced-demo-contract, EP-0032-US-0007-TK-0005-campaign-client]
@@ -106,3 +106,7 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution — 2026-11-17
+
+Optional DemoStartSnapshot exposes profile, fixed seed, start station, station/role pairs and shared starter reference. No resources or duplicate start command; existing session factory owns New Game. Serialization test added; tests at story end.
