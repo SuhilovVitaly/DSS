@@ -6,6 +6,7 @@ internal static class DebugCommandCatalog
     public static DebugCommandRegistry CreateDefault()
     {
         var registry = new DebugCommandRegistry();
+        registry.Register(new HelpDebugCommand());
         registry.Register(new ExitBattleDebugCommand());
         registry.Register(new KillDroneDebugCommand());
         return registry;
