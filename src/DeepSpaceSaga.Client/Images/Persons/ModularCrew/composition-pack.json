@@ -1250,6 +1250,37 @@
         "pilot"
       ],
       "casual": "casual/heads/crew-f97.png"
+    },
+    "mononoke-chestnut": {
+      "suit": "heads/mononoke-chestnut.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ],
+      "casual": "casual/heads/mononoke-chestnut.png",
+      "hairLayers": {
+        "compatibleSuits": [
+          "eva",
+          "engineer",
+          "medic",
+          "security",
+          "explorer",
+          "pilot"
+        ],
+        "compatibleCasualBodies": [
+          "01",
+          "02",
+          "03",
+          "04",
+          "05"
+        ],
+        "back": "hair/mononoke-chestnut-back.png",
+        "front": "hair/mononoke-chestnut-front.png"
+      }
     }
   },
   "suits": {
@@ -1415,7 +1446,8 @@
       "crew-f94": "casual/bodies/01__crew-f94.png",
       "crew-f95": "casual/bodies/01__crew-f95.png",
       "crew-f96": "casual/bodies/01__crew-f96.png",
-      "crew-f97": "casual/bodies/01__crew-f97.png"
+      "crew-f97": "casual/bodies/01__crew-f97.png",
+      "mononoke-chestnut": "casual/bodies/01__mononoke-chestnut.png"
     },
     "02": {
       "violet": "casual/bodies/02__violet.png",
@@ -1517,7 +1549,8 @@
       "crew-f94": "casual/bodies/02__crew-f94.png",
       "crew-f95": "casual/bodies/02__crew-f95.png",
       "crew-f96": "casual/bodies/02__crew-f96.png",
-      "crew-f97": "casual/bodies/02__crew-f97.png"
+      "crew-f97": "casual/bodies/02__crew-f97.png",
+      "mononoke-chestnut": "casual/bodies/02__mononoke-chestnut.png"
     },
     "03": {
       "violet": "casual/bodies/03__violet.png",
@@ -1619,7 +1652,8 @@
       "crew-f94": "casual/bodies/03__crew-f94.png",
       "crew-f95": "casual/bodies/03__crew-f95.png",
       "crew-f96": "casual/bodies/03__crew-f96.png",
-      "crew-f97": "casual/bodies/03__crew-f97.png"
+      "crew-f97": "casual/bodies/03__crew-f97.png",
+      "mononoke-chestnut": "casual/bodies/03__mononoke-chestnut.png"
     },
     "04": {
       "violet": "casual/bodies/04__violet.png",
@@ -1721,7 +1755,8 @@
       "crew-f94": "casual/bodies/04__crew-f94.png",
       "crew-f95": "casual/bodies/04__crew-f95.png",
       "crew-f96": "casual/bodies/04__crew-f96.png",
-      "crew-f97": "casual/bodies/04__crew-f97.png"
+      "crew-f97": "casual/bodies/04__crew-f97.png",
+      "mononoke-chestnut": "casual/bodies/04__mononoke-chestnut.png"
     },
     "05": {
       "violet": "casual/bodies/05__violet.png",
@@ -1823,7 +1858,8 @@
       "crew-f94": "casual/bodies/05__crew-f94.png",
       "crew-f95": "casual/bodies/05__crew-f95.png",
       "crew-f96": "casual/bodies/05__crew-f96.png",
-      "crew-f97": "casual/bodies/05__crew-f97.png"
+      "crew-f97": "casual/bodies/05__crew-f97.png",
+      "mononoke-chestnut": "casual/bodies/05__mononoke-chestnut.png"
     }
   },
   "sha256": {
@@ -2559,7 +2595,16 @@
     "hair/crew-f25-front.png": "b006dc5cae877ff650c041d3ab00a7b41af8fd29b2f0db5b37977aabe7b2ab83",
     "hair/crew-f05-back.png": "e44d8605e81bcf5b671135c938df58146d16c548e3be5e29a3a96623b7070d71",
     "hair/crew-f10-back.png": "7b605d3844601ba9c9edfb82363791a90007be518d482dd0ce8ce3503f012c1f",
-    "hair/crew-f13-back.png": "3cfc6d639de18d8933c613e64bd37b086ec485554fa33752b2e26a838288c54e"
+    "hair/crew-f13-back.png": "3cfc6d639de18d8933c613e64bd37b086ec485554fa33752b2e26a838288c54e",
+    "heads/mononoke-chestnut.png": "b62ed01c96642220a5f39bda6f689e2d031bad1506068173fb48a0ed7006ab72",
+    "casual/bodies/01__mononoke-chestnut.png": "07d91a05c49856ee222cc1262617ba89c8709f708fcd05c07102ddfc079e75be",
+    "casual/bodies/02__mononoke-chestnut.png": "a71398a471e0791de0fd34acfa79d6c960bafc3145546b9251448abafff9fb9d",
+    "casual/bodies/03__mononoke-chestnut.png": "1910dd56d91fac29608a86c1d7565143ea41aa159e4d8e5255261fb9b66a5c62",
+    "casual/bodies/04__mononoke-chestnut.png": "75820e112b9254ef5a4e5f100e42abe9052fad54b3a23bf5cd3d504ca570a4a3",
+    "casual/bodies/05__mononoke-chestnut.png": "c7da6a383a1a5e949add64a3f9d20711e7a1f47231a8b1c5153ab166420b2363",
+    "casual/heads/mononoke-chestnut.png": "54f66f9fc7b97fce5f8cb1c682c071b082d7dace5c886d8fb2511a9c5f1709eb",
+    "hair/mononoke-chestnut-back.png": "e9d6b5f9cee64adcb78fef10527c38995dfbbe680e319f024dcc6dc78d784137",
+    "hair/mononoke-chestnut-front.png": "7b5c55df6eb6b521aba69776a5067045cff395b1f23f6b72a28059a887e88311"
   },
   "hairComposition": {
     "version": 1,
