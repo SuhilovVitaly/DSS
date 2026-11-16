@@ -5,7 +5,7 @@ ticket: EP-0032-US-0007-TK-0005-campaign-client
 title: Асинхронные действия без ложного успеха
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0032-US-0007-TK-0004-campaign-load]
@@ -110,3 +110,9 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 ## Revision log
 
 - 2026-11-17 — ревизия 2 по ревью декомпозиции: `src/DeepSpaceSaga.Client/Program.cs` заменён в allowlist на `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs`. `Program.cs` только создаёт `SkiaWindow` и главное меню; открытие экранов, передача transport-делегатов и обработка `ScreenEvent` находятся в `SkiaWindow.Open*Async`. Число файлов и шаги по существу не изменились.
+
+## Execution — 2026-11-17
+
+Implemented asynchronous handle transport, pending identity/payload tracking, immutable projection, commit notifications and lifetime cancellation. Duplicate delivery is presented once; observer exceptions cannot replace the authoritative receipt. Existing SkiaWindow.OpenStationAsync/OpenTradeAsync already inject this same session handle into their screen constructors; no duplicate transport is introduced. Ship/result consumers are integrated by their owning US-0001/0002 UI tickets. No new gameplay command is invented by the foundation.
+
+Story-end checks: Contracts 3/3, Engine+LocalClient 10/10, Client 4/4 PASS; Release builds included in test runs. Scoped whitespace formatting completed; diff check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0007-retry/{contracts.log,engine3.log,client2.log,format.log}. Self-review, not independent review. Native/product acceptance remains OPEN; no game window launched. End-to-end gameplay coverage belongs to subsequent stories, not these transport tests.

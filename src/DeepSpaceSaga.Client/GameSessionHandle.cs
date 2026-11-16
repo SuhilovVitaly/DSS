@@ -345,6 +345,7 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
             {
                 if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
                 Buffer.Update(snapshot);
+                ObserveDemoCampaign(snapshot.DemoCampaign);
                 ObserveDebugTuningFiles();
                 if (!snapshot.CommandResults.IsDefaultOrEmpty)
                     foreach (var result in snapshot.CommandResults)

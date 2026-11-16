@@ -11,7 +11,7 @@ plan_status: approved
 priority: P0
 dependencies: [EP-0031-US-0005-reduced-demo-contract]
 created: 2026-11-16T20:32:46.441Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Согласованные действия и сохранённое состояние кампании
@@ -65,3 +65,7 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Execution — 2026-11-17
+
+Five foundation tickets implemented. Story-end focused tests: Contracts 3, Engine/LocalClient 10, Client 4 passed. Save22, migrated Save21, receipt replay, failed candidate loading and session lifetime verified. Native/product acceptance OPEN; actual gameplay consumers continue in US-0001 onward. Evidence directory: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0007-retry/.
