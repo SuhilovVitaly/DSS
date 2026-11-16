@@ -55,3 +55,27 @@ none. Демонстрация оболочки возможна до появл
 ## Review log
 
 2026-11-16T06:50:00Z — история декомпозирована на три тикета, stage → approved (autonomous-execution). Тикеты US-0004 синхронизированы с этим контрактом.
+
+## Story test evidence 2026-11-16
+
+Коммиты тикетов: TK-0001 `dcd0b565`, TK-0002 `ecee1df5`, TK-0003 `583f75a0` (ветка `feature/ep-0030-debug-console`, push выполнен).
+
+Прогон тестов истории (один раз после последнего тикета, по инструкции оператора), process-tree cap 300000 ms:
+
+```powershell
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~KeyboardEdgeTrackerTests|FullyQualifiedName~DebugConsole|FullyQualifiedName~KeyboardRoutingTests|FullyQualifiedName~BattleNavigationTests" --results-directory D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0001-20261116T070632Z/ --logger trx
+```
+
+Результат: Total 95, Passed 94, Failed 1, Skipped 0. TRX: `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0001-20261116T070632Z/sushi_VITA-CASTLE_2026-11-16_09_06_38_net8.0.trx`.
+
+| Класс | Passed | Failed |
+|---|---|---|
+| `KeyboardEdgeTrackerTests` (TK-0001: 4 варианта `Ctrl_Alt_P_reports_single_P_edge_with_modifiers`, `Held_P_reports_no_second_edge`, `Bare_P_reports_edge_without_modifiers`) | 34 | 0 |
+| `DebugConsoleControllerTests` (TK-0002, 12 названных тестов + `ParsedArgumentsReachTheHandler`, с вариантами Theory) | 21 | 0 |
+| `DebugConsoleWindowTests` (TK-0003, 8 названных тестов) | 8 | 0 |
+| `KeyboardRoutingTests` (регрессия) | 17 | 0 |
+| `BattleNavigationTests` (регрессия) | 14 | 1 |
+
+Единственный отказ — `BattleNavigationTests.ExitOfAStaleBattleExitsTheLiveEngineBattleInstead` (строка 145: `Assert.True(live.Accepted)` — Engine отклоняет повторный `StartTacticalBattle`). Отказ существовал до эпика: на базовом коммите `43a6fecf` (до кода EP-0030) тот же тест падает так же — TRX `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0001-20261116T070632Z/baseline-43a6fecf/sushi_VITA-CASTLE_2026-11-16_09_07_13_net8.0.trx`. Тест не касается консоли; в рамках US-0001 не исправлялся (вне scope), передан как остаточный риск.
+
+Native-проверка (матрица экранов G-02, RU/EN раскладки): NOT RUN — меньший монитор для `DSS_VALIDATION_SMALL_MONITOR=1` в этой сессии не подтверждён.
