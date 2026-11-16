@@ -5,6 +5,7 @@ ticket: EP-0030-US-0003-TK-0005-kill-command
 title: Команда kill_drone
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0030-US-0003-TK-0004-handle-flow]
@@ -96,3 +97,20 @@ Native: учебный и обычный бой, своя и вражеская 
 ## Self-containment check
 
 Правила сопоставления (G-04), порядок проверок, тексты и API заданы полностью.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы (4, в пределах Code context):
+
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/KillDroneDebugCommand.cs` — новый: `KillTargetStatus { Found, NotFound, Ambiguous, Carrier, AlreadyDestroyed }`, `KillTargetResolution(Status, Unit, MatchIds)`, `KillDroneDebugCommand : IDebugCommand` с descriptor `("kill_drone", "kill_drone <имя>", "Уничтожить дрона любой стороны по Id или имени", "текущий бой")` и `internal static Resolve(TacticalBattleSnapshot, string)` (trim, Ordinal по `Id` или `PilotCardModel.Name(unit)` = `Build?.PilotName ?? Id`, distinct по Id; >1 → Ambiguous; Carrier; Destroyed → AlreadyDestroyed; Disabled → Found). Порядок проверок по шагам 2-5: пустое имя → «Синтаксис: kill_drone <имя>»; внутри `RunExclusiveAsync`: нет боя / setup / чужая сессия (`Flow.Session` ≠ `context.Session`) → «Нет активного боя»; `Flow.Pending || TurnBusy || HasSalvoPresentation` → `Busy()`; Phase Over → «Бой уже завершён»; затем тексты разрешения; запрос `new(NewIdentity("debug-kill"), BattleId, Revision, unitId)` через `Flow.DebugDestroyAsync`; `null` → `Busy()`; отказ → «Отказ: » + `TacticalBattleRefusalText(code)`; принят → `ShowConfirmedState()`, «Уничтожен: label (id)» и «Бой завершён» при Phase Over. Скорость/пауза не трогаются, ход не продвигается.
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/DebugCommandCatalog.cs` — одна строка `registry.Register(new KillDroneDebugCommand());`.
+- `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` — `internal void ShowConfirmedState()` перед `OnBattleUpdated`: при `Flow.PresentationState != null` — `Volatile.Write(ref _presentation, new(state, null))`. Строк локализации не добавляет; `OnBattleUpdated` не изменён.
+- `tests/DeepSpaceSaga.Client.Tests/DebugConsole/KillDroneDebugCommandTests.cs` — новый, 12 тестов из списка Tests. Фикстуры: обычный бой через `BattleNavigationTests.Fixture` (реальный Engine), обучающий бой — скопированная (не извлечённая) фикстура `ExitBattleDebugCommandTests` (`TutorialFixture` + прокси `ExitRecorder`), синтетический бой — `TacticalBattleScreen` над fake `IGameSessionConnection` (`TutorialTestBattle`) для имён с пробелами/неоднозначности/Disabled. `DisabledDroneKillable` проверяется на синтетическом бою (в реальном бою Disabled-дрона детерминированно не получить; авторитетный путь Disabled покрыт Engine-тестом `DestroysOwnDisabledDrone` из TK-0002).
+
+Команды и результаты:
+
+- `dotnet build tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj` — 0 Warning(s), 0 Error(s) (собирает и `DeepSpaceSaga.Client`).
+- `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Client/UI/DebugConsole/ src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs tests/DeepSpaceSaga.Client.Tests/DebugConsole/` — exit 0.
+- `git diff --check` — exit 0.
+- Тесты: запускаются в прогоне конца истории US-0003 (см. story md, `## Story test evidence 2026-11-16`).
+- Native (учебный и обычный бой на меньшем мониторе): NOT RUN — подтверждённый меньший монитор недоступен в автономном прогоне.
