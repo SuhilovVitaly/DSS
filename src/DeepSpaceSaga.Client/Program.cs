@@ -41,6 +41,7 @@ public static class Program
     internal sealed class LocalGameSessionFactory : IGameSessionFactory
     {
         public bool IsDemoProfile => UI.Demo.DemoStartPresentation.IsDemoProfile(SettingsPath);
+        public SaveSlotInfo? GetLatestValidSave() => SaveSlotRepository.GetLatestValidSlot(SaveDirectory, SettingsPath);
         // The only place that knows about Saves/ on disk (mirrors Settings.json).
         private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
         private static string SaveDirectory => Path.Combine(AppContext.BaseDirectory, "Saves");

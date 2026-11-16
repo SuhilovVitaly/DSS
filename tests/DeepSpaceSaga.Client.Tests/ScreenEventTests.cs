@@ -85,13 +85,13 @@ public class ScreenEventTests
     }
 
     [Fact]
-    public void MainMenu_Credits_is_disabled_for_hover_and_click()
+    public void MainMenu_Continue_is_enabled_for_hover_and_click()
     {
         var screen = new MainMenuScreen();
         var (x, y) = ButtonCenter(MenuLayout.CreditsY);
         TriggerRender(screen);
-        Assert.False(screen.OnMouseMove(x, y));
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(x, y));
+        Assert.True(screen.OnMouseMove(x, y));
+        Assert.Equal(ScreenEvent.ContinueCampaign, screen.OnMouseDown(x, y));
     }
 
     [Fact]

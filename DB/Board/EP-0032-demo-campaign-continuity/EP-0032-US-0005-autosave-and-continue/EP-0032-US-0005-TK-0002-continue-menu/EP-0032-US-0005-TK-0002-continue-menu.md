@@ -5,7 +5,7 @@ ticket: EP-0032-US-0005-TK-0002-continue-menu
 title: Продолжить и восстановление после поражения
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0032-US-0005-TK-0003-localized-feedback]
@@ -112,3 +112,14 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 ## Revision log
 
 - 2026-11-17 — ревизия 2 по ревью декомпозиции: `src/DeepSpaceSaga.Client/Program.cs` заменён в allowlist на `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs`. `Program.cs` только создаёт `SkiaWindow` и главное меню; открытие экранов, передача transport-делегатов и обработка `ScreenEvent` находятся в `SkiaWindow.Open*Async`. Число файлов и шаги по существу не изменились.
+
+## Scope correction before implementation — 2026-11-17
+
+Add GameSessionHandle.Autosave.cs, Program.cs/IGameSessionFactory.cs, MainMenu/MenuLayout.cs and IScreen event routing. Continue uses the previously disabled Credits row without expanding window geometry. Autosaves activate only after session adoption, suspend and drain before loading/replacement, and flush for up to five seconds on shutdown; status and F6 retry are global presentation only. This avoids old/candidate sessions overwriting the active continuation.
+
+Scope review: include ScreenEventTests, ShipDestroyedScreen and ShipDestroyedScreenTests. Terminal view must expose checkpoint/New Game directly, with error feedback; preserve manual Load and Main Menu. Suppress autosave while battle is active.
+
+## Execution — 2026-11-17
+
+Implemented asynchronous autosave adoption/drain, visible durable status and F6 retry; Continue validates latest compatible save off render thread. Terminal checkpoint and New Game use existing session transitions. Battle snapshots do not request autosave.
+Story-end checks: Engine 23 PASS (`D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0005/engine.log`), Client 126 PASS (`client3.log` in same directory), Release builds included. Earlier stale Credits and overly broad test-edit failures were corrected. Native/product acceptance remains open.

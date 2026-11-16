@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0032-US-0003-persistent-outcomes, EP-0032-US-0004-demo-campaign-start]
 created: 2026-11-16T20:31:00Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Автосохранение и продолжение кампании
@@ -91,3 +91,7 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Execution
+
+All three tickets implemented; story-end Engine23/Client126 passed. See TK-0002 evidence. Native/product acceptance OPEN.

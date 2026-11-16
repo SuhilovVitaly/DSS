@@ -67,6 +67,12 @@ public sealed class ShipDestroyedScreenTests
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Tab));
         Assert.Equal(ScreenEvent.MainMenu, screen.OnKeyDown(Key.Space));
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Escape));
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Tab));
+        Assert.Equal(ScreenEvent.QuickLoad, screen.OnKeyDown(Key.Enter));
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Tab));
+        Assert.Equal(ScreenEvent.NewGame, screen.OnKeyDown(Key.Enter));
+        Assert.Equal(ScreenEvent.QuickLoad, screen.OnMouseDown(screen.Layout.Continue.MidX, screen.Layout.Continue.MidY, MouseButton.Left));
+        Assert.Equal(ScreenEvent.NewGame, screen.OnMouseDown(screen.Layout.NewGame.MidX, screen.Layout.NewGame.MidY, MouseButton.Left));
         var load = screen.Layout.Load;
         var menu = screen.Layout.MainMenu;
         Assert.Equal(ScreenEvent.OpenLoadWindow, screen.OnMouseDown(load.MidX, load.MidY, MouseButton.Left));

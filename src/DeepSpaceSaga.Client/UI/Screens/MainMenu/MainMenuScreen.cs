@@ -8,6 +8,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.MainMenu;
 public sealed class MainMenuScreen : IScreen
 {
     private readonly bool _demoProfile;
+    private string _status = "";
+    internal void ShowStatus(string key) => _status = Localization.Get(key);
     internal string NewGameLabel => Localization.Get(_demoProfile ? "Demo.Start.NewGame" : "MainMenu.NewGame");
     private int _screenWidth;
     private int _screenHeight;
@@ -59,6 +61,7 @@ public sealed class MainMenuScreen : IScreen
         return hit switch
         {
             MenuButton.NewGame => ScreenEvent.NewGame,
+            MenuButton.Continue => ScreenEvent.ContinueCampaign,
             MenuButton.Load => ScreenEvent.OpenLoadWindow,
             MenuButton.Settings => ScreenEvent.OpenSettings,
             MenuButton.Exit => ScreenEvent.Exit,
@@ -97,15 +100,16 @@ public sealed class MainMenuScreen : IScreen
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, NewGameLabel, MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, Localization.Get("MainMenu.Load"), MenuButton.Load);
         DrawButton(canvas, pl, pt, MenuLayout.SettingsY, Localization.Get("MainMenu.Settings"), MenuButton.Settings);
-        DrawButton(canvas, pl, pt, MenuLayout.CreditsY, Localization.Get("MainMenu.Credits"), MenuButton.Credits);
+        DrawButton(canvas, pl, pt, MenuLayout.CreditsY, Localization.Get("Demo.Save.Continue"), MenuButton.Continue);
         DrawButton(canvas, pl, pt, MenuLayout.ExitY, Localization.Get("MainMenu.Exit"), MenuButton.Exit);
+        if (_status.Length > 0) canvas.DrawText(_status, panelRect.MidX, panelRect.Bottom - 45, MenuStyle.TextStatus);
     }
 
     internal static void DrawWindowShell(SKCanvas canvas, SKRect bounds) =>
         GenericWindowTypeA.Draw(canvas, bounds);
 
     private static bool IsEnabled(MenuButton button) =>
-        button is MenuButton.NewGame or MenuButton.Load or MenuButton.Settings or MenuButton.Exit;
+        button is MenuButton.NewGame or MenuButton.Continue or MenuButton.Load or MenuButton.Settings or MenuButton.Exit;
 
     private ButtonState GetState(MenuButton id, bool active)
     {

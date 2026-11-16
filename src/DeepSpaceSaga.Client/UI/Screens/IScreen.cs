@@ -41,6 +41,7 @@ public enum ScreenEvent
 {
     None,
     NewGame,
+    ContinueCampaign,
     ScenarioSelected,
     Exit,
     OpenGameMenu,
