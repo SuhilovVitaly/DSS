@@ -36,7 +36,7 @@ public sealed class DemoEp0032Us0001Tk0002Tests
         Assert.Equal(exit.Settlement, world.DemoCampaign!.Company!.Roundtrip!.Settlement);
         Assert.Equal(2, world.DemoCampaign.Company.Roundtrip.ConsumedTorpedoes);
         var after = world.CarrierOperations!;
-        Assert.Equal(before.Crew.Select(c => c.CrewId), after.Crew.Select(c => c.CrewId));
+        Assert.Equal(before.Crew.Select(c => c.Id), after.Crew.Select(c => c.Id));
         Assert.Equal(before.OwnedDrones.Select(d => d.Id), after.OwnedDrones.Select(d => d.Id));
         var rearm = engine.RearmDrone(new("rearm", before.ShipId, droneId, 1, after.Revision));
         Assert.True(rearm.Accepted, rearm.Reason);
