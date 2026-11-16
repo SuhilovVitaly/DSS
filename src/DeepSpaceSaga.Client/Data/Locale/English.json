@@ -893,5 +893,11 @@
   "Demo.Outcome.Rollback": "If the game fails before the result is written, loading returns to the last saved checkpoint.",
   "Demo.Start.NewGame": "New demo campaign",
   "Demo.Start.Scope": "One district, five stations. Training starts aboard your carrier.",
-  "Demo.Start.Unavailable": "Demo campaign unavailable: check the scenario files."
+  "Demo.Start.Unavailable": "Demo campaign unavailable: check the scenario files.",
+  "Demo.Save.Continue": "Continue",
+  "Demo.Save.Empty": "No compatible save is available.",
+  "Demo.Save.Saving": "Saving…",
+  "Demo.Save.Saved": "Campaign saved",
+  "Demo.Save.Failed": "Not saved. F6 retries the write.",
+  "Demo.Save.LoadFailed": "Could not read saved games."
 }
