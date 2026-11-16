@@ -5,6 +5,7 @@ ticket: EP-0030-US-0001-TK-0002-console-core
 title: Ядро консоли — реестр, разбор строки и контроллер
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0030-US-0001-TK-0001-hotkey-edge]
@@ -120,3 +121,25 @@ dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -
 ## Self-containment check
 
 Сигнатуры, тексты сообщений, правила разбора и тесты заданы полностью; окно и рендер не требуются.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы (все новые):
+
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/DebugCommand.cs` — `DebugCommandDescriptor`, `DebugCommandResult` (`Ok`/`Error`/`Busy`), `IDebugCommand`, `IDebugConsoleHost`, `DebugCommandContext` (сессия захватывается при создании, `IsCurrent` — `ReferenceEquals` с `host.Session`).
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/DebugCommandRegistry.cs` — словарь `StringComparer.Ordinal`; дубликат → `InvalidOperationException`; `DescribeAll` сортирует Ordinal.
+- `src/DeepSpaceSaga.Client/UI/DebugConsole/DebugConsoleController.cs` — API раздела Public API; `TextInputBox(160)`, вывод — последние 2000 строк (многострочные результаты делятся по `\n`), одна команда одновременно (`Interlocked`), проверка `context.IsCurrent` после await, `Lifetime` отменяется только `Dispose`.
+- `tests/DeepSpaceSaga.Client.Tests/DebugConsole/DebugConsoleControllerTests.cs` — 12 названных тестов + `ParsedArgumentsReachTheHandler`; fake `IDebugConsoleHost`, fake команды на `TaskCompletionSource`, `IdleConnection` для двух реальных `GameSessionHandle`.
+
+Технические допущения исполнителя (в пределах файлов тикета, API контракта не меняют):
+
+- Дополнительные `internal` члены контроллера для overlay TK-0003: `OutputPanel` (`ScrollTextPanel`, состояние прокрутки; Up/Down/Home/End/PageUp/PageDown прокручивают его), `OutputText`/`OutputVersion` (кэш текста вывода), константы `MaxInputLength`, `MaxOutputLines`, `AlreadyExecutingText`, `StaleResultText`. `DebugCommandResult.Busy()` помечен `IsError: true`.
+- Строка из одних пробелов считается пустой (no-op, ввод не очищается); при «Команда уже выполняется» ввод сохраняется для повторной отправки. Устаревший результат не закрывает консоль даже при `CloseConsole`.
+- Отмена через `Lifetime` (Dispose) молча отбрасывает результат.
+
+Команды и результаты:
+
+- `dotnet build tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore` — Build succeeded, 0 warnings, 0 errors.
+- `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Client/UI/DebugConsole/ tests/DeepSpaceSaga.Client.Tests/DebugConsole/` — exit 0 (после нормализации CRLF по `.editorconfig`).
+- `git diff --check` — exit 0.
+- Тесты: NOT RUN — по инструкции оператора выполняются в конце истории (после US-0001 TK-0003).
