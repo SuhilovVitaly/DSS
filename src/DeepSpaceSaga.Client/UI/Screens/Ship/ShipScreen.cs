@@ -16,7 +16,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 /// open/resume-on-close is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
 /// screen has no speed/pause logic of its own.
 /// </summary>
-public sealed class ShipScreen : IScreen
+public sealed partial class ShipScreen : IScreen
 {
     private readonly ShipViewModel _model;
     private readonly Func<DemoCampaignSnapshot?>? _campaign;
@@ -114,7 +114,12 @@ public sealed class ShipScreen : IScreen
         return _isCloseHovered;
     }
 
-    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        if (float.IsFinite(delta) && delta != 0 && y >= ShipLayout.PanelTop(_screenHeight) + 500)
+            _memorialScroll = Math.Clamp(_memorialScroll - Math.Sign(delta), 0, Math.Max(0, Memorial.Length - VisibleMemorialRows));
+        return ScreenEvent.None;
+    }
 
     private void Select(int index)
     {
@@ -308,6 +313,7 @@ public sealed class ShipScreen : IScreen
             using var text = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 18, IsAntialias = true };
             canvas.DrawText(CampaignRoundtripPresentation.Summary(summary), pl + 32, pt + 440, text);
             canvas.DrawText(CampaignRoundtripPresentation.Guidance(summary), pl + 32, pt + 468, text);
+            DrawMemorial(canvas, pl, pt);
         }
         DrawCloseButton(canvas, pl, pt);
     }

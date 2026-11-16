@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0032-US-0001-campaign-roundtrip]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Необратимая гибель пилота
@@ -91,3 +91,7 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Execution — 2026-11-17
+
+Four tickets implemented. Permanent pilot loss, live roster/cabin/assignment consistency, disabled survival, durable memorial and atomic invalid-load rejection verified. Cumulative EP-0032: Engine 15, Contracts 5, Client 10 passed. Future recruitment remains EP-0034; this story reserves and validates its identity sequence without inventing hiring. Native/product acceptance OPEN. Evidence directory: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0002/.
