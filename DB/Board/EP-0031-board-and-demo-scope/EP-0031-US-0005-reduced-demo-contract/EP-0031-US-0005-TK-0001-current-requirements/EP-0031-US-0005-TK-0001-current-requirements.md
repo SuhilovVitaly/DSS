@@ -85,3 +85,5 @@ Allowlist, source lines и шаги перечислены здесь. Новы�
 ## Execution — 2026-11-17
 
 Выполнено как обязательная зависимость порученного EP-0032, ветка codex/ep-0032-demo-campaign-continuity. Пять документов сверены с ScenarioData, ScenarioLoader, SaveMigration21, CommitSortieOutcome, LocalGameSessionConnection и ShipScreen. Save20 writer → фактический Save21; бой без последствий → settlement собственного крыла; Ship shell → рабочий rearm. Гибель пилотов не объявлена реализованной. Проверки всей документационной истории выполняются после TK-0002 по указанию пользователя. Native/runtime tests не запускались: код не изменён.
+
+Проверка истории: source сверены, Documentation содержит только Markdown, diff check PASS; 221 относительная ссылка, две ранее отсутствующие исторические VData-ссылки отмечены как baseline. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-prerequisite/prerequisite-review.md`. Build/runtime/native — NOT RUN (documentation only).

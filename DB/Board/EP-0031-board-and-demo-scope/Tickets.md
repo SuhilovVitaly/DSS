@@ -11,8 +11,8 @@
 | [US-0003-TK-0001 — Граница демо в требованиях](EP-0031-US-0003-demo-boundary/EP-0031-US-0003-TK-0001-demo-requirements/EP-0031-US-0003-TK-0001-demo-requirements.md) | documentation | 1 | US-0001-TK-0001 | US-0003 AC-01, AC-02 | implemented |
 | [US-0003-TK-0002 — Дорожная карта демо](EP-0031-US-0003-demo-boundary/EP-0031-US-0003-TK-0002-demo-roadmap/EP-0031-US-0003-TK-0002-demo-roadmap.md) | documentation | 1 | US-0003-TK-0001 | US-0003 AC-03 | implemented |
 | [US-0004-TK-0001 — Инвентаризация и навигация](EP-0031-US-0004-documentation/EP-0031-US-0004-TK-0001-docs-impact-and-links/EP-0031-US-0004-TK-0001-docs-impact-and-links.md) | documentation | 4 | все тикеты выше | US-0004 AC-01…AC-03 | implemented |
-| [US-0005-TK-0001 — Сверка требований с Save21 и боем EP-0029](EP-0031-US-0005-reduced-demo-contract/EP-0031-US-0005-TK-0001-current-requirements/EP-0031-US-0005-TK-0001-current-requirements.md) | documentation | 5 | none | US-0005 AC-01, AC-02, AC-04 | not-started |
-| [US-0005-TK-0002 — Процессные документы и граница демо](EP-0031-US-0005-reduced-demo-contract/EP-0031-US-0005-TK-0002-demo-scope-sync/EP-0031-US-0005-TK-0002-demo-scope-sync.md) | documentation | 4 | US-0005-TK-0001 | US-0005 AC-01…AC-04 | not-started |
+| [US-0005-TK-0001 — Сверка требований с Save21 и боем EP-0029](EP-0031-US-0005-reduced-demo-contract/EP-0031-US-0005-TK-0001-current-requirements/EP-0031-US-0005-TK-0001-current-requirements.md) | documentation | 5 | none | US-0005 AC-01, AC-02, AC-04 | implemented |
+| [US-0005-TK-0002 — Процессные документы и граница демо](EP-0031-US-0005-reduced-demo-contract/EP-0031-US-0005-TK-0002-demo-scope-sync/EP-0031-US-0005-TK-0002-demo-scope-sync.md) | documentation | 4 | US-0005-TK-0001 | US-0005 AC-01…AC-04 | implemented |
 
 Соответствие тикетов коммитам проверяется через `git log --oneline --grep "EP-0031"`;
 SHA собственного коммита тикета в карточку заранее не записывается.

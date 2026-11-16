@@ -10,7 +10,7 @@ priority: P0
 workstream: feature
 dependencies: []
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Согласованный сокращённый контракт демо
@@ -58,3 +58,7 @@ none
 |---|---|---|---|---|
 | 1. [EP-0031-US-0005-TK-0001-current-requirements](EP-0031-US-0005-TK-0001-current-requirements/EP-0031-US-0005-TK-0001-current-requirements.md) | Сверка требований с фактическим Save21 и боем EP-0029 | documentation | — | AC-01, AC-02, AC-04 |
 | 2. [EP-0031-US-0005-TK-0002-demo-scope-sync](EP-0031-US-0005-TK-0002-demo-scope-sync/EP-0031-US-0005-TK-0002-demo-scope-sync.md) | Процессные документы, каталог экранов и граница демо в Board | documentation | EP-0031-US-0005-TK-0001-current-requirements | AC-01, AC-02, AC-03, AC-04 |
+
+## Текущий результат — 2026-11-17
+
+Оба документационных тикета реализованы при исполнении prerequisite EP-0032. Исторические NOT STARTED выше описывают планирование 16–17 ноября и заменены этим статусом. Проверка source подтверждает Save21, settlement и Ship rearm; native/product gates EP-0029 и демо не закрывались.

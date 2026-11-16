@@ -5,7 +5,7 @@ ticket: EP-0031-US-0005-TK-0002-demo-scope-sync
 title: Процессные документы, каталог экранов и граница демо в Board
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: [EP-0031-US-0005-TK-0001-current-requirements]
@@ -79,3 +79,9 @@ No API change.
 ## Self-containment check
 
 Allowlist, шаги и проверки перечислены здесь. Новый продуктовый выбор или расширение файлов требует правки Board.
+
+## Execution scope — 2026-11-17
+
+Поиск текущих противоречий расширяет scope на DB/Documentation/README.md, 04-Engineering/DebugTuning.md, 03-Design/TabletopClient.md, 02-FirstRelease/Mechanics/TetrarchClass.md, 02-FirstRelease/Screens/Save.md и на Board Tickets.md / карточку US-0005. Причина: оставленные сводки Save20, Ship shell и боя без последствий противоречили бы исправленному контракту. Разрешение — автономное исполнение обязательной зависимости EP-0032; никакой правки production.
+
+Проверка истории: source сверены, Documentation содержит только Markdown, diff check PASS; 221 относительная ссылка, две ранее отсутствующие исторические VData-ссылки отмечены как baseline. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-prerequisite/prerequisite-review.md`. Build/runtime/native — NOT RUN (documentation only).
