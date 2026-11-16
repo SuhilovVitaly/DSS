@@ -1,6 +1,6 @@
 # Тактический бой носителей
 
-Бой — временная сессия, запущенная с карты мира через [подготовку](../02-FirstRelease/Screens/TacticalBattleSetup.md) либо из главного меню как [бой обучения](#запуск-обучения). Engine принимает запуск только на паузе (Speed0). Состояние сражения, приказы, потери и журнал не входят в Save20. Возврат восстанавливает карту и скорость мира, включая случай проигрыша. [Сохранения](SaveFormat.md) описывают границу персистентности.
+Бой — временная сессия, запущенная с карты мира через [подготовку](../02-FirstRelease/Screens/TacticalBattleSetup.md) либо из главного меню как [бой обучения](#запуск-обучения). Engine принимает запуск только на паузе (Speed0). Состояние сражения, приказы и боевой журнал не входят в Save21. При выходе из собственного вылета CommitSortieOutcome переносит в мир повреждения носителя и дронов, потерянные дроны и расход боезапаса, включая прерванный бой. При живом носителе возврат восстанавливает карту; при уничтоженном показывается экран гибели. Потеря дрона пока не удаляет пилота из crew: постоянная гибель пилота относится к EP-0032. [Сохранения](SaveFormat.md) описывают границу персистентности.
 
 | Слой | Ответственность |
 |---|---|
@@ -88,7 +88,7 @@ Move и Fire проверяют идентификатор боя и ожида�
 
 Потеря постоянна для собственного вылета: при последующем выходе, в том числе прерывании через `exit_battle` (`SortieExitKind.Aborted`), settlement включает уничтоженный дрон в `LostDroneIds` и помечает запись крыла носителя tombstone с причиной готовности `destroyed`; сама команда торпеды не списывает. Повтор выхода возвращает тот же ответ без второго settlement.
 
-Client разрешает [скин боя](TacticalBattleSkins.md) при создании активного окна. Каталог и предпочтение относятся к клиенту, отрисовка читает готовые ресурсы под синхронной областью стиля. Save20 хранит состояние мира.
+Client разрешает [скин боя](TacticalBattleSkins.md) при создании активного окна. Каталог и предпочтение относятся к клиенту, отрисовка читает готовые ресурсы под синхронной областью стиля. Save21 хранит состояние мира.
 
 Границы кода: [Contracts](../../../src/DeepSpaceSaga.Contracts/TacticalBattleRequests.cs), [SimulationEngine](../../../src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs), [TacticalBattleSession](../../../src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSession.cs), [Motion](../../../src/DeepSpaceSaga.Motion/TacticalBattle/), [Client](../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/). Методика сверки — [источники и проверки V4](../06-Tooling/CarrierWingSim.md).
 
@@ -98,13 +98,13 @@ Client разрешает [скин боя](TacticalBattleSkins.md) при со�
 
 `SkiaWindow` при NewGame без сессии и без сохранений (`ListSaveSlots().Length == 0`) вызывает `StartTutorialAsync` под общим замком переходов. Порядок: сессия из Tutorial, `TacticalBattleFlow { IsTutorial = true }`, Speed0, `StartAsync` с `StartTacticalBattleRequest(NewIdentity("start"), TutorialBattleSeed)` без экрана подготовки; `SkiaWindow.TutorialBattleSeed = 1` закреплён тестом выигрываемости (`TutorialBattleWinnabilityTests`: на seed 1 побеждают и политика «только Enter», и политика «по подсказкам», детерминированно). Только после принятого старта карта ставится под модальный бой; сохранённая скорость мира — Speed0. Любая ошибка или отказ пишется в InterfaceLog, сессия закрывается, текущим экраном остаётся главное меню.
 
-`IsTutorial` — чисто клиентский признак, Engine и Save20 его не видят. До фазы Over подтверждение выхода отправляет `ScreenEvent.MainMenu` с текстом `TacticalBattle.ConfirmExitToMenu`; шлюз событий активного боя пропускает MainMenu только для такого потока. Сохранение блокируется тем же шлюзом и отказом Engine во время боя. На Over кнопки нового боя нет, единственная кнопка и Esc отправляют `CloseTacticalBattle`, после чего мир работает как после обычного боя. Бой по F8 создаёт поток без признака и не меняется. Отладочное исключение — команда `exit_battle` [дебаг-консоли](DebugConsole.md#exit_battle): она прерывает незавершённое обучение тем же путём выхода и settlement и открывает карту (или экран гибели); штатные выходы не меняются.
+`IsTutorial` — чисто клиентский признак, Engine и Save21 его не видят. До фазы Over подтверждение выхода отправляет `ScreenEvent.MainMenu` с текстом `TacticalBattle.ConfirmExitToMenu`; шлюз событий активного боя пропускает MainMenu только для такого потока. Сохранение блокируется тем же шлюзом и отказом Engine во время боя. На Over кнопки нового боя нет, единственная кнопка и Esc отправляют `CloseTacticalBattle`, после чего мир работает как после обычного боя. Бой по F8 создаёт поток без признака и не меняется. Отладочное исключение — команда `exit_battle` [дебаг-консоли](DebugConsole.md#exit_battle): она прерывает незавершённое обучение тем же путём выхода и settlement и открывает карту (или экран гибели); штатные выходы не меняются.
 
 `SkiaWindow.CreateTacticalBattleView` для потока `IsTutorial` берёт скин `TutorialSkinId = "tabletop"` из каталога, не трогая `_battleSkin` и `gameSettings.tacticalBattleSkinId`; без пакета — предпочтённый скин и строка `TUTORIAL: skin 'tabletop' unavailable…` в InterfaceLog.
 
 ## Подсказки обучения
 
-Код — `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/` (namespace `DeepSpaceSaga.Client.UI.Screens.Tutorial`), вне папок `/TacticalBattle/`, поэтому `ForbiddenCallsTests` его не сканирует; Engine, Motion, Contracts, Save20 и RNG не меняются. `TacticalBattleScreen` знает только `TutorialSession? Tutorial` (задаётся окном для `IsTutorial`): после отрисовки кадра вызывает `Observe` и `Draw` поверх оверлея, первым отдаёт сессии клавиши (кроме модального подтверждения), клики и колесо; `Tutorial.Bounds` входят в `OverlayRects`, поэтому панель перехватывает ввод только в своих прямоугольниках. Сессия не вызывает Engine, не меняет приказы и не тратит RNG.
+Код — `src/DeepSpaceSaga.Client/UI/Screens/Tutorial/` (namespace `DeepSpaceSaga.Client.UI.Screens.Tutorial`), вне папок `/TacticalBattle/`, поэтому `ForbiddenCallsTests` его не сканирует; Engine, Motion, Contracts, Save21 и RNG не меняются. `TacticalBattleScreen` знает только `TutorialSession? Tutorial` (задаётся окном для `IsTutorial`): после отрисовки кадра вызывает `Observe` и `Draw` поверх оверлея, первым отдаёт сессии клавиши (кроме модального подтверждения), клики и колесо; `Tutorial.Bounds` входят в `OverlayRects`, поэтому панель перехватывает ввод только в своих прямоугольниках. Сессия не вызывает Engine, не меняет приказы и не тратит RNG.
 
 Сценарий — `Data/Tutorial/battle-tutorial.json`, загружается `TutorialScriptLoader` с полной проверкой (неизвестные свойства, диапазоны, ссылки `after` только на более ранние шаги, `turn` и `minTurn` взаимоисключающие, путь портрета — относительный `.png` без `..`). Ошибка или отсутствие файла — пустой сценарий и одна строка `TUTORIAL: …`, бой идёт без панели. Формат v1:
 
@@ -142,7 +142,7 @@ Ep0019Scenes строит семь основных реальных сцен se
 
 ### Презентация Tabletop
 
-Три независимых opt-in метрики манифеста v1: `field.style.tabletop`, `ui.style.steel`, `ui.pilot-column.slim`, каждая равная 1. Они не привязаны к имени пакета. `TacticalBattleSkinRenderScope` читает готовые ресурсы синхронно; камера получает признак поля явно вне ambient scope. Engine, Motion, Contracts, RNG, расписание FireSteps, command identity и Save20 не меняются.
+Три независимых opt-in метрики манифеста v1: `field.style.tabletop`, `ui.style.steel`, `ui.pilot-column.slim`, каждая равная 1. Они не привязаны к имени пакета. `TacticalBattleSkinRenderScope` читает готовые ресурсы синхронно; камера получает признак поля явно вне ambient scope. Engine, Motion, Contracts, RNG, расписание FireSteps, command identity и Save21 не меняются.
 
 Карта рисует фон, кэш облаков, сетку, шаблоны/ленты, модели и плашки, затем эффекты/итоговые пометки. Все значки шансов размещаются после лент. Пиксельные модели используют целый масштаб и привязку к пикселям устройства, без повторного декодирования PNG. Прямоугольники плашек, моделей, колонок и правых окон участвуют в размещении подписей и hit-testing.
 

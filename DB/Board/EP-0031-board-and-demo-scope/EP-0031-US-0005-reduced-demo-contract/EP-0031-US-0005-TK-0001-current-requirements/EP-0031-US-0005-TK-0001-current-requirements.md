@@ -5,7 +5,7 @@ ticket: EP-0031-US-0005-TK-0001-current-requirements
 title: Сверка требований с фактическим Save21 и боем EP-0029
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: []
@@ -81,3 +81,7 @@ Save22, демо-механики, правка кода, переписыван
 ## Self-containment check
 
 Allowlist, source lines и шаги перечислены здесь. Новый продуктовый выбор или расширение файлов требует правки Board.
+
+## Execution — 2026-11-17
+
+Выполнено как обязательная зависимость порученного EP-0032, ветка codex/ep-0032-demo-campaign-continuity. Пять документов сверены с ScenarioData, ScenarioLoader, SaveMigration21, CommitSortieOutcome, LocalGameSessionConnection и ShipScreen. Save20 writer → фактический Save21; бой без последствий → settlement собственного крыла; Ship shell → рабочий rearm. Гибель пилотов не объявлена реализованной. Проверки всей документационной истории выполняются после TK-0002 по указанию пользователя. Native/runtime tests не запускались: код не изменён.
