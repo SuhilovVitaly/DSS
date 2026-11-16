@@ -5,6 +5,7 @@ ticket: EP-0030-US-0003-TK-0003-local-passthrough
 title: LocalGameSessionConnection — проброс DebugDestroy
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: local-client
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0030-US-0003-TK-0002-engine-force-destroy]
@@ -74,3 +75,18 @@ dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj -
 ## Self-containment check
 
 Одна строка кода и два теста, все пути указаны.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы (3, в пределах Code context):
+
+- `src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs` — `public ValueTask<TacticalBattleResponse> DebugDestroyTacticalUnitAsync(DebugDestroyTacticalUnitRequest request, CancellationToken cancellationToken = default) => TacticalCall(() => _engine.DebugDestroyTacticalUnit(request), cancellationToken);` после `FireTacticalBattleAsync`. Игровой логики в соединении нет; отмена/dispose обрабатываются `TacticalCall`.
+- `tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/LocalSessionBattleTests.cs` — тест `LocalConnectionForwardsDebugDestroy`: Accepted, цель `Destroyed` в ответе и в последующем `GetTacticalBattleStateAsync`, ревизия +1, повтор того же CommandId возвращает тот же ответ, новая команда со старой ревизией → `StaleRevision`, отменённый токен → `OperationCanceledException` без мутации.
+- `tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/ConnectionApiTests.cs` — `LegacyImplementationsInheritTypedUnavailableDefaults` дополнен вызовом `DebugDestroyTacticalUnitAsync` (default-метод интерфейса → `Unsupported`). Рабочая копия файла была с LF (в отличие от остальных .cs) — переведена на CRLF, чтобы прошёл scoped `dotnet format`; при `core.autocrlf=true` содержимое в репозитории не меняется кроме самих строк теста.
+
+Команды и результаты:
+
+- `dotnet build tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj` — до реализации: только CS1061 `LocalGameSessionConnection.DebugDestroyTacticalUnitAsync` отсутствует (red); после — 0 Warning(s), 0 Error(s).
+- `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/LocalSessionBattleTests.cs tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/ConnectionApiTests.cs` — exit 0.
+- `git diff --check` — exit 0.
+- Тесты: NOT RUN — по инструкции оператора тесты запускаются в конце истории (после TK-0005).

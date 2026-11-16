@@ -148,6 +148,33 @@ public sealed class LocalSessionBattleTests
         finally { DeleteValidationDirectory(directory); }
     }
 
+    [Fact]
+    public async Task LocalConnectionForwardsDebugDestroy()
+    {
+        var engine = new SimulationEngine(GameDataRegistry.Create([], [], [], [], tacticalBattle: Availability.Available(Catalog.Value)));
+        engine.SetSpeed(SimulationSpeed.Speed0);
+        await using var connection = new LocalGameSessionConnection(engine);
+        var start = (await connection.StartTacticalBattleAsync(new("start", 1))).State!;
+        string target = start.Units.First(u => u.Kind == TacticalUnitKind.Drone && u.Side != start.PlayerSide).Id;
+        var request = new DebugDestroyTacticalUnitRequest("debug-kill", start.BattleId, start.Revision, target);
+
+        var response = await connection.DebugDestroyTacticalUnitAsync(request);
+
+        Assert.True(response.Accepted);
+        Assert.Equal(TacticalUnitState.Destroyed, response.State!.Units.Single(u => u.Id == target).State);
+        var after = (await connection.GetTacticalBattleStateAsync())!;
+        Assert.Equal(start.Revision + 1, after.Revision);
+        Assert.Equal(TacticalUnitState.Destroyed, after.Units.Single(u => u.Id == target).State);
+        Assert.Equal(JsonSerializer.Serialize(response), JsonSerializer.Serialize(await connection.DebugDestroyTacticalUnitAsync(request)));
+        var stale = await connection.DebugDestroyTacticalUnitAsync(request with { CommandId = "debug-kill-stale" });
+        Assert.Equal(TacticalBattleRejectionCode.StaleRevision, stale.Code);
+        using var canceled = new CancellationTokenSource();
+        canceled.Cancel();
+        var pending = connection.DebugDestroyTacticalUnitAsync(request with { CommandId = "debug-kill-canceled" }, canceled.Token);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending.AsTask());
+        Assert.Equal(after.Revision, (await connection.GetTacticalBattleStateAsync())!.Revision);
+    }
+
     private static string ValidationRoot => Path.GetFullPath(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT")
         ?? "D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/local-session");
     private static string ValidationDirectory(string name)
