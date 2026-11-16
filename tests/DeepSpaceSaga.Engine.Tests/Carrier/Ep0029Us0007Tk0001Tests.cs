@@ -44,7 +44,7 @@ public sealed class Ep0029Us0007Tk0001Tests
     public void FutureVersionAndInvalidRefsReject()
     {
         // Unknown version is rejected before any session is published.
-        Assert.Throws<ScenarioException>(() => ScenarioLoader.RequireSupportedSaveVersion(22));
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.RequireSupportedSaveVersion(23));
         // Invalid reference: playerShipObjectId points at an object absent from spaceObjects.
         var invalidRefs = new ScenarioFile(
             new ScenarioMetadata("s", "s"),

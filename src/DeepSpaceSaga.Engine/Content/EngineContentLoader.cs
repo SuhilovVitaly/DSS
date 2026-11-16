@@ -24,6 +24,7 @@ public static class EngineContentLoader
         var fields = LoadStationResourceFields(settingsPath, loaded.Registry);
         var engine = new SimulationEngine(loaded.Registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
+        engine.ConfigureDemoCampaign(DemoCampaignDefinitions.Load(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!));
         var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
         engine.LoadScenario(loaded.DefaultScenario, generation: GenerationForScenario(settingsPath, settings.DefaultScenario));
         return engine;
@@ -42,6 +43,7 @@ public static class EngineContentLoader
         var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
+        engine.ConfigureDemoCampaign(DemoCampaignDefinitions.Load(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!));
         engine.LoadScenario(saveScenario, isSave: true);
         return engine;
     }
@@ -60,6 +62,7 @@ public static class EngineContentLoader
         var fields = LoadStationResourceFields(settingsPath, registry);
         var engine = new SimulationEngine(registry, LoadCrewPortraits(settingsPath));
         engine.ConfigureStationResourceFields(fields);
+        engine.ConfigureDemoCampaign(DemoCampaignDefinitions.Load(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!));
         engine.LoadScenario(scenario, generation: GenerationForScenario(settingsPath, scenarioPath));
         return engine;
     }

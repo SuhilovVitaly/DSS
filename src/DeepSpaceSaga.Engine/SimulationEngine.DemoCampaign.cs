@@ -3,12 +3,20 @@ using System.Text;
 using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.Content;
 
 namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
     private DemoCampaignData _demoCampaign = new();
+    private DemoCampaignDefinitions _demoDefinitions = new(null, null);
+
+    internal void ConfigureDemoCampaign(DemoCampaignDefinitions definitions)
+    {
+        definitions.ValidateReferences(_registry);
+        _demoDefinitions = definitions;
+    }
 
     public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command)
     {

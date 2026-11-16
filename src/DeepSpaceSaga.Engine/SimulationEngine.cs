@@ -233,7 +233,11 @@ public sealed partial class SimulationEngine : IDisposable
                 scenario = SaveMigration21.Upgrade(scenario);
         }
         if (isSave && scenario.SaveFormatVersion == 21)
+        {
+            if (scenario.GameState.DemoCampaign is not null)
+                throw new ScenarioException("Save21 cannot contain Save22 campaign metadata.");
             scenario = scenario with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion };
+        }
         if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
         var tuning = new DebugTuningState(_catalogRegistry);
         if (scenario.GameState.DebugTuning is { } values && !tuning.TryApply(new([.. values]), out tuning, out var reason))
@@ -497,6 +501,9 @@ public sealed partial class SimulationEngine : IDisposable
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
         ValidateCarrierStateForLoad(gs, runtimeObjects);
         var restoredDemoCampaign = DemoCampaignData.Validate(gs.DemoCampaign, gs.GameTimeMs);
+        _demoDefinitions.ValidateWorld(scenario);
+        if (scenario.Metadata.ScenarioId == "demo" && restoredDemoCampaign.CatalogFingerprint is null)
+            restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
         ValidateDemoCampaignSections(restoredDemoCampaign);
         lock (_worldStateLock)
         {

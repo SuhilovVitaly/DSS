@@ -5,7 +5,7 @@ ticket: EP-0032-US-0007-TK-0003-campaign-loader
 title: Принятие новой версии сохранения
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-pending-story-validation
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0032-US-0007-TK-0002-campaign-state]
@@ -108,3 +108,13 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution scope — 2026-11-17
+
+Дополнительные файлы: SimulationEngine.DemoCampaign.cs (захват/проверка fingerprint до замены мира), SimulationEngine.cs (проверка definitions перед publish), tests/DeepSpaceSaga.Engine.Tests/Carrier/Ep0029Us0007Tk0001Tests.cs (будущая версия теперь 23, а не введённая 22). Каталог этого эпика владеет cluster; схемы services/jobs/encounters/progression расширяются owning эпиками, не объявляются готовыми заранее. Non-demo допускает отсутствие каталога; demo требует cluster, дополнительные файлы обязательны после включения соответствующей функции.
+
+## Execution — 2026-11-17
+
+Подключены Save22 parsing/Save21 additive migration, проверка receipt IDs/counters до замены мира, strict cluster schema и frozen fingerprint во всех factory paths. Обновлено старое ожидание future version 22 → 23. Добавлены round-trip, duplicate receipt/atomic rejection и Save20/21 compatibility tests. Dotnet запуск в конце US-0007; diff check PASS. Остаётся полный набор typed definitions services/jobs/encounters/progression из шага 3; текущий cluster loader не объявляется реализацией этих схем.
+
+Дополнительно реализованы optional typed services/jobs/encounters/progression definitions, schema/price/range/geometry/identity/reference validation, проверка файлов портретов и общий fingerprint по всем присутствующим файлам. Имена полей — техническая конкретизация общих схем TicketPlan; численные балансные значения не добавлены. Отсутствующие файлы будущих функций не включают соответствующую механику. Полный тестовый gate ещё не запускался.

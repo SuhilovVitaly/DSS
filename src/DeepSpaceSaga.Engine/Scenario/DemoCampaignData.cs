@@ -17,6 +17,9 @@ public sealed record DemoCampaignData(
     [property: JsonPropertyName("progression")] DemoProgressionSnapshot? Progression = null,
     [property: JsonPropertyName("story")] DemoStorySnapshot? Story = null)
 {
+    [JsonPropertyName("catalogFingerprint")]
+    public string? CatalogFingerprint { get; init; }
+
     [JsonPropertyName("receipts")]
     public ImmutableArray<DemoCampaignReceiptData> Receipts { get; init; } = [];
 
@@ -28,16 +31,18 @@ public sealed record DemoCampaignData(
             throw new ScenarioException("Invalid demo campaign version or counters.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;
+        long previousRevision = 0;
         foreach (var receipt in data.Receipts)
         {
             if (receipt is null || receipt.Response is null || string.IsNullOrWhiteSpace(receipt.Response.CommandId) ||
                 !ids.Add(receipt.Response.CommandId) || receipt.PayloadHash is not { Length: 64 } ||
                 !receipt.PayloadHash.All(Uri.IsHexDigit) || receipt.CommitSequence <= previousSequence ||
                 receipt.CommitSequence > data.CommitSequence || receipt.Response.Revision < 0 ||
-                receipt.Response.Revision > data.Revision ||
+                receipt.Response.Revision > data.Revision || receipt.Response.Revision < previousRevision ||
                 (receipt.Response.Applied ? receipt.Response.Reason is not null : string.IsNullOrWhiteSpace(receipt.Response.Reason)))
                 throw new ScenarioException("Invalid demo campaign receipt.");
             previousSequence = receipt.CommitSequence;
+            previousRevision = receipt.Response.Revision;
         }
         return data;
     }

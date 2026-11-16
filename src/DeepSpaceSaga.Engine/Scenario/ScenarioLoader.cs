@@ -107,6 +107,12 @@ public static class ScenarioLoader
         }
         if (scenario.SaveFormatVersion == SaveMigration21.PreviousVersion)
             scenario = SaveMigration21.Upgrade(scenario, allowNonZeroGameTime);
+        if (scenario.SaveFormatVersion == 21)
+        {
+            if (scenario.GameState.DemoCampaign is not null)
+                throw new ScenarioException("Save21 cannot contain Save22 campaign metadata.");
+            scenario = scenario with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion };
+        }
         return scenario;
     }
 
@@ -232,7 +238,7 @@ public static class ScenarioLoader
 
     internal static void RequireSupportedSaveVersion(int version)
     {
-        if (version is not (18 or SaveMigration20.PreviousVersion or SaveMigration20.TargetVersion or SaveFormat.CurrentSaveFormatVersion))
+        if (version is not (18 or SaveMigration20.PreviousVersion or SaveMigration20.TargetVersion or 21 or SaveFormat.CurrentSaveFormatVersion))
             throw new ScenarioException($"incompatible_save_version: expected {SaveFormat.CurrentSaveFormatVersion}, found {version}. Save was not modified.");
     }
 
@@ -240,6 +246,8 @@ public static class ScenarioLoader
     {
         Validate(scenario, allowNonZeroGameTime);
         var gs = scenario.GameState;
+        if (gs.DemoCampaign is not null)
+            DemoCampaignData.Validate(gs.DemoCampaign, gs.GameTimeMs);
         var ids = gs.SpaceObjects.ToDictionary(o => o.ObjectId, o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
         if ((gs.CommandReceipts?.Any(r => r is null || string.IsNullOrWhiteSpace(r.CommandId)) ?? false) ||
             (gs.PendingCommands?.Any(c => c is null || string.IsNullOrWhiteSpace(c.CommandId)) ?? false))
