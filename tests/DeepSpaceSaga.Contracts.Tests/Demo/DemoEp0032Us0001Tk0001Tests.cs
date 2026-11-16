@@ -15,7 +15,7 @@ public sealed class DemoEp0032Us0001Tk0001Tests
         Assert.Equal("battle", loaded.LastBattleId);
         Assert.Equal(3, loaded.SettlementRevision);
         Assert.False(loaded.CarrierDestroyed);
-        Assert.Equal(["lost"], loaded.LostDroneIds);
+        Assert.Equal("lost", Assert.Single(loaded.LostDroneIds));
         Assert.Equal(7, loaded.ConsumedTorpedoes);
         Assert.Null(new DemoCompanySnapshot().Roundtrip);
     }

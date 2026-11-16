@@ -110,3 +110,5 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 ## Execution — 2026-11-17
 
 Read-only CampaignRoundtripSnapshot wraps the existing SortieSettlementSnapshot; DemoCompanySnapshot exposes it optionally. No second inventory and no new settle/rearm command: existing ExitTacticalBattleRequest and RearmDroneRequest retain their identity/revision guards. This resolves generic command boilerplate without creating duplicate mutation ownership. Serialization regression added; tests deferred to story end per user. diff check PASS.
+
+Story-end verification: corrected ImmutableArray assertion to inspect its sole member instead of backing-array identity. Contracts 1/1 PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0001/contracts2.log.
