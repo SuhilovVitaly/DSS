@@ -57,7 +57,8 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
             }
             var cluster = Read<DemoClusterDefinition>("cluster");
             if (cluster is not null && (cluster.SchemaVersion != 1 || cluster.StationIds.IsDefault || cluster.Roles.IsDefault ||
-                cluster.StationIds.Length is < 4 or > 6 || cluster.Roles.Length != cluster.StationIds.Length ||
+                cluster.StationIds.Length != 5 || cluster.Roles.Length != cluster.StationIds.Length ||
+                cluster.Roles.Distinct(StringComparer.Ordinal).Count() != 5 ||
                 cluster.StationIds.Any(string.IsNullOrWhiteSpace) || cluster.Roles.Any(string.IsNullOrWhiteSpace) ||
                 cluster.StationIds.Distinct(StringComparer.Ordinal).Count() != cluster.StationIds.Length ||
                 !cluster.StationIds.Contains(cluster.StartStationId, StringComparer.Ordinal)))
@@ -144,6 +145,8 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
         bool demo = scenario.Metadata.ScenarioId == "demo" || scenario.GameState.DemoCampaign?.CatalogFingerprint is not null;
         if (!demo) return;
         if (Cluster is null) throw new ScenarioException("Demo campaign requires Data/Demo/cluster.json.");
+        if (scenario.GameState.MasterSeed != Cluster.Seed)
+            throw new ScenarioException("Demo world seed does not match the frozen cluster.");
         if (scenario.GameState.DemoCampaign?.CatalogFingerprint is { } saved && saved != Fingerprint)
             throw new ScenarioException("incompatible_demo_catalog: saved campaign was not modified.");
         var stations = scenario.GameState.SpaceObjects.Where(o => o.ObjectType == "Station")
