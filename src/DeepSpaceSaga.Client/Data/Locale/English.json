@@ -886,5 +886,9 @@
   "Demo.PilotLoss.Title": "Fallen crew",
   "Demo.PilotLoss.Empty": "No crew losses.",
   "Demo.PilotLoss.Entry": "{0} — accuracy {1}, maneuver {2}, initiative {3}; time {4} ms",
-  "Demo.PilotLoss.Help": "Fallen pilots cannot return to duty. Scroll to browse losses."
+  "Demo.PilotLoss.Help": "Fallen pilots cannot return to duty. Scroll to browse losses.",
+  "Demo.Outcome.Active": "The campaign continues. Damage and losses remain in the world.",
+  "Demo.Outcome.NoWing": "No drones are ready. The carrier is intact: navigation, docking and trade remain available.",
+  "Demo.Outcome.Terminal": "Carrier destroyed. Load a save or start a new game from the menu.",
+  "Demo.Outcome.Rollback": "If the game fails before the result is written, loading returns to the last saved checkpoint."
 }

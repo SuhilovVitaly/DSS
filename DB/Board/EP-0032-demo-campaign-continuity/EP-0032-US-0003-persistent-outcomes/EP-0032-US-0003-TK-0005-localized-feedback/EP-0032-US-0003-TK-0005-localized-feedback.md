@@ -5,7 +5,7 @@ ticket: EP-0032-US-0003-TK-0005-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0032-US-0003-TK-0002-engine]
@@ -94,3 +94,7 @@ No API change. Существующие словари Russian/English; язык
 ## Self-containment check
 
 История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+
+## Execution — 2026-11-17
+
+RU/EN active, no-ready-wing, terminal and crash rollback guidance. Text distinguishes committed world state from a durable checkpoint; no crash-proof promise. Real dictionary parity test added; story-end tests deferred per user. JSON parse/diff check PASS.
