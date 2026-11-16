@@ -1039,7 +1039,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                     }
                     break;
                 case ScreenEvent.NewGame:
-                    if (_session is null && !HasAnySaveSlotForNewGame())
+                    if (_session is null && (_sessionFactory.IsDemoProfile || !HasAnySaveSlotForNewGame()))
                         await StartTutorialAsync();
                     else
                         OpenScenarioSelect();
@@ -1362,7 +1362,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             if (!_closing)
                 _screens.ReplaceAll(fallBackToScenarioSelect
                     ? new ScenarioSelectScreen(() => _sessionFactory.ListScenarios())
-                    : new MainMenuScreen());
+                    : new MainMenuScreen(_sessionFactory.IsDemoProfile));
             if (session is not null)
             {
                 _lastSessionDisposal = session.DisposeAsync().AsTask();
@@ -2138,7 +2138,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed1;
 
-        var mainMenu = new MainMenuScreen();
+        var mainMenu = new MainMenuScreen(_sessionFactory.IsDemoProfile);
         _screens.ReplaceAll(mainMenu);
         if (oldSession is not null)
         {

@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0031-US-0005-reduced-demo-contract, EP-0032-US-0007-consistent-campaign-actions]
 created: 2026-11-16T20:02:53Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Новая кампания в демо-кластере
@@ -93,3 +93,7 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Execution — 2026-11-17
+
+Five tickets implemented. Public demo uses fixed seed, five stations and shared starter; tutorial stays in the same world and save/load does not regenerate it. Development profile retains service scenarios. Existing five-node TradingMap geometry reused rather than the full multi-district generator. Cumulative Engine 22, Contracts 7, Client 14 passed. Native/product acceptance OPEN. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0004/.

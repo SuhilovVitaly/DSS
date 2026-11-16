@@ -7,6 +7,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.MainMenu;
 
 public sealed class MainMenuScreen : IScreen
 {
+    private readonly bool _demoProfile;
+    internal string NewGameLabel => Localization.Get(_demoProfile ? "Demo.Start.NewGame" : "MainMenu.NewGame");
     private int _screenWidth;
     private int _screenHeight;
 
@@ -25,8 +27,9 @@ public sealed class MainMenuScreen : IScreen
         Typeface = MenuStyle.TypefaceHumaroid
     };
 
-    public MainMenuScreen()
+    public MainMenuScreen(bool demoProfile = false)
     {
+        _demoProfile = demoProfile;
         GenericWindowTypeA.Preload();
         GenericButtonTypeA.Preload();
     }
@@ -91,7 +94,7 @@ public sealed class MainMenuScreen : IScreen
         GenericWindowTypeA.DrawTitle(canvas, panelRect, GameInfo.Title, _titleTextPaint);
         GenericWindowTypeA.DrawVersion(canvas, panelRect, GameInfo.Version);
 
-        DrawButton(canvas, pl, pt, MenuLayout.NewGameY, Localization.Get("MainMenu.NewGame"), MenuButton.NewGame);
+        DrawButton(canvas, pl, pt, MenuLayout.NewGameY, NewGameLabel, MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, Localization.Get("MainMenu.Load"), MenuButton.Load);
         DrawButton(canvas, pl, pt, MenuLayout.SettingsY, Localization.Get("MainMenu.Settings"), MenuButton.Settings);
         DrawButton(canvas, pl, pt, MenuLayout.CreditsY, Localization.Get("MainMenu.Credits"), MenuButton.Credits);

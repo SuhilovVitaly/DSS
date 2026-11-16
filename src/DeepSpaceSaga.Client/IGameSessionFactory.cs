@@ -4,6 +4,7 @@ namespace DeepSpaceSaga.Client;
 
 public interface IGameSessionFactory
 {
+    bool IsDemoProfile => false;
     IGameSessionConnection CreateSession();
 
     /// <summary>Bootstrap a new session from the given save slot's file (F9 uses <see cref="SaveSlots.Quicksave"/>). Throws if the file is missing or invalid.</summary>

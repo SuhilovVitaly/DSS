@@ -21,7 +21,7 @@ public static class ScenarioRepository
     /// operator error in one scenario file must not take down every other one.
     /// Scenarios whose metadata sets hidden=true are excluded.
     /// </summary>
-    public static ScenarioInfo[] ListScenarios(string scenariosDirectory)
+    public static ScenarioInfo[] ListScenarios(string scenariosDirectory, bool demoProfile = false)
     {
         if (!Directory.Exists(scenariosDirectory))
             return Array.Empty<ScenarioInfo>();
@@ -32,7 +32,7 @@ public static class ScenarioRepository
             try
             {
                 var scenario = ScenarioLoader.LoadFromFile(path);
-                if (scenario.Metadata.Hidden == true)
+                if (scenario.Metadata.Hidden == true || demoProfile && scenario.Metadata.ScenarioId != "demo")
                     continue;
                 result.Add(new ScenarioInfo(
                     ScenarioPath: path,
@@ -54,7 +54,7 @@ public static class ScenarioRepository
     /// (hidden or not), or null when the directory or such a file is missing. When several match,
     /// the ordinally first path wins so the result is deterministic.
     /// </summary>
-    public static string? FindTutorialScenarioPath(string scenariosDirectory)
+    public static string? FindTutorialScenarioPath(string scenariosDirectory, bool demoProfile = false)
     {
         if (!Directory.Exists(scenariosDirectory))
             return null;
@@ -64,7 +64,7 @@ public static class ScenarioRepository
         {
             try
             {
-                if (ScenarioLoader.LoadFromFile(path).Metadata.ScenarioId == TutorialScenarioId)
+                if (ScenarioLoader.LoadFromFile(path).Metadata.ScenarioId == (demoProfile ? "demo" : TutorialScenarioId))
                     return path;
             }
             catch (ScenarioException)
