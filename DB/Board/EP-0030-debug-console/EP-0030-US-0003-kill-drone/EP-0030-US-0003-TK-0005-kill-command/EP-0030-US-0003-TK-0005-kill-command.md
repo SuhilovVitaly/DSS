@@ -114,3 +114,8 @@ Native: учебный и обычный бой, своя и вражеская 
 - `git diff --check` — exit 0.
 - Тесты: запускаются в прогоне конца истории US-0003 (см. story md, `## Story test evidence 2026-11-16`).
 - Native (учебный и обычный бой на меньшем мониторе): NOT RUN — подтверждённый меньший монитор недоступен в автономном прогоне.
+
+### Story test run 2026-11-16
+
+- Прогон истории `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0003-20261116T074117Z/client` выявил падение `KillDroneDebugCommandTests.LastEnemyKillEndsBattleThenExitBattleSettlesOnce` на `Assert.NotNull(lost.SourceDroneId)`: `TacticalUnitSnapshot.SourceDroneId` не заполняется ни одним builder (поле только объявлено в контракте). Owned-дроны вылета используют owned id как tactical unit id, и `CommitSortieOutcome` (`SimulationEngine.SortieSettlement.cs`) кладёт в `LostDroneIds` именно `drone.Id`. Ошибка теста, реализация не менялась.
+- Исправление `3269d98a` — проверка `LostDroneIds == [lost.Id]` (строже прежнего `Contains`). Повторный прогон `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0003-20261116T074520Z/client` — тест зелёный.

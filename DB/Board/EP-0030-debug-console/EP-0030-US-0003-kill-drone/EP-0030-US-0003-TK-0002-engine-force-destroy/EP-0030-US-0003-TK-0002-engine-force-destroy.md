@@ -106,3 +106,8 @@ dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj -
 - `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSession.cs tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/DebugDestroyTests.cs` — exit 0 (новый файл переведён на CRLF).
 - `git diff --check` (включая staged) — exit 0.
 - Тесты: NOT RUN — по инструкции оператора тесты запускаются в конце истории (после TK-0005).
+
+### Story test run 2026-11-16
+
+- Прогон истории `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0003-20261116T073301Z/engine` выявил падение `DebugDestroyTests.LastEnemyDroneEndsBattleWithOutcome` на `Assert.Equal(state.Outcome, response.NewEvents[^1].Outcome)`: `TacticalOutcomeSnapshot` содержит `ImmutableArray`, которые record-равенство сравнивает по ссылке, поэтому два одинаковых по значению исхода не равны. Ошибка теста, реализация `TacticalBattleSession.DebugDestroy` (исход через `CheckVictory`/`AddOutcome`) корректна.
+- Исправление `c4dae7da` — сравнение по значению через `JsonSerializer.Serialize` (как в `SessionTests`). `DebugDestroyTests` 10/10; повторный прогон `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/us0003-20261116T074117Z/engine` — тест зелёный.

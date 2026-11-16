@@ -61,6 +61,36 @@ EP-0030-US-0001-global-console — ввод команд и вывод резу�
 | [TK-0004 — handle-flow](EP-0030-US-0003-TK-0004-handle-flow/EP-0030-US-0003-TK-0004-handle-flow.md) | client | EP-0030-US-0003-TK-0003-local-passthrough | AC-03, AC-04, AC-06 |
 | [TK-0005 — kill-command](EP-0030-US-0003-TK-0005-kill-command/EP-0030-US-0003-TK-0005-kill-command.md) | client | EP-0030-US-0003-TK-0004-handle-flow | AC-01..AC-06 |
 
+## Story test evidence 2026-11-16
+
+Ветка `feature/ep-0030-debug-console`. Артефакты: `D:/DeepSpaceSaga/artifacts/validation/ep0030-debug-console/`.
+
+| Проект | Фильтр | Итог | trx |
+|---|---|---|---|
+| Contracts | весь проект | 33/33 passed | `us0003-20261116T073301Z/contracts/sushi_VITA-CASTLE_2026-11-16_09_33_04_net8.0.trx` |
+| Engine (первый прогон, `fded9644`) | `DebugDestroyTests\|LocalSessionBattleTests\|ConnectionApiTests\|SessionTests\|GoldenBattleTests` | 243 total, 240 passed, 3 failed | `us0003-20261116T073301Z/engine/sushi_VITA-CASTLE_2026-11-16_09_37_26_net8.0.trx` |
+| Engine (финал, `c4dae7da`) | тот же | 243 total, 242 passed, 1 failed (pre-existing) | `us0003-20261116T074117Z/engine/sushi_VITA-CASTLE_2026-11-16_09_41_30_net8.0.trx` |
+| Client (первый прогон, `c4dae7da`) | `DebugDestroyFlowTests\|KillDroneDebugCommandTests\|DebugConsole\|LocalizationCoverageTests\|SessionHandleBattleTests` | 69 total, 63 passed, 6 failed | `us0003-20261116T074117Z/client/sushi_VITA-CASTLE_2026-11-16_09_43_52_net8.0.trx` |
+| Client (финал, `3269d98a`) | тот же | 69 total, 64 passed, 5 failed (все pre-existing) | `us0003-20261116T074520Z/client/sushi_VITA-CASTLE_2026-11-16_09_45_32_net8.0.trx` |
+
+Новые тесты истории (`DebugDestroyTests` 10, `DebugDestroyFlowTests`, `KillDroneDebugCommandTests`, `DebugConsole*`) в финальных прогонах зелёные.
+
+**Исправления (обе — ошибки тестов, реализация не менялась):**
+
+- `c4dae7da` EP-0030 US-0003 TK-0002 — `DebugDestroyTests.LastEnemyDroneEndsBattleWithOutcome`: сравнение `TacticalOutcomeSnapshot` через record-равенство падало из-за ссылочного сравнения `ImmutableArray`; теперь сравнение по значению через JSON.
+- `3269d98a` EP-0030 US-0003 TK-0005 — `KillDroneDebugCommandTests.LastEnemyKillEndsBattleThenExitBattleSettlesOnce`: тест опирался на `TacticalUnitSnapshot.SourceDroneId`, который не заполняется; settlement сообщает tactical unit id — теперь проверка `LostDroneIds == [lost.Id]`.
+
+**Pre-existing падения (не вызваны EP-0030), доказательство на базе `43a6fecf` (временный worktree вне репозитория, удалён):**
+
+- Engine `SessionTests.OptionsAndSnapshotsAreCompleteImmutableAndQueriesConsumeNoRandom` — на базе то же падение (Expected 880, Actual 892): `us0003-20261116T073301Z/baseline-43a6fecf/sushi_VITA-CASTLE_2026-11-16_09_40_35_net8.0.trx`.
+- Client `SessionHandleBattleTests.EveryRefusalHasRealLocalizedTextAndUnknownCodesUseGenericMessage` (Russian, English; ключ `TacticalBattle.Refusal.NoAmmo`), `LocalizationCoverageTests.ActualRussianAndEnglishFireTextsContainNoResourceKeys` (Russian, English; `TacticalBattle.Skip.NoAmmo`), `LocalizationCoverageTests.RequiredScreenKeysResolveWithMatchingFormatsInBothPackagedLanguages` (`OutcomeReason.NoCombatCapability`) — на базе те же 5 падений: `us0003-20261116T073301Z/baseline-43a6fecf/client/sushi_VITA-CASTLE_2026-11-16_09_44_26_net8.0.trx`.
+- Engine `LocalSessionBattleTests.RealWorldConnectionRejectsSaveAtEveryActivePhaseAndRestoresItOnExit(phase: Move)` — однократное нестабильное падение в первом прогоне (`ScenarioException`: tradingMap saved edge 'SPC-0005'/'SPC-0006' metadata mismatch при перезагрузке сейва). Не воспроизводится: зелёный изолированно на HEAD дважды, в финальном прогоне Engine и на базе `43a6fecf` (тот же baseline trx). EP-0030 не меняет trading map/scenario/save-код (`git diff 43a6fecf..HEAD -- src` затрагивает только debug destroy и консоль). Классифицировано как pre-existing flaky; полный Engine-прогон на базе (`baseline-43a6fecf/engine-full`, 632 из 3040 падений, в основном cluster corpus/content sync) не используется как доказательство: worktree, по-видимому, без неотслеживаемого контента.
+- Известные pre-existing падения вне фильтра (не запускались): `BattleNavigationTests.ExitOfAStaleBattle...`, 2 `TutorialFlowTests`.
+
+**Native/manual run:** NOT RUN (интерактивный запуск клиента с консолью `kill_drone` не выполнялся).
+
 ## Review log
 
 2026-11-16T06:50:00Z — G-04 решён, история декомпозирована на пять тикетов, stage → approved (autonomous-execution).
+
+2026-11-16T07:46:00Z — story test run: Contracts 33/33, Engine 242/243, Client 64/69; падения pre-existing (доказательство на базе 43a6fecf); исправлены тесты c4dae7da (TK-0002), 3269d98a (TK-0005).
