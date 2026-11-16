@@ -31,6 +31,11 @@ internal interface IDebugConsoleHost
     TacticalBattleScreen? ActiveBattle { get; }
     /// <summary>Runs the operation under the transition lock without waiting; a held lock yields <see cref="DebugCommandResult.Busy"/>.</summary>
     Task<DebugCommandResult> RunExclusiveAsync(Func<CancellationToken, Task<DebugCommandResult>> operation, CancellationToken cancellationToken);
+    /// <summary>
+    /// Aborts the active tutorial battle of <paramref name="expectedSession"/> through the regular exit/settlement path
+    /// and shows its map (or the ship-destroyed screen); answers busy while a transition or a battle request is in flight.
+    /// </summary>
+    Task<DebugCommandResult> ExitTutorialBattleAsync(GameSessionHandle? expectedSession, CancellationToken cancellationToken);
 }
 
 /// <summary>Per-submission context; the session is captured at dispatch so a result after a session change is detected as stale.</summary>

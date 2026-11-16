@@ -272,6 +272,9 @@ public sealed class DebugConsoleControllerTests
 
         public Task<DebugCommandResult> RunExclusiveAsync(Func<CancellationToken, Task<DebugCommandResult>> operation, CancellationToken cancellationToken) =>
             IsTransitionBusy ? Task.FromResult(DebugCommandResult.Busy()) : operation(cancellationToken);
+
+        public Task<DebugCommandResult> ExitTutorialBattleAsync(GameSessionHandle? expectedSession, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 
     private sealed class IdleConnection : IGameSessionConnection

@@ -868,6 +868,36 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         finally { _transitionLock.Release(); }
     }
 
+    /// <summary>
+    /// Debug-only exception to the EP-0027 "tutorial exits to the main menu" rule (EP-0030 D-03): the battle is
+    /// exited through the same flow/settlement/checkpoint path as <see cref="ScreenEvent.CloseTacticalBattle"/>, but
+    /// an animation in progress or an open exit confirmation does not block it. A destroyed carrier still routes to
+    /// the ship-destroyed screen (G-01).
+    /// </summary>
+    async Task<DebugCommandResult> IDebugConsoleHost.ExitTutorialBattleAsync(GameSessionHandle? expectedSession, CancellationToken cancellationToken)
+    {
+        if (!await _transitionLock.WaitAsync(0, cancellationToken)) return DebugCommandResult.Busy();
+        try
+        {
+            if (_closing || _session is null || !ReferenceEquals(expectedSession, _session) ||
+                _screens.Current is not TacticalBattleScreen { IsSetup: false, Flow.IsTutorial: true } battle)
+                return DebugCommandResult.Error(ExitBattleDebugCommand.NoTutorialBattleText);
+            // Only an in-flight battle request blocks the abort; TurnBusy (animation) deliberately does not.
+            if (battle.Flow.Pending) return DebugCommandResult.Busy();
+
+            bool unfinished = battle.Flow.State is { Outcome: null };
+            // A failed exit/checkpoint keeps the battle open; the next exit_battle retries without re-settling.
+            if (!await battle.Flow.ExitAsync())
+                return DebugCommandResult.Error("Не удалось завершить бой: " + battle.Flow.Error + ". Повторите exit_battle");
+            if (unfinished) battle.Tutorial?.RecordAbandoned();
+            await PopModalAsync();
+            bool destroyed = EnsureShipDestroyedScreen();
+            return new DebugCommandResult(
+                [destroyed ? "Бой прерван. Носитель уничтожен — экран гибели" : "Бой завершён, открыта карта"], CloseConsole: true);
+        }
+        finally { _transitionLock.Release(); }
+    }
+
     private const string ScreenshotsDirectory = "Screenshots";
 
     /// <summary>
