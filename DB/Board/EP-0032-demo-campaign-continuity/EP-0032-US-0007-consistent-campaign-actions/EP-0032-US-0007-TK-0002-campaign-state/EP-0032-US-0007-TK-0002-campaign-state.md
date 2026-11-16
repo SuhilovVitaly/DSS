@@ -113,3 +113,5 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 ## Execution — 2026-11-17
 
 Save22 writer, immutable metadata/receipts, identity+payload conflict, revision guard и candidate-state hooks подключены к LoadScenarioCore, snapshot и capture под world lock. Оба tick пути используют календарное время. Отказы сохраняют исходную квитанцию без изменения ресурсов; пустые sections не объявляют будущие функции реализованными. Save21 получает только additive metadata. Именованные тесты добавлены, запуск — в конце US-0007. Loader входа Save21/22 и проверки контента — следующий TK-0003; этот промежуточный коммит не является готовой историей. diff check PASS.
+
+Story-end verification: corrected the minimal SpaceObjectData fixture to pass all required constructor arguments. Engine focused US-0007: 10/10 PASS, Release build succeeded. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0007-retry/engine3.log. No production change in this correction.

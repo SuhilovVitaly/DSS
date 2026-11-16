@@ -9,7 +9,7 @@ public sealed class DemoEp0032Us0007Tk0002Tests
     {
         var engine = new SimulationEngine();
         engine.LoadScenario(new(new("test", "Test"), new(0, "Speed0", "player", null,
-            [new("player", "PlayerShip", "Permanent", "Player", 0, 0, 0, 0, "Stationary")],
+            [new("player", "PlayerShip", "Permanent", "Player", 0, 0, 0, 0, "Stationary", null, null, null)],
             MasterSeed: 42, PlayerTokens: 123)));
         return engine;
     }
