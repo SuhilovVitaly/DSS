@@ -5,7 +5,7 @@ ticket: EP-0031-US-0003-TK-0002-demo-roadmap
 title: Дорожная карта демо
 stage: approved
 approval_kind: autonomous-execution
-implementation_status: pending
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: [EP-0031-US-0003-TK-0001-demo-requirements]
@@ -63,3 +63,7 @@ No API change.
 ## Self-containment check
 
 Состав карты определён в Documentation.md эпика и в этом тикете.
+
+## Результат исполнения
+
+В `DB/Board/README.md` добавлен раздел «Дорожная карта первой демо-версии»: 13 строк EP-0032…EP-0044, шесть фаз и три контрольные точки. Существующие каталоги заканчиваются на EP-0031 — пересечений номеров нет. Реестр US-0001 не изменён. Ссылки — 0 битых; `git diff --check` чисто.
