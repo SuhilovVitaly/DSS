@@ -5,7 +5,7 @@ ticket: EP-0031-US-0004-TK-0001-docs-impact-and-links
 title: Инвентаризация и навигация
 stage: approved
 approval_kind: autonomous-execution
-implementation_status: pending
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: [EP-0031-US-0002-TK-0001-ep0029-status-sync, EP-0031-US-0002-TK-0002-ep0021-demo-supersede, EP-0031-US-0003-TK-0002-demo-roadmap]
@@ -70,3 +70,7 @@ Graphify, push.
 ## Self-containment check
 
 Файлы и проверки перечислены полностью.
+
+## Результат исполнения
+
+Создан [DocumentationImpact](../../DocumentationImpact.md): 5 изменённых документов, 3 проверенных без изменений, 2 расхождения вне scope (Save21, экран корабля) для EP-maintenance. В `DB/Documentation/README.md` добавлены ссылки на границу демо и реестр Board. Documentation.md и Tickets.md эпика синхронизированы. Все ссылки EP-0031 и изменённых файлов — 0 битых; `git diff --check` чисто; Graphify и build/tests — NOT RUN (только Markdown).

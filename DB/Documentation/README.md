@@ -5,7 +5,8 @@
 ## Начать здесь
 
 - [Требования движка](01-Requirements/EngineRequirements.md).
-- [Текущая игра и границы первого релиза](01-Requirements/FirstReleaseRequirements.md).
+- [Текущая игра и граница первой демо-версии](01-Requirements/FirstReleaseRequirements.md).
+- [Реестр эпиков и дорожная карта демо](../Board/README.md).
 - [Архитектура](00-Process/CLAUDE.md).
 - [Правила документации](00-Process/DocumentationSystem.md).
 - [Эпики и задачи](../Board).

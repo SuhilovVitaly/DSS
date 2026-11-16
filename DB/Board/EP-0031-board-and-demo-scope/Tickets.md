@@ -10,7 +10,7 @@
 | [US-0002-TK-0002 — Пометка EP-0021](EP-0031-US-0002-stale-epic-headers/EP-0031-US-0002-TK-0002-ep0021-demo-supersede/EP-0031-US-0002-TK-0002-ep0021-demo-supersede.md) | documentation | 1 | US-0001-TK-0001 | US-0002 AC-02 | implemented |
 | [US-0003-TK-0001 — Граница демо в требованиях](EP-0031-US-0003-demo-boundary/EP-0031-US-0003-TK-0001-demo-requirements/EP-0031-US-0003-TK-0001-demo-requirements.md) | documentation | 1 | US-0001-TK-0001 | US-0003 AC-01, AC-02 | implemented |
 | [US-0003-TK-0002 — Дорожная карта демо](EP-0031-US-0003-demo-boundary/EP-0031-US-0003-TK-0002-demo-roadmap/EP-0031-US-0003-TK-0002-demo-roadmap.md) | documentation | 1 | US-0003-TK-0001 | US-0003 AC-03 | implemented |
-| [US-0004-TK-0001 — Инвентаризация и навигация](EP-0031-US-0004-documentation/EP-0031-US-0004-TK-0001-docs-impact-and-links/EP-0031-US-0004-TK-0001-docs-impact-and-links.md) | documentation | 4 | все тикеты выше | US-0004 AC-01…AC-03 | pending |
+| [US-0004-TK-0001 — Инвентаризация и навигация](EP-0031-US-0004-documentation/EP-0031-US-0004-TK-0001-docs-impact-and-links/EP-0031-US-0004-TK-0001-docs-impact-and-links.md) | documentation | 4 | все тикеты выше | US-0004 AC-01…AC-03 | implemented |
 
 Соответствие тикетов коммитам проверяется через `git log --oneline --grep "EP-0031"`;
 SHA собственного коммита тикета в карточку заранее не записывается.

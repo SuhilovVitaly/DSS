@@ -8,7 +8,7 @@ current_review: complete
 approval_kind: autonomous-execution
 epic_approval: "хорошо. сделай документ с эпиками и сделай EP-N"
 epic_approval_utc: 2026-11-16T19:36:44Z
-implementation_status: in-progress
+implementation_status: implemented
 ---
 
 # EP-0031 — Актуальный Board и граница первой демо-версии
