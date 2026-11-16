@@ -5,7 +5,7 @@ ticket: EP-0031-US-0001-TK-0001-board-registry
 title: Реестр эпиков Board
 stage: approved
 approval_kind: autonomous-execution
-implementation_status: pending
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: []
@@ -67,3 +67,7 @@ No API change.
 ## Self-containment check
 
 Источники статуса перечислены в шагах; категории и легенда заданы здесь.
+
+## Результат исполнения
+
+Создан `DB/Board/README.md`: легенда и 32 строки — по одной на каждый каталог `DB/Board/EP-*` (EP-0001…EP-0031 и EP-maintenance). Проверки: `ls -d DB/Board/EP-* | wc -l` = 32 = число строк таблицы; проверка ссылок (`D:/DeepSpaceSaga/artifacts/validation/ep-0031/20261116-links/checklinks.py`) — 0 битых; `git diff --check` — чисто. Изменены только два разрешённых файла.
