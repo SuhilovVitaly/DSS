@@ -45,8 +45,8 @@ public sealed record SortieSettlementData(
 
 /// <summary>
 /// One owned drone of the persistent wing (EP-0029 US-0003). Stable ids are never derived
-/// from display names. A destroyed drone is kept as a tombstone (not combat-ready) and never
-/// frees its pilot or slot; slots are logically freed only by replacement (out of scope here).
+/// from display names. A destroyed drone is kept as a tombstone (not combat-ready) and
+/// has no operational pilot after a memorialized loss; its slot remains occupied until replacement.
 /// </summary>
 public sealed record OwnedDroneData(
     [property: JsonPropertyName("droneId")] string DroneId,

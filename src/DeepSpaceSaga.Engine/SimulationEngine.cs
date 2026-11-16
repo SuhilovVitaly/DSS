@@ -501,6 +501,7 @@ public sealed partial class SimulationEngine : IDisposable
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
         ValidateCarrierStateForLoad(gs, runtimeObjects);
         var restoredDemoCampaign = DemoCampaignData.Validate(gs.DemoCampaign, gs.GameTimeMs);
+        ValidatePilotLossForLoad(restoredDemoCampaign, gs);
         _demoDefinitions.ValidateWorld(scenario);
         if (scenario.Metadata.ScenarioId == "demo" && restoredDemoCampaign.CatalogFingerprint is null)
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };

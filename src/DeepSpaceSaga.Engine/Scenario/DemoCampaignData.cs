@@ -20,6 +20,12 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("catalogFingerprint")]
     public string? CatalogFingerprint { get; init; }
 
+    [JsonPropertyName("pilotMemorial")]
+    public ImmutableArray<PilotMemorialEntry> PilotMemorial { get; init; } = [];
+
+    [JsonPropertyName("nextCrewSequence")]
+    public long NextCrewSequence { get; init; } = 1;
+
     [JsonPropertyName("receipts")]
     public ImmutableArray<DemoCampaignReceiptData> Receipts { get; init; } = [];
 
@@ -27,7 +33,8 @@ public sealed record DemoCampaignData(
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
         if (data.SchemaVersion != 1 || data.Revision < 0 || data.CommitSequence < data.Revision ||
-            data.LastTickGameTimeMs < 0 || data.LastTickGameTimeMs > gameTimeMs || data.Receipts.IsDefault)
+            data.LastTickGameTimeMs < 0 || data.LastTickGameTimeMs > gameTimeMs || data.Receipts.IsDefault ||
+            data.NextCrewSequence < 1 || data.PilotMemorial.IsDefault)
             throw new ScenarioException("Invalid demo campaign version or counters.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;

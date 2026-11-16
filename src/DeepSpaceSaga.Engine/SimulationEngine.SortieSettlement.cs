@@ -36,7 +36,7 @@ public sealed partial class SimulationEngine
                 consumedTorpedoes += owned.AmmoCurrent - drone.AmmoCurrent;
                 if (drone.Status == TacticalDroneStatus.Destroyed)
                 {
-                    updated.Add(owned with { Destroyed = true });
+                    updated.Add(owned with { Destroyed = true, CrewId = "" });
                     lostIds.Add(drone.Id);
                 }
                 else
@@ -59,7 +59,12 @@ public sealed partial class SimulationEngine
             foreach (var owned in wing.Where(d => !session.Battle.Drones.Any(x => x.Id == d.DroneId)))
                 updated.Add(owned);
 
+            var pilotLosses = PreparePilotLosses(shipId, session.Id, wing, lostIds.ToArray());
+            long campaignRevision = checked(_demoCampaign.Revision + 1);
+            long commitSequence = checked(_demoCampaign.CommitSequence + 1);
             _ownedWing[shipId] = updated.ToImmutable();
+            int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == shipId);
+            _objects[shipIndex] = pilotLosses.Ship;
 
             int hullMax = GetCarrierHullMax(shipId);
             int revision = GetCarrierRevision(shipId) + 1;
@@ -81,10 +86,10 @@ public sealed partial class SimulationEngine
                 ConsumedTorpedoes: consumedTorpedoes,
                 ExitKind: exitKind.ToString());
 
-            _demoCampaign = _demoCampaign with
+            _demoCampaign = pilotLosses.Campaign with
             {
-                Revision = checked(_demoCampaign.Revision + 1),
-                CommitSequence = checked(_demoCampaign.CommitSequence + 1)
+                Revision = campaignRevision,
+                CommitSequence = commitSequence
             };
 
             return new SortieSettlementSnapshot(
