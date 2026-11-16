@@ -309,10 +309,13 @@ public sealed partial class ShipScreen : IScreen
 
         if (_campaign is not null)
         {
-            var summary = _campaign()?.Company?.Roundtrip;
+            var company = _campaign()?.Company;
+            var summary = company?.Roundtrip;
             using var text = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 18, IsAntialias = true };
             canvas.DrawText(CampaignRoundtripPresentation.Summary(summary), pl + 32, pt + 440, text);
-            canvas.DrawText(CampaignRoundtripPresentation.Guidance(summary), pl + 32, pt + 468, text);
+            canvas.DrawText(company?.Outcome?.RecoveryReason is not null
+                ? CampaignOutcomePresentation.Guidance(company.Outcome)
+                : CampaignRoundtripPresentation.Guidance(summary), pl + 32, pt + 468, text);
             DrawMemorial(canvas, pl, pt);
         }
         DrawCloseButton(canvas, pl, pt);

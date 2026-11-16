@@ -67,7 +67,7 @@ public sealed class ShipDestroyedScreen : IScreen
             TextAlign = SKTextAlign.Center,
             Typeface = MenuStyle.TextStatus.Typeface
         };
-        string defeatText = Localization.Get("ShipDestroyed.Defeat");
+        string defeatText = Localization.Get("Demo.Outcome.Rollback");
         float defeatMeasured = defeat.MeasureText(defeatText);
         if (defeatMeasured > available) defeat.TextSize *= available / defeatMeasured;
         canvas.DrawText(defeatText, _layout.Panel.MidX, _layout.Panel.Bottom - 12 * _layout.Scale, defeat);
