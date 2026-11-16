@@ -5,7 +5,7 @@ ticket: EP-0032-US-0004-TK-0002-content
 title: Контент: Новая кампания в демо-кластере
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0032-US-0004-TK-0001-contracts]
@@ -106,3 +106,7 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution — 2026-11-17
+
+Added Demo scenario with seed 320032 and exactly five stations/roles; references the existing shared starter manifest (no copied roster). Uses the existing five-node TradingMap geometry/minimum-distance generator. Demo is intentionally outside solar-system enabledScenarios: the full 3–5 districts / 10–12 stations generator would violate the approved demo scope. Existing development scenarios/config retained. Settings selects Demo and gameSettings.campaignProfile=demo; actual profile routing in following engine/client tickets. Content parity test added; runtime loading at story end.
