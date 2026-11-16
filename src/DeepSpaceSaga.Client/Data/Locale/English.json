@@ -882,5 +882,9 @@
   "Demo.Rearm.destroyed_drone": "A destroyed drone cannot be rearmed.",
   "Demo.Rearm.no_capacity": "Not enough magazine space. Reduce the quantity.",
   "Demo.Rearm.battle_active": "Rearming is available after leaving battle.",
-  "Demo.Rearm.unavailable": "No response received. Check the ship state before retrying."
+  "Demo.Rearm.unavailable": "No response received. Check the ship state before retrying.",
+  "Demo.PilotLoss.Title": "Fallen crew",
+  "Demo.PilotLoss.Empty": "No crew losses.",
+  "Demo.PilotLoss.Entry": "{0} — accuracy {1}, maneuver {2}, initiative {3}; time {4} ms",
+  "Demo.PilotLoss.Help": "Fallen pilots cannot return to duty. Scroll to browse losses."
 }
