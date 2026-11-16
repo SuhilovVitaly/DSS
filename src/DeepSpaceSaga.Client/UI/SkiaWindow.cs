@@ -1552,7 +1552,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             session is not null && carrier is not null
                 ? (request, cancellationToken) => session.RearmDroneAsync(request, cancellationToken)
                 : null;
-        await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm));
+        await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm,
+            campaign: session is null ? null : () => session.DemoCampaign));
     }
 
     /// <summary>

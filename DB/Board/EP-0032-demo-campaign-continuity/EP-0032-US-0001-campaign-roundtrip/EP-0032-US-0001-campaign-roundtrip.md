@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0031-US-0005-reduced-demo-contract, EP-0032-US-0007-consistent-campaign-actions]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Продолжение кампании после настоящего боя
@@ -93,3 +93,7 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Execution — 2026-11-17
+
+Four tickets implemented. Real Tutorial starter -> owned sortie -> settlement -> rearm -> second sortie and serialization/load tested. 14 focused/regression cases PASS. UI summary is on Ship (actual post-settlement owner), not salvo animation. Self-review completed; native/product acceptance OPEN. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0001/.
