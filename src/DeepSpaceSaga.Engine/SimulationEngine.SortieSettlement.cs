@@ -19,6 +19,8 @@ public sealed partial class SimulationEngine
         lock (_worldStateLock)
         {
             string shipId = _tacticalBattleSourceShipId!;
+            if (_carrierSettlement.TryGetValue(shipId, out var committed) && committed.BattleId == session.Id)
+                return ProjectSettlement(shipId, committed);
             var carrier = session.Battle.Carriers.First(c => c.Side == session.PlayerSide);
             bool shipDestroyed = carrier.Hull <= 0;
 
@@ -78,6 +80,12 @@ public sealed partial class SimulationEngine
                 LostDroneIds: lostIdsArray.IsEmpty ? null : lostIdsArray.ToArray(),
                 ConsumedTorpedoes: consumedTorpedoes,
                 ExitKind: exitKind.ToString());
+
+            _demoCampaign = _demoCampaign with
+            {
+                Revision = checked(_demoCampaign.Revision + 1),
+                CommitSequence = checked(_demoCampaign.CommitSequence + 1)
+            };
 
             return new SortieSettlementSnapshot(
                 BattleId: session.Id,
