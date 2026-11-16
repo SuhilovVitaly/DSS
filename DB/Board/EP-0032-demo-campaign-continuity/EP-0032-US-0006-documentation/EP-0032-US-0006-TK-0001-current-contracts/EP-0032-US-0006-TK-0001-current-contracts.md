@@ -5,7 +5,7 @@ ticket: EP-0032-US-0006-TK-0001-current-contracts
 title: Актуальные механики и технические контракты
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0032-US-0001-TK-0003-client, EP-0032-US-0002-TK-0003-client, EP-0032-US-0003-TK-0004-terminal-save-policy, EP-0032-US-0004-TK-0004-client, EP-0032-US-0005-TK-0002-continue-menu, EP-0032-US-0007-TK-0005-campaign-client]
@@ -87,3 +87,11 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Scope expansion before documentation
+
+Impact inventory expands scope to Documentation README, process architecture, FirstReleaseRequirements, CrewAndHabitation, MainMenu/ScenarioSelect/Load/Ship/ScreenCatalog, DebugTuning and a single owning DemoCampaign engineering contract. Save22, profile selection, memorial and autosave changed these current descriptions. Historical Board reports remain historical.
+
+## Execution — 2026-11-17
+
+Current contracts synchronized; inventory in ../../DocumentationImpact.md. Changed Markdown file links checked; Documentation Markdown-only; diff check passed. Solution Release build succeeded with 0 warnings/errors (D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-final/build.log). No manual acceptance claimed; user explicitly deferred manual checks.
