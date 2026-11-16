@@ -318,8 +318,8 @@ public sealed class KillDroneDebugCommandTests
         var state = battle.Flow.State!;
         var own = state.Units.Where(u => u.Side == state.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State != TacticalUnitState.Destroyed).ToList();
         Assert.True(own.Count >= 2, "the tutorial wing needs a spare drone to lose");
+        // Owned sortie drones keep their owned drone id as the tactical unit id; settlement reports that id.
         var lost = own[0];
-        Assert.NotNull(lost.SourceDroneId);
 
         Assert.StartsWith("Уничтожен: ", (await Submit(fixture.Window, "kill_drone " + lost.Id))[^1], StringComparison.Ordinal);
         Assert.Null(battle.Flow.State!.Outcome);
@@ -348,7 +348,7 @@ public sealed class KillDroneDebugCommandTests
         var carrier = ReadCarrier(Path.Combine(fixture.SaveDirectory, "campaign-continuation.json"));
         Assert.Equal(1, carrier.Revision);
         Assert.Equal(over.BattleId, carrier.LastSettlement!.BattleId);
-        Assert.Contains(lost.SourceDroneId!, carrier.LastSettlement.LostDroneIds!);
+        Assert.Equal(new[] { lost.Id }, carrier.LastSettlement.LostDroneIds);
 
         // Nothing is left to kill or settle again.
         Assert.Equal(KillDroneDebugCommand.NoBattleText, (await Submit(fixture.Window, "kill_drone " + lost.Id))[^1]);
