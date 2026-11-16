@@ -9,8 +9,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class CatalogCompatibilityTests
 {
-    private static string SettingsPath => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-        "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client", "Settings.json"));
+    private static string SettingsPath => Path.Combine(TestRepositoryPaths.Client, "Settings.json");
 
     private static GameDataRegistry RealRegistry() => EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
 
@@ -216,7 +215,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(21, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(22, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -230,7 +229,8 @@ public sealed class CatalogCompatibilityTests
     public void Rename_is_compatible_but_price_and_mass_changes_are_not()
     {
         var registry = RealRegistry();
-        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath,
+            Path.Combine(TestRepositoryPaths.Client, "Scenarios", "Default", "scenario.json"));
         var save = engine.CaptureSaveState();
         using var renamed = new SimulationEngine(ChangeCatalog(registry, item => item with { DisplayName = "Renamed" }));
         renamed.LoadScenario(save);
@@ -307,7 +307,8 @@ public sealed class CatalogCompatibilityTests
     [Fact]
     public void Missing_or_mismatched_identity_does_not_replace_running_world()
     {
-        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath,
+            Path.Combine(TestRepositoryPaths.Client, "Scenarios", "Default", "scenario.json"));
         var save = engine.CaptureSaveState();
         long balance = engine.PlayerCredits;
         foreach (var stamp in new CatalogCompatibilityData?[] { null,
@@ -760,7 +761,8 @@ public sealed class CatalogCompatibilityTests
     [Fact]
     public void Save_v9_roundtrips_market_budget_and_pending_output()
     {
-        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath,
+            Path.Combine(TestRepositoryPaths.Client, "Scenarios", "Default", "scenario.json"));
         var save = engine.CaptureSaveState();
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
 

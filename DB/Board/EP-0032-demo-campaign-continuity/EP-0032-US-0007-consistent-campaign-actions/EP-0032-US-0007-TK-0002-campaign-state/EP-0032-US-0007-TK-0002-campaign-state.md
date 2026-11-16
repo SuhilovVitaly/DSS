@@ -115,3 +115,9 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 Save22 writer, immutable metadata/receipts, identity+payload conflict, revision guard и candidate-state hooks подключены к LoadScenarioCore, snapshot и capture под world lock. Оба tick пути используют календарное время. Отказы сохраняют исходную квитанцию без изменения ресурсов; пустые sections не объявляют будущие функции реализованными. Save21 получает только additive metadata. Именованные тесты добавлены, запуск — в конце US-0007. Loader входа Save21/22 и проверки контента — следующий TK-0003; этот промежуточный коммит не является готовой историей. diff check PASS.
 
 Story-end verification: corrected the minimal SpaceObjectData fixture to pass all required constructor arguments. Engine focused US-0007: 10/10 PASS, Release build succeeded. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0007-retry/engine3.log. No production change in this correction.
+
+## Final regression scope
+
+Update obsolete current-writer assertions in TradingEconomySaveSchemaTests, CombatReportsSaveSchemaTests, CatalogCompatibilityTests and SaveMigration20Tests from21 to22. Preserve direct SaveMigration21 intermediate-version assertions. Add TestRepositoryPaths and adapt SaveFixturesTests, SeededWorldBootstrapTests, TradingVoyageFixture and QuotedTradeExecutionTests paths so required external --artifacts-path builds can read source fixtures without copying source into artifacts.
+
+Regression result: 105/105 PASS, including campaign, Save18–22, atomic legacy rejection, catalog compatibility and the unchanged direct Save20→21 migration. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-regression/after2.log; initial artifact-path failures and then incomplete historical projection were corrected. Historical DTO fixture removes DemoCampaign when emulating pre22 input; catalog-only rename test explicitly uses Default instead of the new Demo default.

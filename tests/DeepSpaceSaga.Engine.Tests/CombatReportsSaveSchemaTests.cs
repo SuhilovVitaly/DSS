@@ -14,7 +14,7 @@ public sealed class CombatReportsSaveSchemaTests
         root["gameState"]!["combatReportsState"] = JsonNode.Parse(
             """{"version":1,"sequence":17,"reportedRangeTargetIds":["no-longer-in-world"]}""");
         var world = ScenarioLoader.LoadFromJson(root.ToJsonString(), allowNonZeroGameTime: true, isSave: true);
-        Assert.Equal(21, world.SaveFormatVersion);
+        Assert.Equal(22, world.SaveFormatVersion);
         Assert.DoesNotContain("\"combatReportsState\"", ScenarioLoader.Serialize(world), StringComparison.Ordinal);
     }
 
@@ -33,7 +33,7 @@ public sealed class CombatReportsSaveSchemaTests
     [InlineData("{\"version\":1,\"sequence\":0}")]
     public void MalformedReportStateIsRejectedAtomically(string state)
     {
-        using var engine = Create();
+        using var engine = Create(registry: SaveFixturesTests.Registry());
         var before = engine.CaptureSaveState();
         var root = Fixture();
         root["gameState"]!["combatReportsState"] = JsonNode.Parse(state);
@@ -44,7 +44,7 @@ public sealed class CombatReportsSaveSchemaTests
     [Fact]
     public void Save16StillRejected()
     {
-        using var engine = Create();
+        using var engine = Create(registry: SaveFixturesTests.Registry());
         var save = engine.CaptureSaveState() with { SaveFormatVersion = 16 };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(save, true));
     }

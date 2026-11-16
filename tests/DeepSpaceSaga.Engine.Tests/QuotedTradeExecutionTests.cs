@@ -71,8 +71,7 @@ public class QuotedTradeExecutionTests
 
     internal static GameDataRegistry RealRegistry()
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        string root = TestRepositoryPaths.Client;
         return EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
     }
 
