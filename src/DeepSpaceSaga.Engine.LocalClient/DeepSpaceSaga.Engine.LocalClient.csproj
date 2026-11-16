@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="DeepSpaceSaga.Client.Tests" />
+    <InternalsVisibleTo Include="DeepSpaceSaga.Engine.Tests" />
     <ProjectReference Include="..\DeepSpaceSaga.Contracts\DeepSpaceSaga.Contracts.csproj" />
     <ProjectReference Include="..\DeepSpaceSaga.Engine\DeepSpaceSaga.Engine.csproj" />
     <ProjectReference Include="..\DeepSpaceSaga.Motion\DeepSpaceSaga.Motion.csproj" />

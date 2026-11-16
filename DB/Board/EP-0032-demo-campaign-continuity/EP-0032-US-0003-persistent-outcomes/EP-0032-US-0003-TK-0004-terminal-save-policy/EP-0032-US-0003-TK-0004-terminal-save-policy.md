@@ -5,7 +5,7 @@ ticket: EP-0032-US-0003-TK-0004-terminal-save-policy
 title: Checkpoint, аварийное закрытие и ошибки записи
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: local-client
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0032-US-0003-TK-0003-client]
@@ -106,3 +106,11 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Scope correction before implementation — 2026-11-17
+
+Add Engine.LocalClient.csproj friend access for the owning Engine.Tests assembly and internal storage fault-injection seams. Production writer stays single-gated and atomic; tests inject capture, partial temp write and pre-replace faults into that actual path. CaptureSaveState rejects station-security terminal state; battle-destroyed carriers are already serializable by EP-0029 and must not be silently reverted. Preserve this distinction rather than broadly disabling terminal saves.
+
+## Execution — 2026-11-17
+
+Preserved single atomic writer and checkpoint retry cache. Added internal fault seams and wrapped capture refusal as recoverable checkpoint IOException; no false saved acknowledgement. Fault tests before capture, partial temp write and before replace retain byte-identical old slot, clean temporary files and retry without re-settlement. Battle-destroyed world remains serializable; station-security terminal capture remains forbidden. Cumulative checks: Engine 20/20, Contracts 6/6, Client+terminal regression 17/17 PASS; Release builds included. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0003/{engine.log,contracts.log,client.log,format.err}. Native/product acceptance OPEN.

@@ -17,6 +17,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     private readonly Task _engineLoopTask;
     private readonly string? _saveDirectory;
     private readonly SemaphoreSlim _saveGate = new(1, 1);
+    internal Action<string>? SaveStageForTests { get; set; }
+    internal Func<string, string, CancellationToken, Task>? WriteSaveTempForTests { get; set; }
     // Owned-exit receipts by BattleId and the subset whose continuation checkpoint reached disk.
     // Guarded by _checkpointGate, which serializes the engine call + storage phase so concurrent
     // duplicate exits settle exactly once.
@@ -198,7 +200,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
             await SaveAsync(SaveSlotNaming.ContinuationSlotId, cancellationToken).ConfigureAwait(false);
             _checkpointedBattles.Add(battleId);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or OperationCanceledException or ObjectDisposedException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)
         {
             // The world is already committed: storage is a recoverable post-commit phase. The
             // Client maps this IOException to an Unavailable receipt instead of an engine rejection.
@@ -318,13 +320,18 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
             // Capture stays inside the gate: Engine rejects a terminal world before any
             // directory/temp-file write, including saves queued while the player was alive.
             // An immutable pre-death capture may still finish its atomic write afterwards.
+            SaveStageForTests?.Invoke("before_capture");
             var saveState = _engine.CaptureSaveState();
             string json = ScenarioLoader.Serialize(saveState);
             Directory.CreateDirectory(_saveDirectory);
             string targetPath = Path.Combine(_saveDirectory, SaveSlotNaming.ToFileName(slotId));
             tempPath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
-            await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
+            if (WriteSaveTempForTests is { } write)
+                await write(tempPath, json, cancellationToken).ConfigureAwait(false);
+            else
+                await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
+            SaveStageForTests?.Invoke("before_replace");
             File.Move(tempPath, targetPath, overwrite: true);
         }
         finally

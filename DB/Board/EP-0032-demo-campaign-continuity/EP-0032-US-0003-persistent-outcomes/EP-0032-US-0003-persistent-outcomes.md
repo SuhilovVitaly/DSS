@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0032-US-0002-permanent-pilot-loss]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Сохранение последствий и понятный конец кампании
@@ -95,3 +95,7 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 ### Уточнение AC-03: граница долговечности
 
 Обычное закрытие проводит aborted settlement и checkpoint. Аварийное прекращение процесса допускает rollback только к последнему успешно записанному checkpoint; сохранения внутри боя и crash-proof death ledger не входят в сокращённую демо. После подтверждённого checkpoint потери не откатываются. Это A-assumption текущего планирования, не доказанная crash-safety.
+
+## Execution — 2026-11-17
+
+Five tickets implemented. Empty wing remains recoverable; destroyed carrier terminal routing preserved. Durable pilot/wing/hull roundtrip and three storage fault stages verified. Crash before successful replacement may roll back to previous durable checkpoint; no in-battle save or crash-proof permanence claimed. Cumulative Engine 20, Contracts 6, Client 17 PASS. Native/product acceptance OPEN. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0003/.
