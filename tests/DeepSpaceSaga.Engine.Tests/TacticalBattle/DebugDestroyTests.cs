@@ -219,7 +219,8 @@ public sealed class DebugDestroyTests : IDisposable
         Assert.Equal(frame.Turn, state.Turn);
         Assert.Equal(new[] { TacticalBattleLogKind.Destroyed, TacticalBattleLogKind.Outcome }, response.NewEvents.Select(e => e.Kind));
         Assert.All(response.NewEvents, e => Assert.Equal(TacticalBattlePhase.Fire, e.Phase));
-        Assert.Equal(state.Outcome, response.NewEvents[^1].Outcome);
+        // Records with ImmutableArray members compare arrays by reference; compare by value via JSON.
+        Assert.Equal(JsonSerializer.Serialize(state.Outcome), JsonSerializer.Serialize(response.NewEvents[^1].Outcome));
         Assert.Equal(random, (session.Battle.Random.State, session.Battle.Random.Calls));
         Assert.Equal(TacticalBattleRejectionCode.WrongPhase,
             engine.FireTacticalBattle(new("fire-after", state.BattleId, state.Revision)).Code);
