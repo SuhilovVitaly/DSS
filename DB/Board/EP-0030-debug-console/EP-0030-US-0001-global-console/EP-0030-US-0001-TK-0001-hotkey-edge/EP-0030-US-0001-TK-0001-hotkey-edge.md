@@ -5,6 +5,7 @@ ticket: EP-0030-US-0001-TK-0001-hotkey-edge
 title: Опрос клавиши P для сочетания Ctrl+Alt+P
 stage: approved
 approval_kind: autonomous-execution
+implementation_status: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: []
@@ -83,3 +84,17 @@ dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -
 ## Self-containment check
 
 Файл, строка, изменение и тесты указаны; внешних решений не требуется.
+
+## Execution evidence 2026-11-16
+
+Изменённые файлы:
+
+- `src/DeepSpaceSaga.Client/UI/KeyboardEdgeTracker.cs` — `Key.P` добавлен в конец `StandardKeys` с комментарием «EP-0030 debug console Ctrl+Alt+P».
+- `tests/DeepSpaceSaga.Client.Tests/KeyboardEdgeTrackerTests.cs` — тесты `Ctrl_Alt_P_reports_single_P_edge_with_modifiers` (Theory: ControlLeft/ControlRight × AltLeft/AltRight), `Held_P_reports_no_second_edge`, `Bare_P_reports_edge_without_modifiers`; добавлен `using DeepSpaceSaga.Client.UI.Screens` для `KeyModifiers`.
+
+Команды и результаты:
+
+- `dotnet build tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore` — Build succeeded, 0 warnings, 0 errors (собирает и `DeepSpaceSaga.Client`).
+- `dotnet format DeepSpaceSaga.sln whitespace --verify-no-changes --include src/DeepSpaceSaga.Client/UI/KeyboardEdgeTracker.cs tests/DeepSpaceSaga.Client.Tests/KeyboardEdgeTrackerTests.cs` — exit 0.
+- `git diff --check` — exit 0.
+- Тесты: NOT RUN — по инструкции оператора выполняются в конце истории (после US-0001 TK-0003).

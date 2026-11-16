@@ -14,7 +14,9 @@ internal sealed class KeyboardEdgeTracker
         Key.Up, Key.Down, Key.Left, Key.Right, Key.F5, Key.F9, Key.F10, Key.C, Key.Backspace,
         Key.Equal, Key.Minus, Key.KeypadAdd, Key.KeypadSubtract, Key.Home, Key.End,
         // Tactical battle: E evade / D decoy in Fire (independent of maneuver bindings), H comms log of the battle tutorial.
-        Key.E, Key.D, Key.H
+        Key.E, Key.D, Key.H,
+        // EP-0030 debug console Ctrl+Alt+P (physical key, layout-independent).
+        Key.P
     ];
     private readonly Key[] _keys;
     private readonly Dictionary<Key, bool> _previous = new();
