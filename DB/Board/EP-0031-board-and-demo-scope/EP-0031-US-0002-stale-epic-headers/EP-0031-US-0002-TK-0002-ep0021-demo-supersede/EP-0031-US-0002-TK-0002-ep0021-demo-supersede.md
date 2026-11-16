@@ -5,7 +5,7 @@ ticket: EP-0031-US-0002-TK-0002-ep0021-demo-supersede
 title: Пометка EP-0021
 stage: approved
 approval_kind: autonomous-execution
-implementation_status: pending
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: [EP-0031-US-0001-TK-0001-board-registry]
@@ -64,3 +64,7 @@ No API change.
 ## Self-containment check
 
 Текст пометки полностью определён Decisions и Assumptions.
+
+## Результат исполнения
+
+После заголовка `EP-0021/Documentation.md` вставлена цитата «Актуальность 2026-11-16»: замена D-01, перенос US-0003/0004/0005/0011 в EP-0029, распределение остальных историй по EP-0034/0037/0041/0042, отмена US-0008. Diff — только добавленные строки (0 удалённых). Ссылки — 0 битых; `git diff --check` чисто.
