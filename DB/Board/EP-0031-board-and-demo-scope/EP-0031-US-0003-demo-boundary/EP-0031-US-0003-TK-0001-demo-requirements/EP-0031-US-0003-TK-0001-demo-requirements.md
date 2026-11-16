@@ -5,7 +5,7 @@ ticket: EP-0031-US-0003-TK-0001-demo-requirements
 title: Граница демо в требованиях
 stage: approved
 approval_kind: autonomous-execution
-implementation_status: pending
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: [EP-0031-US-0001-TK-0001-board-registry]
@@ -64,3 +64,7 @@ No API change.
 ## Self-containment check
 
 Содержание раздела полностью задано D-01…D-04 и реестром.
+
+## Результат исполнения
+
+Заголовок: «Границы текущей игры и первой демо-версии». Добавлен раздел «Первая демо-версия»: статус «принято, не реализовано», цикл, D-01…D-04, состав и ссылка на дорожную карту. Таблица текущих границ не изменена (удалена только строка старого заголовка). Ссылки — 0 битых (якорь на дорожную карту появляется в US-0003-TK-0002). Найдено вне scope: код пишет Save21 (`src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:40`), таблица говорит Save20 — передано в инвентаризацию US-0004.
