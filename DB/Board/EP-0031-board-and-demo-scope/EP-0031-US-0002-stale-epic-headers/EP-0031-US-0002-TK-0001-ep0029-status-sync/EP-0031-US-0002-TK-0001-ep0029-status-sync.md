@@ -5,7 +5,7 @@ ticket: EP-0031-US-0002-TK-0001-ep0029-status-sync
 title: Статус EP-0029
 stage: approved
 approval_kind: autonomous-execution
-implementation_status: pending
+implementation_status: implemented
 layer: documentation
 test_project: none
 depends_on: [EP-0031-US-0001-TK-0001-board-registry]
@@ -66,3 +66,7 @@ Stage story- и ticket-файлов EP-0029, исторические табли
 ## Self-containment check
 
 Строки и замены указаны точно; evidence — коммиты и story-файл из шага 1.
+
+## Результат исполнения
+
+`EP-0029/Documentation.md`: `implementation_status: implemented`; строка 18 описывает поставленный код, remediation-story и открытую приёмку. `EP-0029/Tickets.md:3`: «Implementation NOT STARTED» заменено ссылкой на статус. Строка 241 Documentation.md («Реализация не начата … в этой planning-задаче») — датированная запись планирования, сохранена как история. Проверки: ссылки 0 битых; `git diff --check` чисто.
