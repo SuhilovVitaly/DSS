@@ -209,6 +209,19 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     public ValueTask<CarrierCommandResponse> RearmDroneAsync(RearmDroneRequest request, CancellationToken cancellationToken = default) =>
         TacticalCall(() => _engine.RearmDrone(request), cancellationToken);
 
+    public async ValueTask<DemoCampaignResponse> ExecuteDemoCampaignAsync(DemoCampaignCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _engine.ExecuteDemoCampaign(command);
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
     private ValueTask<T> TacticalCall<T>(Func<T> action, CancellationToken token)
     {
         // Engine methods serialize against the same lock as world ticks. The adapter owns no battle state.

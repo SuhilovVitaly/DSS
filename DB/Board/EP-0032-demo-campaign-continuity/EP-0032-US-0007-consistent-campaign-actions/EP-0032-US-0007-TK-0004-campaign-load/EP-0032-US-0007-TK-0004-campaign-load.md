@@ -5,7 +5,7 @@ ticket: EP-0032-US-0007-TK-0004-campaign-load
 title: Безопасная загрузка Save22 и транспорт
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-pending-story-validation
 layer: local-client
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0032-US-0007-TK-0003-campaign-loader]
@@ -105,3 +105,7 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution — 2026-11-17
+
+Campaign transport исполняется асинхронно вне вызывающего UI потока; cancellation/disposal проверяются до отправки и на worker. Используются существующие factory и SaveAsync, второй writer не введён. ScenarioRepository не требует изменений: фабрика поднимает loader exception до создания connection. Добавлены три named tests, включая реальный файл неподдерживаемой версии и сохранение живой сессии. Dotnet gate — конец US-0007; diff check PASS.
