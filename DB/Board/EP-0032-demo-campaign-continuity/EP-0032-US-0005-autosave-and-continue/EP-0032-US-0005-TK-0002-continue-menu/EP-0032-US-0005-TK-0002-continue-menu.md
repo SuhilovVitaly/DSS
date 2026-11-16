@@ -123,3 +123,7 @@ Scope review: include ScreenEventTests, ShipDestroyedScreen and ShipDestroyedScr
 
 Implemented asynchronous autosave adoption/drain, visible durable status and F6 retry; Continue validates latest compatible save off render thread. Terminal checkpoint and New Game use existing session transitions. Battle snapshots do not request autosave.
 Story-end checks: Engine 23 PASS (`D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0005/engine.log`), Client 126 PASS (`client3.log` in same directory), Release builds included. Earlier stale Credits and overly broad test-edit failures were corrected. Native/product acceptance remains open.
+
+Final review correction: Continue must also display LoadFailed when full candidate validation succeeded but session adoption later fails. HandleScreenEvent already serializes the transition; use the shared boolean LoadSlotCoreAsync result instead of discarding it through the void UI wrapper.
+
+Correction verification: final/client.log, 126 Client PASS; no game launch.

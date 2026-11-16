@@ -1056,7 +1056,11 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                     try
                     {
                         var slot = await Task.Run(_sessionFactory.GetLatestValidSave);
-                        if (slot is not null) await LoadSlotAsync(slot.SlotId);
+                        if (slot is not null)
+                        {
+                            if (!await LoadSlotCoreAsync(slot.SlotId, "Continue") && _screens.Current is MainMenuScreen failedMenu)
+                                failedMenu.ShowStatus("Demo.Save.LoadFailed");
+                        }
                         else if (_screens.Current is MainMenuScreen menu) menu.ShowStatus("Demo.Save.Empty");
                     }
                     catch (Exception error)
