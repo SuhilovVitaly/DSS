@@ -125,3 +125,5 @@ The current kneeling README/index supersede the draft generic-composition assump
 
 ## Execution
 Integrated exact-identity repaired v3 pose selection for all seven prepared outfits, default pilot only when no outfit assigned. Pending uses original portrait; missing/incompatible assembly uses original or neutral name card. Cache owns one selected image and disposes on target change/deactivation. Profiles/index copied to output and publish; existing prepared assets included unchanged. Client/test build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk6-build.log). Native NOT RUN; generic unprepared head/body registrations are not inferred from example metadata.
+
+Boundary/review correction: None Update could not restore JSON removed by the existing ModularCrew None Remove. Changed the owning Content Include; initial US9 portrait tests correctly failed on missing metadata. Rerun pending after engine provenance correction.
