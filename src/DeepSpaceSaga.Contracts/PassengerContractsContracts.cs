@@ -12,13 +12,19 @@ public static class PassengerDeliveryStates
     /// <summary>Passengers are aboard and the deadline has not passed: dock at the destination to deliver.</summary>
     public const string Aboard = "aboard";
 
-    /// <summary>The deadline has passed before delivery; no payout is due (failure handling belongs to US-0003).</summary>
+    /// <summary>The deadline has passed before delivery; no payout is due until the failure is recorded (US-0003).</summary>
     public const string Overdue = "overdue";
 
     /// <summary>The passengers left the carrier at the destination and the payout was credited exactly once.</summary>
     public const string Delivered = "delivered";
 
-    public static bool IsKnown(string? state) => state is Aboard or Overdue or Delivered;
+    /// <summary>
+    /// EP-0034 US-0003: the contract expired, was cancelled or was lost with the carrier; no payout. Reason, penalty
+    /// and whether the passengers still wait for a docking to leave are in <see cref="TransportFailuresSnapshot"/>.
+    /// </summary>
+    public const string Failed = "failed";
+
+    public static bool IsKnown(string? state) => state is Aboard or Overdue or Delivered or Failed;
 }
 
 /// <summary>

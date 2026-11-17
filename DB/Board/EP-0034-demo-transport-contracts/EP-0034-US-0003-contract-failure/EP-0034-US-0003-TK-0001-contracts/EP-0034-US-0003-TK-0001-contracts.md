@@ -5,7 +5,7 @@ ticket: EP-0034-US-0003-TK-0001-contracts
 title: Контракт: Просрочка и отмена перевозки
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0034-US-0002-TK-0003-client]
@@ -106,3 +106,22 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution result (2026-11-17)
+
+Статус: implemented; **validation pending at story end** (каденция владельца: на тикет — сборка, story-тесты в конце US-0003). PASS истории здесь не заявляется.
+
+Изменённые файлы (`files_touched` 3; `DemoCampaign.cs` не потребовал правок — `DemoTransportSnapshot` уже `partial` с US-0001; allowlist расширен на `PassengerContractsContracts.cs`, см. A-03):
+
+- `src/DeepSpaceSaga.Contracts/TransportFailureContracts.cs` — новый: `TransportFailureSnapshot(ContractId, Type, Reason, FailedAtGameTimeMs, PenaltyCredits, PenaltyPaid, Debt, DisembarkPending, PostingId, PassengerIds, RepaidCredits = 0, DisembarkedAtGameTimeMs?, DisembarkStationId?)`; `TransportCancellationTerms(ContractId, CancelPenaltyCredits, ExpiryPenaltyCredits, DeadlineGameTimeMs, Blocker)`; `TransportFailuresSnapshot(Failures, Terms, ContractDebt, ObservedAtGameTimeMs)`; partial `DemoTransportSnapshot.TransportFailures`; команда `CancelTransportCommand(CommandId, ExpectedRevision, ContractId) : DemoCampaignCommand`; `TransportFailureReasons` — исходы `cancelled`/`expired`/`carrier_lost`, отказы `contract_not_found`/`contract_not_active`/`not_cancellable`, posting `penalty:{contractId}`, `CancelBlocker(section, id)` (отсутствие данных → `unavailable`) и `Outcome(section, id)` (неизвестный reason → null).
+- `src/DeepSpaceSaga.Contracts/PassengerContractsContracts.cs` — аддитивно `PassengerDeliveryStates.Failed = "failed"` и `IsKnown`.
+- `tests/DeepSpaceSaga.Contracts.Tests/Demo/DemoEp0034Us0003Tk0001Tests.cs` — `Payload_RoundTrips`, `LegacyPayload_UsesSafeDefaults`, `ReasonCodes_AreStable`.
+
+Проверки: red — сборка тестового проекта падала с CS0246 (`TransportFailureSnapshot` отсутствует) до реализации; после реализации быстрый прогон `dotnet test tests/DeepSpaceSaga.Contracts.Tests --filter FullyQualifiedName~DemoEp0034` — 12/12 (TRX `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0003-tk0001/contracts.trx`). Доказательством остаётся story-прогон в конце US-0003.
+
+Допущения:
+
+- A-01 (technical): один record на неудачу для любых транспортных заказов (пассажир/груз), чтобы US-0004 переиспользовала штрафы и долг; пассажирская часть — `PassengerIds`/`DisembarkPending`, для груза пустая.
+- A-02 (technical): долг считается в Tokens: `PenaltyPaid + RepaidCredits + Debt = PenaltyCredits`; условия отмены и просрочки публикуются заранее в `Terms`, клиент не считает штраф.
+- A-03 (allowlist): `PassengerContractsContracts.cs` добавлен в scope — у проваленного пассажирского контракта нужен собственный delivery state `failed` (иначе отменённый контракт показывался бы как `overdue`). Изменение аддитивное, старые коды не меняются.
+- A-04 (technical): потеря носителя — исход `carrier_lost` со статусом журнала `failed`; отмена — статус `cancelled`; просрочка — `failed`.
