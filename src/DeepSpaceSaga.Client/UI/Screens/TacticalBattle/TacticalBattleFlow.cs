@@ -180,6 +180,12 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
         try
         {
             var response = await send();
+            // Storage may fail after the winning command has already committed. Recover the
+            // frozen map, but preserve Unavailable so durability is still retried separately.
+            if (response.Code == TacticalBattleRejectionCode.Unavailable &&
+                await Session.GetTacticalBattleStateAsync() is { Phase: TacticalBattlePhase.Over } frozen &&
+                frozen.BattleId == State?.BattleId)
+                response = response with { State = frozen };
             var previous = Volatile.Read(ref _observed);
             if (response.Accepted && exiting)
             {

@@ -13,7 +13,7 @@ namespace DeepSpaceSaga.Client.Tests.Demo;
 
 public sealed class DemoEp0036Us0007Tk0004Tests
 {
-    internal static SimulationEngine Won()
+    internal static SimulationEngine Won(bool finish = true)
     {
         var engine = EngineContentLoader.CreateEngineFromScenarioFile(AppContext.BaseDirectory + "/Settings.json", AppContext.BaseDirectory + "/Scenarios/Demo/scenario.json");
         var save = engine.CaptureSaveState();
@@ -39,6 +39,7 @@ public sealed class DemoEp0036Us0007Tk0004Tests
         Assert.True(engine.ExecuteDemoCampaign(new DismissSensorContactReportRequest("ack", current.Revision, current.PendingSensorReport!.BatchId)).Applied);
         current = engine.CaptureSnapshot().DemoCampaign!;
         Assert.True(engine.ExecuteDemoCampaign(new BeginEncounterBattleCommand("begin", current.Revision, current.WorldEncounter!.Binding.EncounterId)).Applied);
+        if (!finish) return engine;
         var battle = engine.TacticalBattleSessionForTests!;
         foreach (var drone in battle.Battle.Drones.Where(d => d.Side == "B")) drone.Status = TacticalDroneStatus.Disabled;
         battle.Battle.CheckVictory();
@@ -50,6 +51,35 @@ public sealed class DemoEp0036Us0007Tk0004Tests
     {
         var deadline = DateTime.UtcNow.AddSeconds(10);
         while (!predicate()) { Assert.True(DateTime.UtcNow < deadline, "Session projection timeout"); await Task.Delay(20); }
+    }
+
+    [Fact]
+    public async Task FailedOpeningCheckpointRecoversFrozenMap()
+    {
+        string directory = Directory.CreateDirectory("D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/io-" + Guid.NewGuid().ToString("N")).FullName;
+        try
+        {
+            using var engine = Won(false);
+            await using var connection = new LocalGameSessionConnection(engine, directory);
+            await using var handle = new GameSessionHandle(connection);
+            await WaitFor(() => handle.DemoCampaign?.WorldEncounter is not null);
+            var flow = new TacticalBattleFlow(handle) { CampaignEncounter = handle.DemoCampaign!.WorldEncounter };
+            Assert.True(await flow.StartEncounterAsync());
+            var screen = new TacticalBattleScreen(flow, 1);
+            var battle = engine.TacticalBattleSessionForTests!;
+            var enemies = battle.Battle.Drones.Where(d => d.Side != battle.PlayerSide).ToArray();
+            foreach (var drone in enemies.Skip(1)) drone.Status = TacticalDroneStatus.Disabled;
+            connection.SaveStageForTests = stage => { if (stage == "before_replace") throw new IOException("opening checkpoint failure"); };
+            var command = new DebugDestroyTacticalUnitRequest("last", battle.Id, battle.Revision, enemies[0].Id);
+            var response = await flow.DebugDestroyAsync(command);
+            Assert.Equal(TacticalBattleRejectionCode.Unavailable, response!.Code);
+            await WaitFor(() => handle.DemoCampaign?.Rewards?.Loot?.Phase == LootPhases.Open);
+            Assert.Equal(TacticalBattlePhase.Over, screen.CaptureFrame(1280, 720)!.Battle.Phase);
+            connection.SaveStageForTests = null;
+            Assert.True((await flow.DebugDestroyAsync(command))!.Accepted);
+            Assert.Equal(TacticalBattlePhase.Over, flow.State!.Phase);
+        }
+        finally { Directory.Delete(directory, true); }
     }
 
     [Fact]

@@ -158,7 +158,9 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
             if (_pendingLootCheckpoint is { } pending) await WriteContinuationCheckpointAsync(pending, token).ConfigureAwait(false);
             var response = action();
             if (response.Accepted && response.Settlement is { } settlement &&
-                _engine.CaptureSnapshot().DemoCampaign?.Rewards?.Loot?.BattleId == settlement.BattleId)
+                !_checkpointedBattles.Contains(settlement.BattleId) &&
+                _engine.CaptureSnapshot().DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot &&
+                loot.BattleId == settlement.BattleId)
             {
                 _pendingLootCheckpoint = settlement.BattleId;
                 _engine.SetEncounterStoragePending(true);

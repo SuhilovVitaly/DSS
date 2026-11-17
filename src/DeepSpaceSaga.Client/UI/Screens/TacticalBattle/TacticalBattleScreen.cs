@@ -103,6 +103,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     internal TacticalBattleFrame? CaptureFrame(int width, int height)
     {
+        if (Flow.State is { Phase: TacticalBattlePhase.Over } frozen &&
+            Volatile.Read(ref _presentation)?.Accepted.Revision < frozen.Revision &&
+            Flow.Session.DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == frozen.BattleId)
+            ShowConfirmedState();
         if (Volatile.Read(ref _presentation) is not { } presentation || width < 2 || height < 1) return null;
         long now = ClockMilliseconds();
         bool moving = presentation.Animation?.IsActive(now) == true;
