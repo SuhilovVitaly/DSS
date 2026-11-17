@@ -81,3 +81,5 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 
 ## Execution 2026-11-17
 AI uses live origin for defense, nearest live same-side fallback after origin loss, nearest live enemy for strikes, and threats to any live friendly carrier. Stable distance/ID tie-break; singleton behavior preserved. Added explicit origin/fallback/target test. Build PASS us14-tk1-build.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests deferred to US14 boundary.
+
+Full-suite oracle correction scope OutcomeTests: last destroyed own carrier now disables four surviving drones by D35; structural losses are4/6, not0/6. Explicitly assert Disabled, Speed0 and preserved positive hull for all four; Draw and reason ordering retained.
