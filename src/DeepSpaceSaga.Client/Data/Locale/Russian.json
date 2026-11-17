@@ -958,5 +958,12 @@
   "Demo.Recruitment.Confirmed": "Состав экипажа обновлён",
   "Demo.Recruitment.Empty": "На этой станции нет предложений пилотов",
   "Demo.Recruitment.NoPilot": "Нет доступного пилота",
-  "Demo.Recruitment.NoDrone": "Нет доступного дрона"
+  "Demo.Recruitment.NoDrone": "Нет доступного дрона",
+  "Demo.Upkeep.Title": "Содержание экипажа",
+  "Demo.Upkeep.Totals": "Начислено {0}; выплачено {1}; долг {2}",
+  "Demo.Upkeep.Food": "Людей {0}; рационов {1}; не хватает {2}",
+  "Demo.Upkeep.Next": "Следующее начисление через {0} ч",
+  "Demo.Upkeep.Pay": "Погасить долг: {0} кр",
+  "Demo.Upkeep.Confirmed": "Долг погашен на выбранную сумму",
+  "Demo.Upkeep.Help": "Долг не блокирует мирные рейсы"
 }
