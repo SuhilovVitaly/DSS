@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01, AC-04]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 ---
 
 # Отдельный инженер в стартовом составе демо
@@ -103,3 +103,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Execution — 2026-11-17
+
+Added separate Alex Morgan/CHR-PLAYER-ENGINEER with existing male portrait and omitted skill for seeded generation. Captain remains first crew member; existing identities/skills unchanged. RU/EN role/percentage-point labels added. JSON parse/scoped format/diff PASS. Real New Game and legacy-no-grant tests added, NOT RUN until US8 completion.

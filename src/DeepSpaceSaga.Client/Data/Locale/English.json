@@ -1136,6 +1136,8 @@
   "Demo.SensorReport.Acknowledge": "Acknowledged — remain paused",
   "Demo.SensorReport.Footer": "Change course if needed. Resume explicitly when ready.",
   "bounty.title": "Bounties",
+  "Ship.Crew.Role.Engineer": "Engineer",
+  "Ship.Crew.SalvageBonus": "Salvage bonus: +{0} percentage points",
   "bounty.claim": "Collect reward",
   "bounty.due": "Due: {0} Tokens",
   "bounty.paid": "Paid: {0} Tokens",

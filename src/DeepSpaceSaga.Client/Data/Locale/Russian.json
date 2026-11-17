@@ -1136,6 +1136,8 @@
   "Demo.SensorReport.Footer": "При необходимости измените курс. Возобновите движение явно, когда будете готовы.",
   "TacticalBattle.Refusal.NoAmmo": "У этого дрона закончились боеприпасы.",
   "bounty.title": "Боевые заказы",
+  "Ship.Crew.Role.Engineer": "Инженер",
+  "Ship.Crew.SalvageBonus": "Бонус демонтажа: +{0} п.п.",
   "bounty.claim": "Получить награду",
   "bounty.due": "Причитается: {0} Tokens",
   "bounty.paid": "Выплачено: {0} Tokens",
