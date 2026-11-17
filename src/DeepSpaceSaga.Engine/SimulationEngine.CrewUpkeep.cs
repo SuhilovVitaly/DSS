@@ -43,7 +43,7 @@ public sealed partial class SimulationEngine
         };
     }
 
-    partial void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate)
+    private void TickCrewUpkeep(long gameTimeMs, ref DemoCampaignData candidate)
     {
         if (candidate.CatalogFingerprint is null || candidate.Company?.Upkeep is not { } ledger) return;
         long day = gameTimeMs / CrewDayMs;

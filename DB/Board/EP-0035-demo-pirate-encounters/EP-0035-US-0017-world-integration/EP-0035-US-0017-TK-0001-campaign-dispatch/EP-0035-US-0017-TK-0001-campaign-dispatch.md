@@ -5,7 +5,7 @@ ticket: EP-0035-US-0017-TK-0001-campaign-dispatch
 title: Единый dispatcher campaign hooks
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0033-US-0005-TK-0002-engine]
@@ -42,3 +42,6 @@ NOT RUN. Focused Ep0035Us0017Tk0001Tests проверяет: ExistingRepairSuppl
 
 ## Definition of Done
 Served AC подтверждены focused integration evidence, existing behavior сохранено; нет выхода за allowlist. Native ускорение/пауза/диалог/перехват отдельно, acceptance OPEN до проверки. Planning не разрешает production/build/commit. US0006 documentation после всех интеграций.
+
+## Execution 2026-11-17
+Central dispatcher implemented; repair and upkeep retain named feature helpers. No gameplay EP35 is claimed. Release Engine.Tests build: PASS, zero warnings/errors. Scoped whitespace and git diff --check: PASS. Tests NOT RUN until US0017 completion; existing EP33 service regressions plus Ep0035Us0017Tk0001Tests are scheduled. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-execution/dispatch-build.log and dispatch-format.log. Story acceptance remains OPEN.

@@ -87,9 +87,38 @@ public sealed partial class SimulationEngine
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
 
-    // Hooks must prepare immutable candidate state only; rejection cannot mutate the live world.
-    partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
-        ref bool handled, ref string? reason, ref Action? commit);
-    partial void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate);
-    partial void ValidateDemoCampaignSections(DemoCampaignData candidate);
+    // Central dispatch owns ordering. Feature helpers prepare candidates and deferred commits;
+    // unsupported or rejected commands never mutate gameplay state.
+    private void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
+        ref bool handled, ref string? reason, ref Action? commit)
+    {
+        handled = true;
+        switch (command)
+        {
+            case PayCrewDebtCommand debt:
+                PrepareCrewDebt(debt, ref candidate, ref reason, ref commit);
+                break;
+            case HirePilotCommand or AssignPilotCommand:
+                PrepareRecruitment(command, ref candidate, ref reason, ref commit);
+                break;
+            case PurchaseDroneCommand or EquipDroneCommand:
+                PrepareReplacement(command, ref candidate, ref reason, ref commit);
+                break;
+            case DecoyQuoteRequest or ResupplyDecoyCommand:
+                PrepareSupply(command, ref candidate, ref reason, ref commit);
+                break;
+            case RepairQuoteRequest or RepairCommand:
+                PrepareStationRepair(command, ref candidate, ref reason, ref commit);
+                break;
+            default:
+                handled = false;
+                break;
+        }
+    }
+
+    private void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate) =>
+        TickCrewUpkeep(gameTimeMs, ref candidate);
+
+    private void ValidateDemoCampaignSections(DemoCampaignData candidate) =>
+        DemoCampaignData.Validate(candidate, _clock.GameTimeMs);
 }
