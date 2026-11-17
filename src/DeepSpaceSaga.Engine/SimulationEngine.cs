@@ -510,6 +510,7 @@ public sealed partial class SimulationEngine : IDisposable
         if (scenario.Metadata.ScenarioId == "demo" || restoredDemoCampaign.CatalogFingerprint is not null)
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
         DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
+        restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;

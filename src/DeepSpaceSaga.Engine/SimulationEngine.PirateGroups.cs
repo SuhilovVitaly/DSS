@@ -1,0 +1,142 @@
+using System.Collections.Immutable;
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Rng;
+using DeepSpaceSaga.Engine.Scenario;
+
+namespace DeepSpaceSaga.Engine;
+
+public sealed partial class SimulationEngine
+{
+    private DemoDebugSettings _demoDebugSettings = new();
+
+    private DemoCampaignData PreparePirateWorldForLoad(DemoCampaignData campaign,
+        IReadOnlyList<SpaceObjectRuntime> objects, GameStateData state, bool isSave, ulong seed)
+    {
+        if (campaign.PirateWorld is { } saved)
+        {
+            ValidatePirateWorld(saved, objects, state);
+            return campaign;
+        }
+        if (isSave || campaign.CatalogFingerprint is null || _demoDefinitions.Encounters is not { } definition)
+            return campaign;
+        var player = objects.Single(o => o.InitialMotion.ObjectId == state.PlayerShipObjectId);
+        var engine = player.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal)
+            .Where(CanExecuteModuleCommand).Select(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex))
+            .FirstOrDefault(t => IsEngineCategory(t) && t.MaxSpeedMps is > 0 && t.LinearInertiaMps2 is > 0 && t.AngularInertiaDegPerSec is > 0)
+            ?? throw new ScenarioException("Demo pirates require an operational player engine at New Game.");
+        double maximum = engine.MaxSpeedMps!.Value / 1000.0;
+        double acceleration = engine.LinearInertiaMps2!.Value / 1000.0;
+        var start = objects.Single(o => o.InitialMotion.ObjectId == _demoDefinitions.Cluster!.StartStationId).InitialMotion;
+        var stations = objects.Where(o => o.ObjectType == SpaceObjectType.Station).Select(o => o.InitialMotion).ToArray();
+        var groups = ImmutableArray.CreateBuilder<PirateGroupData>();
+        for (int index = 0; index < definition.GroupCount; index++)
+        {
+            string id = $"pirate:{index + 1:D2}";
+            var types = PirateRandom(seed, "type:" + id);
+            bool squad = types.Next(100) < _demoDebugSettings.PirateSquadChancePercent;
+            string type = squad || types.Next(2) == 0 ? PirateSignatureTypes.Lair : PirateSignatureTypes.Tancred;
+            var profile = definition.Profiles.Single(p => p.SignatureTypeId == type);
+            var module = _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(profile.SensorModuleTypeId));
+            var members = Enumerable.Range(1, squad ? 2 : 1).Select(i => new PirateCarrierData($"{id}:carrier:{i}", type,
+                new($"{id}:sensor:{i}", module.TypeId, [new(0, 0)], module.StructurePointsMax, "On", "Ready", null, []))).ToImmutableArray();
+            var random = PirateRandom(seed, "placement:" + id);
+            ImmutableArray<PiratePoint> route = [];
+            double reserve = Math.Pow(maximum * 1.1, 2) / (2 * acceleration) * 10 + 10;
+            for (int attempt = 0; attempt < 256; attempt++)
+            {
+                double angle = random.NextDouble() * 2 * Math.PI;
+                double radius = Math.Sqrt(random.NextDouble()) * definition.Region.Radius;
+                double x = definition.Region.X + Math.Cos(angle) * radius;
+                double y = definition.Region.Y + Math.Sin(angle) * radius;
+                if (stations.Any(s => Distance(x, y, s.X, s.Y) < definition.Pursuit.SpawnStationRadius)) continue;
+                double patrol = definition.Pursuit.PatrolRadius;
+                var points = ImmutableArray.Create(new PiratePoint(x, y), new(x + patrol, y), new(x + patrol, y + patrol), new(x, y + patrol));
+                if (points.Where((p, i) => SegmentDistance(p, points[(i + 1) % points.Length], new(start.X, start.Y)) <= definition.Pursuit.StartSafeRadius + reserve).Any()) continue;
+                route = points;
+                break;
+            }
+            if (route.IsEmpty) throw new ScenarioException("No feasible pirate patrol placement after 256 attempts; world unchanged.");
+            groups.Add(new(id, route[0].X, route[0].Y, 90, 0, members, route));
+        }
+        var world = new PirateWorldData(1, maximum, acceleration, engine.AngularInertiaDegPerSec!.Value, state.MotionTimeMs, groups.ToImmutable());
+        ValidatePirateWorld(world, objects, state);
+        return campaign with { PirateWorld = world };
+    }
+
+    private void ValidatePirateWorld(PirateWorldData world, IReadOnlyList<SpaceObjectRuntime> objects, GameStateData state)
+    {
+        if (_demoDefinitions.Encounters is not { } definition || world.Version != 1 || world.Groups.IsDefault || world.Groups.Length != 4 ||
+            !double.IsFinite(world.CapturedPlayerMaxSpeedKmS) || world.CapturedPlayerMaxSpeedKmS <= 0 ||
+            !double.IsFinite(world.AccelerationKmS2) || world.AccelerationKmS2 <= 0 ||
+            !double.IsFinite(world.TurnRateDegreesPerSecond) || world.TurnRateDegreesPerSecond <= 0 ||
+            world.LastMotionTimeMs < 0 || world.LastMotionTimeMs > state.MotionTimeMs)
+            throw new ScenarioException("Invalid saved pirate world.");
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        var start = objects.Single(o => o.InitialMotion.ObjectId == _demoDefinitions.Cluster!.StartStationId).InitialMotion;
+        foreach (var group in world.Groups)
+        {
+            if (group is null || string.IsNullOrWhiteSpace(group.GroupId) || !ids.Add(group.GroupId) ||
+                !double.IsFinite(group.X) || !double.IsFinite(group.Y) || !double.IsFinite(group.Direction) ||
+                !double.IsFinite(group.SpeedKmS) || group.SpeedKmS < 0 || group.SpeedKmS > world.CapturedPlayerMaxSpeedKmS * 1.1 ||
+                group.Members.IsDefault || group.Members.Length is < 1 or > 2 || group.PatrolPoints.IsDefault || group.PatrolPoints.Length != 4 ||
+                group.NextPatrolPoint is < 0 or > 3 || group.Phase is not ("patrol" or "pursuit" or "last_known" or "return" or "captured") ||
+                group.ApproximateDroneCount is < 0 ||
+                group.LastObservedPlayer is { } seen && (!double.IsFinite(seen.X) || !double.IsFinite(seen.Y)))
+                throw new ScenarioException("Invalid saved pirate group.");
+            if (!group.Retired && Distance(group.X, group.Y, start.X, start.Y) <= definition.Pursuit.StartSafeRadius)
+                throw new ScenarioException("Pirate group is inside START safe zone.");
+            for (int i = 0; i < group.PatrolPoints.Length; i++)
+            {
+                var point = group.PatrolPoints[i];
+                if (point is null || !double.IsFinite(point.X) || !double.IsFinite(point.Y) ||
+                    group.PatrolPoints[(i + 1) % 4] is not { } next ||
+                    SegmentDistance(point, next, new(start.X, start.Y)) <= definition.Pursuit.StartSafeRadius)
+                    throw new ScenarioException("Invalid pirate patrol corridor.");
+            }
+            foreach (var member in group.Members)
+            {
+                if (member is null || string.IsNullOrWhiteSpace(member.CarrierId) || !ids.Add(member.CarrierId) ||
+                    member.SignatureTypeId is not (PirateSignatureTypes.Lair or PirateSignatureTypes.Tancred) ||
+                    group.Members.Length == 2 && member.SignatureTypeId != PirateSignatureTypes.Lair || member.Sensor is not { } sensor ||
+                    !ids.Add(sensor.ModuleId) || sensor.ModuleTypeId != definition.Profiles.Single(p => p.SignatureTypeId == member.SignatureTypeId).SensorModuleTypeId ||
+                    sensor.StructurePoints < 0 || sensor.StructurePoints > _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(sensor.ModuleTypeId)).StructurePointsMax)
+                    throw new ScenarioException("Invalid saved pirate carrier or sensor.");
+            }
+        }
+    }
+
+    private DemoEncountersSnapshot? BuildPirateGroupsProjection()
+    {
+        if (_demoCampaign.PirateWorld is not { } world) return null;
+        var player = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+        if (player is null) return new();
+        long time = _processedSimulationTimeMs;
+        var pose = PredictMotion(player, Math.Max(0, time - player.StartGameTimeMs));
+        double radius = EvaluateCarrierSensor(player)?.RadiusWorldUnits ?? 0;
+        var result = ImmutableArray.CreateBuilder<PirateGroupSnapshot>();
+        foreach (var group in world.Groups.Where(g => !g.Retired).OrderBy(g => g.GroupId, StringComparer.Ordinal))
+        {
+            bool detected = SensorCovers(radius, pose.X, pose.Y, group.X, group.Y);
+            if (!detected && _demoDebugSettings.FogOfWar) continue;
+            double angle = group.Direction * Math.PI / 180;
+            result.Add(new(group.GroupId, group.X, group.Y, Math.Sin(angle) * group.SpeedKmS * 10,
+                -Math.Cos(angle) * group.SpeedKmS * 10, time, detected,
+                group.Phase == "captured" ? PirateGroupStatuses.Captured : detected ? PirateGroupStatuses.Observed : PirateGroupStatuses.DebugVisible,
+                detected ? group.ApproximateDroneCount : null,
+                detected ? group.Members.Select(m => new PirateSignatureObservation(group.GroupId, m.SignatureTypeId,
+                    m.SignatureTypeId == "lair" ? "Demo.Pirate.Lair" : "Demo.Pirate.Tancred", time)).ToImmutableArray() : [],
+                detected ? group.Members.Select(m => new PirateMemberSnapshot(m.CarrierId, m.SignatureTypeId)).ToImmutableArray() : []));
+        }
+        return new() { Groups = result.ToImmutable() };
+    }
+
+    private static Random PirateRandom(ulong seed, string fact) =>
+        RngStreamNames.CreateDeterministicRandom(RngStreamSeedDerivation.DeriveStreamSeed(seed, "pirate/v1/" + fact));
+    private static double Distance(double x, double y, double x2, double y2) => Math.Sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
+    internal static double SegmentDistance(PiratePoint a, PiratePoint b, PiratePoint point)
+    {
+        double dx = b.X - a.X, dy = b.Y - a.Y, squared = dx * dx + dy * dy;
+        double t = squared == 0 ? 0 : Math.Clamp(((point.X - a.X) * dx + (point.Y - a.Y) * dy) / squared, 0, 1);
+        return Distance(a.X + dx * t, a.Y + dy * t, point.X, point.Y);
+    }
+}

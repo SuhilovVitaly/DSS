@@ -38,6 +38,9 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("pirateCompositions")]
     public ImmutableArray<PirateCompositionData> PirateCompositions { get; init; } = [];
 
+    [JsonPropertyName("pirateWorld")]
+    public PirateWorldData? PirateWorld { get; init; }
+
     /// <summary>EP-0034 US-0006: published offers and the obligations journal; null until the first publication.</summary>
     [JsonPropertyName("stationJobs")]
     public StationJobsStateData? StationJobs { get; init; }
