@@ -172,7 +172,7 @@ public sealed partial class SimulationEngine
             CommitSequence = checked(_demoCampaign.CommitSequence + 1)
         };
         DemoCampaignData.Validate(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
-        ValidateDemoCampaignSections(candidate);
+        ValidateDemoCampaignSections(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
         // Commit: campaign state, money, people and the voyage penalty postings together.
         _demoCampaign = candidate;
         PlayerCredits = credits;

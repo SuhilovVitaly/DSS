@@ -12,7 +12,7 @@ public sealed record DemoClusterDefinition(int SchemaVersion, ImmutableArray<str
 
 public sealed record DemoRepairRates(long Hull, long Armor, long Engine, long Jam, long DecoyCharge);
 public sealed record DemoOffer(string Id, string CatalogId, long Price, int Stock, ImmutableArray<string> StationIds);
-public sealed record DemoRecruitment(ImmutableArray<string> Portraits, int SkillMin, int SkillMax, long Price, long RefreshGameTimeMs);
+public sealed record DemoRecruitment(ImmutableArray<string> Portraits, int SkillMin, int SkillMax, long Price, long RefreshGameTimeMs, long DailyWage = 20);
 public sealed record DemoServicesDefinition(int SchemaVersion, ImmutableArray<string> StationIds,
     DemoRepairRates RepairRates, DemoRecruitment? Recruitment,
     ImmutableArray<DemoOffer> DroneOffers, ImmutableArray<DemoOffer> UpgradeOffers);
@@ -144,7 +144,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
             if (s.Recruitment is { } recruitment)
                 Require(!recruitment.Portraits.IsDefaultOrEmpty && recruitment.Portraits.All(p => !string.IsNullOrWhiteSpace(p) && !Path.IsPathRooted(p) && !p.Split('/', '\\').Contains("..")) &&
                     recruitment.SkillMin >= 0 && recruitment.SkillMax >= recruitment.SkillMin && recruitment.SkillMax <= 100 &&
-                    recruitment.Price >= 0 && recruitment.RefreshGameTimeMs > 0, "recruitment");
+                    recruitment.Price >= 0 && recruitment.DailyWage >= 0 && recruitment.RefreshGameTimeMs > 0, "recruitment");
         }
         if (Jobs is { } j)
         {

@@ -1559,7 +1559,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         if (_screens.Current is FinanceScreen)
             return;
 
-        await PushModalAsync(new FinanceScreen(_session?.Buffer));
+        var session = _session;
+        await PushModalAsync(new FinanceScreen(session?.Buffer,
+            service: session is null ? null : (command, token) => session.ExecuteDemoCampaignAsync(command, token),
+            campaign: session is null ? null : () => session.DemoCampaign));
     }
 
     /// <summary>
@@ -1584,7 +1587,9 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 ? (request, cancellationToken) => session.RearmDroneAsync(request, cancellationToken)
                 : null;
         await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm,
-            campaign: session is null ? null : () => session.DemoCampaign));
+            campaign: session is null ? null : () => session.DemoCampaign,
+            service: session is null ? null : (command, token) => session.ExecuteDemoCampaignAsync(command, token),
+            carrier: session is null ? null : () => session.CarrierOperations));
     }
 
     /// <summary>
@@ -1669,7 +1674,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         if (_screens.Current is HireScreen)
             return;
 
-        await PushModalAsync(new HireScreen(_session?.Buffer));
+        var session = _session;
+        await PushModalAsync(new HireScreen(session?.Buffer,
+            service: session is null ? null : (command, token) => session.ExecuteDemoCampaignAsync(command, token),
+            campaign: session is null ? null : () => session.DemoCampaign));
     }
 
     /// <summary>

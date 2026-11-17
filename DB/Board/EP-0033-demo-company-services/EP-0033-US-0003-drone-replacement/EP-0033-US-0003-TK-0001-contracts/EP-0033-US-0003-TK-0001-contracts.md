@@ -5,7 +5,7 @@ ticket: EP-0033-US-0003-TK-0001-contracts
 title: Контракт: Замена потерянного дрона и ограниченное оснащение
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0033-US-0002-TK-0004-client]
@@ -106,3 +106,6 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution
+Typed replacement/equipment commands and explicit priced/stocked offers added. Validation pending story boundary.

@@ -32,16 +32,19 @@ public sealed partial class SimulationEngine
             if (previous is not null)
                 return previous.PayloadHash == hash ? previous.Response
                     : new(command.CommandId, false, DemoCampaignReasons.IdentityConflict, _demoCampaign.Revision);
+            if (_demoCampaign.CommittedCommandHashes.TryGetValue(command.CommandId, out string? committedHash))
+                return new(command.CommandId, false, committedHash == hash ? DemoCampaignReasons.AlreadyApplied : DemoCampaignReasons.IdentityConflict, _demoCampaign.Revision);
 
             string? reason = null;
             var candidate = _demoCampaign;
             bool handled = false;
+            Action? commit = null;
             if (command.ExpectedRevision != _demoCampaign.Revision) reason = DemoCampaignReasons.StaleRevision;
             else if (_tacticalBattleSession is not null) reason = DemoCampaignReasons.BattleActive;
             else if (_objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
                 reason = DemoCampaignReasons.CarrierDestroyed;
             else
-                PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason);
+                PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason, ref commit);
             PrepareStationJobsCommand(command, ref candidate, ref handled, ref reason); // EP-0034 US-0006, explicit dispatch
             var boarding = PreparePassengerBoarding(command, ref candidate, handled, ref reason); // EP-0034 US-0002
             var cancellation = PrepareTransportCancellation(command, ref candidate, ref handled, ref reason); // EP-0034 US-0003
@@ -52,14 +55,22 @@ public sealed partial class SimulationEngine
             bool applied = handled && reason is null;
             long revision = applied ? checked(_demoCampaign.Revision + 1) : _demoCampaign.Revision;
             long sequence = checked(_demoCampaign.CommitSequence + 1);
-            var response = new DemoCampaignResponse(command.CommandId, applied, reason, revision);
+            var response = new DemoCampaignResponse(command.CommandId, applied, reason, revision,
+                applied ? candidate.Company?.StationRepair : null,
+                applied ? candidate.Company?.Supply : null,
+                applied ? candidate.Company?.Replacement : null,
+                applied ? candidate.Company?.Recruitment : null,
+                applied ? candidate.Company?.Upkeep : null);
             candidate = (applied ? candidate : _demoCampaign) with
             {
                 Revision = revision,
                 CommitSequence = sequence,
                 Receipts = (_demoCampaign.Receipts.Length >= 1024 ? _demoCampaign.Receipts.RemoveRange(0, _demoCampaign.Receipts.Length - 1023) : _demoCampaign.Receipts).Add(new(hash, sequence, response))
             };
-            ValidateDemoCampaignSections(candidate);
+            if (applied && command is not (RepairQuoteRequest or DecoyQuoteRequest))
+                candidate = candidate with { CommittedCommandHashes = candidate.CommittedCommandHashes.Add(command.CommandId, hash) };
+            ValidateDemoCampaignSections(candidate, Math.Max(_clock.GameTimeMs, candidate.LastTickGameTimeMs));
+            if (applied) commit?.Invoke();
             _demoCampaign = candidate;
             if (applied && boarding is not null) BoardPassengers(boarding); // EP-0034 US-0002: same commit
             if (applied && cancellation is not null) ApplyTransportCancellation(cancellation); // EP-0034 US-0003: same commit
@@ -77,7 +88,7 @@ public sealed partial class SimulationEngine
         if (gameTimeMs <= _demoCampaign.LastTickGameTimeMs) return;
         var candidate = _demoCampaign;
         TickDemoCampaignSections(gameTimeMs, ref candidate);
-        ValidateDemoCampaignSections(candidate);
+        DemoCampaignData.Validate(candidate, gameTimeMs);
         _demoCampaign = candidate with { LastTickGameTimeMs = gameTimeMs };
     }
 
@@ -90,7 +101,7 @@ public sealed partial class SimulationEngine
 
     // Hooks must prepare immutable candidate state only; rejection cannot mutate the live world.
     partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
-        ref bool handled, ref string? reason);
+        ref bool handled, ref string? reason, ref Action? commit);
     partial void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate);
-    partial void ValidateDemoCampaignSections(DemoCampaignData candidate);
+    partial void ValidateDemoCampaignSections(DemoCampaignData candidate, long gameTimeMs);
 }

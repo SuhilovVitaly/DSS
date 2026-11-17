@@ -4,11 +4,9 @@
 
 Уничтожение собственного дрона переносит пилота в постоянный мемориал при settlement, освобождает его место и снимает назначение. Disabled оставляет пилота живым. Save/Load сохраняет потери без повторного применения. [Контракт кампании](../../04-Engineering/DemoCampaign.md).
 
-Персонажи и боевые операторы имеют identity и skills; роль оператора влияет
-на соответствующий боевой расчёт. Диалог использует стабильный портрет и
-identity говорящего. Hire сейчас показывает not available yet; полноценный найм
-и содержание экипажа не завершены. Коммуникация с персонажем использует общий
-диалог и не является отдельным уже завершённым экраном.
+Живые пилоты имеют стабильные identity, портрет и навыки. Наём и назначение доступны через Hire; условия определяет Engine. Исправные Living quarters задают cabin capacity. Наём учитывает живой crew, фактических пассажиров и два резервных места; пустые и резервные места не расходуют пищу.
+
+Зарплата фиксируется при найме и начисляется на календарной границе суток. Доступные Tokens погашают начисления, остаток становится долгом; Finance позволяет погасить выбранную сумму. Рационы потребляются существующим календарным механизмом для crew и реальных пассажиров. [Подробный контракт](../../04-Engineering/CompanyServices.md).
 
 Люди размещаются в исправных Living quarters по cabin capacity. Демо-носитель
 стартует с дополнительным жилым модулем: шесть членов экипажа, два резервных
@@ -22,3 +20,5 @@ identity говорящего. Hire сейчас показывает not availa
 [перевозки](DemoTransportContracts.md).
 
 Источники: [modules-livingquarters.json](../../../../src/DeepSpaceSaga.Client/Data/Modules/LivingQuarters/modules-livingquarters.json), [demo-starter-carrier.json](../../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json), [SimulationEngine.PassengerCapacity.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.PassengerCapacity.cs), [HireScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Hire/HireScreen.cs), [ContractsScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Contracts/ContractsScreen.cs).
+
+Развитие пилотов и расширенная коммуникация имеют отдельных владельцев в Board.

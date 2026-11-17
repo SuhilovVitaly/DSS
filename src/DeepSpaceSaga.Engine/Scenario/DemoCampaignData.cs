@@ -26,6 +26,12 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("nextCrewSequence")]
     public long NextCrewSequence { get; init; } = 1;
 
+    public long NextDroneSequence { get; init; } = 1;
+    public ImmutableDictionary<string, int> ServiceOfferUsage { get; init; } = ImmutableDictionary<string, int>.Empty;
+    public ImmutableHashSet<string> HiredOfferIds { get; init; } = ImmutableHashSet<string>.Empty;
+    public ImmutableArray<DemoCrewEmploymentData> Employment { get; init; } = [];
+    public ImmutableDictionary<string, string> CommittedCommandHashes { get; init; } = ImmutableDictionary<string, string>.Empty;
+
     [JsonPropertyName("receipts")]
     public ImmutableArray<DemoCampaignReceiptData> Receipts { get; init; } = [];
 
@@ -48,9 +54,31 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        if (data.CommittedCommandHashes is null || data.CommittedCommandHashes.Any(p => string.IsNullOrWhiteSpace(p.Key) ||
+            p.Value is not { Length: 64 } || !p.Value.All(Uri.IsHexDigit)))
+            throw new ScenarioException("Invalid committed campaign identities.");
+        if (data.Company?.Upkeep is { } upkeep && (upkeep.Accrued < 0 || upkeep.Paid < 0 || upkeep.Paid > upkeep.Accrued ||
+            upkeep.Outstanding != upkeep.Accrued - upkeep.Paid || upkeep.LastProcessedDay < 0 ||
+            upkeep.LastProcessedDay > gameTimeMs / 86400000 || upkeep.PeopleFed < 0 || upkeep.FoodRemaining < 0 || upkeep.MissingRations < 0))
+            throw new ScenarioException("Invalid crew upkeep ledger.");
+        if (data.Company?.StationRepair is { } repair)
+        {
+            if (repair.Postings.IsDefault || repair.Postings.Any(p => p is null || string.IsNullOrWhiteSpace(p.Id) ||
+                string.IsNullOrWhiteSpace(p.TargetId) || p.Kind is not ("repair" or "decoy" or "drone" or "equipment" or "hire") || p.Amount < 0 || p.GameTimeMs < 0 || p.GameTimeMs > gameTimeMs) ||
+                repair.Postings.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != repair.Postings.Length)
+                throw new ScenarioException("Invalid company repair postings.");
+            if (repair.LastResult is { } result && (result.Paid < 0 ||
+                !repair.Postings.Any(p => p.Id == result.PostingId && p.Amount == result.Paid && p.TargetId == result.TargetId)))
+                throw new ScenarioException("Invalid company repair result.");
+            if (repair.Quote is { } quote && (string.IsNullOrWhiteSpace(quote.Id) || quote.Total < 0 ||
+                quote.Items.IsDefault || quote.Items.Any(i => i is null || i.Quantity < 0 || i.UnitPrice < 0 ||
+                    (decimal)i.Quantity * i.UnitPrice != i.Total) || quote.Items.Sum(i => (decimal)i.Total) != quote.Total))
+                throw new ScenarioException("Invalid company repair quote.");
+        }
         if (data.SchemaVersion != 1 || data.Revision < 0 || data.CommitSequence < data.Revision ||
             data.LastTickGameTimeMs < 0 || data.LastTickGameTimeMs > gameTimeMs || data.Receipts.IsDefault ||
-            data.NextCrewSequence < 1 || data.PilotMemorial.IsDefault)
+            data.NextCrewSequence < 1 || data.NextDroneSequence < 1 || data.ServiceOfferUsage is null ||
+            data.ServiceOfferUsage.Any(p => string.IsNullOrWhiteSpace(p.Key) || p.Value < 0) || data.PilotMemorial.IsDefault)
             throw new ScenarioException("Invalid demo campaign version or counters.");
         // EP-0034 US-0001: passenger capacity is derived from the world on projection, never trusted from a file.
         if (data.Transport?.PassengerCapacity is not null)
@@ -59,6 +87,10 @@ public sealed record DemoCampaignData(
         ValidatePassengerContracts(data, gameTimeMs);
         ValidateTransportFailures(data, gameTimeMs);
         ValidateCargoContracts(data, gameTimeMs);
+        if (data.HiredOfferIds is null || data.Employment.IsDefault || data.Employment.Any(e => e is null ||
+            string.IsNullOrWhiteSpace(e.CrewId) || e.DailyWage < 0 || e.HiredAt < 0 || e.HiredAt > gameTimeMs) ||
+            data.Employment.Select(e => e.CrewId).Distinct().Count() != data.Employment.Length)
+            throw new ScenarioException("Invalid crew employment terms.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;
         long previousRevision = 0;
@@ -280,6 +312,7 @@ public sealed record StationJobsStateData(
     [property: JsonPropertyName("publishedBucket")] long PublishedBucket,
     [property: JsonPropertyName("offers")] ImmutableArray<JobOffer> Offers,
     [property: JsonPropertyName("obligations")] ImmutableArray<JobObligation> Obligations);
+public sealed record DemoCrewEmploymentData(string CrewId, long DailyWage, long HiredAt);
 
 public sealed record DemoCampaignReceiptData(
     [property: JsonPropertyName("payloadHash")] string PayloadHash,

@@ -5,7 +5,7 @@ ticket: EP-0033-US-0006-TK-0001-current-contracts
 title: Актуальные механики и технические контракты
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0033-US-0001-TK-0004-client, EP-0033-US-0002-TK-0004-client, EP-0033-US-0003-TK-0004-client, EP-0033-US-0004-TK-0004-client, EP-0033-US-0005-TK-0003-client]
@@ -87,3 +87,9 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Documentation impact and expanded allowlist before edits
+Owning descriptions: Documentation/04-Engineering/{CompanyServices,DemoCampaign,SaveFormat}.md; 01-Requirements/{EngineRequirements,FirstReleaseRequirements}.md; 02-FirstRelease/Mechanics/{CrewAndHabitation,Money}.md; Screens/{Ship,Hire,Finance,Station,ScreenCatalog}.md; 03-Design/TabletopClient.md; Documentation/README.md; 06-Tooling/GraphifyRebuild.md. tools/graphify/rebuild.py includes EP-0033 in the existing offline corpus. Board DocumentationImpact.md records whole-repository inventory and unchanged areas. No root README exists; the maintained documentation and Board README indices are updated. Run history stays in Board only.
+
+## Implementation evidence
+Current contracts and source-based impact inventory updated. Story-end link/ID/graph checks are recorded in FinalValidation; publication and acceptance gates are owned by TK-0002. No independent review or product approval is claimed.

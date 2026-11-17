@@ -106,7 +106,7 @@ public sealed partial class SimulationEngine
         // another pilot's alias. An empty deployable set refuses entry (never a fallback).
         var wing = GetOwnedWing(sourceShipId).OrderBy(d => d.DroneId, StringComparer.Ordinal).ToImmutableArray();
         var deployable = wing
-            .Where(d => !d.Destroyed && !d.Disabled && IsHangarReady(d.HangarModuleId))
+            .Where(d => !d.Destroyed && !d.Disabled && ship.Crew.Any(c => c.Id == d.CrewId) && IsHangarReady(d.HangarModuleId))
             .Select(d => d.DroneId)
             .ToImmutableHashSet(StringComparer.Ordinal);
         if (deployable.IsEmpty)

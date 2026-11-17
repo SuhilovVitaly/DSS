@@ -15,6 +15,8 @@ created: 2026-11-16T20:02:53Z
 implementation_status: not-started
 ---
 
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+
 # Выбор маршрута с учётом угрозы и срока
 
 ## Связь с техническим заданием
@@ -91,4 +93,3 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 ## Gaps and backlog
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
-

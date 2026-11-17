@@ -160,3 +160,7 @@ Automated tests, native UI, производительность и баланс
 gates; этот документ не хранит результаты отдельных запусков.
 
 Источники: [SimulationSpeed.cs](../../../src/DeepSpaceSaga.Contracts/SimulationSpeed.cs), [SimulationClock.cs](../../../src/DeepSpaceSaga.Engine/SimulationClock.cs), [ScenarioData.cs](../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs), [ScenarioLoader.cs](../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs), [SimulationEngine.TacticalBattle.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs), [TradeQuoteCalculator.cs](../../../src/DeepSpaceSaga.Engine/TradeQuoteCalculator.cs).
+
+## Услуги демо-компании
+
+[CompanyServices](../04-Engineering/CompanyServices.md) определяет ремонт, снабжение, ограниченную замену/оснащение, наём и содержание. Engine проверяет command identity, ревизию, стыковку и условия до атомарного списания; клиент показывает подтверждённый результат. Жалованье использует календарное время и captured условия найма. Save/Load сохраняет остатки, назначения, долг и защиту применённых команд без повторной оплаты. Пассажирский контракт имеет отдельного владельца и не считается реализованным наличием учёта пассажиров.

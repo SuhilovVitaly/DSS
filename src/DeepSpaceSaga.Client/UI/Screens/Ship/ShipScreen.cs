@@ -18,8 +18,14 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 /// </summary>
 public sealed partial class ShipScreen : IScreen
 {
-    private readonly ShipViewModel _model;
+    private ShipViewModel _model;
+    private readonly Func<CarrierOperationsSnapshot?>? _carrier;
     private readonly Func<DemoCampaignSnapshot?>? _campaign;
+    private readonly Func<DemoCampaignCommand, CancellationToken, ValueTask<DemoCampaignResponse>>? _service;
+    private StationRepairSnapshot? _repairState;
+    private long? _serviceRevision;
+    internal Task? PendingService;
+    internal string ServiceStatus { get; private set; } = "";
     internal string CampaignSummary => CampaignRoundtripPresentation.Summary(_campaign?.Invoke()?.Company?.Roundtrip);
     private readonly Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? _rearm;
     private readonly Func<string> _commandId;
@@ -41,10 +47,14 @@ public sealed partial class ShipScreen : IScreen
 
     public ShipScreen(ShipViewModel model, int torpedoStock,
         Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? rearm, Func<string>? commandId = null,
-        Func<DemoCampaignSnapshot?>? campaign = null)
+        Func<DemoCampaignSnapshot?>? campaign = null,
+        Func<DemoCampaignCommand, CancellationToken, ValueTask<DemoCampaignResponse>>? service = null,
+        Func<CarrierOperationsSnapshot?>? carrier = null)
     {
         _model = model;
+        _carrier = carrier;
         _campaign = campaign;
+        _service = service;
         _torpedoStock = Math.Max(0, torpedoStock);
         _rearm = rearm;
         _commandId = commandId ?? (() => Guid.NewGuid().ToString("N"));
@@ -87,6 +97,18 @@ public sealed partial class ShipScreen : IScreen
 
         if (_model.Unsupported)
             return ScreenEvent.None;
+
+        float sx = x - ShipLayout.PanelLeft(_screenWidth), sy = y - ShipLayout.PanelTop(_screenHeight);
+        if (_service is not null && sx >= 730 && sx <= 1340)
+        {
+            if (sy >= 265 && sy <= 295) { _shipyard = sx >= 1030; return ScreenEvent.None; }
+            if (_shipyard) { ClickShipyard(sx, sy); return ScreenEvent.None; }
+            if (sy >= 300 && sy <= 332) { RequestRepair(_model.ShipId); return ScreenEvent.None; }
+            if (sy >= 340 && sy <= 372 && _selectedRow >= 0) { RequestRepair(_drones[_selectedRow].Id); return ScreenEvent.None; }
+            if (sy >= 530 && sy <= 562) { ConfirmRepair(); return ScreenEvent.None; }
+            if (sy >= 650 && sy <= 682 && _selectedRow >= 0) { RequestDecoys(_drones[_selectedRow].Id); return ScreenEvent.None; }
+            if (sy >= 690 && sy <= 722) { ConfirmDecoys(); return ScreenEvent.None; }
+        }
 
         var (control, row) = ShipLayout.RearmHitTest(x, y, _screenWidth, _screenHeight, _drones.Length);
         switch (control)
@@ -169,6 +191,7 @@ public sealed partial class ShipScreen : IScreen
 
     private void StartRearm()
     {
+        if (PendingService is { IsCompleted: false }) return;
         if (_rearm is null)
         {
             _status = "rearm is not available for this ship";
@@ -248,7 +271,8 @@ public sealed partial class ShipScreen : IScreen
     {
         string? selectedId = _selectedRow >= 0 && _selectedRow < _drones.Length ? _drones[_selectedRow].Id : null;
         _revision = snapshot.Revision;
-        _drones = ShipViewModel.From(snapshot).Drones.ToArray();
+        _model = ShipViewModel.From(snapshot);
+        _drones = _model.Drones.ToArray();
         int index = selectedId is null ? -1 : Array.FindIndex(_drones, drone => drone.Id == selectedId);
         _selectedRow = index;
         if (index >= 0) _quantity = ShipWingPanel.ClampQuantity(_quantity, MaxQuantity(index));
@@ -256,6 +280,7 @@ public sealed partial class ShipScreen : IScreen
 
     public void Render(SKCanvas canvas, int width, int height)
     {
+        if (_carrier?.Invoke() is { } live && live.Revision != _revision) Rebuild(live);
         _screenWidth = width;
         _screenHeight = height;
 
@@ -275,13 +300,14 @@ public sealed partial class ShipScreen : IScreen
         }
         else
         {
+            using var bodyPaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 16, IsAntialias = true, TextAlign = SKTextAlign.Left };
             canvas.DrawText($"{_model.Name} ({_model.ShipClassId}) — hull {_model.HullCurrent}/{_model.HullMax}",
-                cx, pt + ShipLayout.BodyStartY, MenuStyle.TextStatus);
+                cx, pt + 80, MenuStyle.TextStatus);
 
             // Wing panel (left half): one row per owned drone, destroyed/disabled never shown ready.
             var (wl, wt, _, _) = ShipLayout.WingPanelLocalRect();
             canvas.DrawText($"wing · torpedoes in hold {_torpedoStock}", pl + wl + ShipLayout.WingRowInset,
-                pt + wt + 20, MenuStyle.TextStatus);
+                pt + wt + 20, bodyPaint);
             for (int i = 0; i < _drones.Length; i++)
             {
                 var drone = _drones[i];
@@ -293,19 +319,19 @@ public sealed partial class ShipScreen : IScreen
                     canvas.DrawRect(rect, highlight);
                 }
                 string marker = i == _selectedRow ? "› " : "  ";
-                string state = ShipWingPanel.DroneStateLabel(drone.Destroyed, drone.Disabled);
+                string state = ShipWingPanel.DroneStateLabel(drone.Destroyed, drone.Disabled, drone.Uncrewed);
                 canvas.DrawText($"{marker}{drone.Id} — ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
-                    rect.Left + 6, rect.Top + 19, MenuStyle.TextStatus);
+                    rect.Left + 6, rect.Top + 19, bodyPaint);
             }
             if (_selectedRow >= 0)
                 DrawRearmControls(canvas, pl, pt);
 
             // Crew panel (right half): one line per crew member.
             var (cl, ct, cr, _) = ShipLayout.CrewPanelLocalRect();
-            float crewY = pt + ct;
+            float crewY = pt + ct + 20;
             foreach (var member in _model.Crew)
             {
-                canvas.DrawText($"{member.DisplayName} ({member.Role})", pl + cl, crewY, MenuStyle.TextStatus);
+                canvas.DrawText($"{member.DisplayName} ({member.Role})", pl + cl, crewY, bodyPaint);
                 crewY += ShipLayout.BodyLineHeight;
             }
 
@@ -331,6 +357,67 @@ public sealed partial class ShipScreen : IScreen
             DrawMemorial(canvas, pl, pt);
         }
         DrawCloseButton(canvas, pl, pt);
+        DrawServices(canvas, pl, pt);
+    }
+
+    internal void RequestRepair(string target)
+    {
+        if (_service is null || PendingService is { IsCompleted: false } || IsPending) return;
+        _decoyQuote = null;
+        PendingService = SubmitService(new RepairQuoteRequest(_commandId(),
+            Math.Max(_serviceRevision ?? 0, _campaign?.Invoke()?.Revision ?? 0), target));
+    }
+
+    internal void ConfirmRepair()
+    {
+        if (_service is null || PendingService is { IsCompleted: false } || IsPending || _repairState?.Quote is not { } quote) return;
+        PendingService = SubmitService(new RepairCommand(_commandId(), quote.Revision, quote.Id, quote.TargetId));
+    }
+
+    private async Task SubmitService(DemoCampaignCommand command)
+    {
+        ServiceStatus = Localization.Get("Demo.Repair.Pending");
+        try
+        {
+            var response = await _service!(command, CancellationToken.None);
+            _serviceRevision = response.Revision;
+            if (response.Applied)
+            {
+                _repairState = response.StationRepair;
+                ServiceStatus = StationRepairPresentation.Summary(_repairState);
+            }
+            else { _repairState = null; ServiceStatus = StationRepairPresentation.Reason(response.Reason); }
+        }
+        catch (Exception) { _repairState = null; ServiceStatus = StationRepairPresentation.Reason("unavailable"); }
+    }
+
+    private void DrawServices(SKCanvas canvas, float pl, float pt)
+    {
+        if (_service is null) return;
+        DrawLocalButton(canvas, pl, pt, (730, 265, 1020, 295), Localization.Get("Demo.Replacement.Services"), true);
+        DrawLocalButton(canvas, pl, pt, (1030, 265, 1340, 295), Localization.Get("Demo.Replacement.Tab"), true);
+        if (_shipyard) { DrawShipyard(canvas, pl, pt); return; }
+        DrawSupply(canvas, pl, pt);
+        bool ready = PendingService is not { IsCompleted: false };
+        DrawLocalButton(canvas, pl, pt, (730, 300, 1340, 332), Localization.Get("Demo.Repair.QuoteCarrier"), ready);
+        DrawLocalButton(canvas, pl, pt, (730, 340, 1340, 372), Localization.Get("Demo.Repair.QuoteDrone"), ready && _selectedRow >= 0);
+        using var paint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 16, IsAntialias = true };
+        canvas.Save();
+        canvas.ClipRect(new SKRect(pl + 730, pt + 380, pl + 1370, pt + 525));
+        canvas.DrawText(ServiceStatus.Length == 0 ? StationRepairPresentation.Summary(null) : ServiceStatus, pl + 730, pt + 400, paint);
+        float y = pt + 425;
+        if (_repairState?.Quote is { } quote)
+            foreach (var line in quote.Items)
+            {
+                canvas.DrawText(string.Format(Localization.Get("Demo.Repair.Line"), Localization.Get("Demo.Repair." + line.Kind),
+                    line.Quantity, line.UnitPrice, line.Total), pl + 730, y, paint);
+                y += 24;
+            }
+        if (_repairState?.LastResult is { } result && _repairState.Quote is null)
+            canvas.DrawText($"{Localization.Get("Demo.Repair.hull")}: {result.Before.Hull} → {result.After.Hull}; " +
+                $"{Localization.Get("Demo.Repair.armor")}: {result.Before.Armor} → {result.After.Armor}", pl + 730, y, paint);
+        canvas.Restore();
+        DrawLocalButton(canvas, pl, pt, (730, 530, 1340, 562), Localization.Get("Demo.Repair.Confirm"), ready && _repairState?.Quote is not null);
     }
 
     /// <summary>Greedy word wrap so localized explanations stay inside the crew panel.</summary>
@@ -357,6 +444,7 @@ public sealed partial class ShipScreen : IScreen
 
     private void DrawRearmControls(SKCanvas canvas, float panelLeft, float panelTop)
     {
+        using var bodyPaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 15, IsAntialias = true, TextAlign = SKTextAlign.Left };
         var drone = _drones[_selectedRow];
         int max = MaxQuantity(_selectedRow);
         int quantity = ShipWingPanel.ClampQuantity(_quantity, max);
@@ -374,9 +462,9 @@ public sealed partial class ShipScreen : IScreen
         var preview = max > 0
             ? ShipWingPanel.PreviewText(drone.AmmoCurrent, drone.AmmoCapacity, _torpedoStock, quantity)
             : Explanation(_selectedRow);
-        canvas.DrawText($"quantity {quantity} · {preview}", x, panelTop + controls.Top + 52, MenuStyle.TextStatus);
+        canvas.DrawText($"quantity {quantity} · {preview}", x, panelTop + controls.Top + 52, bodyPaint);
         if (_status.Length > 0)
-            canvas.DrawText(_status, x, panelTop + controls.Top + 72, MenuStyle.TextStatus);
+            canvas.DrawText(_status, x, panelTop + controls.Top + 72, bodyPaint);
     }
 
     private static void DrawLocalButton(SKCanvas canvas, float panelLeft, float panelTop,

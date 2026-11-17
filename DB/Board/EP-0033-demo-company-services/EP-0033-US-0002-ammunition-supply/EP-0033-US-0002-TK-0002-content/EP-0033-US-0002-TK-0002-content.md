@@ -5,7 +5,7 @@ ticket: EP-0033-US-0002-TK-0002-content
 title: Контент: Покупка торпед и восстановление расходников
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0033-US-0002-TK-0001-contracts]
@@ -106,3 +106,8 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution
+Existing torpedo item unchanged. Transit and industrial markets: 24 initial units, two produced per calendar hour subject to existing economy rules, target 24. Decoy charge price remains 25. Baseline balance requires playtest. Validation pending story boundary.
+
+Story-boundary correction: initial market validation rejected missing supply/demand membership; transit validation correctly prohibits production. Final design: industrial produces two torpedoes per hour; transit demands/consumes one and receives deliveries via existing industrial-to-transit cargo flow. Both start with 24 units before size scaling. No transit production exception. Real engine fixtures now load successfully (engine5.log).

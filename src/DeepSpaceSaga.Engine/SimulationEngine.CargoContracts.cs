@@ -128,7 +128,7 @@ public sealed partial class SimulationEngine
             CommitSequence = checked(_demoCampaign.CommitSequence + 1)
         };
         DemoCampaignData.Validate(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
-        ValidateDemoCampaignSections(candidate);
+        ValidateDemoCampaignSections(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
         // Commit: campaign receipt (hold freed), money and the arrival voyage posting together.
         _demoCampaign = candidate;
         PlayerCredits = credits;
@@ -165,7 +165,7 @@ public sealed partial class SimulationEngine
             CommitSequence = checked(_demoCampaign.CommitSequence + 1)
         };
         DemoCampaignData.Validate(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
-        ValidateDemoCampaignSections(candidate);
+        ValidateDemoCampaignSections(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
         _demoCampaign = candidate;
     }
 

@@ -15,3 +15,5 @@ Voyage ledger рейса прибытия показывает «Выплаты 
 контрактам». [Перевозки](DemoTransportContracts.md).
 
 Источники: [ScenarioData.cs](../../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs), [FinanceScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Finance/FinanceScreen.cs).
+
+Услуги компании списывают тот же баланс Tokens атомарно с ремонтом, пополнением ловушек, покупкой дрона/модуля или наймом и сохраняют проводку. Зарплата ведёт отдельные суммы начислено/оплачено/долг; недостаток денег не делает баланс отрицательным. [Правила и сохранение долга](../../04-Engineering/CompanyServices.md).

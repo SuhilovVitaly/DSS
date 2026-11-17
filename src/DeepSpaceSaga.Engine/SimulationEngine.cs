@@ -508,7 +508,7 @@ public sealed partial class SimulationEngine : IDisposable
         _demoDefinitions.ValidateWorld(scenario with { GameState = gs });
         if (scenario.Metadata.ScenarioId == "demo" || restoredDemoCampaign.CatalogFingerprint is not null)
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
-        ValidateDemoCampaignSections(restoredDemoCampaign);
+        DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
@@ -548,6 +548,7 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.AddRange(runtimeObjects);
             RestoreCarrierState(gs);
             _demoCampaign = restoredDemoCampaign;
+            InitializeCrewUpkeep(gs.GameTimeMs);
             _appliedMotionTimeMs = gs.MotionTimeMs;
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
@@ -2572,6 +2573,8 @@ public sealed partial class SimulationEngine : IDisposable
                 catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
                 _voyageState = departureVoyage;
             }
+            _activeRepairQuote = null;
+            _activeDecoyQuote = null;
             _objects[objectIndex] = obj with
             {
                 InitialMotion = currentMotion with { Orbit = null, OrbitSampleSimulationTimeMs = null, WorldOffsetX = 0, WorldOffsetY = 0 },

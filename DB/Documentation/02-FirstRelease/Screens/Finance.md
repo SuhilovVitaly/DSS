@@ -7,3 +7,5 @@
 См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
 
 Источники: [FinanceScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Finance/FinanceScreen.cs).
+
+Раздел компании показывает начислено/оплачено/долг, срок следующей зарплаты, фактические рационы и число людей. Игрок выбирает сумму погашения долга и подтверждает её; pending и отказ не меняют локальный баланс. Последняя service-проводка показывает ремонт, ловушки, дрон, оснащение или наём отдельно от payroll ledger. [Учёт услуг](../../04-Engineering/CompanyServices.md).
