@@ -94,3 +94,6 @@ No API change. Существующие словари Russian/English; язык
 ## Self-containment check
 
 История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+
+## Execution — 2026-11-17
+Added RU/EN actions, price breakdown, confirmation and stable rejection text. Parity/format/raw-code checks authored; execution at story boundary. Native readability remains OPEN.
