@@ -13,7 +13,7 @@ namespace DeepSpaceSaga.Client.Tests.Demo;
 
 public sealed class DemoEp0036Us0007Tk0004Tests
 {
-    internal static SimulationEngine Won(bool finish = true)
+    internal static SimulationEngine Won(bool finish = true, bool begin = true)
     {
         var engine = EngineContentLoader.CreateEngineFromScenarioFile(AppContext.BaseDirectory + "/Settings.json", AppContext.BaseDirectory + "/Scenarios/Demo/scenario.json");
         var save = engine.CaptureSaveState();
@@ -38,6 +38,7 @@ public sealed class DemoEp0036Us0007Tk0004Tests
         var current = engine.CaptureSnapshot().DemoCampaign!;
         Assert.True(engine.ExecuteDemoCampaign(new DismissSensorContactReportRequest("ack", current.Revision, current.PendingSensorReport!.BatchId)).Applied);
         current = engine.CaptureSnapshot().DemoCampaign!;
+        if (!begin) return engine;
         Assert.True(engine.ExecuteDemoCampaign(new BeginEncounterBattleCommand("begin", current.Revision, current.WorldEncounter!.Binding.EncounterId)).Applied);
         if (!finish) return engine;
         var battle = engine.TacticalBattleSessionForTests!;

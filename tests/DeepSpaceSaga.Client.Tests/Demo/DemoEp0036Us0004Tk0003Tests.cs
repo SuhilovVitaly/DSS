@@ -13,8 +13,10 @@ public sealed class DemoEp0036Us0004Tk0003Tests
     [InlineData(true)]
     public async Task ActualLoadRouterAdoptsPendingCombatOrFrozenLootWithoutCommand(bool finished)
     {
-        using var engine = DemoEp0036Us0007Tk0004Tests.Won(finished);
-        var saved = engine.CaptureSaveState();
+        using var engine = DemoEp0036Us0007Tk0004Tests.Won(finished, finished);
+        var campaign = engine.CaptureSnapshot().DemoCampaign!;
+        var saved = finished ? engine.CaptureSaveState() : engine.CapturePendingEncounterCheckpoint(
+            new("checkpoint", campaign.Revision, campaign.WorldEncounter!.Binding.EncounterId));
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true, true), true);
         await using var connection = new LocalGameSessionConnection(engine);
         await using var handle = new GameSessionHandle(connection);
@@ -29,6 +31,7 @@ public sealed class DemoEp0036Us0004Tk0003Tests
         {
             var screen = new TacticalBattleScreen(flow, 1);
             Assert.Equal(TacticalBattlePhase.Over, screen.CaptureFrame(1280, 720)!.Battle.Phase);
+            screen.OnKeyDown(Silk.NET.Input.Key.Escape, DeepSpaceSaga.Client.UI.Screens.KeyModifiers.None, false);
             Assert.NotNull(screen.LootWindow);
             Assert.False(screen.LootWindow.RequestExit());
             flow.ConfirmLootDiscard = true;
