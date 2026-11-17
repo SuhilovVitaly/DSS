@@ -129,3 +129,5 @@ Integrated exact-identity repaired v3 pose selection for all seven prepared outf
 Boundary/review correction: None Update could not restore JSON removed by the existing ModularCrew None Remove. Changed the owning Content Include; initial US9 portrait tests correctly failed on missing metadata. Rerun pending after engine provenance correction.
 
 Independent review P2: moved assignment resolution after the selected-input cache check. Unchanged frames perform no file read; changing identity/asset/explicit outfit/gender/capture state invalidates the image. Bundled assignments are immutable for one screen lifetime.
+
+Boundary malformed-path test exposed uncaught InvalidDataException in both pose and fallback paths; explicitly included this exception. 17/18 client checks passed before correction. Inspected existing pilot assembly visually without running the game; pose and face remain intact, owner in-game acceptance pending.

@@ -40,13 +40,13 @@ internal sealed class PrisonerPortraits(string root) : IDisposable
             _image ??= SKBitmap.Decode(original);
             _image?.SetImmutable();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException)
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException)
         {
             InterfaceLog.Write("Prisoner portrait unavailable: " + ex.Message);
             _image?.Dispose(); _image = null; Kneeling = false;
             // A malformed/missing pose must still preserve the original identity if readable.
             try { _image = SKBitmap.Decode(SafePath(root, asset)); _image?.SetImmutable(); }
-            catch (Exception fallback) when (fallback is IOException or UnauthorizedAccessException or ArgumentException) { }
+            catch (Exception fallback) when (fallback is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException) { }
         }
         return _image;
     }
