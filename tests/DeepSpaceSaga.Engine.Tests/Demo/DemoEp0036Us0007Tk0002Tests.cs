@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Engine.TacticalBattle;
 using DeepSpaceSaga.Engine.TacticalBattle.Content;
+using System.Collections.Immutable;
 
 namespace DeepSpaceSaga.Engine.Tests.Demo;
 
@@ -8,9 +9,11 @@ public sealed class DemoEp0036Us0007Tk0002Tests
     private static TacticalBattleSession Squad(string playerSide = "A")
     {
         var catalog = TacticalBattleContentLoader.Load(DemoEp0033Us0001Tk0003Tests.Root() + "/Data/TacticalBattle");
+        var scenario = Ep0035Us13Tk2Tests.Scenario();
+        scenario = scenario with { Sides = scenario.Sides.Select(s => s with { Tactic = catalog.Ai.Tactics.Entries[0].Id }).ToImmutableArray() };
         catalog = catalog with
         {
-            Scenarios = new([("squad", Ep0035Us13Tk2Tests.Scenario())]),
+            Scenarios = new([("squad", scenario)]),
             Pilots = new([("p", catalog.Pilots.Entries[0].Value)])
         };
         return TacticalBattleSession.Create(DeepSpaceSaga.Engine.TacticalBattle.TacticalBattle.Create(catalog, "squad", 42), "squad", playerSide);

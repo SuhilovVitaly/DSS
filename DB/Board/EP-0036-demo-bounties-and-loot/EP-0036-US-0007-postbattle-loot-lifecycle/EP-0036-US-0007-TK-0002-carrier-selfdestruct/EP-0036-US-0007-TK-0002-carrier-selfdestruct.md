@@ -95,3 +95,4 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Execution — 2026-11-17
 
 Session explicitly sets enemy side before BeginTurn. CheckVictory self-destructs each enemy carrier only when its nonempty owned wing has no Air drone; survivor carriers and disabled pilots remain intact. HashSet records cause once; existing TacticalCarrierDestroyed outcome is reused. Combined squad test covers independent carrier continuation, disabled survivor and repeated-check idempotency, plus player-side B. Engine build/scoped format/diff PASS; tests NOT RUN until US7 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk2-build.log.
+US7 Engine boundary: 10/12 passed; two squad fixtures used a schema-only placeholder tactic standard absent in real content. Fixtures now select an actual catalog tactic. Production unchanged; repeat after corrections.
