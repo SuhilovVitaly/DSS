@@ -26,7 +26,7 @@ public sealed class DemoEp0033Us0002Tk0003Tests
     [Fact]
     public void PaidSupply_ReplayAndLoadDoNotMintCharges()
     {
-        using var engine = Demo();
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         string id = EmptyDecoys(engine);
         var before = engine.CaptureSnapshot().DemoCampaign!.Company!.Supply!;
         var quote = Quote(engine, id);
@@ -39,7 +39,7 @@ public sealed class DemoEp0033Us0002Tk0003Tests
         var save = ScenarioLoader.Serialize(engine.CaptureSaveState());
         engine.ExecuteDemoCampaign(command);
         Assert.Equal(save, ScenarioLoader.Serialize(engine.CaptureSaveState()));
-        engine.LoadScenario(ScenarioLoader.Deserialize(save), isSave: true);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(save, true, true), isSave: true);
         engine.ExecuteDemoCampaign(command);
         Assert.Equal(1950, engine.PlayerCredits);
         Assert.Equal(2, engine.CaptureSnapshot().CarrierOperations!.OwnedDrones.Single(d => d.Id == id).DecoyCharges);
@@ -47,7 +47,7 @@ public sealed class DemoEp0033Us0002Tk0003Tests
     [Fact]
     public void InsufficientFundsAndLoadInvalidatedQuote_DoNotMutateInventory()
     {
-        using var engine = Demo();
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         string id = EmptyDecoys(engine, 1);
         var quote = Quote(engine, id);
         var response = engine.ExecuteDemoCampaign(new ResupplyDecoyCommand("poor", quote.Revision, id, quote.Id, 2));
@@ -61,9 +61,10 @@ public sealed class DemoEp0033Us0002Tk0003Tests
     [Fact]
     public void CapacityAndUndockedService_AreRejected()
     {
-        using var engine = Demo();
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         Assert.Equal(CompanyServiceReasons.NotDocked, engine.ExecuteDemoCampaign(new DecoyQuoteRequest("undocked", 0, "unknown", 1)).Reason);
         string id = EmptyDecoys(engine);
         Assert.Equal(CompanyServiceReasons.Unavailable, engine.ExecuteDemoCampaign(new DecoyQuoteRequest("too-many", 0, id, 3)).Reason);
     }
 }
+
