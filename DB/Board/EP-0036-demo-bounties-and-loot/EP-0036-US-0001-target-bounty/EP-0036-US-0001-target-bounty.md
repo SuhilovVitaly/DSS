@@ -11,7 +11,7 @@ workstream: feature
 dependencies: [EP-0034-US-0006-station-job-board, EP-0035-US-0003-world-battle]
 created: 2026-11-16T19:49:59Z
 revision: 4
-implementation_status: not-started
+implementation_status: implemented-tested
 source_request: "Груминг EP-0036; зафиксировать решения пользователя через сабагента"
 ---
 

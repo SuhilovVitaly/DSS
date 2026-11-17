@@ -5,7 +5,7 @@ ticket: EP-0036-US-0001-TK-0001-contracts
 title: Контракт отслеживания и ретроактивного bounty
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-tests-pending
+implementation_status: implemented-tested
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0034-US-0006-TK-0004-client, EP-0035-US-0003-TK-0003-client]

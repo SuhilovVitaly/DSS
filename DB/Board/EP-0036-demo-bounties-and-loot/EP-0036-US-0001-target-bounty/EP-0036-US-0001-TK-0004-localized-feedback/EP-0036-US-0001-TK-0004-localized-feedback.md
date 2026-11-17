@@ -5,7 +5,7 @@ ticket: EP-0036-US-0001-TK-0004-localized-feedback
 title: Bounty content и RU/EN условия
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-tests-pending
+implementation_status: implemented-tested
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0001-TK-0005-bounty-schema]

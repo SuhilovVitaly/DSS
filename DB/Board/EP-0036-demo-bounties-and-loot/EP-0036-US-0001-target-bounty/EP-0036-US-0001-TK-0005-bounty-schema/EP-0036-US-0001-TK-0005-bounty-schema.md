@@ -5,7 +5,7 @@ ticket: EP-0036-US-0001-TK-0005-bounty-schema
 title: Схема фиксированных станционных bounty
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-tests-pending
+implementation_status: implemented-tested
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0001-TK-0001-contracts]
