@@ -9,7 +9,7 @@ implementation_status: implemented-validation-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0001-TK-0001-contracts]
-files_touched: 4
+files_touched: 6
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
 revision: 1
@@ -126,3 +126,9 @@ Assumptions/limits:
 - A-03: the Tetrarch class has no hull mass limit in the current engine; "mass" admissibility means the module is a real catalog module with its catalog mass, not a free weightless cabin. Life support = food rations (power draw of living quarters is 0 W).
 - Shared starter, Tutorial and Default scenarios are unchanged; existing Save22 demo saves carry their expanded 8-cabin carrier and receive nothing (manifest is resolved only on a version-0 New Game). The cluster fingerprint does not include the manifest, so no save-version bump.
 - Other EP-0032 tests still read `D:/DeepSpaceSaga/DSS` via `DemoEp0032Us0001Tk0002Tests.ContentRoot` (pre-existing); not changed here — recorded for the epic report.
+
+## Story-end correction (2026-11-17)
+
+Allowlist expansion (recorded before the change): `tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs` and `tests/DeepSpaceSaga.Engine.Tests/ModuleHealthBootstrapTests.cs`. Their "real default scenario" tests load `Settings.defaultScenario`, which is the demo since EP-0032; the demo New Game now has 10 modules, 3 four-cabin quarters (12 cabins, 4 free) and 16 of 24 occupied hull cells. Expectations were updated to the new agreed contract (`Real_default_scenario_occupies_15_of_24_hull_cells` renamed to `..._16_of_24_...`, now also asserting cell (4,1)); the shared 8-cabin starter stays covered by Tutorial/Default assertions in `DemoEp0034Us0001Tk0002Tests` and the EP-0029 Tutorial tests.
+
+Story-end results: see the story card «Story validation».

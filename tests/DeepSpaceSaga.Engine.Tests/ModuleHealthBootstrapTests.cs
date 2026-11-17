@@ -40,7 +40,8 @@ public sealed class ModuleHealthBootstrapTests
     {
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"));
         var modules = engine.CaptureSnapshot().InstalledModules;
-        Assert.Equal(9, modules.Length);
+        // Default New Game is the demo: the shared starter's 9 modules plus the passenger quarters (EP-0034-US-0001).
+        Assert.Equal(10, modules.Length);
         // The starter manifest (EP-0029 US-0011 TK-0002) starts every module intact at its type max:
         // medium drone bays 250 SP, every other starter module 150 SP.
         Assert.All(modules, module =>
