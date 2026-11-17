@@ -87,3 +87,7 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution — 2026-11-17
+
+Added RU/EN shared loot window, source labels, all stable reasons, module conditions/chances/estimated-value caveat, permanent-discard warning with count and battle report labels. Added human item names for all trophy/consumable SKUs. JSON parsing/Client build/scoped format/diff PASS; locale tests authored, not run at ticket level. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us3-tk5-build.log.
