@@ -18,7 +18,7 @@ public sealed class DemoEp0036Us0008Tk0005Tests
         var snapshot = engine.CaptureSnapshot();
         var member = Assert.Single(snapshot.CarrierOperations!.Crew.Where(c => c.Role == CrewRole.Engineer));
         var screen = new ShipScreen(ShipViewModel.From(snapshot.CarrierOperations));
-        string label = Assert.Single(screen.CrewLabels.Where(l => l.Contains(role, StringComparison.Ordinal)));
+        string label = Assert.Single(screen.CrewLabels, l => l.Contains(role, StringComparison.Ordinal));
         Assert.Contains(member.DisplayName, label);
         Assert.Contains(member.SalvageBonusPercentagePoints.ToString(), label);
         Assert.Contains(units, label);
