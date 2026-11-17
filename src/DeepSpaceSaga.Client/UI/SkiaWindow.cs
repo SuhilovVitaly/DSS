@@ -1559,7 +1559,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         if (_screens.Current is FinanceScreen)
             return;
 
-        await PushModalAsync(new FinanceScreen(_session?.Buffer));
+        var session = _session;
+        await PushModalAsync(new FinanceScreen(session?.Buffer,
+            service: session is null ? null : (command, token) => session.ExecuteDemoCampaignAsync(command, token),
+            campaign: session is null ? null : () => session.DemoCampaign));
     }
 
     /// <summary>
