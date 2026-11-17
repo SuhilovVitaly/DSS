@@ -95,6 +95,8 @@ internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, stri
     public ImmutableArray<TacticalCarrier> Carriers { get; } = carriers;
     public ImmutableArray<string> Tactics { get; } = tactics;
     public Mulberry32 Random { get; } = random;
+    public string? SelfDestructEnemySide { get; set; }
+    public HashSet<string> SelfDestructedCarrierIds { get; } = new(StringComparer.Ordinal);
     public Mulberry32 InitiativeRandom { get; } = new(unchecked((uint)seed ^ 0x494E4954u));
     public int Turn { get; set; }
     public int RoleChanges { get; set; }

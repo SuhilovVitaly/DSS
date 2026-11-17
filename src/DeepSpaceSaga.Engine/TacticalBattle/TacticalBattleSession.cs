@@ -28,6 +28,7 @@ internal sealed class TacticalBattleSession
         Battle = battle;
         Id = id;
         PlayerSide = playerSide;
+        Battle.SelfDestructEnemySide = Battle.EnemySide(playerSide);
         Add(TacticalBattleLogKind.Started, TacticalBattlePhase.Move);
         BeginTurn();
     }

@@ -91,3 +91,7 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution — 2026-11-17
+
+Session explicitly sets enemy side before BeginTurn. CheckVictory self-destructs each enemy carrier only when its nonempty owned wing has no Air drone; survivor carriers and disabled pilots remain intact. HashSet records cause once; existing TacticalCarrierDestroyed outcome is reused. Combined squad test covers independent carrier continuation, disabled survivor and repeated-check idempotency, plus player-side B. Engine build/scoped format/diff PASS; tests NOT RUN until US7 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk2-build.log.
