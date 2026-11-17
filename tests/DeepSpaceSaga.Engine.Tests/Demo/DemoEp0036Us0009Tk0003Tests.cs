@@ -43,8 +43,8 @@ public sealed class DemoEp0036Us0009Tk0003Tests
         long day = (now / GameCalendar.DayMs + 1) * GameCalendar.DayMs;
         var whole = engine.CaptureSaveStateForTests(day, SimulationSpeed.Speed0, simulationTimeMs: seed.GameState.SimulationTimeMs);
         long half = day - GameCalendar.DayMs / 2;
-        if (half > now) sliced.CaptureSaveStateForTests(half, SimulationSpeed.Speed0, simulationTimeMs: seed.GameState.SimulationTimeMs);
-        sliced.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(sliced.CaptureSaveState()), true, true), true);
+        var halfSave = half > now ? sliced.CaptureSaveStateForTests(half, SimulationSpeed.Speed0, simulationTimeMs: seed.GameState.SimulationTimeMs) : seed;
+        sliced.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(halfSave), true, true), true);
         var split = sliced.CaptureSaveStateForTests(day, SimulationSpeed.Speed0, simulationTimeMs: seed.GameState.SimulationTimeMs);
         Assert.Equal(whole.GameState.DemoCampaign!.Company!.Upkeep, split.GameState.DemoCampaign!.Company!.Upkeep);
         Assert.Equal(RationScheduleTests.Food(engine.CaptureSnapshot()), RationScheduleTests.Food(sliced.CaptureSnapshot()));

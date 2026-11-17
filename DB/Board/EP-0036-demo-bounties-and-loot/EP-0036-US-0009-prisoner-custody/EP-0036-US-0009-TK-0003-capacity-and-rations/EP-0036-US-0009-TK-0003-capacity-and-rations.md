@@ -117,3 +117,5 @@ Include StationJobs.cs offer sizing (subtract actual prisoners), CrewRecruitment
 Actual prisoners now consume shared cabins and scheduled rations; fixed reserve producer is zero. Crew payroll remains employment-only. Recruitment and passenger offer capacity respect custody; Load rejects prisoners assigned to a foreign ship. Engine/tests build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk3-build.log); tests deferred to US9 boundary.
 
 Boundary regression scope: update EP34 passenger-capacity fixture to seven real demo crew, zero reserve, five passenger cabins and twelve actual meal consumers; retain full-capacity, damaged, missing-food and legacy-save assertions. Fixture outputs now use this task's artifact run.
+
+Boundary fixture correction: retain the explicit-time helper's returned save rather than recapturing with the unchanged test clock. The latter manufactured a gameTime older than LastTick. 32/33 passed before this fixture correction (us9-engine-repeat.log).
