@@ -1,4 +1,10 @@
 {
+  "Ship.Sensor.Operator": "Оператор сенсора",
+  "Ship.Sensor.Script": "Скрипт сенсора",
+  "Ship.Sensor.Unassigned": "Оператор не назначен",
+  "Ship.Sensor.CrewMissing": "Назначенный член экипажа недоступен",
+  "Ship.Sensor.ModuleUnavailable": "Сенсор недоступен",
+  "Ship.Sensor.Range": "Сенсор: {0:0.#} км (база {1:0.#} км)",
   "TacticalBattle.Panel.FlightTitle": "ОГОНЬ",
   "TacticalBattle.Panel.FlightQueue": "очередь {0}",
   "TacticalBattle.Panel.FlightTarget": "цель {0} · шанс {1}",

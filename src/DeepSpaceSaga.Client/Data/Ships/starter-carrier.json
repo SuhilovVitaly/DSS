@@ -35,6 +35,7 @@
     {
       "moduleId": "MOD-PLAYER-SENSOR-01",
       "moduleTypeId": "module.sensor.player-start",
+      "operatorCrewId": "CHR-PLAYER-DEFENSE",
       "occupiedCells": [ { "x": 3, "y": 4 } ],
       "structurePoints": 150,
       "powerState": "On",
@@ -151,6 +152,7 @@
     {
       "crewId": "CHR-PLAYER-DEFENSE",
       "displayName": "Irina Volskaya",
+      "sensorRangeBonusPercent": 10,
       "accuracySkill": 0,
       "maneuverabilitySkill": 0,
       "gender": "Female",

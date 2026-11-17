@@ -1,4 +1,10 @@
 {
+  "Ship.Sensor.Operator": "Sensor operator",
+  "Ship.Sensor.Script": "Sensor script",
+  "Ship.Sensor.Unassigned": "No operator assigned",
+  "Ship.Sensor.CrewMissing": "Assigned crew member unavailable",
+  "Ship.Sensor.ModuleUnavailable": "Sensor unavailable",
+  "Ship.Sensor.Range": "Sensor: {0:0.#} km (base {1:0.#} km)",
   "TacticalBattle.Panel.FlightTitle": "FIRE",
   "TacticalBattle.Panel.FlightQueue": "queue {0}",
   "TacticalBattle.Panel.FlightTarget": "target {0} · chance {1}",
