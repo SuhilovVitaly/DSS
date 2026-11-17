@@ -66,6 +66,7 @@ public sealed partial class ShipScreen : IScreen
     /// <summary>The request currently in flight; awaited by tests and never re-sent while non-null and pending.</summary>
     internal Task? PendingRearm;
     internal IReadOnlyList<ShipViewModel.DroneRow> Drones => _drones;
+    internal IReadOnlyList<string> CrewLabels => _model.Crew.Select(c => ShipCrewPanel.EngineerLabel(c) ?? SensorCrewLabel(c)).ToArray();
     internal int TorpedoStock => _torpedoStock;
     internal int Revision => _revision;
     internal int SelectedRow => _selectedRow;
@@ -342,7 +343,7 @@ public sealed partial class ShipScreen : IScreen
             float crewY = pt + ct + 60;
             foreach (var member in _model.Crew)
             {
-                canvas.DrawText(SensorCrewLabel(member), pl + cl, crewY, bodyPaint);
+                canvas.DrawText(ShipCrewPanel.EngineerLabel(member) ?? SensorCrewLabel(member), pl + cl, crewY, bodyPaint);
                 crewY += ShipLayout.BodyLineHeight;
             }
             DrawSensorOperator(canvas, pl + cl, crewY, bodyPaint);
