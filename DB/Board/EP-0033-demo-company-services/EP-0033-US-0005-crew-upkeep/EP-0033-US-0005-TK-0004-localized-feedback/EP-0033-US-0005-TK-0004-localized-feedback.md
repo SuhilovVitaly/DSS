@@ -5,7 +5,7 @@ ticket: EP-0033-US-0005-TK-0004-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0033-US-0005-TK-0002-engine]
@@ -94,3 +94,6 @@ No API change. Существующие словари Russian/English; язык
 ## Self-containment check
 
 История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+
+## Execution
+RU/EN wages, separate debt, actual people/food and explicit payment feedback. Tests at story boundary; passenger-contract integration remains OPEN.

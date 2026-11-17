@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0032-US-0002-permanent-pilot-loss, EP-0033-US-0001-station-repairs]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Наём замены и назначение пилота
@@ -94,3 +94,6 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story-boundary validation
+14 Engine, 10 Contracts, 71 Client tests PASS (combined implemented stories and Ship/Hire/Finance regressions). Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-us0004/Engine3.log, Contracts3.log, Client3.log. Native/product acceptance OPEN.

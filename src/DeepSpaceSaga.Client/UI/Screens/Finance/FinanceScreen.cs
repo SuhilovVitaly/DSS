@@ -17,7 +17,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Finance;
 /// Pause-on-open/resume-on-close is handled generically by SkiaWindow's
 /// PushModalAsync/PopModalAsync — this screen has no speed/pause logic of its own.
 /// </summary>
-public sealed class FinanceScreen : IScreen
+public sealed partial class FinanceScreen : IScreen
 {
     private readonly SnapshotBuffer? _buffer;
 
@@ -64,9 +64,13 @@ public sealed class FinanceScreen : IScreen
         _fuelHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
-    public FinanceScreen(SnapshotBuffer? buffer = null)
+    public FinanceScreen(SnapshotBuffer? buffer = null,
+        Func<DemoCampaignCommand, CancellationToken, ValueTask<DemoCampaignResponse>>? service = null,
+        Func<DemoCampaignSnapshot?>? campaign = null)
     {
         _buffer = buffer;
+        _service = service;
+        _campaign = campaign;
     }
 
     public void OnActivated()
@@ -108,6 +112,7 @@ public sealed class FinanceScreen : IScreen
 
         var reports = Reports;
         float localX = x - FinanceLayout.PanelLeft(_screenWidth), localY = y - FinanceLayout.PanelTop(_screenHeight);
+        ClickUpkeep(localX, localY);
         if (localX is >= 40 and <= 510 && localY is >= 388 and < 748)
         {
             int index = _listScroll + (int)((localY - 388) / 36);
@@ -166,6 +171,9 @@ public sealed class FinanceScreen : IScreen
         return ScreenEvent.None;
     }
 
+    internal ImmutableArray<CompanyServicePosting> ServicePostings =>
+        _buffer?.Presented?.Snapshot.DemoCampaign?.Company?.StationRepair?.Postings is { IsDefault: false } postings ? postings : [];
+
     public void Render(SKCanvas canvas, int width, int height)
     {
         _screenWidth = width;
@@ -201,6 +209,13 @@ public sealed class FinanceScreen : IScreen
             canvas.DrawText($"Портовая задолженность: {fees.Debt}", cx, pt + 330, MenuStyle.TextStatus);
         }
 
+        if (ServicePostings.LastOrDefault() is { } service)
+        {
+            using var servicePaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 16, IsAntialias = true };
+            canvas.DrawText(Localization.Get(service.Kind switch { "decoy" => "Demo.Supply.Confirmed", "drone" or "equipment" => "Demo.Replacement.Tab", "hire" => "Demo.Recruitment.Title", _ => "Demo.Repair.Title" }), pl + 40, pt + 300, servicePaint);
+            canvas.DrawText(string.Format(Localization.Get("Demo.Services.Paid"), service.Amount), pl + 40, pt + 325, servicePaint);
+        }
+        DrawUpkeep(canvas, pl, pt);
         DrawVoyageFinances(canvas, pl, pt);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must

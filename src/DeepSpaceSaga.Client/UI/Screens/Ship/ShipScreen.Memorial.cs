@@ -23,7 +23,7 @@ public sealed partial class ShipScreen
         canvas.DrawText(Localization.Get("Demo.PilotLoss.Title"), left + 32, top + 510, text);
         canvas.DrawText(Localization.Get(entries.IsEmpty ? "Demo.PilotLoss.Empty" : "Demo.PilotLoss.Help"), left + 32, top + 535, text);
         canvas.Save();
-        canvas.ClipRect(new(left + 28, top + 540, left + ShipLayout.PanelWidth - 28, top + 780));
+        canvas.ClipRect(new(left + 28, top + 540, left + 700, top + 780));
         for (int i = 0; i < VisibleMemorialRows && i + _memorialScroll < entries.Length; i++)
         {
             var entry = entries[i + _memorialScroll];

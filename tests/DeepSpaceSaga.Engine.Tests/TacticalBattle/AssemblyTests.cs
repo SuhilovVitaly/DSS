@@ -78,9 +78,11 @@ public sealed class AssemblyTests
         };
     }
 
+    private static string SourceFile([System.Runtime.CompilerServices.CallerFilePath] string file = "") => file;
+
     internal static TacticalBattleCatalog Catalog()
     {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        for (var dir = new DirectoryInfo(Path.GetDirectoryName(SourceFile())!); dir is not null; dir = dir.Parent)
             if (File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln")))
                 return TacticalBattleContentLoader.Load(Path.Combine(dir.FullName, "src/DeepSpaceSaga.Client/Data/TacticalBattle"));
         throw new DirectoryNotFoundException("DSS repository not found.");
@@ -200,3 +202,4 @@ public sealed class AssemblyTests
         Assert.Equal(43, one.Random.Calls);
     }
 }
+

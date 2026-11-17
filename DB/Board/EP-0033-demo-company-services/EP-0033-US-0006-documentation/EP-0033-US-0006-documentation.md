@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0033-US-0001-station-repairs, EP-0033-US-0002-ammunition-supply, EP-0033-US-0003-drone-replacement, EP-0033-US-0004-pilot-recruitment, EP-0033-US-0005-crew-upkeep]
 created: 2026-11-16T20:02:53Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Документация проекта по итогам эпика
@@ -96,3 +96,6 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Delivery evidence
+[Documentation impact](../DocumentationImpact.md), [validation](../FinalValidation.md), [coverage](../AcceptanceCoverage.md), [publication map](../Tickets.md). Documentation delivery does not close native/product or external passenger-contract acceptance.

@@ -19,7 +19,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Hire;
 /// <see cref="Contracts.ContractsScreen"/>/<see cref="Trade.TradeScreen"/>/
 /// <see cref="Station.StationScreen"/>.
 /// </summary>
-public sealed class HireScreen : IScreen
+public sealed partial class HireScreen : IScreen
 {
     private readonly SnapshotBuffer? _buffer;
 
@@ -66,11 +66,13 @@ public sealed class HireScreen : IScreen
         _fuelHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
-    private const string PlaceholderLine = "Crew hiring: not available yet";
-
-    public HireScreen(SnapshotBuffer? buffer = null)
+    public HireScreen(SnapshotBuffer? buffer = null,
+        Func<DeepSpaceSaga.Contracts.DemoCampaignCommand, CancellationToken, ValueTask<DeepSpaceSaga.Contracts.DemoCampaignResponse>>? service = null,
+        Func<DeepSpaceSaga.Contracts.DemoCampaignSnapshot?>? campaign = null)
     {
         _buffer = buffer;
+        _service = service;
+        _campaign = campaign;
     }
 
     public void OnActivated()
@@ -102,6 +104,8 @@ public sealed class HireScreen : IScreen
         // Click on the dimmed background outside the panel also closes it.
         if (!HireLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseHire;
+
+        ClickRecruitment(x - HireLayout.PanelLeft(_screenWidth), y - HireLayout.PanelTop(_screenHeight));
 
         return ScreenEvent.None;
     }
@@ -162,12 +166,7 @@ public sealed class HireScreen : IScreen
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
             fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs, missingRations: snapshot?.MissingRations ?? 0);
 
-        float center = pl + HireLayout.PanelWidth / 2f;
-        float top = pt + HireLayout.BodyStartY - 24;
-        var emptyState = new SKRect(center - 270, top, center + 270, top + 38);
-        TabletopStyle.Field(canvas, emptyState);
-        emptyState.Inflate(-10, 0);
-        TabletopStyle.Label(canvas, emptyState, PlaceholderLine, MenuStyle.TextStatus);
+        DrawRecruitment(canvas, pl, pt);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.

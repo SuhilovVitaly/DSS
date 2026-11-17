@@ -316,11 +316,13 @@ public sealed class ContentLoaderTests
         Assert.False(EngineContentLoader.LoadRegistryFromSettingsFile(fixture.Settings, out _, out _).TacticalBattle.IsAvailable);
     }
 
+    private static string SourceFile([System.Runtime.CompilerServices.CallerFilePath] string file = "") => file;
+
     private static string ClientRoot
     {
         get
         {
-            for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+            for (var dir = new DirectoryInfo(Path.GetDirectoryName(SourceFile())!); dir is not null; dir = dir.Parent)
                 if (File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) return Path.Combine(dir.FullName, "src/DeepSpaceSaga.Client");
             throw new DirectoryNotFoundException("DSS repository not found.");
         }
@@ -378,3 +380,4 @@ public sealed class ContentLoaderTests
         }
     }
 }
+

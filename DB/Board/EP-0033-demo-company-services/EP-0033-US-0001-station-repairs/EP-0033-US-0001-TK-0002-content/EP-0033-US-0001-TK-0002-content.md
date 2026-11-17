@@ -5,7 +5,7 @@ ticket: EP-0033-US-0001-TK-0002-content
 title: Контент: Ремонт носителя и уцелевших дронов
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0033-US-0001-TK-0001-contracts]
@@ -104,3 +104,6 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution — 2026-11-17
+Added schema1 services for start and industrial stations using the existing strict DemoCampaignDefinitions loader. Rates are technical baseline assumptions, not balance acceptance. Tests authored; run at story boundary. Legacy no-grant behavior is covered through the owning Engine story tests. No new labels field: stable UI keys belong to TK-0005.

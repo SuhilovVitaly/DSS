@@ -1,7 +1,8 @@
 # Найм экипажа
 
-Текущий экран — placeholder shell с сообщением Crew hiring: not available yet. Открывается из Station как вложенная модаль; полноценный подбор и найм экипажа не реализован.
+Экран открывается из Station во вложенной модали. Для доступной демо-станции Engine возвращает три воспроизводимых предложения: портрет, имя, навыки, разовую плату, суточную ставку и срок. Показаны свободные каюты с учётом живого экипажа, реальных пассажиров и двух резервных мест. Наём подтверждается Engine; pending блокирует повтор, отказ не списывает деньги.
 
-См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
+Выбор пилота и живого дрона позволяет явно назначить его; прежнее назначение снимается. Погибшие пилоты из мемориала не участвуют в списках. Просроченные предложения отвергаются, открытие окна не перегенерирует roster. Закрытие возвращает в Station через общий modal stack.
 
-Источники: [HireScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Hire/HireScreen.cs).
+[Правила услуг](../../04-Engineering/CompanyServices.md), [каталог экранов](ScreenCatalog.md).
+Источники: [HireScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Hire/HireScreen.cs), [Recruitment](../../../../src/DeepSpaceSaga.Client/UI/Screens/Hire/HireScreen.Recruitment.cs).

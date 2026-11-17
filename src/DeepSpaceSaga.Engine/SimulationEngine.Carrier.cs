@@ -76,7 +76,7 @@ public partial class SimulationEngine
     private ImmutableArray<HangarSlotSnapshot> BuildHangarSlots(SpaceObjectRuntime ship)
     {
         var wing = GetOwnedWing(ship.InitialMotion.ObjectId);
-        var droneBySlot = wing.ToDictionary(d => (d.HangarModuleId, d.SlotIndex), d => d.DroneId);
+        var droneBySlot = wing.Where(d => !d.Destroyed).ToDictionary(d => (d.HangarModuleId, d.SlotIndex), d => d.DroneId);
 
         var slots = ImmutableArray.CreateBuilder<HangarSlotSnapshot>();
         foreach (var module in ship.Modules)
@@ -129,7 +129,7 @@ public partial class SimulationEngine
             }
         }
 
-        int occupied = ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length;
+        int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
         int reserved = ReservedPrisonerCabins;
         return new CabinReservationSnapshot(
             TotalCabins: operationalCabins,

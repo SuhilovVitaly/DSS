@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "stationIds": [
+    "SPC-0002",
+    "SPC-0006"
+  ],
+  "repairRates": {
+    "hull": 10,
+    "armor": 5,
+    "engine": 100,
+    "jam": 50,
+    "decoyCharge": 25
+  },
+  "recruitment": {
+    "portraits": [
+      "Images/Persons/W4/Portraits/CHR-20260915-102445-3C5C5D.png",
+      "Images/Persons/W4/Portraits/CHR-20260915-102448-E2757F.png",
+      "Images/Persons/W4/Portraits/CHR-20260915-104315-4DF131.png"
+    ],
+    "skillMin": 40,
+    "skillMax": 65,
+    "price": 300,
+    "refreshGameTimeMs": 86400000,
+    "dailyWage": 20
+  },
+  "droneOffers": [
+    {
+      "id": "replacement.light",
+      "catalogId": "light.sword.shield",
+      "price": 1500,
+      "stock": 2,
+      "stationIds": [
+        "SPC-0002",
+        "SPC-0006"
+      ]
+    },
+    {
+      "id": "replacement.heavy",
+      "catalogId": "heavy.sword.shield",
+      "price": 2200,
+      "stock": 1,
+      "stationIds": [
+        "SPC-0006"
+      ]
+    }
+  ],
+  "upgradeOffers": [
+    {
+      "id": "equipment.spear",
+      "catalogId": "gun.spear.t1",
+      "price": 400,
+      "stock": 3,
+      "stationIds": [
+        "SPC-0002",
+        "SPC-0006"
+      ]
+    },
+    {
+      "id": "equipment.armor",
+      "catalogId": "plate.heavy",
+      "price": 600,
+      "stock": 2,
+      "stationIds": [
+        "SPC-0006"
+      ]
+    }
+  ]
+}

@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0033-US-0001-station-repairs]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Покупка торпед и восстановление расходников
@@ -92,3 +92,6 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story-boundary validation
+7 Engine, 6 Contracts, 43 Client checks PASS (combined US-0001/0002 and screen regression). Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-us0002/engine5.log, Contracts.log, Client2.log. Content loader failures corrected without weakening production validation. Native/product/balance acceptance OPEN.

@@ -80,4 +80,5 @@ public sealed record OwnedDroneData(
     /// Per-engine damage factors captured at settlement, in <see cref="EngineIds"/> order
     /// (1.0 = intact, e.g. 0.5 = damaged). Null means every engine is intact.
     /// </summary>
-    [property: JsonPropertyName("engineFactors")] IReadOnlyList<double>? EngineFactors = null);
+    [property: JsonPropertyName("engineFactors")] IReadOnlyList<double>? EngineFactors = null,
+    [property: JsonPropertyName("replacesDroneId")] string? ReplacesDroneId = null);
