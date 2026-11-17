@@ -135,6 +135,24 @@ public sealed class ContractsScreen : IScreen
         }
     }
 
+    /// <summary>Test seam — cargo contracts section and hold split exactly as drawn (EP-0034 US-0004).</summary>
+    internal CargoContractsView CargoView =>
+        CargoContractsPresentation.Build(Campaign?.Transport?.CargoContracts, StationName);
+
+    /// <summary>
+    /// Test seam — confirmed sealing of the last applied cargo acceptance on this screen, from the authoritative
+    /// snapshot once it lists the contract; null before that, for passenger offers and on a freshly opened screen.
+    /// </summary>
+    internal string? CargoFeedback
+    {
+        get
+        {
+            string? offerId;
+            lock (_jobsGate) offerId = _acceptedOfferId;
+            return CargoContractsPresentation.Sealed(Campaign?.Transport?.CargoContracts, offerId, StationName);
+        }
+    }
+
     internal IReadOnlyList<(SKRect Rect, string OfferId)> AcceptButtons => _acceptButtons;
 
     /// <summary>Test seam — failures and cancellations section exactly as drawn (EP-0034 US-0003).</summary>
@@ -400,6 +418,12 @@ public sealed class ContractsScreen : IScreen
             Text(canvas, notice, left, y, JobsColumnWidth, JobsDimPaint);
             y += 26;
         }
+        // EP-0034 US-0004: hold split before any acceptance — sealed contract cargo apart from the player's goods.
+        if (CargoView.Hold is { } hold)
+        {
+            Text(canvas, hold, left, y, JobsColumnWidth, JobsDimPaint);
+            y += 26;
+        }
         if (view.BoardEmpty is { } empty)
             Text(canvas, empty, left, y, JobsColumnWidth, JobsDimPaint);
 
@@ -446,7 +470,8 @@ public sealed class ContractsScreen : IScreen
             jy += 8;
         }
         jy = DrawFailures(canvas, journalLeft, jy + 12, journalWidth, journalBottom);
-        DrawPassengers(canvas, journalLeft, jy + 12, journalWidth, journalBottom);
+        jy = DrawPassengers(canvas, journalLeft, jy + 12, journalWidth, journalBottom);
+        DrawCargo(canvas, journalLeft, jy + 12, journalWidth, journalBottom); // EP-0034 US-0004
 
         string? feedback;
         bool error;
@@ -454,6 +479,7 @@ public sealed class ContractsScreen : IScreen
         // A confirmed passenger boarding replaces the generic "accepted" line once the snapshot shows it.
         if (!error && PassengerFeedback is { } boarded) feedback = boarded;
         if (!error && CancelFeedback is { } cancelled) feedback = cancelled; // EP-0034 US-0003
+        if (!error && CargoFeedback is { } sealedCargo) feedback = sealedCargo; // EP-0034 US-0004
         if (feedback is not null)
             Text(canvas, feedback, left, pt + ContractsLayout.PanelHeight - 44, ContractsLayout.PanelWidth - 2 * JobsLeftMargin,
                 error ? JobsWarnPaint : JobsOkPaint);
@@ -514,9 +540,9 @@ public sealed class ContractsScreen : IScreen
     }
 
     /// <summary>EP-0034 US-0002: people aboard (life support), each passenger contract and its confirmed delivery.</summary>
-    private void DrawPassengers(SKCanvas canvas, float left, float y, float width, float bottom)
+    private float DrawPassengers(SKCanvas canvas, float left, float y, float width, float bottom)
     {
-        if (y + ContractsLayout.BodyLineHeight > bottom) return;
+        if (y + ContractsLayout.BodyLineHeight > bottom) return y;
         var view = PassengersView;
         Text(canvas, view.Title, left, y, width, JobsHeadingPaint);
         y += 30;
@@ -540,6 +566,23 @@ public sealed class ContractsScreen : IScreen
             }
             y += 6;
         }
+        return y;
+    }
+
+    /// <summary>
+    /// EP-0034 US-0004: the not-for-sale rule while cargo is sealed, each cargo contract with its hold state and the
+    /// confirmed delivery or return. The hold split itself is drawn under the board title.
+    /// </summary>
+    private void DrawCargo(SKCanvas canvas, float left, float y, float width, float bottom)
+    {
+        if (y + ContractsLayout.BodyLineHeight > bottom) return;
+        var view = CargoView;
+        Text(canvas, view.Title, left, y, width, JobsHeadingPaint);
+        y += 30;
+        foreach (string? note in new[] { view.NotForSale, view.Empty })
+            y = Wrapped(canvas, note, left, y, width, bottom, JobsDimPaint);
+        foreach (string line in view.Lines)
+            y = Wrapped(canvas, line, left, y, width, bottom, JobsTextPaint);
     }
 
     private static void Text(SKCanvas canvas, string text, float x, float y, float width, SKPaint paint)
