@@ -50,11 +50,11 @@ public sealed class DemoEp0034Us0001Tk0005Tests
         foreach (var key in en.Keys.Where(k => k.StartsWith(Prefix, StringComparison.Ordinal)))
             Assert.Equal(Regex.Matches(en[key], @"\{\d+\}").Select(m => m.Value).Order(),
                 Regex.Matches(ru[key], @"\{\d+\}").Select(m => m.Value).Order());
-        // Summary formats five authoritative integers; Ready formats the free-cabin count.
-        Assert.Equal(["{0}", "{1}", "{2}", "{3}", "{4}"], Regex.Matches(en[Prefix + "Summary"], @"\{\d+\}").Select(m => m.Value));
+        // Summary formats six authoritative integers; Ready formats the free-cabin count.
+        Assert.Equal(["{0}", "{1}", "{2}", "{5}", "{3}", "{4}"], Regex.Matches(en[Prefix + "Summary"], @"\{\d+\}").Select(m => m.Value));
         Assert.Equal(["{0}"], Regex.Matches(en[Prefix + "Ready"], @"\{\d+\}").Select(m => m.Value));
-        _ = string.Format(en[Prefix + "Summary"], 12, 6, 0, 2, 4);
-        _ = string.Format(ru[Prefix + "Summary"], 12, 6, 0, 2, 4);
+        _ = string.Format(en[Prefix + "Summary"], 12, 7, 0, 0, 4, 1);
+        _ = string.Format(ru[Prefix + "Summary"], 12, 7, 0, 0, 4, 1);
     }
 
     [Fact]
