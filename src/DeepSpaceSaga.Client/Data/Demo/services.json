@@ -1,8 +1,57 @@
 {
   "schemaVersion": 1,
-  "stationIds": ["SPC-0002", "SPC-0006"],
-  "repairRates": { "hull": 10, "armor": 5, "engine": 100, "jam": 50, "decoyCharge": 25 },
+  "stationIds": [
+    "SPC-0002",
+    "SPC-0006"
+  ],
+  "repairRates": {
+    "hull": 10,
+    "armor": 5,
+    "engine": 100,
+    "jam": 50,
+    "decoyCharge": 25
+  },
   "recruitment": null,
-  "droneOffers": [],
-  "upgradeOffers": []
+  "droneOffers": [
+    {
+      "id": "replacement.light",
+      "catalogId": "light.sword.shield",
+      "price": 1500,
+      "stock": 2,
+      "stationIds": [
+        "SPC-0002",
+        "SPC-0006"
+      ]
+    },
+    {
+      "id": "replacement.heavy",
+      "catalogId": "heavy.sword.shield",
+      "price": 2200,
+      "stock": 1,
+      "stationIds": [
+        "SPC-0006"
+      ]
+    }
+  ],
+  "upgradeOffers": [
+    {
+      "id": "equipment.spear",
+      "catalogId": "gun.spear.t1",
+      "price": 400,
+      "stock": 3,
+      "stationIds": [
+        "SPC-0002",
+        "SPC-0006"
+      ]
+    },
+    {
+      "id": "equipment.armor",
+      "catalogId": "plate.heavy",
+      "price": 600,
+      "stock": 2,
+      "stationIds": [
+        "SPC-0006"
+      ]
+    }
+  ]
 }

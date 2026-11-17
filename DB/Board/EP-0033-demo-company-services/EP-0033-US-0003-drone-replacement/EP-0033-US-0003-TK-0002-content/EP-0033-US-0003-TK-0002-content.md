@@ -5,7 +5,7 @@ ticket: EP-0033-US-0003-TK-0002-content
 title: Контент: Замена потерянного дрона и ограниченное оснащение
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0033-US-0003-TK-0001-contracts]
@@ -104,3 +104,6 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution
+Two existing light/heavy layouts and spear/heavy-armor equipment offers. Stock is finite per station (2/1 frames, 3/2 modules), no automatic window/load replenishment. Prices are provisional balance. New drones carry zero ammunition/decoy charges and no pilot. Validation at story boundary.
