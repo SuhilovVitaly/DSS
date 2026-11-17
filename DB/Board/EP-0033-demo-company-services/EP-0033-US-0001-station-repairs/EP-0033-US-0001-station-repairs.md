@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0032-US-0001-campaign-roundtrip]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Ремонт носителя и уцелевших дронов
@@ -92,3 +92,5 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+## Story validation — 2026-11-17
+Focused Engine 4, Contracts 3 and Client 37 (including Ship/Finance regression) PASS. Owning projects built by test runs. Scoped dotnet format whitespace completed; diff check clean. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-us0001/{Engine4.log,Contracts4.log,Client4.log,client-regression.log,format.log}. Early fixture failures retained. Self-review only; native/product acceptance OPEN. Service repair finance is persisted and shown in Finance.

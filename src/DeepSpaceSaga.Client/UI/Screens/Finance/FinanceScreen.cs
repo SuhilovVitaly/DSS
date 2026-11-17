@@ -166,6 +166,9 @@ public sealed class FinanceScreen : IScreen
         return ScreenEvent.None;
     }
 
+    internal ImmutableArray<CompanyServicePosting> ServicePostings =>
+        _buffer?.Presented?.Snapshot.DemoCampaign?.Company?.StationRepair?.Postings is { IsDefault: false } postings ? postings : [];
+
     public void Render(SKCanvas canvas, int width, int height)
     {
         _screenWidth = width;
@@ -201,6 +204,12 @@ public sealed class FinanceScreen : IScreen
             canvas.DrawText($"Портовая задолженность: {fees.Debt}", cx, pt + 330, MenuStyle.TextStatus);
         }
 
+        if (ServicePostings.LastOrDefault() is { } service)
+        {
+            using var servicePaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 16, IsAntialias = true };
+            canvas.DrawText(Localization.Get("Demo.Repair.Title"), pl + 40, pt + 300, servicePaint);
+            canvas.DrawText(string.Format(Localization.Get("Demo.Repair.Confirmed"), service.Amount), pl + 40, pt + 325, servicePaint);
+        }
         DrawVoyageFinances(canvas, pl, pt);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must

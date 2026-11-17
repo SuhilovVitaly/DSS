@@ -5,7 +5,7 @@ ticket: EP-0033-US-0001-TK-0002-content
 title: Контент: Ремонт носителя и уцелевших дронов
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0033-US-0001-TK-0001-contracts]

@@ -5,7 +5,7 @@ ticket: EP-0033-US-0001-TK-0001-contracts
 title: Контракт: Ремонт носителя и уцелевших дронов
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0032-US-0001-TK-0003-client]

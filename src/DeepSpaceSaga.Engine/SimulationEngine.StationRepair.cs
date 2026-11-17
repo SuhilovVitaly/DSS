@@ -70,14 +70,27 @@ public sealed partial class SimulationEngine
             var after = new RepairCondition(hullMax, carrier ? 0 : drone!.MaxArmor, 0, false);
             var result = new RepairResult(targetId, before, after, command.CommandId, total);
             var postings = state.Postings.IsDefault ? ImmutableArray<CompanyServicePosting>.Empty : state.Postings;
-            candidate = candidate with { Company = (candidate.Company ?? new()) with { StationRepair = state with
+            candidate = candidate with
             {
-                Quote = null, LastResult = result, Reason = null,
-                Postings = postings.Add(new(command.CommandId, "repair", targetId, _clock.GameTimeMs, total))
-            } } };
+                Company = (candidate.Company ?? new()) with
+                {
+                    StationRepair = state with
+                    {
+                        Quote = null,
+                        LastResult = result,
+                        Reason = null,
+                        Postings = postings.Add(new(command.CommandId, "repair", targetId, _clock.GameTimeMs, total))
+                    }
+                }
+            };
             var newWing = carrier ? wing : wing.SetItem(index, drone! with
-            { CurrentHull = hullMax, Armor = drone.MaxArmor, Jammed = false, Disabled = false,
-                EngineFactors = drone.EngineIds?.Select(_ => 1.0).ToArray() });
+            {
+                CurrentHull = hullMax,
+                Armor = drone.MaxArmor,
+                Jammed = false,
+                Disabled = false,
+                EngineFactors = drone.EngineIds?.Select(_ => 1.0).ToArray()
+            });
             int newHull = carrier ? hullMax : GetCarrierHullCurrent(shipId, GetCarrierHullMax(shipId));
             commit = () =>
             {

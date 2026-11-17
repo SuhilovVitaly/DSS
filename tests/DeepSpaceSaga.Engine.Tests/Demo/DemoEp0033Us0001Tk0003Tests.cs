@@ -18,9 +18,22 @@ public sealed class DemoEp0033Us0001Tk0003Tests
         var ship = save.GameState.SpaceObjects.Single(s => s.ObjectId == shipId);
         var drones = ship.CarrierState!.OwnedDrones!.ToArray();
         drones[0] = drones[0] with { CurrentHull = drones[0].MaxHull - 2, Armor = drones[0].MaxArmor - 1, Jammed = true };
-        var changed = ship with { CarrierState = ship.CarrierState with { OwnedDrones = drones } };
-        engine.LoadScenario(save with { GameState = save.GameState with { PlayerTokens = credits,
-            SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId == shipId ? changed : s).ToArray() } }, isSave: true);
+        var changed = ship with
+        {
+            IsDocked = true,
+            DockedStationObjectId = "SPC-0002",
+            FirstPortFeeGameTimeMs = 0,
+            NextPortFeeDueGameTimeMs = 86400000,
+            CarrierState = ship.CarrierState with { OwnedDrones = drones }
+        };
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                PlayerTokens = credits,
+                SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId == shipId ? changed : s).ToArray()
+            }
+        }, isSave: true);
         return drones[0].DroneId;
     }
 
