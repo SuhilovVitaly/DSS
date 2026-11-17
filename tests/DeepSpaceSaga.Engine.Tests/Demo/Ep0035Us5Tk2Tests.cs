@@ -79,7 +79,8 @@ public sealed class Ep0035Us5Tk2Tests
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(flying), true, true), true);
         Assert.Equal(JsonSerializer.Serialize(flying.GameState.VoyageState), JsonSerializer.Serialize(engine.CaptureSaveState().GameState.VoyageState));
         engine.ReceiveCommand(new("manual", 2, "SPC-0001", "MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.MaintainCourse));
-        var manual = engine.CaptureSnapshotForTests(9000000, SimulationSpeed.Speed0, 30000);
+        engine.CaptureSnapshotForTests(9000000, SimulationSpeed.Speed0, 30000);
+        var manual = engine.CaptureSnapshotForTests(9300000, SimulationSpeed.Speed0, 31000);
         Assert.Equal(CommandResultStatus.Executed, manual.CommandResults.Single(r => r.CommandId == "manual").Status);
         var cancelled = engine.CaptureSaveStateForTests(9300000, SimulationSpeed.Speed0, 31000).GameState.VoyageState!.ThreatRoute!;
         Assert.True(cancelled.Suspended);
