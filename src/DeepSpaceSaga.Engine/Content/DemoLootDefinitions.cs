@@ -11,7 +11,16 @@ public sealed record DemoLootDefinitions(int SchemaVersion, string ScrapItemType
     ImmutableDictionary<string, long> CarrierScrapQuantityByLayout,
     ImmutableArray<LootItemMapping>? ModuleItems = null, ImmutableArray<LootItemMapping> ConsumableItems = default)
 {
-    public string Fingerprint => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(this)));
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string Fingerprint => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new
+    {
+        SchemaVersion,
+        ScrapItemTypeId,
+        DroneScrapQuantityByFrame = DroneScrapQuantityByFrame.OrderBy(p => p.Key, StringComparer.Ordinal),
+        CarrierScrapQuantityByLayout = CarrierScrapQuantityByLayout.OrderBy(p => p.Key, StringComparer.Ordinal),
+        ModuleItems = ModuleItems?.OrderBy(m => m.Category, StringComparer.Ordinal).ThenBy(m => m.CatalogId, StringComparer.Ordinal),
+        ConsumableItems = ConsumableItems.IsDefault ? null : ConsumableItems.OrderBy(m => m.Category, StringComparer.Ordinal).ThenBy(m => m.CatalogId, StringComparer.Ordinal)
+    })));
 
     internal void ValidateReferences(GameDataRegistry registry, DemoEncountersDefinition? encounters)
     {

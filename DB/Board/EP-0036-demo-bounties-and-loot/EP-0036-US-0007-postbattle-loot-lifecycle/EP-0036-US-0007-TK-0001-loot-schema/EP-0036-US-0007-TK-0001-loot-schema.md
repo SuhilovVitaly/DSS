@@ -98,3 +98,7 @@ Loot gets a separate fingerprint, preserving cluster identity. ModuleItems is nu
 ## Execution — 2026-11-17
 
 Typed loot schema and optional loader integrated, including explicit quantities, existing tactical IDs, item storage/price/mass and complete present module mappings. Independent section fingerprint. Initial nullable diagnostics corrected; Engine build/scoped formatting/diff PASS. Tests NOT RUN until US7 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk1-build-repeat.log.
+
+## Corrective implementation — canonical fingerprint
+
+Review while connecting the lifecycle identified recursive serialization of the computed Fingerprint property. Replaced whole-record serialization with an explicit payload, ignored the computed property, and sorted dictionary/mapping keys ordinally. Added order-invariance assertion. Engine build PASS; tests remain NOT RUN until US7 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk1-fingerprint-build.log.

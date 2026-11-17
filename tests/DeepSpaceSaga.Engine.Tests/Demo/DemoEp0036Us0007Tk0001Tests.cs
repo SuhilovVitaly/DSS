@@ -27,5 +27,7 @@ public sealed class DemoEp0036Us0007Tk0001Tests
         Assert.NotEqual(loot.Fingerprint, (loot with { ScrapItemTypeId = "item.other" }).Fingerprint);
         var definitions = new DemoCampaignDefinitions(null, "cluster") { Loot = loot };
         Assert.Equal("cluster", (definitions with { Loot = loot with { ScrapItemTypeId = "item.other" } }).Fingerprint);
+        var reordered = loot with { DroneScrapQuantityByFrame = new Dictionary<string, long> { ["light"] = 20, ["heavy"] = 60 }.ToImmutableDictionary() };
+        Assert.Equal(reordered.Fingerprint, (reordered with { DroneScrapQuantityByFrame = new Dictionary<string, long> { ["heavy"] = 60, ["light"] = 20 }.ToImmutableDictionary() }).Fingerprint);
     }
 }
