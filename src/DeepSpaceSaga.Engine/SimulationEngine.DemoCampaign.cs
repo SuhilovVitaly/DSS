@@ -43,6 +43,7 @@ public sealed partial class SimulationEngine
             else
                 PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason);
             PrepareStationJobsCommand(command, ref candidate, ref handled, ref reason); // EP-0034 US-0006, explicit dispatch
+            var boarding = PreparePassengerBoarding(command, ref candidate, handled, ref reason); // EP-0034 US-0002
 
             reason ??= handled ? null : DemoCampaignReasons.Unsupported;
             bool applied = handled && reason is null;
@@ -57,6 +58,7 @@ public sealed partial class SimulationEngine
             };
             ValidateDemoCampaignSections(candidate);
             _demoCampaign = candidate;
+            if (applied && boarding is not null) BoardPassengers(boarding); // EP-0034 US-0002: same commit
             return response;
         }
     }
@@ -64,6 +66,7 @@ public sealed partial class SimulationEngine
     private void TickDemoCampaign(long gameTimeMs)
     {
         PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
+        DeliverPassengerContracts(gameTimeMs); // EP-0034 US-0002: idempotent, a Completed contract never pays again
         if (gameTimeMs <= _demoCampaign.LastTickGameTimeMs) return;
         var candidate = _demoCampaign;
         TickDemoCampaignSections(gameTimeMs, ref candidate);

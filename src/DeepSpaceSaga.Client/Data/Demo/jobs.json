@@ -16,8 +16,8 @@
     "urgencyPermille": 1500
   },
   "deadlines": {
-    "ordinaryPermille": 2000,
-    "urgentPermille": 1250,
+    "ordinaryPermille": 12000,
+    "urgentPermille": 8000,
     "cargoPermille": 2500,
     "minimumGameTimeMs": 3600000
   },

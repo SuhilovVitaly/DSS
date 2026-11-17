@@ -193,7 +193,7 @@ public sealed partial class SimulationEngine
             var capacity = BuildPassengerCapacityProjection();
             string? blocker = PassengerCapacityReasons.BoardingBlocker(capacity);
             if (blocker is not null && blocker != PassengerCapacityReasons.NoFreeCabins) return blocker;
-            long committed = active.Where(o => StationJobTypes.CarriesPassengers(o.Type)).Sum(o => (long)o.Count);
+            long committed = PassengerSeatsAwaitingBoarding(active); // boarded passengers already occupy cabins (US-0002)
             return capacity!.FreeCabins - committed < offer.Count ? PassengerCapacityReasons.NoFreeCabins : null;
         }
         if (offer.Type == StationJobTypes.Cargo)

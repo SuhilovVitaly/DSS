@@ -20,7 +20,12 @@ public sealed partial class SimulationEngine
         var capacity = BuildPassengerCapacityProjection();
         var jobs = BuildStationJobsProjection(); // EP-0034 US-0006
         return capacity is null && jobs is null ? persisted
-            : (persisted ?? new DemoTransportSnapshot()) with { PassengerCapacity = capacity, StationJobs = jobs };
+            : (persisted ?? new DemoTransportSnapshot()) with
+            {
+                PassengerCapacity = capacity,
+                StationJobs = jobs,
+                PassengerContracts = BuildPassengerContractsProjection() // EP-0034 US-0002
+            };
     }
 
     private PassengerCapacitySnapshot? BuildPassengerCapacityProjection()

@@ -33,6 +33,10 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("stationJobs")]
     public StationJobsStateData? StationJobs { get; init; }
 
+    /// <summary>EP-0034 US-0002: boarded passengers, payout posting and delivery receipt per passenger obligation.</summary>
+    [JsonPropertyName("passengerContracts")]
+    public ImmutableArray<PassengerContractData> PassengerContracts { get; init; } = [];
+
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
@@ -44,6 +48,7 @@ public sealed record DemoCampaignData(
         if (data.Transport?.PassengerCapacity is not null)
             throw new ScenarioException("Invalid demo campaign transport: passenger capacity is derived, not persisted.");
         ValidateStationJobs(data, gameTimeMs);
+        ValidatePassengerContracts(data, gameTimeMs);
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;
         long previousRevision = 0;
@@ -90,7 +95,56 @@ public sealed record DemoCampaignData(
             !jobs.Offers.Any(o => jobs.Obligations.Any(b => b.OfferId == o.Id));
         if (!valid) throw new ScenarioException("Invalid demo campaign station jobs.");
     }
+
+    /// <summary>
+    /// Atomic structural check of the passenger contracts (EP-0034 US-0002): every record belongs to one passenger
+    /// obligation, owns unique passenger ids and the canonical posting id, and a delivery receipt exists exactly
+    /// for Completed obligations with the obligation's payout. World membership is checked by the engine on Load.
+    /// </summary>
+    private static void ValidatePassengerContracts(DemoCampaignData data, long gameTimeMs)
+    {
+        if (data.Transport?.PassengerContracts is not null)
+            throw new ScenarioException("Invalid demo campaign transport: the passenger contracts projection is not persisted.");
+        if (data.PassengerContracts.IsDefault)
+            throw new ScenarioException("Invalid demo campaign passenger contracts.");
+        var obligations = data.StationJobs?.Obligations ?? [];
+        var contracts = new HashSet<string>(StringComparer.Ordinal);
+        var passengers = new HashSet<string>(StringComparer.Ordinal);
+        bool valid = data.PassengerContracts.IsEmpty || data.StationJobs is not null;
+        foreach (var record in data.PassengerContracts)
+        {
+            if (!valid) break;
+            var obligation = record is null ? null : obligations.FirstOrDefault(o => o.ContractId == record.ContractId);
+            valid = record is not null && obligation is not null && contracts.Add(record.ContractId) &&
+                StationJobTypes.CarriesPassengers(obligation.Type) &&
+                record.PostingId == PassengerContractReasons.PostingIdFor(record.ContractId) &&
+                !record.PassengerIds.IsDefault && record.PassengerIds.All(id => !string.IsNullOrWhiteSpace(id) && passengers.Add(id)) &&
+                // Empty ids only for a delivered legacy acceptance that never boarded anyone.
+                (record.PassengerIds.Length == obligation.Count || record.PassengerIds.IsEmpty && record.DeliveredAtGameTimeMs is not null) &&
+                (record.DeliveredAtGameTimeMs is null) == (record.PaidCredits is null) &&
+                (record.DeliveredAtGameTimeMs is not { } delivered
+                    ? obligation.Status != StationJobStatuses.Completed
+                    : obligation.Status == StationJobStatuses.Completed && record.PaidCredits == obligation.Payout &&
+                      delivered == obligation.ClosedAtGameTimeMs && delivered >= obligation.AcceptedAtGameTimeMs &&
+                      delivered <= obligation.DeadlineGameTimeMs && delivered <= gameTimeMs);
+        }
+        // A completed passenger obligation always carries its delivery receipt, so a payout cannot be replayed.
+        valid = valid && obligations.All(o => o is null || !StationJobTypes.CarriesPassengers(o.Type) ||
+            o.Status != StationJobStatuses.Completed || contracts.Contains(o.ContractId));
+        if (!valid) throw new ScenarioException("Invalid demo campaign passenger contracts.");
+    }
 }
+
+/// <summary>
+/// Persisted passenger contract part (EP-0034 US-0002): who boarded, the durable voyage posting and, once
+/// delivered, the arrival time and the credited payout. Route, deadline and payout stay in the journal obligation.
+/// </summary>
+public sealed record PassengerContractData(
+    [property: JsonPropertyName("contractId")] string ContractId,
+    [property: JsonPropertyName("passengerIds")] ImmutableArray<string> PassengerIds,
+    [property: JsonPropertyName("postingId")] string PostingId,
+    [property: JsonPropertyName("deliveredAtGameTimeMs")] long? DeliveredAtGameTimeMs = null,
+    [property: JsonPropertyName("paidCredits")] long? PaidCredits = null);
 
 /// <summary>Persisted job board: last published calendar bucket, live offers with frozen terms and the journal.</summary>
 public sealed record StationJobsStateData(

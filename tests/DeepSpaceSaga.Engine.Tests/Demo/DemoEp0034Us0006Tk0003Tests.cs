@@ -248,8 +248,12 @@ public sealed class DemoEp0034Us0006Tk0003Tests
                 save["gameState"]!["demoCampaign"]!["transport"] = new JsonObject { ["StationJobs"] = new JsonObject() }));
 
             // An older demo save without a board publishes the current day on Load; nothing else is granted.
+            // Such a save predates the passenger contracts of EP-0034-US-0002 too, so both sections are absent.
             using var legacy = Reload(engine, directory, noon, save =>
-                save["gameState"]!["demoCampaign"]!.AsObject().Remove("stationJobs"));
+            {
+                save["gameState"]!["demoCampaign"]!.AsObject().Remove("stationJobs");
+                save["gameState"]!["demoCampaign"]!.AsObject().Remove("passengerContracts");
+            });
             var fresh = Board(legacy, noon);
             Assert.Empty(fresh.Obligations);
             Assert.Contains(fresh.Offers, o => o.Id == "jobs:SPC-0002:0:0");
