@@ -926,5 +926,12 @@
   "Demo.Repair.identity_conflict": "This request conflicts with an earlier action.",
   "Demo.Repair.invalid_identity": "The request could not be sent. Try again.",
   "Demo.Repair.unsupported": "This service is unavailable.",
-  "Demo.Repair.unavailable": "Connection failed. Refresh the state before retrying."
+  "Demo.Repair.unavailable": "Connection failed. Refresh the state before retrying.",
+  "Demo.Supply.Quote": "Quote one decoy charge",
+  "Demo.Supply.Confirm": "Pay for decoy charges",
+  "Demo.Supply.Stock": "Cargo: {0}; maximum shots: {1}",
+  "Demo.Supply.Drone": "Magazine: {0}/{1}; decoys: {2}/{3}",
+  "Demo.Supply.Price": "Decoy charges: {0}; total: {1} cr",
+  "Demo.Supply.Confirmed": "Decoy charges replenished",
+  "Demo.Supply.Market": "Buy torpedoes through the station market"
 }

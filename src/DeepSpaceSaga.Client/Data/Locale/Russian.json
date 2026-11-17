@@ -926,5 +926,12 @@
   "Demo.Repair.identity_conflict": "Запрос конфликтует с предыдущим действием.",
   "Demo.Repair.invalid_identity": "Не удалось отправить запрос. Повторите попытку.",
   "Demo.Repair.unsupported": "Услуга недоступна.",
-  "Demo.Repair.unavailable": "Ошибка связи. Обновите состояние перед повтором."
+  "Demo.Repair.unavailable": "Ошибка связи. Обновите состояние перед повтором.",
+  "Demo.Supply.Quote": "Рассчитать один заряд ловушек",
+  "Demo.Supply.Confirm": "Оплатить заряды ловушек",
+  "Demo.Supply.Stock": "Трюм: {0}; максимум выстрелов: {1}",
+  "Demo.Supply.Drone": "Магазин: {0}/{1}; ловушки: {2}/{3}",
+  "Demo.Supply.Price": "Заряды ловушек: {0}; всего: {1} кр",
+  "Demo.Supply.Confirmed": "Заряды ловушек пополнены",
+  "Demo.Supply.Market": "Покупка торпед — на рынке станции"
 }
