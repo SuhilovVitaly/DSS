@@ -46,8 +46,7 @@ internal sealed class TradingVoyageFixture : IDisposable
         long calendarRatio = DefaultCalendarRatio, long initialCredits = 1_000_000,
         Func<ScenarioFile, ScenarioFile>? adjust = null, GameDataRegistry? registry = null)
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        string root = TestRepositoryPaths.Client;
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "Docked", "scenario.json"));
         scenario = scenario with { GameState = scenario.GameState with { MasterSeed = seed, PlayerTokens = initialCredits } };
         var engine = new SimulationEngine(registry ?? QuotedTradeExecutionTests.RealRegistry());

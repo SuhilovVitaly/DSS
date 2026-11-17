@@ -37,7 +37,7 @@ public static class SaveFormat
     /// Bump when the save schema changes incompatibly (see requirements §3891 migration policy).
     /// Version 21 adds the persisted carrier surface (hull + owned wing) on the player ship.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 21;
+    public const int CurrentSaveFormatVersion = 22;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -125,7 +125,9 @@ public sealed record GameStateData(
     /// <summary>Fractional physical milliseconds, in quarters. Absent in older saves (zero).</summary>
     [property: JsonPropertyName("motionQuarterRemainder")] int MotionQuarterRemainder = 0,
     [property: JsonPropertyName("debugTuning"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    IReadOnlyList<DeepSpaceSaga.Contracts.DebugTuningValue>? DebugTuning = null)
+    IReadOnlyList<DeepSpaceSaga.Contracts.DebugTuningValue>? DebugTuning = null,
+    [property: JsonPropertyName("demoCampaign"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    DemoCampaignData? DemoCampaign = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]

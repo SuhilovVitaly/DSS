@@ -29,7 +29,7 @@ public static class Program
         }
 
         var factory = new LocalGameSessionFactory();
-        var mainMenu = new MainMenuScreen();
+        var mainMenu = new MainMenuScreen(factory.IsDemoProfile);
 
         using var window = new SkiaWindow(mainMenu, factory, startupStopwatch);
         window.Run();
@@ -40,6 +40,8 @@ public static class Program
 
     internal sealed class LocalGameSessionFactory : IGameSessionFactory
     {
+        public bool IsDemoProfile => UI.Demo.DemoStartPresentation.IsDemoProfile(SettingsPath);
+        public SaveSlotInfo? GetLatestValidSave() => SaveSlotRepository.GetLatestValidSlot(SaveDirectory, SettingsPath);
         // The only place that knows about Saves/ on disk (mirrors Settings.json).
         private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
         private static string SaveDirectory => Path.Combine(AppContext.BaseDirectory, "Saves");
@@ -60,12 +62,12 @@ public static class Program
 
         public ScenarioInfo[] ListScenarios()
         {
-            return ScenarioRepository.ListScenarios(ScenariosDirectory);
+            return ScenarioRepository.ListScenarios(ScenariosDirectory, IsDemoProfile);
         }
 
         public string? GetTutorialScenarioPath()
         {
-            return ScenarioRepository.FindTutorialScenarioPath(ScenariosDirectory);
+            return ScenarioRepository.FindTutorialScenarioPath(ScenariosDirectory, IsDemoProfile);
         }
 
         public IGameSessionConnection CreateSessionFromSave(string slotId)

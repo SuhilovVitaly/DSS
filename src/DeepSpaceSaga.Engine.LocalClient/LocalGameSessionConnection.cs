@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Engine.LocalClient;
 /// Starts the engine loop and forwards snapshots to the client via Channel.
 /// Replaceable by NetworkGameSessionConnection without client changes.
 /// </summary>
-public sealed class LocalGameSessionConnection : IGameSessionConnection
+public sealed partial class LocalGameSessionConnection : IGameSessionConnection
 {
     private readonly SimulationEngine _engine;
     private readonly SnapshotMailbox _snapshots = new();
@@ -17,6 +17,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     private readonly Task _engineLoopTask;
     private readonly string? _saveDirectory;
     private readonly SemaphoreSlim _saveGate = new(1, 1);
+    internal Action<string>? SaveStageForTests { get; set; }
+    internal Func<string, string, CancellationToken, Task>? WriteSaveTempForTests { get; set; }
     // Owned-exit receipts by BattleId and the subset whose continuation checkpoint reached disk.
     // Guarded by _checkpointGate, which serializes the engine call + storage phase so concurrent
     // duplicate exits settle exactly once.
@@ -125,8 +127,13 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         TacticalCall(_engine.GetTacticalBattleOptions, cancellationToken);
     public ValueTask<TacticalBattleSnapshot?> GetTacticalBattleStateAsync(CancellationToken cancellationToken = default) =>
         TacticalCall(_engine.GetTacticalBattleState, cancellationToken);
-    public ValueTask<TacticalBattleResponse> StartTacticalBattleAsync(StartTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
-        TacticalCall(() => _engine.StartTacticalBattle(request), cancellationToken);
+    public async ValueTask<TacticalBattleResponse> StartTacticalBattleAsync(StartTacticalBattleRequest request, CancellationToken cancellationToken = default)
+    {
+        // Keep a recoverable living world even for the first tutorial sortie.
+        if (request is not null && request.SourceShipId is not null && !string.IsNullOrWhiteSpace(_saveDirectory) && _engine.GetTacticalBattleState() is null)
+            await SaveAsync(SaveSlotNaming.ContinuationSlotId, cancellationToken).ConfigureAwait(false);
+        return await TacticalCall(() => _engine.StartTacticalBattle(request!), cancellationToken).ConfigureAwait(false);
+    }
     public ValueTask<TacticalBattleResponse> MoveTacticalBattleAsync(MoveTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
         TacticalCall(() => _engine.MoveTacticalBattle(request), cancellationToken);
     public ValueTask<TacticalBattleResponse> FireTacticalBattleAsync(FireTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
@@ -198,7 +205,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
             await SaveAsync(SaveSlotNaming.ContinuationSlotId, cancellationToken).ConfigureAwait(false);
             _checkpointedBattles.Add(battleId);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or OperationCanceledException or ObjectDisposedException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)
         {
             // The world is already committed: storage is a recoverable post-commit phase. The
             // Client maps this IOException to an Unavailable receipt instead of an engine rejection.
@@ -208,6 +215,19 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
 
     public ValueTask<CarrierCommandResponse> RearmDroneAsync(RearmDroneRequest request, CancellationToken cancellationToken = default) =>
         TacticalCall(() => _engine.RearmDrone(request), cancellationToken);
+
+    public async ValueTask<DemoCampaignResponse> ExecuteDemoCampaignAsync(DemoCampaignCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _engine.ExecuteDemoCampaign(command);
+        }, cancellationToken).ConfigureAwait(false);
+    }
 
     private ValueTask<T> TacticalCall<T>(Func<T> action, CancellationToken token)
     {
@@ -291,7 +311,10 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     /// writing and rename: a queued save captures the world only after its predecessor commits.
     /// Failed or cancelled writes remove their own temporary file.
     /// </summary>
-    public async ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
+    public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) =>
+        WriteSaveAsync(slotId, null, cancellationToken);
+
+    private async ValueTask WriteSaveAsync(string slotId, long? minimumSequence, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_saveDirectory))
             throw new InvalidOperationException(
@@ -305,13 +328,25 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
             // Capture stays inside the gate: Engine rejects a terminal world before any
             // directory/temp-file write, including saves queued while the player was alive.
             // An immutable pre-death capture may still finish its atomic write afterwards.
+            if (slotId == SaveSlotNaming.ContinuationSlotId)
+            {
+                var snapshot = _engine.CaptureSnapshot();
+                if (snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDestroyed)) return;
+            }
+            SaveStageForTests?.Invoke("before_capture");
             var saveState = _engine.CaptureSaveState();
+            if (minimumSequence is { } required && (saveState.GameState.DemoCampaign?.CommitSequence ?? 0) < required)
+                throw new InvalidOperationException("Requested campaign commit has not been captured.");
             string json = ScenarioLoader.Serialize(saveState);
             Directory.CreateDirectory(_saveDirectory);
             string targetPath = Path.Combine(_saveDirectory, SaveSlotNaming.ToFileName(slotId));
             tempPath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
-            await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
+            if (WriteSaveTempForTests is { } write)
+                await write(tempPath, json, cancellationToken).ConfigureAwait(false);
+            else
+                await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
+            SaveStageForTests?.Invoke("before_replace");
             File.Move(tempPath, targetPath, overwrite: true);
         }
         finally

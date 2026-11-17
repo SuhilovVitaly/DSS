@@ -169,13 +169,16 @@ internal static class OwnedWingValidator
             if (drone.SlotIndex < 0 || drone.SlotIndex >= capacity)
                 throw new ScenarioException($"Drone '{drone.DroneId}' slot '{drone.SlotIndex}' is outside hangar '{drone.HangarModuleId}' capacity {capacity}.");
 
-            if (!pilots.Add(drone.CrewId))
-                throw new ScenarioException($"Duplicate pilot '{drone.CrewId}'.");
-            if (!crewIds.Contains(drone.CrewId))
-                throw new ScenarioException($"Drone '{drone.DroneId}' pilot '{drone.CrewId}' is not a crew member.");
-            var pilot = ship.Crew.First(c => c.Id == drone.CrewId);
-            if (string.IsNullOrWhiteSpace(pilot.Role) || !string.Equals(pilot.Role, "Pilot", StringComparison.OrdinalIgnoreCase))
-                throw new ScenarioException($"Drone '{drone.DroneId}' pilot '{drone.CrewId}' must have the Pilot role.");
+            if (!(drone.Destroyed && drone.CrewId == ""))
+            {
+                if (!pilots.Add(drone.CrewId))
+                    throw new ScenarioException($"Duplicate pilot '{drone.CrewId}'.");
+                if (!crewIds.Contains(drone.CrewId))
+                    throw new ScenarioException($"Drone '{drone.DroneId}' pilot '{drone.CrewId}' is not a crew member.");
+                var pilot = ship.Crew.First(c => c.Id == drone.CrewId);
+                if (string.IsNullOrWhiteSpace(pilot.Role) || !string.Equals(pilot.Role, "Pilot", StringComparison.OrdinalIgnoreCase))
+                    throw new ScenarioException($"Drone '{drone.DroneId}' pilot '{drone.CrewId}' must have the Pilot role.");
+            }
 
             if (drone.CurrentHull < 0 || drone.MaxHull < 0 || drone.CurrentHull > drone.MaxHull)
                 throw new ScenarioException($"Drone '{drone.DroneId}' has invalid hull bounds.");

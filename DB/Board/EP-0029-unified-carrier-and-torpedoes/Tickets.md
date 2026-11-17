@@ -1,6 +1,6 @@
 # EP-0029 — Карта 47 тикетов
 
-[Эпик](Documentation.md). Полная последовательная топологическая очередь: US-0001…US-0013, внутри TK по номеру. Точные prerequisites ниже. Implementation NOT STARTED. Approved тикетов — workflow-only, не human review и не разрешение начать код.
+[Эпик](Documentation.md). Полная последовательная топологическая очередь: US-0001…US-0013, внутри TK по номеру. Точные prerequisites ниже. Реализация поставлена, см. [статус эпика](Documentation.md) (уточнено 2026-11-16 в EP-0031). Approved тикетов — workflow-only, не human review и не разрешение начать код.
 
 | Story / Ticket | Layer | Files | Prerequisites | Criteria |
 |---|---|---:|---|---|

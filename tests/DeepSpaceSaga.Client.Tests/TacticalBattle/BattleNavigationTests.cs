@@ -477,7 +477,8 @@ public sealed class BattleNavigationTests
             typeof(SkiaWindow).GetMethod("OnFocusChanged", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(Window, [focused]);
         public IGameSessionConnection CreateSession() => throw new NotSupportedException();
-        public IGameSessionConnection CreateSessionFromSave(string slotId) => throw new NotSupportedException();
+        internal string? LastRequestedSaveSlot;
+        public IGameSessionConnection CreateSessionFromSave(string slotId) { LastRequestedSaveSlot = slotId; throw new NotSupportedException(); }
         public IGameSessionConnection CreateSessionFromScenario(string path) => throw new NotSupportedException();
         public ScenarioInfo[] ListScenarios() => [];
         public SaveSlotInfo[] ListSaveSlots() => [];

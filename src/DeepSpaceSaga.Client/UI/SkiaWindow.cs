@@ -468,6 +468,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 height - 20, MenuStyle.TextStatus);
 
         _debugConsoleOverlay.Render(canvas, DebugConsole, width, height, _debugConsoleUiScale);
+        if (_session is { IsPlayerShipDestroyed: false } && _session.Buffer.Latest?.Snapshot.IsTacticalBattleActive != true && _session.AutosaveStatus is { Length: > 0 } saveStatus)
+            canvas.DrawText(Localization.Get("Demo.Save." + saveStatus), width / 2f, height - 48, MenuStyle.TextStatus);
         return index;
     }
 
@@ -807,6 +809,11 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             return;
         }
 
+        if (key == Key.F6 && !repeat && _session is { } autosaveSession)
+        {
+            _ = autosaveSession.RetryAutosaveAsync();
+            return;
+        }
         if (key == Key.F10)
         {
             CaptureScreenshot();
@@ -976,7 +983,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 return;
             }
             if (EnsureShipDestroyedScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or ScreenEvent.Exit or
-                ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad)) return;
+                ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.NewGame or ScreenEvent.ContinueCheckpoint)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
                 (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
                 ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle) &&
@@ -1039,10 +1046,32 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                     }
                     break;
                 case ScreenEvent.NewGame:
-                    if (_session is null && !HasAnySaveSlotForNewGame())
+                    if (_session?.IsPlayerShipDestroyed == true) await ReturnToMainMenuAsync();
+                    if (_session is null && (_sessionFactory.IsDemoProfile || !HasAnySaveSlotForNewGame()))
                         await StartTutorialAsync();
                     else
                         OpenScenarioSelect();
+                    break;
+                case ScreenEvent.ContinueCheckpoint:
+                    if (!await LoadSlotCoreAsync(DeepSpaceSaga.Engine.LocalClient.SaveSlotNaming.ContinuationSlotId, "Checkpoint") && _screens.Current is ShipDestroyedScreen terminal)
+                        terminal.ShowStatus("Demo.Save.LoadFailed");
+                    break;
+                case ScreenEvent.ContinueCampaign:
+                    try
+                    {
+                        var slot = await Task.Run(_sessionFactory.GetLatestValidSave);
+                        if (slot is not null)
+                        {
+                            if (!await LoadSlotCoreAsync(slot.SlotId, "Continue") && _screens.Current is MainMenuScreen failedMenu)
+                                failedMenu.ShowStatus("Demo.Save.LoadFailed");
+                        }
+                        else if (_screens.Current is MainMenuScreen menu) menu.ShowStatus("Demo.Save.Empty");
+                    }
+                    catch (Exception error)
+                    {
+                        InterfaceLog.Write("Continue failed: " + error.Message);
+                        if (_screens.Current is MainMenuScreen menu) menu.ShowStatus("Demo.Save.LoadFailed");
+                    }
                     break;
                 case ScreenEvent.ScenarioSelected:
                     if (payload is not null)
@@ -1246,6 +1275,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             _savedSpeed = SimulationSpeed.Speed1;
             _screens.Replace(gameScreen);
             session.DebugTuningFiles.Activate();
+            session.ActivateAutosave();
         }
         catch
         {
@@ -1351,6 +1381,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             _screens.Push(CreateTacticalBattleView(flow));
             _modalDepth = 1;
             session.DebugTuningFiles.Activate();
+            session.ActivateAutosave(saveInitialState: false);
         }
         catch (Exception ex)
         {
@@ -1362,7 +1393,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             if (!_closing)
                 _screens.ReplaceAll(fallBackToScenarioSelect
                     ? new ScenarioSelectScreen(() => _sessionFactory.ListScenarios())
-                    : new MainMenuScreen());
+                    : new MainMenuScreen(_sessionFactory.IsDemoProfile));
             if (session is not null)
             {
                 _lastSessionDisposal = session.DisposeAsync().AsTask();
@@ -1552,7 +1583,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             session is not null && carrier is not null
                 ? (request, cancellationToken) => session.RearmDroneAsync(request, cancellationToken)
                 : null;
-        await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm));
+        await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm,
+            campaign: session is null ? null : () => session.DemoCampaign));
     }
 
     /// <summary>
@@ -2016,11 +2048,13 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             if (!_sessionFactory.HasQuickSave())
             {
                 InterfaceLog.Write("QuickLoad: no save file found, ignored.");
+                if (_screens.Current is ShipDestroyedScreen terminal) terminal.ShowStatus("Demo.Save.Empty");
                 return;
             }
 
             if (await LoadSlotCoreAsync(SaveSlots.Quicksave, "QuickLoad"))
                 InterfaceLog.Write("QuickLoad: loaded Saves/quicksave.json");
+            else if (_screens.Current is ShipDestroyedScreen terminal) terminal.ShowStatus("Demo.Save.LoadFailed");
         }
         finally
         {
@@ -2085,7 +2119,11 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             // CreateSessionFromSave call here would block Silk.NET's message pump if disk I/O
             // stalls, freezing the whole window for both the Load screen and QuickLoad (F9).
             await _lastSessionDisposal;
-            if (previousSession is not null) await previousSession.DeactivateDebugTuningWritesAsync();
+            if (previousSession is not null)
+            {
+                await previousSession.SuspendAutosaveAsync();
+                await previousSession.DeactivateDebugTuningWritesAsync();
+            }
             var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromSave(slotId));
             if (!_connectionLoader.TryAdopt(connection)) return false;
             newSession = new GameSessionHandle(connection, deferDebugTuningWrites: true);
@@ -2101,7 +2139,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             InterfaceLog.Write($"{logPrefix} failed: {ex.Message}");
             if (newSession is not null) await newSession.DisposeAsync();
             previousSession?.DebugTuningFiles.Activate();
-            if (!_closing)
+            previousSession?.ActivateAutosave();
+            if (!_closing && logPrefix is not ("Continue" or "Checkpoint"))
             {
                 await OpenLoadWindowAsync();
                 if (_screens.Current is LoadScreen load) load.ShowError(SessionConnectionLoader.LoadErrorKey(ex));
@@ -2123,6 +2162,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         }
 
         newSession.DebugTuningFiles.Activate();
+        newSession.ActivateAutosave(saveInitialState: false);
 
         return true;
     }
@@ -2137,7 +2177,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed1;
 
-        var mainMenu = new MainMenuScreen();
+        var mainMenu = new MainMenuScreen(_sessionFactory.IsDemoProfile);
         _screens.ReplaceAll(mainMenu);
         if (oldSession is not null)
         {

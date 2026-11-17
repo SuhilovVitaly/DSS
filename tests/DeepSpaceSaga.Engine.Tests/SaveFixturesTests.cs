@@ -7,8 +7,8 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class SaveFixturesTests
 {
-    internal static string ClientRoot => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
-    internal static string Fixtures => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../Fixtures/Saves"));
+    internal static string ClientRoot => TestRepositoryPaths.Client;
+    internal static string Fixtures => Path.Combine(TestRepositoryPaths.Root, "tests", "DeepSpaceSaga.Engine.Tests", "Fixtures", "Saves");
     internal static GameDataRegistry Registry() => EngineContentLoader.LoadRegistryFromSettingsFile(
         Path.Combine(ClientRoot, "Settings.json"), out _, out _);
 

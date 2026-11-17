@@ -9,6 +9,7 @@ public enum MenuButton
     Load,
     Settings,
     Credits,
+    Continue,
     Exit
 }
 
@@ -52,7 +53,7 @@ public sealed class MenuLayout
         if (IsInButton(lx, ly, NewGameY)) return MenuButton.NewGame;
         if (IsInButton(lx, ly, LoadY)) return MenuButton.Load;
         if (IsInButton(lx, ly, SettingsY)) return MenuButton.Settings;
-        if (IsInButton(lx, ly, CreditsY)) return MenuButton.Credits;
+        if (IsInButton(lx, ly, CreditsY)) return MenuButton.Continue;
         if (IsInButton(lx, ly, ExitY)) return MenuButton.Exit;
         return MenuButton.None;
     }

@@ -19,6 +19,8 @@ public sealed partial class SimulationEngine
         lock (_worldStateLock)
         {
             string shipId = _tacticalBattleSourceShipId!;
+            if (_carrierSettlement.TryGetValue(shipId, out var committed) && committed.BattleId == session.Id)
+                return ProjectSettlement(shipId, committed);
             var carrier = session.Battle.Carriers.First(c => c.Side == session.PlayerSide);
             bool shipDestroyed = carrier.Hull <= 0;
 
@@ -34,7 +36,7 @@ public sealed partial class SimulationEngine
                 consumedTorpedoes += owned.AmmoCurrent - drone.AmmoCurrent;
                 if (drone.Status == TacticalDroneStatus.Destroyed)
                 {
-                    updated.Add(owned with { Destroyed = true });
+                    updated.Add(owned with { Destroyed = true, CrewId = "" });
                     lostIds.Add(drone.Id);
                 }
                 else
@@ -57,7 +59,12 @@ public sealed partial class SimulationEngine
             foreach (var owned in wing.Where(d => !session.Battle.Drones.Any(x => x.Id == d.DroneId)))
                 updated.Add(owned);
 
+            var pilotLosses = PreparePilotLosses(shipId, session.Id, wing, lostIds.ToArray());
+            long campaignRevision = checked(_demoCampaign.Revision + 1);
+            long commitSequence = checked(_demoCampaign.CommitSequence + 1);
             _ownedWing[shipId] = updated.ToImmutable();
+            int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == shipId);
+            _objects[shipIndex] = pilotLosses.Ship;
 
             int hullMax = GetCarrierHullMax(shipId);
             int revision = GetCarrierRevision(shipId) + 1;
@@ -78,6 +85,12 @@ public sealed partial class SimulationEngine
                 LostDroneIds: lostIdsArray.IsEmpty ? null : lostIdsArray.ToArray(),
                 ConsumedTorpedoes: consumedTorpedoes,
                 ExitKind: exitKind.ToString());
+
+            _demoCampaign = pilotLosses.Campaign with
+            {
+                Revision = campaignRevision,
+                CommitSequence = commitSequence
+            };
 
             return new SortieSettlementSnapshot(
                 BattleId: session.Id,

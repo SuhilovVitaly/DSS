@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Demo;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
@@ -15,9 +16,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 /// open/resume-on-close is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
 /// screen has no speed/pause logic of its own.
 /// </summary>
-public sealed class ShipScreen : IScreen
+public sealed partial class ShipScreen : IScreen
 {
     private readonly ShipViewModel _model;
+    private readonly Func<DemoCampaignSnapshot?>? _campaign;
+    internal string CampaignSummary => CampaignRoundtripPresentation.Summary(_campaign?.Invoke()?.Company?.Roundtrip);
     private readonly Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? _rearm;
     private readonly Func<string> _commandId;
     private readonly ShipRearmController _controller = new();
@@ -37,9 +40,11 @@ public sealed class ShipScreen : IScreen
     public ShipScreen(ShipViewModel model) : this(model, 0, null) { }
 
     public ShipScreen(ShipViewModel model, int torpedoStock,
-        Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? rearm, Func<string>? commandId = null)
+        Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? rearm, Func<string>? commandId = null,
+        Func<DemoCampaignSnapshot?>? campaign = null)
     {
         _model = model;
+        _campaign = campaign;
         _torpedoStock = Math.Max(0, torpedoStock);
         _rearm = rearm;
         _commandId = commandId ?? (() => Guid.NewGuid().ToString("N"));
@@ -109,7 +114,12 @@ public sealed class ShipScreen : IScreen
         return _isCloseHovered;
     }
 
-    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        if (float.IsFinite(delta) && delta != 0 && y >= ShipLayout.PanelTop(_screenHeight) + 500)
+            _memorialScroll = Math.Clamp(_memorialScroll - Math.Sign(delta), 0, Math.Max(0, Memorial.Length - VisibleMemorialRows));
+        return ScreenEvent.None;
+    }
 
     private void Select(int index)
     {
@@ -118,7 +128,7 @@ public sealed class ShipScreen : IScreen
         if (_drones[index].Destroyed)
         {
             // A destroyed drone can never receive torpedoes; the row stays visible but unselectable.
-            _status = "destroyed drones cannot be rearmed";
+            _status = CampaignRoundtripPresentation.RearmReason("destroyed_drone");
             return;
         }
         _selectedRow = index;
@@ -179,7 +189,7 @@ public sealed class ShipScreen : IScreen
         // The pending barrier guarantees a double-click sends exactly one request.
         if (!_controller.TryBegin(quantity))
             return;
-        _status = $"rearming {quantity}…";
+        _status = Localization.Get("Demo.Rearm.Pending");
         PendingRearm = SubmitAsync(drone.Id, quantity, _revision, _controller);
     }
 
@@ -197,21 +207,21 @@ public sealed class ShipScreen : IScreen
             {
                 if (response.Snapshot is null) ApplyTransfer(droneId, response.Transferred);
                 else _torpedoStock = Math.Max(0, _torpedoStock - response.Transferred);
-                _status = $"rearmed {response.Transferred} torpedo(es)";
+                _status = string.Format(Localization.Get("Demo.Rearm.Confirmed"), response.Transferred);
                 if (_selectedRow >= 0) _quantity = MaxQuantity(_selectedRow);
             }
             else
             {
                 // A rejection transfers nothing: the magazine stays exactly as it was.
-                _status = response.Reason ?? "rearm rejected";
+                _status = CampaignRoundtripPresentation.RearmReason(response.Reason);
                 if (_selectedRow >= 0) _quantity = ShipWingPanel.ClampQuantity(_quantity, MaxQuantity(_selectedRow));
             }
         }
-        catch (Exception error)
+        catch (Exception)
         {
             // Transport failure: keep the last authoritative magazine and replace the in-flight status
             // with an explicit error so the player can retry; the pending barrier is released below.
-            _status = "rearm failed: " + error.Message;
+            _status = CampaignRoundtripPresentation.RearmReason("unavailable");
         }
         finally
         {
@@ -297,6 +307,17 @@ public sealed class ShipScreen : IScreen
             }
         }
 
+        if (_campaign is not null)
+        {
+            var company = _campaign()?.Company;
+            var summary = company?.Roundtrip;
+            using var text = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 18, IsAntialias = true };
+            canvas.DrawText(CampaignRoundtripPresentation.Summary(summary), pl + 32, pt + 440, text);
+            canvas.DrawText(company?.Outcome?.RecoveryReason is not null
+                ? CampaignOutcomePresentation.Guidance(company.Outcome)
+                : CampaignRoundtripPresentation.Guidance(summary), pl + 32, pt + 468, text);
+            DrawMemorial(canvas, pl, pt);
+        }
         DrawCloseButton(canvas, pl, pt);
     }
 
@@ -311,7 +332,7 @@ public sealed class ShipScreen : IScreen
             quantity > 0 && !_controller.IsPending);
         DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmPlusLocalRect(_drones.Length), "+",
             quantity < max && !_controller.IsPending);
-        DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmConfirmLocalRect(_drones.Length), "Rearm",
+        DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmConfirmLocalRect(_drones.Length), Localization.Get("Demo.Rearm.Action"),
             confirmEnabled);
 
         var controls = ShipLayout.RearmControlsLocalRect(_drones.Length);

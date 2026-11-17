@@ -15,6 +15,30 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class ShipDestroyedScreenTests
 {
     [Fact]
+    public async Task TerminalContinueUsesCampaignSlotAndKeepsVisibleError()
+    {
+        await using var f = await BattleNavigationTests.Fixture.Create();
+        PresentDestroyedPlayer(f);
+        await f.Route(ScreenEvent.None);
+        await f.Route(ScreenEvent.ContinueCheckpoint);
+        Assert.Equal(DeepSpaceSaga.Engine.LocalClient.SaveSlotNaming.ContinuationSlotId, f.LastRequestedSaveSlot);
+        var terminal = Assert.IsType<ShipDestroyedScreen>(f.Screens.Current);
+        Assert.Equal("Demo.Save.LoadFailed", Field<string>(terminal, "_status"));
+    }
+
+    [Fact]
+    public async Task FailedContinueDoesNotReplaceMainMenuWithLoadWindow()
+    {
+        await using var f = await BattleNavigationTests.Fixture.Create();
+        var menu = new DeepSpaceSaga.Client.UI.Screens.MainMenu.MainMenuScreen(true);
+        f.Screens.ReplaceAll(menu);
+        var result = (Task<bool>)typeof(SkiaWindow).GetMethod("LoadSlotCoreAsync", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(f.Window, new object[] { "missing", "Continue" })!;
+        Assert.False(await result);
+        Assert.Same(menu, f.Screens.Current);
+    }
+
+    [Fact]
     public async Task DestroyedPlayerShipReplacesTheWorldWithTheTerminalScreen()
     {
         await using var f = await BattleNavigationTests.Fixture.Create();
@@ -67,6 +91,12 @@ public sealed class ShipDestroyedScreenTests
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Tab));
         Assert.Equal(ScreenEvent.MainMenu, screen.OnKeyDown(Key.Space));
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Escape));
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Tab));
+        Assert.Equal(ScreenEvent.ContinueCheckpoint, screen.OnKeyDown(Key.Enter));
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Tab));
+        Assert.Equal(ScreenEvent.NewGame, screen.OnKeyDown(Key.Enter));
+        Assert.Equal(ScreenEvent.ContinueCheckpoint, screen.OnMouseDown(screen.Layout.Continue.MidX, screen.Layout.Continue.MidY, MouseButton.Left));
+        Assert.Equal(ScreenEvent.NewGame, screen.OnMouseDown(screen.Layout.NewGame.MidX, screen.Layout.NewGame.MidY, MouseButton.Left));
         var load = screen.Layout.Load;
         var menu = screen.Layout.MainMenu;
         Assert.Equal(ScreenEvent.OpenLoadWindow, screen.OnMouseDown(load.MidX, load.MidY, MouseButton.Left));

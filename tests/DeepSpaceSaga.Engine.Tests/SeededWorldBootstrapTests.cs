@@ -7,15 +7,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class SeededWorldBootstrapTests
 {
-    internal static string ClientRoot
-    {
-        get
-        {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) dir = dir.Parent;
-            return Path.Combine(dir!.FullName, "src", "DeepSpaceSaga.Client");
-        }
-    }
+    internal static string ClientRoot => TestRepositoryPaths.Client;
     internal static GameDataRegistry Registry() => EngineContentLoader.LoadRegistryFromSettingsFile(
         Path.Combine(ClientRoot, "Settings.json"), out _, out _);
     internal static ScenarioFile Scenario(string name = "Default") => ScenarioLoader.LoadFromFile(

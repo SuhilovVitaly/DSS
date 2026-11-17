@@ -1,0 +1,129 @@
+---
+epic: EP-0032-demo-campaign-continuity
+story: EP-0032-US-0007-consistent-campaign-actions
+ticket: EP-0032-US-0007-TK-0002-campaign-state
+title: Версионированное состояние и единый commit
+stage: approved
+approval_kind: workflow
+implementation_status: implemented-pending-story-validation
+layer: engine
+matching_test_project: tests/DeepSpaceSaga.Engine.Tests
+depends_on: [EP-0032-US-0007-TK-0001-campaign-contract]
+files_touched: 5
+serves: [AC-01, AC-02, AC-03, AC-04]
+created: 2026-11-16T20:32:46.441Z
+revision: 1
+---
+
+# Версионированное состояние и единый commit
+
+## Why
+
+Согласованные действия и сохранённое состояние кампании. Тикет 2/5 даёт проверяемый результат своего слоя. [Story и полный пользовательский результат](../EP-0032-US-0007-consistent-campaign-actions.md).
+
+## Decisions
+
+Поручение владельца: «пройди все эпики с 32 по 41 и наполни их сторисы тикетами. Если по мере прохождения эпика ты понимаешь что не хватает какой-то стори - ты можешь смело ее добавить уже вместе с тикетами. Реализация с 32 по 41 эпик должно привести нас к состоянию первого демо». Время записи 2026-11-16T20:32:46.441Z, не доказанное время отправки. Разрешены тикеты и необходимые дополнительные истории. Human approval технических деталей/баланса не заявляется; stage approved означает автоматическую готовность workflow планирования. Исполнение и публикация требуют отдельного поручения.
+
+## Assumptions
+
+- Используется сокращённая демо на 60–120 минут, один кластер, готовый Tetrarch; backlog полного продукта не включается.
+- Технические имена/новые API ниже — планируемые, не утверждения о текущем коде. Численные A-решения в шагах — baseline для owning плейтеста, не доказанный баланс.
+- Сначала prerequisites: EP-0032-US-0007-TK-0001-campaign-contract. При drift исходников пересмотреть allowlist в Board до расширения diff.
+
+## Code context
+
+| File | Current state | Allowed change |
+|---|---|---|
+| `src/DeepSpaceSaga.Engine/SimulationEngine.DemoCampaign.cs` | Новый файл этого тикета; на момент grounding отсутствует. | Только изменения, перечисленные в Implementation steps; прочие функции сохраняются. |
+| `src/DeepSpaceSaga.Engine/Scenario/DemoCampaignData.cs` | Новый файл этого тикета; на момент grounding отсутствует. | Только изменения, перечисленные в Implementation steps; прочие функции сохраняются. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.cs` | `src/DeepSpaceSaga.Engine/SimulationEngine.cs:17` — public sealed partial class SimulationEngine : IDisposable | Только изменения, перечисленные в Implementation steps; прочие функции сохраняются. |
+| `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs` | `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:7` — public static class SaveFormat | Только изменения, перечисленные в Implementation steps; прочие функции сохраняются. |
+| `tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0032Us0007Tk0002Tests.cs` | Новый файл этого тикета; на момент grounding отсутствует. | Именованные проверки этого тикета; не менять production из тестов. |
+
+Разрешены только эти 5 implementation/documentation files. Board evidence/status этого тикета обновляются отдельно как каноническая история исполнения; не дают разрешения править произвольный production. Read-only архитектурные источники: `DB/Documentation/00-Process/CLAUDE.md`, `DB/Documentation/01-Requirements/EngineRequirements.md` и [общая карта](../../../EP-0041-demo-validation-and-release/TicketPlan.md).
+
+## Public API after the change
+
+SimulationEngine.ExecuteDemoCampaign(DemoCampaignCommand); private TickDemoCampaign(long), BuildDemoCampaignProjection(), CaptureDemoCampaignState().
+
+## Implementation steps
+
+1. Добавить nullable GameStateData.DemoCampaign; writer Save22, versioned DemoCampaignData(schema=1, revision, commitSequence, receipts и именованные typed sections). Save21 без раздела получает пустые обязанности, но не новый корабль, деньги или экипаж.
+2. Подключить восстановление/валидацию до публикации мира в LoadScenarioCore, проекцию в BuildSnapshot, экспорт в CaptureSaveStateCore. TickDemoCampaign(gameTimeMs) вызывается на обеих границах после действующих мировых переходов, до snapshot/capture; одинаковый timestamp — no-op.
+3. ExecuteDemoCampaign проверяет command identity/payload hash, expected revision, живой носитель и доступность функции. Сначала вычислить candidate state/финансовые проводки, затем одним commit под _worldStateLock опубликовать изменения. Ошибка не оставляет частичных денег/груза/receipt.
+4. Предусмотреть явные partial hooks для последующих Company/Transport/Encounters/Rewards/Progression/Story handlers, валидации, tick и проекции; без reflection, динамических плагинов и второго RNG. Пустой раздел не объявляет функцию реализованной.
+
+## Served acceptance criteria
+
+- **AC-01:** Новая команда кампании имеет identity, revision, типизированный результат и причину отказа; повтор с тем же payload возвращает исходный receipt, изменённый payload с той же identity отклоняется.
+- **AC-02:** Состояние демо, квитанции и версии сохраняются атомарно; Save21 мигрирует без выдачи нового стартового имущества, неподдерживаемая версия не заменяет сессию.
+- **AC-03:** Доставка через LocalClient и GameSessionHandle асинхронна; UI не списывает ресурсы по pending и не обращается к Engine из рендера.
+- **AC-04:** Новые обязанности обрабатываются теми же календарными границами при обычном кадре и CaptureSaveState; нет параллельной модели мира.
+
+Вклад этого тикета ограничен слоем `engine`; полный AC принимается после всей карты истории, включая реальный пользовательский путь. DTO/test scaffold сам по себе не закрывает AC.
+
+## Out of scope
+
+Полная верфь, другие носители, фракционная симуляция, пленные, тактическое отступление, сохранение внутри боя, универсальный квестовый движок и публикация. Не переписывать поставленный EP-0029, не ремонтировать несвязанные файлы и не расширять лимит пяти файлов молча.
+
+## Invariants
+
+- `DB/Documentation/01-Requirements/EngineRequirements.md`, «Архитектура и авторитет» / «Команды, события и воспроизводимость»: Engine владеет исходами/временем/RNG/деньгами; render не мутирует мир.
+- `src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs:10`: асинхронный transport. `src/DeepSpaceSaga.Engine/SimulationEngine.SortieSettlement.cs:17`: использовать единый settlement, не создавать второй inventory.
+- `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:40`: на grounding writer Save21; переход к Save22 принадлежит EP-0032-US-0007. Последующие тикеты не назначают конкурирующие версии writer.
+- Reject/duplicate не даёт частичных денег, груза, награды, опыта или повторного звука. Pause не двигает deadlines; calendar и motion units не смешиваются.
+- Реализация gameplay-инвариантов — в owning engine ticket; клиентский/content/tooling тикет их не дублирует.
+
+## Tests
+
+Будущие тесты (ещё не реализованы/не запущены):
+
+- `DemoEp0032Us0007Tk0002Tests.DuplicateChangedPayload_IsRejected` — проверяет шаг 1 и соответствующие AC; fixture использует реальные typed receipts/state, не копию алгоритма в тесте.
+- `DemoEp0032Us0007Tk0002Tests.Save21Migration_DoesNotGrantStarter` — проверяет шаг 2 и соответствующие AC; fixture использует реальные typed receipts/state, не копию алгоритма в тесте.
+- `DemoEp0032Us0007Tk0002Tests.CaptureAndTick_HaveSameCommit` — проверяет шаг 3 и соответствующие AC; fixture использует реальные typed receipts/state, не копию алгоритма в тесте.
+
+Запуск из `D:/DeepSpaceSaga/DSS`; создать уникальный run, ограничить **каждый process tree 300000 ms**, не продолжать после timeout/failure. Пример PowerShell для именованного test corpus:
+
+```powershell
+$run = 'D:/DeepSpaceSaga/artifacts/validation/EP-0032-US-0007-TK-0002-campaign-state/' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
+New-Item -ItemType Directory -Force -Path $run | Out-Null
+$p = Start-Process dotnet -ArgumentList @('test','tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj','-c','Release','--filter','FullyQualifiedName~DemoEp0032Us0007Tk0002Tests','--results-directory',($run + '/results'),'--artifacts-path',($run + '/build')) -PassThru -WindowStyle Hidden -RedirectStandardOutput ($run + '/test.log') -RedirectStandardError ($run + '/test.err')
+if (-not $p.WaitForExit(300000)) { taskkill /PID $p.Id /T /F; throw 'test process-tree timeout' }
+if ($p.ExitCode -ne 0) { throw 'focused tests failed' }
+```
+
+Owning build: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj -c Release --artifacts-path <absolute-run>/build`. Format: `dotnet format src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --verify-no-changes --include src/DeepSpaceSaga.Engine/SimulationEngine.DemoCampaign.cs src/DeepSpaceSaga.Engine/Scenario/DemoCampaignData.cs src/DeepSpaceSaga.Engine/SimulationEngine.cs src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0032Us0007Tk0002Tests.cs`; тот же timeout wrapper и абсолютные stdout/stderr. Не запускать format для content-only. Длительный corpus делить по указанным полным IDs, не увеличивать cap. Native/manual сценарий: AC-01: Новая команда кампании имеет identity, revision, типизированный результат и причину отказа; повтор с тем же payload возвращает исходный receipt, изменённый payload с той же identity отклоняется. AC-02: Состояние демо, квитанции и версии сохраняются атомарно; Save21 мигрирует без выдачи нового стартового имущества, неподдерживаемая версия не заменяет сессию. AC-03: Доставка через LocalClient и GameSessionHandle асинхронна; UI не списывает ресурсы по pending и не обращается к Engine из рендера. AC-04: Новые обязанности обрабатываются теми же календарными границами при обычном кадре и CaptureSaveState; нет параллельной модели мира.
+
+Native запуск — только после проверки display layout, на меньшем мониторе с isolated profile/explicit index и `DSS_VALIDATION_SMALL_MONITOR=1`; иначе NOT RUN. Автотест не закрывает native, слуховую, независимую или продуктовую приёмку.
+
+## Definition of Done
+
+- Все шаги выполнены только в allowlist, тесты проверяют указанные исходы и ошибки.
+- Served AC имеют evidence вклада этого слоя; story end-to-end/native/product gates не закрыты автоматически.
+- Focused checks и owning build/format проходят либо конкретное исходное падение записано как блокер; timeout не PASS.
+- Public API, units, persistence, idempotency и ограничения соблюдены; нет скрытого follow-up вне Board.
+- Evidence в `D:/DeepSpaceSaga/artifacts/validation/<ticket>/<unique-run>/`, status/решения в Board, актуальные контракты в Documentation.
+- Удалены только собственные disposable scripts/caches/results; сохранены необходимые ссылки evidence, нет мусора в корнях workspace/repo.
+
+## Self-containment check
+
+Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution — 2026-11-17
+
+Save22 writer, immutable metadata/receipts, identity+payload conflict, revision guard и candidate-state hooks подключены к LoadScenarioCore, snapshot и capture под world lock. Оба tick пути используют календарное время. Отказы сохраняют исходную квитанцию без изменения ресурсов; пустые sections не объявляют будущие функции реализованными. Save21 получает только additive metadata. Именованные тесты добавлены, запуск — в конце US-0007. Loader входа Save21/22 и проверки контента — следующий TK-0003; этот промежуточный коммит не является готовой историей. diff check PASS.
+
+Story-end verification: corrected the minimal SpaceObjectData fixture to pass all required constructor arguments. Engine focused US-0007: 10/10 PASS, Release build succeeded. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-us0007-retry/engine3.log. No production change in this correction.
+
+## Final regression scope
+
+Update obsolete current-writer assertions in TradingEconomySaveSchemaTests, CombatReportsSaveSchemaTests, CatalogCompatibilityTests and SaveMigration20Tests from21 to22. Preserve direct SaveMigration21 intermediate-version assertions. Add TestRepositoryPaths and adapt SaveFixturesTests, SeededWorldBootstrapTests, TradingVoyageFixture and QuotedTradeExecutionTests paths so required external --artifacts-path builds can read source fixtures without copying source into artifacts.
+
+Regression result: 105/105 PASS, including campaign, Save18–22, atomic legacy rejection, catalog compatibility and the unchanged direct Save20→21 migration. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-regression/after2.log; initial artifact-path failures and then incomplete historical projection were corrected. Historical DTO fixture removes DemoCampaign when emulating pre22 input; catalog-only rename test explicitly uses Default instead of the new Demo default.
+
+## Review correction scope — 2026-11-17
+
+User requested autonomous fixes of the supplied production review, tests only at the end. Related scope includes owning campaign/autosave/content/menu/session files, localized feedback, focused Demo tests and current documentation. Preserve a living continuation before owned sorties; never overwrite it with terminal state; Continue skips terminal candidates. Load establishes an autosave baseline without writing. Validate only demo content for demo worlds; fingerprint only the stable cluster contract with old cluster-hash compatibility. Keep development Credits disabled. Confirmed command receipts survive presentation teardown; rejected requests do not trigger autosave (observe revision). Bound replay history to1024 with expected-revision protection for older applied commands. No game launch or manual acceptance.
+
+Review-fix validation: focused Engine DemoEp0032 corpus 27/27 PASS (engine4.log), focused Client DemoEp0032 + ShipDestroyedScreenTests + ScreenEventTests + MenuLayoutTests 133/133 PASS (client3.log). Logs: D:/DeepSpaceSaga/artifacts/validation/ep-0032-review/20261117-check/. Release owning builds included in tests; scoped whitespace and diff checks clean. No game/native launch. See ../../ReviewCorrections.md.

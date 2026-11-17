@@ -63,10 +63,10 @@ public class MenuLayoutTests
     }
 
     [Fact]
-    public void HitTest_Credits_center_returns_Credits()
+    public void HitTest_Continue_center_returns_Continue()
     {
         var (x, y) = ButtonCenterInScreen(MenuLayout.CreditsY);
-        Assert.Equal(MenuButton.Credits, MenuLayout.HitTest(x, y, ScreenWidth, ScreenHeight));
+        Assert.Equal(MenuButton.Continue, MenuLayout.HitTest(x, y, ScreenWidth, ScreenHeight));
     }
 
     [Fact]

@@ -4,12 +4,15 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.ShipDestroyed;
 
-/// <summary>A terminal screen after the player ship is destroyed: only Load and Main Menu can leave it.</summary>
+/// <summary>A terminal screen after the player ship is destroyed: offers checkpoint, new campaign, manual Load and Main Menu.</summary>
 public sealed class ShipDestroyedScreen : IScreen
 {
     private readonly float _uiScale;
     private ShipDestroyedLayout _layout;
     private ScreenEvent _hovered;
+    private string? _status;
+    public void ShowStatus(string key) => _status = key;
+    private static readonly ScreenEvent[] Actions = [ScreenEvent.OpenLoadWindow, ScreenEvent.MainMenu, ScreenEvent.ContinueCheckpoint, ScreenEvent.NewGame];
     private ScreenEvent _focused = ScreenEvent.OpenLoadWindow;
 
     internal ShipDestroyedLayout Layout => _layout;
@@ -24,7 +27,7 @@ public sealed class ShipDestroyedScreen : IScreen
     public ScreenEvent OnKeyDown(Key key)
     {
         if (key is Key.Tab or Key.Down or Key.Up or Key.Left or Key.Right)
-            _focused = _focused == ScreenEvent.OpenLoadWindow ? ScreenEvent.MainMenu : ScreenEvent.OpenLoadWindow;
+            _focused = Actions[(Array.IndexOf(Actions, _focused) + (key is Key.Up or Key.Left ? 3 : 1)) % Actions.Length];
         return key is Key.Enter or Key.Space ? _focused : ScreenEvent.None;
     }
 
@@ -67,12 +70,14 @@ public sealed class ShipDestroyedScreen : IScreen
             TextAlign = SKTextAlign.Center,
             Typeface = MenuStyle.TextStatus.Typeface
         };
-        string defeatText = Localization.Get("ShipDestroyed.Defeat");
+        string defeatText = Localization.Get(_status ?? "ShipDestroyed.Defeat");
         float defeatMeasured = defeat.MeasureText(defeatText);
         if (defeatMeasured > available) defeat.TextSize *= available / defeatMeasured;
         canvas.DrawText(defeatText, _layout.Panel.MidX, _layout.Panel.Bottom - 12 * _layout.Scale, defeat);
         Draw(_layout.Load, "ShipDestroyed.Load", ScreenEvent.OpenLoadWindow);
         Draw(_layout.MainMenu, "ShipDestroyed.MainMenu", ScreenEvent.MainMenu);
+        Draw(_layout.Continue, "Demo.Save.Continue", ScreenEvent.ContinueCheckpoint);
+        Draw(_layout.NewGame, "Demo.Start.NewGame", ScreenEvent.NewGame);
         canvas.Restore();
 
         void Draw(SKRect rect, string key, ScreenEvent action) =>
@@ -82,17 +87,18 @@ public sealed class ShipDestroyedScreen : IScreen
 }
 
 /// <summary>Logical coordinates; the window applies the configured interface scale.</summary>
-internal readonly record struct ShipDestroyedLayout(SKRect Panel, SKRect Load, SKRect MainMenu, float Scale)
+internal readonly record struct ShipDestroyedLayout(SKRect Panel, SKRect Load, SKRect MainMenu, SKRect Continue, SKRect NewGame, float Scale)
 {
     internal static ShipDestroyedLayout Create(int width, int height)
     {
-        float scale = Math.Max(.01f, Math.Min(1, Math.Min((width - 16) / 500f, (height - 16) / 280f)));
-        float left = (width - 500 * scale) / 2, top = (height - 280 * scale) / 2;
+        float scale = Math.Max(.01f, Math.Min(1, Math.Min((width - 16) / 500f, (height - 16) / 430f)));
+        float left = (width - 500 * scale) / 2, top = (height - 430 * scale) / 2;
         SKRect Rect(float x, float y, float w, float h) =>
             new(left + x * scale, top + y * scale, left + (x + w) * scale, top + (y + h) * scale);
-        return new(Rect(0, 0, 500, 280), Rect(40, 110, 420, 56), Rect(40, 182, 420, 56), scale);
+        return new(Rect(0, 0, 500, 430), Rect(40, 110, 420, 56), Rect(40, 182, 420, 56), Rect(40, 254, 420, 56), Rect(40, 326, 420, 56), scale);
     }
 
     internal ScreenEvent Hit(float x, float y) => Load.Contains(x, y) ? ScreenEvent.OpenLoadWindow :
-        MainMenu.Contains(x, y) ? ScreenEvent.MainMenu : ScreenEvent.None;
+        MainMenu.Contains(x, y) ? ScreenEvent.MainMenu :
+        Continue.Contains(x, y) ? ScreenEvent.ContinueCheckpoint : NewGame.Contains(x, y) ? ScreenEvent.NewGame : ScreenEvent.None;
 }

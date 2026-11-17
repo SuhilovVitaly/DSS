@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "stationIds": [
+    "SPC-0002",
+    "SPC-0005",
+    "SPC-0006",
+    "SPC-0007",
+    "SPC-0008"
+  ],
+  "roles": [
+    "service",
+    "mining",
+    "industrial",
+    "agricultural",
+    "far_trade"
+  ],
+  "seed": 320032,
+  "startStationId": "SPC-0002"
+}
