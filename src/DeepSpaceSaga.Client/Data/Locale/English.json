@@ -1268,5 +1268,18 @@
   "loot.jettison.retry": "Retry jettison: {0} × {1}",
   "loot.loot_retry_pending": "Resolve the previous operation using Retry.",
   "loot.retry": "Retry the previous operation",
-  "bounty.map.area_label": "Search area: {0} · {1} tokens"
+  "bounty.map.area_label": "Search area: {0} · {1} tokens",
+  "reward_report.bounty": "{0}: due {1}; paid {2}",
+  "reward_report.captured": "In custody: {0}",
+  "reward_report.consumable": "{0}: taken {1}; remaining {2}",
+  "reward_report.discarded": "Unclaimed goods were left behind. Taken = total collected.",
+  "reward_report.empty": "No recorded battle.",
+  "reward_report.item": "{0} × {1}: {2}",
+  "reward_report.left_pilot": "Not captured: {0}",
+  "reward_report.losses": "Lost drones: {0}; torpedoes consumed: {1}",
+  "reward_report.lost_pilot": "Pilot lost: {0}",
+  "reward_report.module": "{0}: {1}; estimate {2}",
+  "reward_report.notice": "Due and estimates are not cash. Costs/profit: unknown.",
+  "reward_report.remaining": "Remaining goods are still on the battlefield.",
+  "reward_report.title": "Battle report"
 }

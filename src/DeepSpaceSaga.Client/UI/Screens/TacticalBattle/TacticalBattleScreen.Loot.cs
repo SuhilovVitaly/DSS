@@ -13,7 +13,8 @@ public sealed partial class TacticalBattleScreen
     {
         var campaign = Flow.Session.DemoCampaign;
         if (campaign?.Rewards?.Loot is not { Phase: LootPhases.Open } loot || loot.BattleId != Flow.State?.BattleId) return false;
-        _lootWindow ??= new(new BattleLootPresentation(command => Flow.Session.ExecuteDemoCampaignAsync(command).AsTask()));
+        _lootWindow ??= new(new BattleLootPresentation(command => Flow.Session.ExecuteDemoCampaignAsync(command).AsTask()),
+            () => RewardReportPresentation.Lines(Flow.Session.DemoCampaign));
         _lootWindow.Presentation.Observe(loot, campaign.Revision);
         return _lootWindow.Presentation.State is not null;
     }

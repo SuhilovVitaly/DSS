@@ -23,7 +23,10 @@ public sealed record LootCargoSnapshot(string ItemTypeId, long Quantity, long Un
 public sealed record LootObjectSnapshot(string ObjectId, string Kind, ImmutableArray<LootConsumableSnapshot> Consumables,
     ScrapLootSnapshot? Scrap, ImmutableArray<ModuleLootSnapshot> Modules, LootPilotSnapshot? Pilot,
     double X = 0, double Y = 0, double Direction = 0);
-public sealed record LootConsumableSnapshot(string ItemTypeId, long Remaining, bool CanCollect, string? Reason, long UnitMassKg = 0);
+public sealed record LootConsumableSnapshot(string ItemTypeId, long Remaining, bool CanCollect, string? Reason, long UnitMassKg = 0)
+{
+    public long? OriginalQuantity { get; init; }
+}
 public sealed record ScrapLootSnapshot(string ItemTypeId, long Quantity, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0);
 public sealed record ModuleLootSnapshot(string InstanceId, string Category, string CatalogId, string ItemTypeId,
     string DisplayName, string ConditionLabel, long EstimatedValueTokens, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0);

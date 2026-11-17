@@ -6,7 +6,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Demo;
 
 /// <summary>Scrollable object details on the existing tactical map, without a second window.</summary>
-public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDisposable
+public sealed class BattleLootWindow(BattleLootPresentation presentation, Func<string[]>? report = null) : IDisposable
 {
     private readonly PrisonerPortraits _portraits = new(AppContext.BaseDirectory);
     public void Dispose() => _portraits.Dispose();
@@ -48,7 +48,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
         Button(canvas, LeaveBounds, L("leave"), !presentation.Pending && !flowPending);
         float panelWidth = Math.Min(500, width - 40);
         Bounds = new(width - panelWidth - 18, 34, width - 18, height - 70);
-        if (presentation.Selected is null && !_showJettison) Bounds = new(16, 34, Math.Min(width - 18, 516), 185);
+        if (presentation.Selected is null && !_showJettison && report is null) Bounds = new(16, 34, Math.Min(width - 18, 516), 185);
         using var background = new SKPaint { Color = new(12, 23, 29, 245) };
         canvas.DrawRoundRect(Bounds, 8, 8, background);
         Text(canvas, L("title"), Bounds.Left + 16, Bounds.Top + 27, 19);
@@ -64,7 +64,19 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
             canvas.Restore();
         }
         else if (presentation.Selected is not { } source)
+        {
             Wrapped(canvas, L("select_source"), Bounds.Left + 16, Bounds.Top + 62, panelWidth - 32, 15);
+            if (report is not null)
+            {
+                var clip = new SKRect(Bounds.Left + 16, Bounds.Top + 115, Bounds.Right - 16, Bounds.Bottom - 12);
+                canvas.Save(); canvas.ClipRect(clip);
+                float y = clip.Top + 18 - _scroll;
+                foreach (string line in report()) { Text(canvas, line, clip.Left, y, 12); y += 26; }
+                _contentHeight = y - clip.Top + _scroll;
+                canvas.Restore();
+                _scroll = Math.Clamp(_scroll, 0, Math.Max(0, _contentHeight - clip.Height));
+            }
+        }
         else
         {
             Text(canvas, L("source." + source.Kind), Bounds.Left + 16, Bounds.Top + 54, 15);

@@ -5,7 +5,7 @@ ticket: EP-0036-US-0004-TK-0002-reward-report
 title: Раздельный отчёт о награде, трофеях и потерях
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0004-TK-0001-reward-roundtrip, EP-0036-US-0006-TK-0004-client]
@@ -64,3 +64,9 @@ Committed sortie/entitlement/attempt не применяются дважды. F
 
 ## Self-containment check
 Входы принадлежат указанным prerequisite tickets, owning files/API/negative cases перечислены. При необходимости изменить иной слой сначала исправить Board allowlist.
+
+## Execution scope clarification
+Report requires authoritative collected consumable quantity absent from prior projection: extend LootConsumableSnapshot with additive OriginalQuantity populated from persisted ledger. Wire the read-only component into BattleLootWindow and ContractsScreen for reopening after exit/payment; add RU/EN report strings under this ticket to keep integrated UI complete. These owning files expand the draft allowlist. No new persistence or gameplay rules.
+
+## Implementation evidence
+Read-only report wired to loot map and Contracts screen; authoritative original quantities, separate due/paid postings, collected/remaining/failed/discarded goods, estimates, custody and actual sortie/pilot losses. Unknown costs/profit explicitly remain unknown. Tests run at US4 boundary; native NOT RUN.

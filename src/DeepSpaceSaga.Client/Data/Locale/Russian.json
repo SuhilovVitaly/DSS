@@ -1268,5 +1268,18 @@
   "loot.jettison.retry": "Повторить выброс: {0} × {1}",
   "loot.loot_retry_pending": "Завершите предыдущую операцию кнопкой повтора.",
   "loot.retry": "Повторить предыдущую операцию",
-  "bounty.map.area_label": "Район поиска: {0} · {1} токенов"
+  "bounty.map.area_label": "Район поиска: {0} · {1} токенов",
+  "reward_report.bounty": "{0}: к выплате {1}; выплачено {2}",
+  "reward_report.captured": "В плену: {0}",
+  "reward_report.consumable": "{0}: взято {1}; остаток {2}",
+  "reward_report.discarded": "Остаток оставлен. Взято = всего собрано за этот бой.",
+  "reward_report.empty": "Нет сохранённого результата боя.",
+  "reward_report.item": "{0} × {1}: {2}",
+  "reward_report.left_pilot": "Не арестован: {0}",
+  "reward_report.losses": "Потеряно дронов: {0}; расход торпед: {1}",
+  "reward_report.lost_pilot": "Погиб пилот: {0}",
+  "reward_report.module": "{0}: {1}; оценка {2}",
+  "reward_report.notice": "Ожидание и оценка — не деньги. Затраты/прибыль неизвестны.",
+  "reward_report.remaining": "Остаток ещё находится на поле боя.",
+  "reward_report.title": "Итог боя"
 }

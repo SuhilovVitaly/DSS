@@ -149,7 +149,7 @@ public sealed partial class SimulationEngine
             {
                 string? reason = !open ? BattleLootReasons.LootClosed : c.Remaining == 0 ? BattleLootReasons.AlreadyAttempted :
                     !TryPrepareLootCargo(c.ItemTypeId, 1, out _) ? BattleLootReasons.CargoFull : null;
-                return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason, _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(c.ItemTypeId)).UnitMassKg);
+                return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason, _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(c.ItemTypeId)).UnitMassKg) { OriginalQuantity = c.OriginalQuantity };
             }).ToImmutableArray(),
             s.Scrap is { } scrap ? ProjectScrap(scrap, open) : null,
             s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open)).ToImmutableArray(), ProjectLootPilot(loot, s), s.X, s.Y, s.Direction)).ToImmutableArray();

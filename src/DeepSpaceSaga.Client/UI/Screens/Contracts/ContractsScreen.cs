@@ -74,6 +74,9 @@ public sealed class ContractsScreen : IScreen
     private readonly Func<DemoCampaignCommand, ValueTask<DemoCampaignResponse>>? _execute;
     private readonly object _jobsGate = new();
     private bool _showBounties;
+    private bool _showReport;
+    private SKRect _reportTab;
+    private float _reportScroll;
     private SKRect _bountyTab;
     private readonly List<(SKRect Rect, string BountyId)> _bountyButtons = [];
     private readonly List<(SKRect Rect, string BountyId)> _claimButtons = [];
@@ -374,8 +377,16 @@ public sealed class ContractsScreen : IScreen
         if (IsStationNameHit(x, y))
             return ScreenEvent.NavigateToStation;
 
+        if (_reportTab.Contains(x, y))
+        {
+            _showReport = !_showReport;
+            _reportScroll = 0;
+            _acceptButtons.Clear(); _cancelButtons.Clear(); _bountyButtons.Clear(); _claimButtons.Clear();
+            return ScreenEvent.None;
+        }
         if (_bountyTab.Contains(x, y))
         {
+            _showReport = false;
             _showBounties = !_showBounties;
             _acceptButtons.Clear();
             _cancelButtons.Clear();
@@ -444,7 +455,11 @@ public sealed class ContractsScreen : IScreen
         return _isStationNameHovered || _isExitButtonHovered || _hoveredAcceptIndex >= 0 || _hoveredCancelIndex >= 0;
     }
 
-    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        if (_showReport) _reportScroll = Math.Max(0, _reportScroll + delta * .4f);
+        return ScreenEvent.None;
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -472,7 +487,21 @@ public sealed class ContractsScreen : IScreen
         TabletopStyle.Button(canvas, _bountyTab, ButtonState.Normal, primary: false);
         JobsButtonPaint.Color = TabletopStyle.Ink;
         TabletopStyle.Label(canvas, _bountyTab, Localization.Get(_showBounties ? "Demo.Jobs.Title" : "bounty.title"), JobsButtonPaint);
-        if (_showBounties) DrawBounties(canvas, pl, pt);
+        _reportTab = new(_bountyTab.Left - 250, _bountyTab.Top, _bountyTab.Left - 12, _bountyTab.Bottom);
+        TabletopStyle.Button(canvas, _reportTab, ButtonState.Normal, primary: false);
+        TabletopStyle.Label(canvas, _reportTab, Localization.Get("reward_report.title"), JobsButtonPaint);
+        if (_showReport)
+        {
+            var clip = new SKRect(pl + JobsLeftMargin, pt + ContractsLayout.BodyStartY + 44,
+                pl + ContractsLayout.PanelWidth - JobsLeftMargin, pt + ContractsLayout.PanelHeight - 40);
+            var lines = RewardReportPresentation.Lines(Campaign);
+            _reportScroll = Math.Clamp(_reportScroll, 0, Math.Max(0, lines.Length * 26 - clip.Height));
+            canvas.Save(); canvas.ClipRect(clip);
+            float y = clip.Top - _reportScroll;
+            foreach (string line in lines) { Text(canvas, line, clip.Left, y, clip.Width, JobsTextPaint); y += 26; }
+            canvas.Restore();
+        }
+        else if (_showBounties) DrawBounties(canvas, pl, pt);
         else DrawJobs(canvas, pl, pt);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
