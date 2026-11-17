@@ -49,6 +49,7 @@ implementation_status: implemented
 - 2026-11-16T20:31:00Z — время фиксации поручения в Board, не доказанное время отправки: «Эпики с 32 по 41 это твоя совместная работа с другим агентом. вы дополняете друг друга. твоя задача пройти по всем этим эпикам, понять их цель, решить достаточны ли эти истории или нет и если нет добавить новые. Цель - подготовить эпики с 32 по 41 к первой демо игры».
 - Проверка автора: результат демонстрируем, зависимости указаны, completion evidence наблюдаемо; тикетная декомпозиция не выполнялась. Если детализация не помещается в пять тикетов, сначала разделить story.
 - Implementation: 5/5 tickets published (see Story validation below). Automated story-scoped tests: PASS for own tests, no new regression vs base. Native/manual/product acceptance: NOT RUN / OPEN.
+- 2026-11-17: добавлен исправляющий тикет 6 — [EP-0034-US-0006-TK-0006-feasible-deadlines](EP-0034-US-0006-TK-0006-feasible-deadlines/EP-0034-US-0006-TK-0006-feasible-deadlines.md): сроки заказов были невыполнимы реальным полётом (найдено при US-0005). Implementation: 6/6.
 
 ## Текущая декомпозиция и review log
 
@@ -82,6 +83,7 @@ implementation_status: implemented
 | 3. [EP-0034-US-0006-TK-0003-engine](EP-0034-US-0006-TK-0003-engine/EP-0034-US-0006-TK-0003-engine.md) | Правила: Доска заказов станции | engine | EP-0034-US-0006-TK-0002-content | AC-01, AC-02, AC-03, AC-04 |
 | 4. [EP-0034-US-0006-TK-0005-localized-feedback](EP-0034-US-0006-TK-0005-localized-feedback/EP-0034-US-0006-TK-0005-localized-feedback.md) | RU/EN условия, результаты и причины отказа | content-data | EP-0034-US-0006-TK-0003-engine | AC-01, AC-02, AC-03, AC-04 |
 | 5. [EP-0034-US-0006-TK-0004-client](EP-0034-US-0006-TK-0004-client/EP-0034-US-0006-TK-0004-client.md) | Экран и причины отказа: Доска заказов станции | client | EP-0034-US-0006-TK-0005-localized-feedback | AC-01, AC-02, AC-03, AC-04 |
+| 6. [EP-0034-US-0006-TK-0006-feasible-deadlines](EP-0034-US-0006-TK-0006-feasible-deadlines/EP-0034-US-0006-TK-0006-feasible-deadlines.md) | Выполнимые сроки транспортных заказов (дефект из US-0005) | engine | EP-0034-US-0006-TK-0003-engine, EP-0034-US-0005-TK-0001-transport-roundtrip | AC-02 |
 
 ## Invariants
 
@@ -118,3 +120,7 @@ Commands (repository root `D:/DeepSpaceSaga/Dss-Main`, each process ≤ 300000 m
 Defects found and fixed during the story run (`4c1e3689`, tests only): US-0001 purity check compared transport records whose new `ImmutableArray` members compare by reference; EP-0032 demo tests read the sibling EP-0033 checkout (`ContentRoot`) — now this checkout.
 
 Assumptions (details in tickets): TK-0001 A-01…A-03 (generic accept command, explicit verdicts, integer terms); TK-0002 A-01…A-03 (baseline numbers for EP-0037, fingerprint unaffected, ordinary goods); TK-0003 A-01…A-05 (2-day offers, explicit dispatch instead of shared partial hooks, bucket-start times and frozen whole-km distance, acceptance only records the obligation, no save-format bump); TK-0005 A-01/A-02; TK-0004 A-01…A-03 (no remote boards in flight, refresh with next snapshot, Ctrl+J). Self-review only; no independent review is claimed.
+
+## Исправление дефекта после US-0005 (2026-11-17)
+
+EP-0034-US-0005 измерила, что опубликованные сроки невыполнимы реальным командным полётом (SPC-0005 → SPC-0002 ≈ 9 ч календаря при сроке обычного заказа 2,5 ч), то есть AC-02 «выполнимы текущим носителем» не выполнялся. Исправлено тикетом [EP-0034-US-0006-TK-0006-feasible-deadlines](EP-0034-US-0006-TK-0006-feasible-deadlines/EP-0034-US-0006-TK-0006-feasible-deadlines.md): срок = max(минимум, (надбавка манёвра + ETA максимальной скорости × крейсерский масштаб) × множитель типа), параметры в `jobs.json`; реальный полёт по каждой публикуемой упорядоченной паре укладывается в срок обычного/грузового заказа с запасом ≥ 34%, срочного — ≥ 13,5%. SHA коммита — в `ExecutionStatus.md`. Датированная story validation выше сохранена как история; её evidence AC-02 по срокам заменено TK-0006.

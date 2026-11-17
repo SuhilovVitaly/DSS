@@ -17,7 +17,7 @@ implementation_status: not-started
 
 # EP-0034 — Контракты пассажирских и грузовых перевозок
 
-Д4 одобренного плана. **Объём: 7 пользовательских историй, 26 тикетов.** Порядок определяется зависимостями конкретных историй, а не номером эпика.
+Д4 одобренного плана. **Объём: 7 пользовательских историй, 27 тикетов** (26 по исходной декомпозиции + исправляющий EP-0034-US-0006-TK-0006-feasible-deadlines, 2026-11-17). Порядок определяется зависимостями конкретных историй, а не номером эпика.
 
 ## Исходный запрос и граница поручения
 
@@ -103,7 +103,7 @@ Planning: подготовлено по одобренному плану. Imple
 | [EP-0034-US-0003-contract-failure](EP-0034-US-0003-contract-failure/EP-0034-US-0003-contract-failure.md) | 4 | EP-0034-US-0002-passenger-contract |
 | [EP-0034-US-0004-cargo-contract](EP-0034-US-0004-cargo-contract/EP-0034-US-0004-cargo-contract.md) | 4 | EP-0034-US-0002-passenger-contract, EP-0034-US-0006-station-job-board |
 | [EP-0034-US-0005-transport-continuation](EP-0034-US-0005-transport-continuation/EP-0034-US-0005-transport-continuation.md) | 2 | EP-0034-US-0003-contract-failure, EP-0034-US-0004-cargo-contract, EP-0032-US-0003-persistent-outcomes |
-| [EP-0034-US-0006-station-job-board](EP-0034-US-0006-station-job-board/EP-0034-US-0006-station-job-board.md) | 5 | EP-0032-US-0004-demo-campaign-start |
+| [EP-0034-US-0006-station-job-board](EP-0034-US-0006-station-job-board/EP-0034-US-0006-station-job-board.md) | 6 (5 + исправляющий TK-0006) | EP-0032-US-0004-demo-campaign-start |
 | [EP-0034-US-0007-documentation](EP-0034-US-0007-documentation/EP-0034-US-0007-documentation.md) | 2 | EP-0034-US-0001-passenger-ready-start, EP-0034-US-0002-passenger-contract, EP-0034-US-0003-contract-failure, EP-0034-US-0004-cargo-contract, EP-0034-US-0005-transport-continuation, EP-0034-US-0006-station-job-board |
 
 Порядок ниже — локальная проекция глобального dependency order (не числовая сортировка): EP-0034-US-0001-passenger-ready-start → EP-0034-US-0006-station-job-board → EP-0034-US-0002-passenger-contract → EP-0034-US-0003-contract-failure → EP-0034-US-0004-cargo-contract → EP-0034-US-0005-transport-continuation → EP-0034-US-0007-documentation. Документационная история исполняется после всех функциональных, включая добавленные с большим ID.

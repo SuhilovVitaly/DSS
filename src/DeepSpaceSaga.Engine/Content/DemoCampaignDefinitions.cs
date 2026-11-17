@@ -20,7 +20,11 @@ public sealed record DemoServicesDefinition(int SchemaVersion, ImmutableArray<st
 public sealed record DemoJobLimits(int Offers, long PublicationGameTimeMs, long ExpiryGameTimeMs, int PassengerMax,
     int CargoTonnesMin, int CargoTonnesMax);
 public sealed record DemoJobRates(long Base, long PerPassenger, long PerCargoTonne, long PerDistanceKm, int UrgencyPermille);
-public sealed record DemoJobDeadlines(int OrdinaryPermille, int UrgentPermille, int CargoPermille, long MinimumGameTimeMs);
+// EP-0034 US-0006 TK-0006: deadline = max(minimum, (maneuver + max-speed ETA x cruise) x type permille). The optional
+// flight estimate (absent = 0 ms / 1000, i.e. the plain max-speed ETA) covers undocking, acceleration, the approach turn,
+// speed/heading synchronization and docking, which dominate short routes.
+public sealed record DemoJobDeadlines(int OrdinaryPermille, int UrgentPermille, int CargoPermille, long MinimumGameTimeMs,
+    long ManeuverGameTimeMs = 0, int CruisePermille = 1000);
 public sealed record DemoJobRisk(string RiskProfileId, string Band, int Permille);
 public sealed record DemoJobRoleFilter(string Role, int PassengerWeight, int UrgentPassengerWeight, int CargoWeight);
 public sealed record DemoJobFirstOffer(string Type, int Count);
@@ -148,6 +152,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                 j.Limits.ExpiryGameTimeMs >= j.Limits.PublicationGameTimeMs && j.Limits.CargoTonnesMax >= j.Limits.CargoTonnesMin &&
                 j.Rates is { Base: >= 0, PerPassenger: >= 0, PerCargoTonne: >= 0, PerDistanceKm: >= 0, UrgencyPermille: >= 1000 } &&
                 j.Deadlines is { OrdinaryPermille: >= 1000, UrgentPermille: >= 1000, CargoPermille: >= 1000, MinimumGameTimeMs: > 0 } &&
+                j.Deadlines is { ManeuverGameTimeMs: >= 0, CruisePermille: >= 1000 } &&
                 j.Deadlines.UrgentPermille <= j.Deadlines.OrdinaryPermille &&
                 j.Penalties is null or { CancelPermille: >= 0 and <= 1000, ExpiryPermille: >= 0 and <= 1000 }, "jobs");
             Require(!j.Risk.IsDefaultOrEmpty && j.Risk.All(r => r is not null && !string.IsNullOrWhiteSpace(r.RiskProfileId) &&
