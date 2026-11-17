@@ -4,6 +4,16 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    public static DemoDebugSettings ConfigureFogOfWar(bool? enabled = null)
+    {
+        lock (DemoDebugSettingsGate)
+        {
+            if (enabled is { } value)
+                Volatile.Write(ref _processDemoDebugSettings, _processDemoDebugSettings with { FogOfWar = value });
+            return _processDemoDebugSettings;
+        }
+    }
+
     /// <summary>Engine-process debug override, intentionally independent of sessions, saves and user settings.</summary>
     public static DemoDebugSettings ConfigurePirateSquadChance(int? percent = null)
     {

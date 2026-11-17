@@ -90,7 +90,7 @@ public sealed partial class SimulationEngine
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
         BuildDemoTransportProjection(), BuildPirateGroupsProjection(), _demoCampaign.Rewards,
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
-        BuildSensorOperatorProjection());
+        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar));
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
 
@@ -102,6 +102,9 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case SetFogOfWarRequest fog:
+                commit = () => ConfigureFogOfWar(fog.Enabled);
+                break;
             case PayCrewDebtCommand debt:
                 PrepareCrewDebt(debt, ref candidate, ref reason, ref commit);
                 break;
