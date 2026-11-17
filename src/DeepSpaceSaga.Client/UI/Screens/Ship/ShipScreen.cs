@@ -18,7 +18,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 /// </summary>
 public sealed partial class ShipScreen : IScreen
 {
-    private readonly ShipViewModel _model;
+    private ShipViewModel _model;
+    private readonly Func<CarrierOperationsSnapshot?>? _carrier;
     private readonly Func<DemoCampaignSnapshot?>? _campaign;
     private readonly Func<DemoCampaignCommand, CancellationToken, ValueTask<DemoCampaignResponse>>? _service;
     private StationRepairSnapshot? _repairState;
@@ -47,9 +48,11 @@ public sealed partial class ShipScreen : IScreen
     public ShipScreen(ShipViewModel model, int torpedoStock,
         Func<RearmDroneRequest, CancellationToken, ValueTask<CarrierCommandResponse>>? rearm, Func<string>? commandId = null,
         Func<DemoCampaignSnapshot?>? campaign = null,
-        Func<DemoCampaignCommand, CancellationToken, ValueTask<DemoCampaignResponse>>? service = null)
+        Func<DemoCampaignCommand, CancellationToken, ValueTask<DemoCampaignResponse>>? service = null,
+        Func<CarrierOperationsSnapshot?>? carrier = null)
     {
         _model = model;
+        _carrier = carrier;
         _campaign = campaign;
         _service = service;
         _torpedoStock = Math.Max(0, torpedoStock);
@@ -95,6 +98,8 @@ public sealed partial class ShipScreen : IScreen
         float sx = x - ShipLayout.PanelLeft(_screenWidth), sy = y - ShipLayout.PanelTop(_screenHeight);
         if (_service is not null && sx >= 730 && sx <= 1340)
         {
+            if (sy >= 265 && sy <= 295) { _shipyard = sx >= 1030; return ScreenEvent.None; }
+            if (_shipyard) { ClickShipyard(sx, sy); return ScreenEvent.None; }
             if (sy >= 300 && sy <= 332) { RequestRepair(_model.ShipId); return ScreenEvent.None; }
             if (sy >= 340 && sy <= 372 && _selectedRow >= 0) { RequestRepair(_drones[_selectedRow].Id); return ScreenEvent.None; }
             if (sy >= 530 && sy <= 562) { ConfirmRepair(); return ScreenEvent.None; }
@@ -263,7 +268,8 @@ public sealed partial class ShipScreen : IScreen
     {
         string? selectedId = _selectedRow >= 0 && _selectedRow < _drones.Length ? _drones[_selectedRow].Id : null;
         _revision = snapshot.Revision;
-        _drones = ShipViewModel.From(snapshot).Drones.ToArray();
+        _model = ShipViewModel.From(snapshot);
+        _drones = _model.Drones.ToArray();
         int index = selectedId is null ? -1 : Array.FindIndex(_drones, drone => drone.Id == selectedId);
         _selectedRow = index;
         if (index >= 0) _quantity = ShipWingPanel.ClampQuantity(_quantity, MaxQuantity(index));
@@ -271,6 +277,7 @@ public sealed partial class ShipScreen : IScreen
 
     public void Render(SKCanvas canvas, int width, int height)
     {
+        if (_carrier?.Invoke() is { } live && live.Revision != _revision) Rebuild(live);
         _screenWidth = width;
         _screenHeight = height;
 
@@ -373,6 +380,9 @@ public sealed partial class ShipScreen : IScreen
     private void DrawServices(SKCanvas canvas, float pl, float pt)
     {
         if (_service is null) return;
+        DrawLocalButton(canvas, pl, pt, (730, 265, 1020, 295), Localization.Get("Demo.Replacement.Services"), true);
+        DrawLocalButton(canvas, pl, pt, (1030, 265, 1340, 295), Localization.Get("Demo.Replacement.Tab"), true);
+        if (_shipyard) { DrawShipyard(canvas, pl, pt); return; }
         DrawSupply(canvas, pl, pt);
         bool ready = PendingService is not { IsCompleted: false };
         DrawLocalButton(canvas, pl, pt, (730, 300, 1340, 332), Localization.Get("Demo.Repair.QuoteCarrier"), ready);

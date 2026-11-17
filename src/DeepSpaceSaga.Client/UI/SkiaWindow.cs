@@ -1585,7 +1585,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 : null;
         await PushModalAsync(new ShipScreen(ShipViewModel.From(carrier), stock, rearm,
             campaign: session is null ? null : () => session.DemoCampaign,
-            service: session is null ? null : (command, token) => session.ExecuteDemoCampaignAsync(command, token)));
+            service: session is null ? null : (command, token) => session.ExecuteDemoCampaignAsync(command, token),
+            carrier: session is null ? null : () => session.CarrierOperations));
     }
 
     /// <summary>
