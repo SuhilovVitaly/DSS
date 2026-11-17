@@ -5,7 +5,7 @@ ticket: EP-0036-US-0003-TK-0001-contracts
 title: Пообъектный контракт добычи
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: []
@@ -88,3 +88,7 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution — 2026-11-17
+
+Added per-object immutable loot, full module/pilot read-models, typed collect/scrap/finish commands with ILootCampaignCommand and optional Rewards response. Captured is projection-only, derived by custody owner later. Contracts build/scoped formatting/diff PASS; named tests NOT RUN until US3 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us3-tk1-build.log.

@@ -5,7 +5,7 @@ public abstract record DemoCampaignCommand(string CommandId, long ExpectedRevisi
 
 public sealed record DemoCampaignResponse(string CommandId, bool Applied, string? Reason, long Revision,
     StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null, ReplacementSnapshot? Replacement = null,
-    RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null);
+    RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null, DemoRewardsSnapshot? Rewards = null);
 
 /// <summary>Absent sections indicate unavailable features, never implicit resources or entitlements.</summary>
 public sealed record DemoCampaignSnapshot(
@@ -34,6 +34,7 @@ public sealed partial record DemoRewardsSnapshot
 {
     public TargetBountySnapshot? Bounties { get; init; }
     public BountyPaymentSnapshot? BountyPayment { get; init; }
+    public LootSessionSnapshot? Loot { get; init; }
 }
 public sealed record DemoProgressionSnapshot;
 public sealed record DemoStorySnapshot;
