@@ -13,9 +13,12 @@ public sealed partial class SimulationEngine
         var pose = PredictMotion(player, Math.Max(0, _processedSimulationTimeMs - player.StartGameTimeMs));
         double radius = EvaluateCarrierSensor(player)?.RadiusWorldUnits ?? 0;
         var candidate = _demoCampaign;
-        foreach (var group in world.Groups.Where(g => !g.Retired && !g.CompositionMaterialized).OrderBy(g => g.GroupId, StringComparer.Ordinal))
+        foreach (var group in world.Groups.Where(g => !g.Retired && !g.ReportConsumed).OrderBy(g => g.GroupId, StringComparer.Ordinal))
             if (SensorCovers(radius, pose.X, pose.Y, group.X, group.Y))
+            {
                 candidate = EnsurePirateComposition(candidate, group.GroupId);
+                candidate = AddSensorReport(candidate, group.GroupId, pose, _processedSimulationTimeMs);
+            }
         if (ReferenceEquals(candidate, _demoCampaign)) return;
         candidate = candidate with { Revision = checked(candidate.Revision + 1), CommitSequence = checked(candidate.CommitSequence + 1) };
         DemoCampaignData.Validate(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
@@ -78,5 +81,15 @@ public sealed partial class SimulationEngine
             for (int i = 0; i < composition.Drones.Length; i++)
                 if (composition.Drones[i].DroneId != $"{composition.CarrierId}:drone:{i + 1:D2}")
                     throw new ScenarioException("Invalid stable pirate drone identity.");
+        foreach (var group in world.Groups)
+        {
+            var report = campaign.SensorReports.SingleOrDefault(r => r.GroupId == group.GroupId);
+            if (group.ReportConsumed != (report is not null) || report is not null &&
+                (!group.CompositionMaterialized || report.ApproximateDroneCount != group.ApproximateDroneCount ||
+                 !report.SignatureTypeIds.SequenceEqual(group.Members.Select(m => m.SignatureTypeId)) || report.ObservedMotionTimeMs > world.LastMotionTimeMs))
+                throw new ScenarioException("Sensor report does not match its saved group.");
+        }
+        if (campaign.SensorReports.Any(r => !world.Groups.Any(g => g.GroupId == r.GroupId)))
+            throw new ScenarioException("Sensor report refers to an unknown group.");
     }
 }

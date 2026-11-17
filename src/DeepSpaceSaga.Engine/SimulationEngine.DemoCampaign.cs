@@ -90,7 +90,7 @@ public sealed partial class SimulationEngine
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
         BuildDemoTransportProjection(), BuildPirateGroupsProjection(), _demoCampaign.Rewards,
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
-        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar));
+        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport);
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
 

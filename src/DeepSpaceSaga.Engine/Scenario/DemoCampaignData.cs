@@ -41,6 +41,9 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("pirateWorld")]
     public PirateWorldData? PirateWorld { get; init; }
 
+    public ImmutableArray<SensorContactReport> SensorReports { get; init; } = [];
+    public SensorContactReportBatch? PendingSensorReport { get; init; }
+
     /// <summary>EP-0034 US-0006: published offers and the obligations journal; null until the first publication.</summary>
     [JsonPropertyName("stationJobs")]
     public StationJobsStateData? StationJobs { get; init; }
@@ -60,6 +63,19 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        if (data.SensorReports.IsDefault || data.SensorReports.Length > 4 || data.SensorReports.Any(r => r is null ||
+            r.ReportId != "report:" + r.GroupId || string.IsNullOrWhiteSpace(r.GroupId) || r.ObservedMotionTimeMs < 0 ||
+            !double.IsFinite(r.BearingDegrees) || r.BearingDegrees < 0 || r.BearingDegrees >= 360 ||
+            !double.IsFinite(r.RangeWorldUnits) || r.RangeWorldUnits < 0 || r.ApproximateDroneCount < 0 ||
+            r.EtaRealSecondsAt1X is { } eta && (!double.IsFinite(eta) || eta < 0) ||
+            (r.EtaRealSecondsAt1X is null ? r.EtaUnavailableReason != "no_intercept" : r.EtaUnavailableReason is not null) ||
+            r.SignatureTypeIds.IsDefaultOrEmpty || r.SignatureTypeIds.Length > 2 || r.SignatureTypeIds.Any(s => s is not ("lair" or "tancred"))) ||
+            data.SensorReports.Select(r => r.GroupId).Distinct(StringComparer.Ordinal).Count() != data.SensorReports.Length)
+            throw new ScenarioException("Invalid frozen sensor reports.");
+        if (data.PendingSensorReport is { } batch && (string.IsNullOrWhiteSpace(batch.BatchId) || batch.Reports.IsDefaultOrEmpty ||
+            batch.Reports.Select(r => r.ReportId).Distinct(StringComparer.Ordinal).Count() != batch.Reports.Length ||
+            batch.Reports.Any(r => r is null || !data.SensorReports.Any(saved => System.Text.Json.JsonSerializer.Serialize(saved) == System.Text.Json.JsonSerializer.Serialize(r)))))
+            throw new ScenarioException("Invalid pending sensor report batch.");
         if (data.PirateCompositions.IsDefault || data.PirateCompositions.Any(c => c is null ||
             string.IsNullOrWhiteSpace(c.GroupId) || string.IsNullOrWhiteSpace(c.CarrierId) || c.GenerationVersion != 1 ||
             c.SignatureTypeId is not (PirateSignatureTypes.Lair or PirateSignatureTypes.Tancred) || c.Drones.IsDefault ||
