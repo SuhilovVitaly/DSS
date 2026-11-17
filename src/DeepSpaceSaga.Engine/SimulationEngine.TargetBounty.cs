@@ -33,7 +33,11 @@ public sealed partial class SimulationEngine
     private DemoRewardsSnapshot? BuildDemoRewardsProjection()
     {
         if (_demoCampaign.BountyOrders.IsEmpty) return _demoCampaign.Rewards;
-        return (_demoCampaign.Rewards ?? new()) with { Bounties = BuildTargetBountyProjection() };
+        return (_demoCampaign.Rewards ?? new()) with
+        {
+            Bounties = BuildTargetBountyProjection(),
+            BountyPayment = BuildBountyPaymentProjection()
+        };
     }
 
     private TargetBountySnapshot BuildTargetBountyProjection() => new(_demoCampaign.BountyOrders

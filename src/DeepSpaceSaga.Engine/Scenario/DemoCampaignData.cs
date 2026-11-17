@@ -6,6 +6,8 @@ namespace DeepSpaceSaga.Engine.Scenario;
 
 public sealed record BountyOrderData(string Id, string IssuerStationId, string TargetGroupId,
     long RewardTokens, bool Tracking, string? PaidPostingId = null);
+public sealed record BountyPaymentData(string BountyId, string IssuerStationId, string TargetGroupId,
+    string BattleId, long RewardTokens, string PostingId, long PaidAtGameTimeMs);
 
 /// <summary>Campaign metadata only. Resources remain in the existing authoritative world.</summary>
 public sealed partial record DemoCampaignData(
@@ -25,6 +27,7 @@ public sealed partial record DemoCampaignData(
 
     public string? BountyCatalogFingerprint { get; init; }
     public ImmutableArray<BountyOrderData> BountyOrders { get; init; } = [];
+    public ImmutableArray<BountyPaymentData> BountyPayments { get; init; } = [];
 
     [JsonPropertyName("pilotMemorial")]
     public ImmutableArray<PilotMemorialEntry> PilotMemorial { get; init; } = [];
@@ -81,6 +84,15 @@ public sealed partial record DemoCampaignData(
             !data.BountyOrders.IsEmpty && data.BountyCatalogFingerprint is null)
             throw new ScenarioException("Invalid saved bounty orders.");
         ValidateEncounterHistory(data);
+        if (data.BountyPayments.IsDefault || data.BountyPayments.Any(p => p is null ||
+            p.PostingId != "bounty:" + p.BountyId || p.RewardTokens <= 0 || p.PaidAtGameTimeMs < 0 || p.PaidAtGameTimeMs > gameTimeMs ||
+            !data.BountyOrders.Any(b => b.Id == p.BountyId && b.PaidPostingId == p.PostingId &&
+                b.IssuerStationId == p.IssuerStationId && b.TargetGroupId == p.TargetGroupId && b.RewardTokens == p.RewardTokens) ||
+            !data.EncounterResults.Any(r => r.PlayerWon && r.Binding.GroupId == p.TargetGroupId && r.Binding.BattleId == p.BattleId)) ||
+            data.BountyPayments.Select(p => p.BountyId).Distinct(StringComparer.Ordinal).Count() != data.BountyPayments.Length ||
+            data.BountyPayments.Select(p => p.PostingId).Distinct(StringComparer.Ordinal).Count() != data.BountyPayments.Length ||
+            data.BountyOrders.Any(b => b.PaidPostingId is not null && !data.BountyPayments.Any(p => p.BountyId == b.Id && p.PostingId == b.PaidPostingId)))
+            throw new ScenarioException("Invalid bounty payment provenance.");
         if (data.WorldEncounter is { } encounter && (encounter.Binding is null || encounter.Seed < 0 ||
             encounter.Phase is not (WorldEncounterPhases.Captured or WorldEncounterPhases.PendingBattle or WorldEncounterPhases.Finished) ||
             encounter.Binding.EncounterId != "encounter:" + encounter.Binding.GroupId ||

@@ -107,6 +107,9 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case ClaimBountyCommand claim:
+                PrepareBountyPayment(claim, ref candidate, ref reason, ref commit);
+                break;
             case AcceptBountyCommand or CancelBountyCommand:
                 PrepareTargetBounty(command, ref candidate, ref reason);
                 break;
