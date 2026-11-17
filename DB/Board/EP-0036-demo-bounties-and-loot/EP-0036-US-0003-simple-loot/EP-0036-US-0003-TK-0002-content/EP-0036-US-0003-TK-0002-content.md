@@ -91,3 +91,11 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution scope correction — additive save compatibility
+
+Adding loot SKUs changes the catalog and station profile identities. Extend this ticket to `Scenario/LootCatalogCompatibility.cs`, `Scenario/CarrierCatalogCompatibility.cs`, `SimulationEngine.cs`, `SimulationEngine.TradingContinuation.cs` and matching Engine migration tests. Accept only structurally reconstructed exact previous catalogs/profiles, initialize newly added station goods at zero, preserve captured inventory/credits/budget/revisions, and retain atomic rejection of unrelated content drift. This is required to make the content addition load-compatible; no generic fingerprint bypass.
+
+## Execution — 2026-11-17
+
+Added fixed light/heavy/carrier scrap, existing torpedo mapping, one scrap SKU and finite industrial demand (target5000, zero stock, unchanged budget). Exact catalog/profile compatibility preserves prior economic state and validates continuation before publication. Independent migration review found no weakened drift check; US6 must add the exact scrap-only predecessor when introducing trophies. Client build PASS (0 warnings/errors), scoped formatting/diff PASS; tests authored, NOT RUN until US3 boundary. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us3-tk2-build.log.

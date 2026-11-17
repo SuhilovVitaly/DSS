@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "scrapItemTypeId": "item.scrap",
+  "droneScrapQuantityByFrame": { "light": 20, "heavy": 60 },
+  "carrierScrapQuantityByLayout": { "carrier.standard": 250 },
+  "consumableItems": [
+    { "category": "ammo", "catalogId": "torpedo.t1", "itemTypeId": "item.drone-torpedo.t1" }
+  ]
+}

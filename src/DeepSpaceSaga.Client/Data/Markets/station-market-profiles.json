@@ -74,6 +74,7 @@
         "item.electronics"
       ],
       "demandItemTypeIds": [
+        "item.scrap",
         "item.iron-ore",
         "item.magnesium-ore",
         "item.carbon-ore",
@@ -82,6 +83,7 @@
         "item.food-rations"
       ],
       "initialInventory": [
+        { "itemTypeId": "item.scrap", "quantity": 0 },
         { "itemTypeId": "item.drone-torpedo.t1", "quantity": 24 },
         { "itemTypeId": "item.steel", "quantity": 132 },
         { "itemTypeId": "item.energy-cells", "quantity": 132 },
@@ -113,6 +115,7 @@
         ],
         "hourlyConsumption": [],
         "stockTargets": [
+          { "itemTypeId": "item.scrap", "targetStock": 5000 },
           { "itemTypeId": "item.drone-torpedo.t1", "targetStock": 24 },
           { "itemTypeId": "item.iron-ore", "targetStock": 132 },
           { "itemTypeId": "item.magnesium-ore", "targetStock": 132 },

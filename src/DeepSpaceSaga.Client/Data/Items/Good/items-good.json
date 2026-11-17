@@ -82,6 +82,17 @@
       "storageKind": "Cargo",
       "buyQuantityStep": 1,
       "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.scrap",
+      "displayName": "Salvaged Scrap",
+      "unitMassKg": 1,
+      "basePriceCredits": 5,
+      "tradeCategory": "Good",
+      "tradeUnit": "Kilogram",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
     }
   ],
   "schemaVersion": 2,
