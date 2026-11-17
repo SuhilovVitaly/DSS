@@ -30,8 +30,14 @@ public sealed class DemoEp0033Us0003Tk0003Tests
         var ship = save.GameState.SpaceObjects.Single(s => s.ObjectId == save.GameState.PlayerShipObjectId);
         var drone = ship.CarrierState!.OwnedDrones!.First(d => d.DroneId == id);
         var drones = ship.CarrierState.OwnedDrones!.Select(d => d.DroneId == id ? d with { Destroyed = true, CurrentHull = 0, CrewId = "" } : d).ToArray();
-        engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s =>
-            s.ObjectId == ship.ObjectId ? s with { CarrierState = ship.CarrierState with { OwnedDrones = drones } } : s).ToArray() } }, isSave: true);
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(s =>
+            s.ObjectId == ship.ObjectId ? s with { CarrierState = ship.CarrierState with { OwnedDrones = drones } } : s).ToArray()
+            }
+        }, isSave: true);
         return (id, drone.HangarModuleId, drone.SlotIndex);
     }
     [Fact]

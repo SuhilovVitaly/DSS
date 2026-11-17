@@ -113,11 +113,14 @@ public sealed partial class SimulationEngine
         var repair = candidate.Company?.StationRepair ?? new(Postings: []);
         var postings = repair.Postings.IsDefault ? ImmutableArray<CompanyServicePosting>.Empty : repair.Postings;
         candidate = candidate with { NextDroneSequence = nextId, ServiceOfferUsage = candidate.ServiceOfferUsage.SetItem(key, used + 1) };
-        candidate = candidate with { Company = (candidate.Company ?? new()) with
+        candidate = candidate with
         {
-            Replacement = BuildReplacementProjection(candidate, wing, drone.DroneId),
-            StationRepair = repair with { Postings = postings.Add(new(command.CommandId, purchase ? "drone" : "equipment", drone.DroneId, _clock.GameTimeMs, offer.Price)) }
-        } };
+            Company = (candidate.Company ?? new()) with
+            {
+                Replacement = BuildReplacementProjection(candidate, wing, drone.DroneId),
+                StationRepair = repair with { Postings = postings.Add(new(command.CommandId, purchase ? "drone" : "equipment", drone.DroneId, _clock.GameTimeMs, offer.Price)) }
+            }
+        };
         long credits = checked(PlayerCredits - offer.Price);
         int revision = checked(GetCarrierRevision(shipId) + 1);
         int carrierHull = GetCarrierHullCurrent(shipId, GetCarrierHullMax(shipId));

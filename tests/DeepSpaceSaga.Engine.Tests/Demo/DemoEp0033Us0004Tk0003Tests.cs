@@ -12,8 +12,11 @@ public sealed class DemoEp0033Us0004Tk0003Tests
         var save = engine.CaptureSaveState();
         var ship = save.GameState.SpaceObjects.Single(s => s.ObjectId == save.GameState.PlayerShipObjectId);
         string departed = ship.Crew![0].CrewId;
-        var changed = ship with { Crew = ship.Crew!.Where(c => c.CrewId != departed).ToArray(),
-            CarrierState = ship.CarrierState! with { OwnedDrones = ship.CarrierState!.OwnedDrones!.Select(d => d.CrewId == departed ? d with { CrewId = "" } : d).ToArray() } };
+        var changed = ship with
+        {
+            Crew = ship.Crew!.Where(c => c.CrewId != departed).ToArray(),
+            CarrierState = ship.CarrierState! with { OwnedDrones = ship.CarrierState!.OwnedDrones!.Select(d => d.CrewId == departed ? d with { CrewId = "" } : d).ToArray() }
+        };
         engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId == ship.ObjectId ? changed : s).ToArray() } }, isSave: true);
     }
     [Fact]
@@ -61,8 +64,14 @@ public sealed class DemoEp0033Us0004Tk0003Tests
         var snapshot = engine.CaptureSnapshot();
         int free = snapshot.CarrierOperations!.CabinReservation!.FreeCabins;
         var save = engine.CaptureSaveState();
-        engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s =>
-            s.ObjectId == save.GameState.PlayerShipObjectId ? s with { Passengers = Enumerable.Range(0, free).Select(i => new ShipPassengerData("p" + i, "Passenger")).ToArray() } : s).ToArray() } }, isSave: true);
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(s =>
+            s.ObjectId == save.GameState.PlayerShipObjectId ? s with { Passengers = Enumerable.Range(0, free).Select(i => new ShipPassengerData("p" + i, "Passenger")).ToArray() } : s).ToArray()
+            }
+        }, isSave: true);
         var state = engine.CaptureSnapshot().DemoCampaign!.Company!.Recruitment!;
         Assert.Equal(0, state.FreeCabins);
         Assert.False(engine.ExecuteDemoCampaign(new HirePilotCommand("full", 0, state.Offers[0].Id)).Applied);

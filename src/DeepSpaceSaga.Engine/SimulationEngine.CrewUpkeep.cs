@@ -16,8 +16,12 @@ public sealed partial class SimulationEngine
         foreach (var crew in ship.Crew)
             if (!employment.Any(e => e.CrewId == crew.Id)) employment = employment.Add(new(crew.Id, terms.DailyWage, time));
         var company = _demoCampaign.Company ?? new();
-        _demoCampaign = _demoCampaign with { Employment = employment, Company = company with
-            { Upkeep = company.Upkeep ?? new(0, 0, 0, checked((time / CrewDayMs + 1) * CrewDayMs), 0, 0, 0, time / CrewDayMs) } };
+        _demoCampaign = _demoCampaign with
+        {
+            Employment = employment,
+            Company = company with
+            { Upkeep = company.Upkeep ?? new(0, 0, 0, checked((time / CrewDayMs + 1) * CrewDayMs), 0, 0, 0, time / CrewDayMs) }
+        };
     }
 
     private CrewUpkeepSnapshot? BuildUpkeepProjection(DemoCampaignData state)
@@ -31,8 +35,12 @@ public sealed partial class SimulationEngine
             int index = _registry.ItemTypes.GetIndex("item.food-rations");
             food = ship.Modules.SelectMany(m => m.Cargo).Where(c => c.ItemTypeIndex == index).Sum(c => c.Quantity);
         }
-        return ledger with { PeopleFed = ship.IsDestroyed ? 0 : ship.Crew.Length + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length),
-            FoodRemaining = food, MissingRations = _economyTime.MissingRations };
+        return ledger with
+        {
+            PeopleFed = ship.IsDestroyed ? 0 : ship.Crew.Length + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length),
+            FoodRemaining = food,
+            MissingRations = _economyTime.MissingRations
+        };
     }
 
     partial void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate)
@@ -50,9 +58,22 @@ public sealed partial class SimulationEngine
         long available = Math.Max(0, PlayerCredits);
         long payment = Math.Min(available, checked(ledger.Outstanding + due));
         long paid = checked(ledger.Paid + payment);
-        candidate = candidate with { Revision = checked(candidate.Revision + 1), CommitSequence = checked(candidate.CommitSequence + 1),
-            Company = candidate.Company with { Upkeep = ledger with { Accrued = accrued, Paid = paid, Outstanding = accrued - paid,
-                LastProcessedDay = day, NextDueAt = checked((day + 1) * CrewDayMs) } } };
+        candidate = candidate with
+        {
+            Revision = checked(candidate.Revision + 1),
+            CommitSequence = checked(candidate.CommitSequence + 1),
+            Company = candidate.Company with
+            {
+                Upkeep = ledger with
+                {
+                    Accrued = accrued,
+                    Paid = paid,
+                    Outstanding = accrued - paid,
+                    LastProcessedDay = day,
+                    NextDueAt = checked((day + 1) * CrewDayMs)
+                }
+            }
+        };
         DemoCampaignData.Validate(candidate, gameTimeMs);
         PlayerCredits -= payment;
     }

@@ -13,8 +13,14 @@ public sealed class DemoEp0033Us0002Tk0003Tests
         var ship = save.GameState.SpaceObjects.Single(s => s.ObjectId == save.GameState.PlayerShipObjectId);
         var drones = ship.CarrierState!.OwnedDrones!.Select(d => d.DroneId == id
             ? d with { DecoyId = "decoy.t1", DecoyMaxCharges = 2, DecoyCharges = 0 } : d).ToArray();
-        engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s =>
-            s.ObjectId == ship.ObjectId ? s with { CarrierState = ship.CarrierState with { OwnedDrones = drones } } : s).ToArray() } }, isSave: true);
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(s =>
+            s.ObjectId == ship.ObjectId ? s with { CarrierState = ship.CarrierState with { OwnedDrones = drones } } : s).ToArray()
+            }
+        }, isSave: true);
         return id;
     }
     private static DecoySupplyQuote Quote(SimulationEngine engine, string id)

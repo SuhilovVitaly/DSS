@@ -61,8 +61,14 @@ public sealed class DemoEp0033Us0005Tk0002Tests
         int count = before.CarrierOperations!.Crew.Length;
         Assert.Equal(count, before.DemoCampaign!.Company!.Upkeep!.PeopleFed);
         var save = engine.CaptureSaveState();
-        engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId == save.GameState.PlayerShipObjectId
-            ? s with { Passengers = [new ShipPassengerData("passenger", "Passenger")] } : s).ToArray() } }, isSave: true);
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId == save.GameState.PlayerShipObjectId
+            ? s with { Passengers = [new ShipPassengerData("passenger", "Passenger")] } : s).ToArray()
+            }
+        }, isSave: true);
         Assert.Equal(count + 1, engine.CaptureSnapshot().DemoCampaign!.Company!.Upkeep!.PeopleFed);
         var after = engine.CaptureSaveStateForTests(Day, SimulationSpeed.Speed0, simulationTimeMs: 0);
         Assert.Equal(count * 20, after.GameState.DemoCampaign!.Company!.Upkeep!.Accrued);

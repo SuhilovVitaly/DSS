@@ -56,16 +56,23 @@ public sealed partial class SimulationEngine
             { reason = CompanyServiceReasons.Unavailable; return; }
             if (credits < offer.Fee) { reason = CompanyServiceReasons.InsufficientFunds; return; }
             credits -= offer.Fee;
-            changed = ship with { Crew = ship.Crew.Add(new(offer.CrewId, offer.Name, offer.Accuracy, offer.Maneuver,
-                "Female", offer.Portrait, "Pilot", offer.Initiative)) };
+            changed = ship with
+            {
+                Crew = ship.Crew.Add(new(offer.CrewId, offer.Name, offer.Accuracy, offer.Maneuver,
+                "Female", offer.Portrait, "Pilot", offer.Initiative))
+            };
             var repair = candidate.Company?.StationRepair ?? new(Postings: []);
             var postings = repair.Postings.IsDefault ? ImmutableArray<CompanyServicePosting>.Empty : repair.Postings;
             candidate = candidate with
             {
-                HiredOfferIds = candidate.HiredOfferIds.Add(offer.Id), NextCrewSequence = checked(candidate.NextCrewSequence + 1),
+                HiredOfferIds = candidate.HiredOfferIds.Add(offer.Id),
+                NextCrewSequence = checked(candidate.NextCrewSequence + 1),
                 Employment = candidate.Employment.Add(new(offer.CrewId, offer.DailyWage, _clock.GameTimeMs)),
-                Company = (candidate.Company ?? new()) with { StationRepair = repair with
-                    { Postings = postings.Add(new(command.CommandId, "hire", offer.CrewId, _clock.GameTimeMs, offer.Fee)) } }
+                Company = (candidate.Company ?? new()) with
+                {
+                    StationRepair = repair with
+                    { Postings = postings.Add(new(command.CommandId, "hire", offer.CrewId, _clock.GameTimeMs, offer.Fee)) }
+                }
             };
         }
         else if (command is AssignPilotCommand assign)
