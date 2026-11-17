@@ -1,6 +1,6 @@
 # EP-0035 review evidence
 
-Independent reviewer: `/root/dependency_review`. Preparatory review read all150 Markdown documents in the EP35/current-documentation snapshot and inspected code/fixtures. This document records findings and source comparisons; final post-suite review remains a separate gate.
+Independent reviewer: `/root/dependency_review`. Preparatory review read all150 Markdown documents in the EP35/current-documentation snapshot and inspected code/fixtures. Final independent review of base-to-2c308fbb plus closing documentation/prompt edits completed after owner stopped unrelated long runs: no new confirmed actionable EP35 production findings. Integration with newly updated main is reviewed separately before the requested PR.
 
 ## Confirmed EP35 corrections
 
@@ -37,4 +37,4 @@ Other scene/raster numeric expectations and second Tutorial/Skin startup have no
 
 ## Review boundary
 
-No game/window was launched. No independent native, audio, physical-input or product acceptance is claimed. Final epic review must assess the complete base-to-final diff after all authorized automated runs and record its own verdict here or in FinalValidation.
+No game/window was launched. No independent native, audio, physical-input or product acceptance is claimed. Final review covered AC, save/recovery, interception/time, squads, routes, documentation and thematic validation policy.148 explicitEP35 tests passed;835 ordinary-suite failures remain failed; owner-stopped corpus500PASS/140NOTRUN is not a full corpus pass. No executed baseline parity is claimed. Main integration/PR conflict verification follows this review.

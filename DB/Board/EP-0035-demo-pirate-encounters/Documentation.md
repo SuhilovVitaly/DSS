@@ -33,7 +33,7 @@ implementation_status: implemented
 G-35-20 Draw CLOSED D-35-48 и G-35-20T Timeout CLOSED D-35-49: оба player defeat без искусственного damage. Открытых обязательных product вопросов нет.
 D-35-50 закрывает A-35-20: после завершённого боя участвовавшая пиратская группа удаляется с карты независимо от исхода, включая Draw/Timeout и живые носители. Это retirement группы, а не фиктивное уничтожение: фактические hull/status/pilot state сохраняются в результате. Pending/replay бой не считается завершённым; retirement и settlement фиксируются вместе ровно один раз, до durable release. Остальные группы сохраняются.
 Остальное — технический owner review: module footprint/power; waypoint coordinates/feasible motion; numerical tolerances; serialization/version drift; firstcaptured encounter снеработающим player sensor должен получить fixed composition ДОcheckpoint (не reroll). Narrative внеscope, новая fifthgroup не утверждалась.
-Implementation NOT STARTED; build/tests/native/product NOT RUN. Structural planning checks не являются acceptance.
+Implementation: все17 историй/66 тикетов реализованы. Фактические build/tests/review и публикация — в [ExecutionStatus](ExecutionStatus.md) и [FinalValidation](FinalValidation.md). Native/product acceptance остаётся NOT RUN; структурные проверки планирования не являются приёмкой.
 ## Актуальная карта историй после аудита
 
 | История | Тикетов | Зависимости начала истории |
@@ -132,7 +132,7 @@ Aggregate dependencies в frontmatter — перечень внешних ист
 
 ## Статусы поставки
 
-Planning: подготовлено по одобренному плану. Implementation: NOT STARTED. Automated/runtime/native/product acceptance: NOT RUN / OPEN. Никаких новых свидетельств готовности игры этот документ не создаёт.
+Planning: одобренный план реализован. Implementation:17 историй/66 тикетов, включая завершающую документацию; [опубликованные SHA](Tickets.md). Automated validation: точные результаты и открытые ограничения в [FinalValidation](FinalValidation.md), общий набор не объявляется зелёным. Native/product acceptance: NOT RUN / OPEN, осмотр владельцем.
 
 
 ## Тикетная декомпозиция первого демо

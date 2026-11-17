@@ -2,7 +2,7 @@
 
 Branch `codex/ep-0035-demo-pirate-encounters`; origin `https://github.com/SuhilovVitaly/DSS`.
 Base `0c06524b5e1c9fb631ff6c6dc49ca2da48717a23`. [66 ticket publication ledger](Tickets.md).
-17 stories implemented; US0006 documentation is the final story. Full headless suite and final independent review follow its publication and are not claimed passed yet.
+17 stories implemented; US0006 documentation is the final story. Thematic EP35 checks148/148 passed and independent final review found no new confirmed actionable EP35 production findings. Owner stopped unrelated long runs at500PASS/140NOTRUN and requested a conflict-free PR to main; final integration/publication follows. General suite failures remain explicit in FinalValidation.
 EP0034 prerequisite implementation was integrated (merge721e3a5e, UIc1c71929, fixturesc27c6e95); old dependency-blocked notes are [history](ExecutionHistory.md).
 
 ## Story evidence
