@@ -39,6 +39,7 @@ public sealed partial class ShipScreen : IScreen
     private int _screenWidth;
     private int _screenHeight;
     private bool _isCloseHovered;
+    private bool _showCrew = true;
 
     /// <summary>Legacy open path: no carrier surface yet — renders the explicit unsupported state.</summary>
     public ShipScreen() : this(ShipViewModel.From(null)) { }
@@ -99,7 +100,12 @@ public sealed partial class ShipScreen : IScreen
             return ScreenEvent.None;
 
         float sx = x - ShipLayout.PanelLeft(_screenWidth), sy = y - ShipLayout.PanelTop(_screenHeight);
-        if (_service is not null && sx >= 730 && sx <= 1340)
+        if (sx >= 730 && sx <= 1340 && sy >= 90 && sy <= 122)
+        {
+            _showCrew = sx < 1030;
+            return ScreenEvent.None;
+        }
+        if (!_showCrew && _service is not null && sx >= 730 && sx <= 1340)
         {
             if (sy >= 265 && sy <= 295) { _shipyard = sx >= 1030; return ScreenEvent.None; }
             if (_shipyard) { ClickShipyard(sx, sy); return ScreenEvent.None; }
@@ -327,9 +333,13 @@ public sealed partial class ShipScreen : IScreen
             if (_selectedRow >= 0)
                 DrawRearmControls(canvas, pl, pt);
 
-            // Crew panel (right half): one line per crew member.
+            DrawLocalButton(canvas, pl, pt, (730, 90, 1020, 122), Localization.Get("Ship.Crew"), true);
+            DrawLocalButton(canvas, pl, pt, (1030, 90, 1340, 122), Localization.Get("Demo.Replacement.Services"), true);
+            // Crew, sensor and passenger information share one tab, separate from service controls.
+            if (_showCrew)
+            {
             var (cl, ct, cr, _) = ShipLayout.CrewPanelLocalRect();
-            float crewY = pt + ct;
+            float crewY = pt + ct + 60;
             foreach (var member in _model.Crew)
             {
                 canvas.DrawText(SensorCrewLabel(member), pl + cl, crewY, bodyPaint);
@@ -346,6 +356,7 @@ public sealed partial class ShipScreen : IScreen
                     canvas.DrawText(row, pl + cl, crewY, MenuStyle.TextStatus);
                     crewY += ShipLayout.BodyLineHeight;
                 }
+            }
         }
 
         if (_campaign is not null)
@@ -360,7 +371,7 @@ public sealed partial class ShipScreen : IScreen
             DrawMemorial(canvas, pl, pt);
         }
         DrawCloseButton(canvas, pl, pt);
-        DrawServices(canvas, pl, pt);
+        if (!_showCrew) DrawServices(canvas, pl, pt);
     }
 
     internal void RequestRepair(string target)
