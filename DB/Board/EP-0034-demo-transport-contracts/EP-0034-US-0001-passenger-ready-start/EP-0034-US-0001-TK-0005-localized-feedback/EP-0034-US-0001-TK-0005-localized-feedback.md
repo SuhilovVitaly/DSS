@@ -5,7 +5,7 @@ ticket: EP-0034-US-0001-TK-0005-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-validation-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0001-TK-0003-engine]
@@ -94,3 +94,14 @@ No API change. Существующие словари Russian/English; язык
 ## Self-containment check
 
 История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+
+## Execution result (2026-11-17)
+
+Status: implemented; **validation pending at story end** (owner cadence). No test PASS claimed.
+
+- `src/DeepSpaceSaga.Client/Data/Locale/English.json`, `Russian.json` — nine identical keys inserted right after the `Demo.Rearm.*` block (not at the file end, to reduce merge overlap with EP-0033): `Demo.Passengers.Title`, `.Summary` ({0} total, {1} crew, {2} passengers, {3} reserve, {4} free), `.Ready` ({0} free), `.Empty`, `.Blocked` (fallback for an unknown code), and one key per stable reason: `.no_free_cabins`, `.cabins_overcommitted`, `.insufficient_food_rations`, `.unavailable`. Each reason says what happened and what the player can do. No existing translation changed.
+- `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0001Tk0005Tests.cs` — `StoryKeysExistInBothLocales`, `FormatArgumentsMatch`, `NoRawReasonCodeLeaks` over the shipped dictionaries in the test output.
+
+Checks: `dotnet build tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -c Release` — 0 warnings/0 errors (`D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0001-20261117/tk0005-build.log`); both JSON files parse.
+
+Assumption A-06: US-0001 has no player command (TK-0001 A-01), so no pending/confirmed command texts are added; they belong to US-0002. Real readability on screen is checked by TK-0004 and the release UI pass, not by parity tests.
