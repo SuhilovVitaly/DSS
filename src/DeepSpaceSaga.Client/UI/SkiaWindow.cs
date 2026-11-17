@@ -1016,7 +1016,9 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                     if (_session is { } battleSession && _screens.Count == 1 && _screens.Current is GameSessionScreen)
                     {
                         Localization.ApplyLanguage(Localization.ReadLanguageSetting(SettingsFilePath));
-                        var flow = new TacticalBattleFlow(battleSession);
+                        var captured = battleSession.DemoCampaign?.WorldEncounter;
+                        var flow = new TacticalBattleFlow(battleSession)
+                        { CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } ? captured : null };
                         var setup = CreateTacticalSetupView(flow);
                         await PushModalAsync(setup, () => ReferenceEquals(_session, battleSession));
                         if (ReferenceEquals(_screens.Current, setup))
@@ -1029,8 +1031,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 case ScreenEvent.StartTacticalBattle:
                     if (_screens.Current is TacticalBattleModalScreen { CanStart: true } preparation)
                     {
-                        var started = await preparation.Flow.StartAsync(preparation.BuildStartRequest());
-                        if ((started?.Accepted == true || preparation.Flow.State is not null) && ReferenceEquals(_screens.Current, preparation))
+                        bool started = preparation.Flow.IsCampaign
+                            ? await preparation.Flow.StartEncounterAsync()
+                            : (await preparation.Flow.StartAsync(preparation.BuildStartRequest()))?.Accepted == true;
+                        if ((started || preparation.Flow.State is not null) && ReferenceEquals(_screens.Current, preparation))
                             _screens.Replace(CreateTacticalBattleView(preparation.Flow));
                     }
                     break;
@@ -1487,7 +1491,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
     }
 
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
-        new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+        flow.IsCampaign ? new CapturedEncounterScreen(flow, _gameSessionScreen?.UiScale ?? 1)
+        : new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
     /// <summary>
     /// Seed of the tutorial battle (scenario «initial», default loadout). Pinned by <c>TutorialBattleWinnabilityTests</c>: on this seed the
     /// player's side wins both by Enter only and by following the officer's lessons (EP-0028-US-0005-TK-0002).

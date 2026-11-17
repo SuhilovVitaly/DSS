@@ -32,6 +32,36 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public StartTacticalBattleRequest? LastStart { get; private set; }
     /// <summary>Client-only tutorial mode: mid-battle exit leads to the main menu and a finished battle only returns to the map.</summary>
     public bool IsTutorial { get; init; }
+    public WorldEncounterSnapshot? CampaignEncounter { get; init; }
+    public bool IsCampaign => CampaignEncounter is not null;
+    public async Task<bool> StartEncounterAsync()
+    {
+        if (CampaignEncounter is null || Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;
+        try
+        {
+            var current = Session.DemoCampaign;
+            var response = await Session.ExecuteDemoCampaignAsync(new BeginEncounterBattleCommand(
+                NewIdentity("encounter"), current?.Revision ?? 0, CampaignEncounter.Binding.EncounterId));
+            var state = await Session.GetTacticalBattleStateAsync();
+            if (state is not null && state.BattleId == CampaignEncounter.Binding.BattleId)
+            {
+                Volatile.Write(ref _observed, new(state, state));
+                Volatile.Write(ref _error, "");
+                return true;
+            }
+            string key = "Demo.Encounter." + response.Reason;
+            string reason = Localization.Get(key);
+            if (reason == key) reason = Localization.Get("Demo.Encounter.Unavailable");
+            Volatile.Write(ref _error, string.Format(Localization.Get("Demo.Encounter.Refused"), reason));
+            return false;
+        }
+        catch (Exception)
+        {
+            Volatile.Write(ref _error, Localization.Get("Demo.Encounter.Unavailable"));
+            return false;
+        }
+        finally { Volatile.Write(ref _pending, 0); }
+    }
     public void BeginLoadOptions() => OptionsTask ??= LoadOptionsAsync();
     private async Task LoadOptionsAsync()
     {
