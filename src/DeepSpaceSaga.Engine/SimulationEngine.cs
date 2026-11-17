@@ -171,7 +171,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         lock (_worldStateLock)
         {
-            if (_tacticalBattleSession is not null && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
+            if (CombatOrLootOpen && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
             if (_encounterStoragePending && speed != SimulationSpeed.Speed0) return "encounter_checkpoint_pending";
             if (HasCapturedEncounter && speed != SimulationSpeed.Speed0) return "encounter_captured";
             if (_demoCampaign.PendingSensorReport is not null && speed != SimulationSpeed.Speed0) return "sensor_report_pending";
@@ -516,6 +516,7 @@ public sealed partial class SimulationEngine : IDisposable
         DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
         restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
         restoredDemoCampaign = PrepareBountiesForLoad(restoredDemoCampaign);
+        ValidateBattleLootForLoad(restoredDemoCampaign);
         ValidateSensorDialogueSave(restoredDemoCampaign, scenario with { GameState = gs });
         if (restoredDemoCampaign.WorldEncounter is { Phase: WorldEncounterPhases.PendingBattle } &&
             (restoredDemoCampaign.PendingSensorReport is not null || gs.DialogueState?.ActiveDialogue is not null ||
@@ -584,6 +585,8 @@ public sealed partial class SimulationEngine : IDisposable
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
             RestorePendingEncounterBattle();
+            SetTacticalBattleCommandBlock(CombatOrLootOpen);
+            if (LootOpen) _clock.Reset(gs.GameTimeMs, SimulationSpeed.Speed0, gs.MotionTimeMs, gs.MotionQuarterRemainder);
         }
     }
 
@@ -2326,7 +2329,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
-            if (_tacticalBattleSession is not null || HasCapturedEncounter || _encounterStoragePending)
+            if (CombatOrLootOpen || HasCapturedEncounter || _encounterStoragePending)
             {
                 RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, TacticalBattleActiveReason);
                 continue;

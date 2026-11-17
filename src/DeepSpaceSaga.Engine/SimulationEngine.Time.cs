@@ -37,7 +37,7 @@ public sealed partial class SimulationEngine
         ArgumentNullException.ThrowIfNull(command);
         lock (_worldStateLock)
         {
-            if (_tacticalBattleSession is not null || HasCapturedEncounter || _encounterStoragePending) return new(false, TacticalBattleActiveReason, CaptureSnapshot());
+            if (CombatOrLootOpen || HasCapturedEncounter || _encounterStoragePending) return new(false, TacticalBattleActiveReason, CaptureSnapshot());
             if (IsStoppedByStationSecurity) return new(false, StationSecurityStoppedReason, CaptureSnapshot());
             if (string.IsNullOrWhiteSpace(command.CommandId) || !Enum.IsDefined(command.Destination))
                 return new(false, "invalid_transition", CaptureSnapshot());

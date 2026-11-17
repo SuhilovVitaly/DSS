@@ -49,7 +49,7 @@ public sealed partial class SimulationEngine
             var composition = _demoCampaign.PirateCompositions.SingleOrDefault(c => c.CarrierId == carrier.Id);
             string layout = composition is not null ? _demoDefinitions.Encounters!.Profiles.Single(p => p.SignatureTypeId == composition.SignatureTypeId).CarrierLayoutId
                 : "carrier.standard";
-            sources.Add(new(carrier.Id, "Carrier", layout, carrier.Pose.X, carrier.Pose.Y, carrier.Pose.Course, null, [],
+            sources.Add(new(carrier.Id, session.Battle.SelfDestructedCarrierIds.Contains(carrier.Id) ? "SelfDestructCarrier" : "Carrier", layout, carrier.Pose.X, carrier.Pose.Y, carrier.Pose.Course, null, [],
                 new(definitions.ScrapItemTypeId, definitions.CarrierScrapQuantityByLayout[layout], chance), []));
         }
         return new(session.Id, LootPhases.Open, definitions.Fingerprint, seed, draws, session.Capture(), sources.ToImmutable());

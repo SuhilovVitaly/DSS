@@ -27,7 +27,7 @@ public sealed record BattleLootData(string BattleId, string Phase, string Catalo
         foreach (var s in data.Sources)
         {
             Require(!string.IsNullOrWhiteSpace(s.ObjectId) && !string.IsNullOrWhiteSpace(s.LayoutId) &&
-                s.Kind is "DisabledDrone" or "DestroyedDrone" or "Carrier" && double.IsFinite(s.X) && double.IsFinite(s.Y) && double.IsFinite(s.Direction) &&
+                s.Kind is "DisabledDrone" or "DestroyedDrone" or "Carrier" or "SelfDestructCarrier" && double.IsFinite(s.X) && double.IsFinite(s.Y) && double.IsFinite(s.Direction) &&
                 !s.Consumables.IsDefault && !s.Modules.IsDefault && s.Consumables.All(c => c is not null) && s.Modules.All(m => m is not null));
             Require(s.Consumables.Select(c => c.ItemTypeId).Distinct(StringComparer.Ordinal).Count() == s.Consumables.Length &&
                 s.Modules.Select(m => m.InstanceId).Distinct(StringComparer.Ordinal).Count() == s.Modules.Length);

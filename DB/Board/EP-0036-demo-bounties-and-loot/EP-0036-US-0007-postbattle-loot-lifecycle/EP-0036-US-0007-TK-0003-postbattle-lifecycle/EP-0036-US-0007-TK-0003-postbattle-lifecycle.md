@@ -102,3 +102,11 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Execution preflight correction — 2026-11-17
 
 US12 SetLootDebugRequest is an explicit non-gameplay exception to combat/LootOpen command gates. It changes only process-local debug overrides for future rolls and must never reroll or rewrite existing loot. Other unrelated campaign commands remain blocked.
+
+## Execution scope correction
+
+Lifecycle requires extending actual direct-entry gates beyond the planned six files: SimulationEngine.Time.cs, Rearm.cs, PirateWorldStep.cs, PassengerContracts.cs, TransportFailure.cs, SensorContactReports.cs, WorldEncounterBattle.cs, Dialogue/SimulationEngine.Dialogue.cs, TargetBounty.cs and shared BattleLoot.cs/BattleLootData.cs. These changes only apply LootOpen pause/command restrictions, frozen reward projection and self-destruct cause. SimulationEngine.cs also validates and restores frozen loot before publishing loaded state. Existing combat save restriction remains combat-only; completed loot is serializable.
+
+## Execution — 2026-11-17
+
+Victory atomically settles owned sortie and encounter with frozen loot before the response, then clears live combat while preserving command/clock gates. Loot commands return authoritative Rewards; finish requires explicit discard when unclaimed sources remain. Load validates victory, frozen map, source identity/status/pose, exact scrap output and module/consumable mappings, then restores pause without combat. Independent review found missing mapping validation; corrected before publication with corruption regression cases. Wrong-battle Exit is validated before transition. Engine build/scoped formatting/diff PASS; tests NOT RUN until US7 completion. LocalClient checkpoint and map-panel integration remain the designated dependent tickets. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk3-reviewed-build.log.

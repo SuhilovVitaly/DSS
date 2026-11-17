@@ -65,7 +65,7 @@ public sealed partial class SimulationEngine
     private void DeliverPassengerContracts(long gameTimeMs)
     {
         if (!StationJobsEnabled || _demoCampaign.StationJobs is not { } jobs) return;
-        if (_tacticalBattleSession is not null || _dialogue.Active is not null || _voyageState is { Phase: VoyagePhases.Docking })
+        if (CombatOrLootOpen || _dialogue.Active is not null || _voyageState is { Phase: VoyagePhases.Docking })
             return; // docking is confirmed only after its dialogue has finished
         int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         if (shipIndex < 0) return;

@@ -89,7 +89,7 @@ public sealed partial class SimulationEngine
         var encounter = _demoCampaign.WorldEncounter;
         if (encounter is null) return null;
         string? reason = encounter.Phase == WorldEncounterPhases.Finished ? "encounter_finished"
-            : _tacticalBattleSession is not null ? TacticalBattleActiveReason
+            : CombatOrLootOpen ? TacticalBattleActiveReason
             : _demoCampaign.PendingSensorReport is not null ? "sensor_report_pending"
             : _dialogue.Active is not null ? "dialogue_active" : null;
         return new(encounter.Binding, encounter.Phase, reason is null, reason);

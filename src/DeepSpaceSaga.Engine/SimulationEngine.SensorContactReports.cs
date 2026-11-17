@@ -10,7 +10,7 @@ public sealed partial class SimulationEngine
 
     private void OpenPendingSensorReport(long time)
     {
-        if (_demoCampaign.PendingSensorReport is not { } batch || _tacticalBattleSession is not null) return;
+        if (_demoCampaign.PendingSensorReport is not { } batch || CombatOrLootOpen) return;
         if (_dialogue.Active is not null)
         {
             _dialogue.ResumeSpeed = SimulationSpeed.Speed0;

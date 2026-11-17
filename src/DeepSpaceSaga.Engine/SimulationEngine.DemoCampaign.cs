@@ -41,6 +41,7 @@ public sealed partial class SimulationEngine
             Action? commit = null;
             if (command.ExpectedRevision != _demoCampaign.Revision) reason = DemoCampaignReasons.StaleRevision;
             else if (_tacticalBattleSession is not null) reason = DemoCampaignReasons.BattleActive;
+            else if (LootOpen && command is not ILootCampaignCommand) reason = DemoCampaignReasons.BattleActive;
             else if (_encounterStoragePending) reason = "encounter_checkpoint_pending";
             else if (HasCapturedEncounter && command is not (BeginEncounterBattleCommand or DismissSensorContactReportRequest or SetFogOfWarRequest))
                 reason = "encounter_captured";
@@ -70,12 +71,15 @@ public sealed partial class SimulationEngine
             ValidateDemoCampaignSections(candidate, Math.Max(_clock.GameTimeMs, candidate.LastTickGameTimeMs));
             if (applied) commit?.Invoke();
             _demoCampaign = candidate;
+            response = response with { Rewards = BuildDemoRewardsProjection() };
+            _demoCampaign = candidate with { Receipts = candidate.Receipts.SetItem(candidate.Receipts.Length - 1, new(hash, sequence, response)) };
             return response;
         }
     }
 
     private void TickDemoCampaign(long gameTimeMs)
     {
+        if (LootOpen) return;
         ObservePirateGroups(gameTimeMs);
         PublishCapturedEncounter();
         OpenPendingSensorReport(_processedSimulationTimeMs);
@@ -107,6 +111,12 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case FinishBattleLootCommand finish:
+                PrepareFinishBattleLoot(finish, ref candidate, ref reason, ref commit);
+                break;
+            case ILootCampaignCommand:
+                PrepareBattleLootCommand(command, ref candidate, ref reason, ref commit);
+                break;
             case ClaimBountyCommand claim:
                 PrepareBountyPayment(claim, ref candidate, ref reason, ref commit);
                 break;
