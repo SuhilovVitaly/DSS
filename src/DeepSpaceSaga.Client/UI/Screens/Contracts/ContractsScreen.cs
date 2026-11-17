@@ -78,6 +78,7 @@ public sealed class ContractsScreen : IScreen
     private string? _jobsFeedback;
     private bool _jobsFeedbackIsError;
     private int _hoveredAcceptIndex = -1;
+    private string? _acceptedOfferId; // EP-0034 US-0002: last applied acceptance, its boarding read from snapshots
 
     private const float JobsLeftMargin = 40f;
     private const float JobsColumnWidth = 960f;
@@ -108,6 +109,26 @@ public sealed class ContractsScreen : IScreen
 
     internal bool IsAcceptPending { get { lock (_jobsGate) return _pendingCommandId is not null; } }
 
+    private DemoCampaignSnapshot? Campaign => _campaign?.Invoke() ?? _buffer?.Latest?.Snapshot.DemoCampaign;
+
+    /// <summary>Test seam â€” passenger contracts section exactly as drawn (EP-0034 US-0002).</summary>
+    internal PassengerContractsView PassengersView =>
+        PassengerContractsPresentation.Build(Campaign?.Transport?.PassengerContracts, StationName);
+
+    /// <summary>
+    /// Test seam â€” confirmed boarding of the last applied acceptance on this screen, taken from the authoritative
+    /// snapshot once it lists the contract; null before that, for cargo offers and on a freshly opened screen.
+    /// </summary>
+    internal string? PassengerFeedback
+    {
+        get
+        {
+            string? offerId;
+            lock (_jobsGate) offerId = _acceptedOfferId;
+            return PassengerContractsPresentation.Boarded(Campaign?.Transport?.PassengerContracts, offerId, StationName);
+        }
+    }
+
     internal IReadOnlyList<(SKRect Rect, string OfferId)> AcceptButtons => _acceptButtons;
 
     /// <summary>
@@ -132,6 +153,7 @@ public sealed class ContractsScreen : IScreen
             }
             command = new AcceptJobOfferCommand("jobs-accept-" + Guid.NewGuid().ToString("N"), campaign!.Revision, offerId);
             _pendingCommandId = command.CommandId;
+            _acceptedOfferId = null;
             _jobsFeedback = StationJobsPresentation.Pending;
             _jobsFeedbackIsError = false;
         }
@@ -148,6 +170,7 @@ public sealed class ContractsScreen : IScreen
             if (_pendingCommandId != command.CommandId) return;
             _pendingCommandId = null;
             _jobsFeedbackIsError = !response.Applied;
+            if (response.Applied) _acceptedOfferId = command.OfferId;
             _jobsFeedback = response.Applied ? StationJobsPresentation.Accepted : StationJobsPresentation.Reason(response.Reason);
         }
     }
@@ -324,13 +347,45 @@ public sealed class ContractsScreen : IScreen
             }
             jy += 8;
         }
+        DrawPassengers(canvas, journalLeft, jy + 12, journalWidth, journalBottom);
 
         string? feedback;
         bool error;
         lock (_jobsGate) { feedback = _jobsFeedback; error = _jobsFeedbackIsError; }
+        // A confirmed passenger boarding replaces the generic "accepted" line once the snapshot shows it.
+        if (!error && PassengerFeedback is { } boarded) feedback = boarded;
         if (feedback is not null)
             Text(canvas, feedback, left, pt + ContractsLayout.PanelHeight - 44, ContractsLayout.PanelWidth - 2 * JobsLeftMargin,
                 error ? JobsWarnPaint : JobsOkPaint);
+    }
+
+    /// <summary>EP-0034 US-0002: people aboard (life support), each passenger contract and its confirmed delivery.</summary>
+    private void DrawPassengers(SKCanvas canvas, float left, float y, float width, float bottom)
+    {
+        if (y + ContractsLayout.BodyLineHeight > bottom) return;
+        var view = PassengersView;
+        Text(canvas, view.Title, left, y, width, JobsHeadingPaint);
+        y += 30;
+        foreach (string? line in new[] { view.Summary, view.Empty })
+        {
+            if (line is null || y + ContractsLayout.BodyLineHeight > bottom) continue;
+            foreach (string wrapped in ControlText.Wrap(ControlText.SafeSymbols(line), width, JobsDimPaint).Take(2))
+            {
+                Text(canvas, wrapped, left, y, width, JobsDimPaint);
+                y += 20;
+            }
+            y += 6;
+        }
+        foreach (string line in view.Lines)
+        {
+            if (y + ContractsLayout.BodyLineHeight > bottom) break;
+            foreach (string wrapped in ControlText.Wrap(ControlText.SafeSymbols(line), width, JobsTextPaint).Take(2))
+            {
+                Text(canvas, wrapped, left, y, width, JobsTextPaint);
+                y += 20;
+            }
+            y += 6;
+        }
     }
 
     private static void Text(SKCanvas canvas, string text, float x, float y, float width, SKPaint paint)
