@@ -1,4 +1,9 @@
 {
+  "Demo.Pirate.NoContacts": "Пиратских контактов нет",
+  "Demo.Pirate.Unknown": "Неопознанный носитель",
+  "Demo.Pirate.Observed": "Пиратский контакт",
+  "Demo.Pirate.DebugVisible": "Неподтверждённый контакт (отладка)",
+  "Demo.Pirate.Captured": "Перехват",
   "Demo.Pirate.Lair": "Логово",
   "Demo.Pirate.Tancred": "Танкред",
   "Demo.Pirate.ApproximateDrones": "около {0} дронов",

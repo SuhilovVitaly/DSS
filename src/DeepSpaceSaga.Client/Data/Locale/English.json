@@ -1,4 +1,9 @@
 {
+  "Demo.Pirate.NoContacts": "No pirate contacts",
+  "Demo.Pirate.Unknown": "Unidentified carrier",
+  "Demo.Pirate.Observed": "Pirate contact",
+  "Demo.Pirate.DebugVisible": "Unconfirmed contact (debug)",
+  "Demo.Pirate.Captured": "Intercepted",
   "Demo.Pirate.Lair": "Lair",
   "Demo.Pirate.Tancred": "Tancred",
   "Demo.Pirate.ApproximateDrones": "about {0} drones",
