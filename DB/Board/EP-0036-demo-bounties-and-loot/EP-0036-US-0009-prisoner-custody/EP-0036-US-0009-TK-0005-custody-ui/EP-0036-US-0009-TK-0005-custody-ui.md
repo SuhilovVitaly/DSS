@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-04, AC-05]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: not-started
+implementation_status: complete
 ---
 
 # Арест в окне лута и список пленных на корабле

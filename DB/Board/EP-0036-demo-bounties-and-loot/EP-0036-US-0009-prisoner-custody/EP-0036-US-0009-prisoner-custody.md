@@ -10,7 +10,7 @@ revision: 2
 created: 2026-11-17T19:18:11Z
 source_request: "Интерактивный груминг EP-0036 и запись принятых решений через сабагентов."
 dependencies: [EP-0036-US-0007-postbattle-loot-lifecycle]
-implementation_status: not-started
+implementation_status: complete
 ---
 
 # Арест пиратов и содержание в общих каютах

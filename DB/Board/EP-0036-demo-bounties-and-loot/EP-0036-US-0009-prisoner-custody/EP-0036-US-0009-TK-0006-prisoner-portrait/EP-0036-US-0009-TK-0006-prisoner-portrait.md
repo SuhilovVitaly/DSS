@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-04, AC-05, AC-06]
 created: 2026-11-17T19:50:17Z
 revision: 1
-implementation_status: not-started
+implementation_status: complete
 ---
 
 # Изображение захваченного пилота в позе пленного

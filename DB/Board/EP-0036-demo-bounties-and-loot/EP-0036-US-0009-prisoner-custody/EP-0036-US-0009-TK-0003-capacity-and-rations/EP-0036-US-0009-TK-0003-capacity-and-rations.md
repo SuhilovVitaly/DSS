@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-02, AC-03, AC-05]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: not-started
+implementation_status: complete
 ---
 
 # Общие каюты и питание без жалованья

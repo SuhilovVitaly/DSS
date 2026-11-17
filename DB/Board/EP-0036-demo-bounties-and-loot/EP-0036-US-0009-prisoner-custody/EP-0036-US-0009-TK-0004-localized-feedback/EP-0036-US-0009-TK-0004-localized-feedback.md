@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-04]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: not-started
+implementation_status: complete
 ---
 
 # Тексты ареста и содержания RU/EN
