@@ -52,7 +52,7 @@ public sealed partial class SimulationEngine
             {
                 Revision = revision,
                 CommitSequence = sequence,
-                Receipts = _demoCampaign.Receipts.Add(new(hash, sequence, response))
+                Receipts = (_demoCampaign.Receipts.Length >= 1024 ? _demoCampaign.Receipts.RemoveRange(0, _demoCampaign.Receipts.Length - 1023) : _demoCampaign.Receipts).Add(new(hash, sequence, response))
             };
             ValidateDemoCampaignSections(candidate);
             _demoCampaign = candidate;
