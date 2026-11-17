@@ -5,7 +5,7 @@ ticket: EP-0036-US-0001-TK-0004-localized-feedback
 title: Bounty content и RU/EN условия
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0001-TK-0005-bounty-schema]
@@ -112,3 +112,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj
 ## Self-containment check
 
 Описаны authority, identity, отсутствие acceptance prerequisite, frozen definitions, schema, dependencies, allowlist, шаги и named tests. Открытого продуктового вопроса по этому результату нет; численный content baseline — A-B05 для плейтеста, не обещание доказанного баланса.
+
+## Execution — 2026-11-17
+
+Added the two planned A-B05 bounty definitions and matching RU/EN keys, without changing transport terms. JSON parsing, scoped whitespace and diff checks PASS. Added real loader/group reference and locale parity tests; NOT RUN until US1 completion. Numerical rewards remain playtest assumptions, not accepted balance.
