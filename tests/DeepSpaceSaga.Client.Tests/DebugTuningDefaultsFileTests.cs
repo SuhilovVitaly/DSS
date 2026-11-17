@@ -9,8 +9,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class DebugTuningDefaultsFileTests : IDisposable
 {
     private readonly string _directory = Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath(), "debug-defaults-fixtures", Guid.NewGuid().ToString("N"));
-    private static string SettingsPath => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-        "../../../../../src/DeepSpaceSaga.Client/Settings.json"));
+    private static string SettingsPath => Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client/Settings.json"));
     private string ReferencePath => Path.Combine(_directory, "debug-tuning.defaults.json");
 
     [Fact]

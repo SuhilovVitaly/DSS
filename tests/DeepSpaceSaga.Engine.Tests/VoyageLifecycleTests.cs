@@ -7,11 +7,12 @@ public sealed class VoyageLifecycleTests
 {
     private const string ShipId = "SPC-0001";
     private const string BridgeId = "MOD-PLAYER-BRIDGE-01";
+    private static string ContentRoot([System.Runtime.CompilerServices.CallerFilePath] string source = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(source)!, "../../src/DeepSpaceSaga.Client"));
 
     internal static ScenarioFile DockedScenario(long debt = 0)
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        string root = ContentRoot();
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "Docked", "scenario.json"));
         return scenario with
         {

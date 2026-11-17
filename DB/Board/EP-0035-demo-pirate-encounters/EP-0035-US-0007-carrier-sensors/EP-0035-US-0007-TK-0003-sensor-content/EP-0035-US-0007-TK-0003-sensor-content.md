@@ -5,7 +5,7 @@ ticket: EP-0035-US-0007-TK-0003-sensor-content
 title: Стартовые сенсоры с преимуществом 20 процентов
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0007-TK-0002-module-schema]
@@ -15,7 +15,7 @@ created: 2026-11-17T11:23:54Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Стартовые сенсоры с преимуществом 20 процентов
 
@@ -125,3 +125,15 @@ D-35-42 пользователь: «Да, принимаем: если пере�
 При реальном pirate sensor contact и distance<=20км authoritative atomic capture фиксирует encounter. Player detection alone не capture. Для новой группы report+pause по batch policy; dismissal сохраняет Speed0; explicitcontinue начинает бой. Уже captured нельзя отменить сменой курса на паузе. Previously reported group не создаёт повторный automatic modal; используется существующий battle transition. Save/Load сохраняет pending capture, не даёт free escape. G-35-09 normal single-group inside-capture CLOSED; остаток: simultaneous capture CLOSED D-35-45: select earliest, no merge; recovery CLOSED D-35-47.
 Tests NOT RUN: MainMenuOverrides_NoSession; OverridesSurviveNewGameLoadUntilExit; Restart_NormalDefaults; Save_NoOverrides; Chance_ExistingGroupsUnchanged; IrinaAbsentUnassigned_Fallback; AssignedIrina_Bonus; BrokenSensor_NoDetection; Reassignment_NoDuplicateReport; NewlyRevealedGroup_NormalBatch; CaptureThenReport_StaysPaused; ExplicitContinue_StartsUnavoidableBattle; PausedCourse_CannotUndoCapture; LoadPendingCapture_NoEscape; PlayerDetectionOnly_NoCapture.
 Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-35-19; конкретные patrol routes ещё балансируются.
+
+## Implementation assumptions and scope 2026-11-17
+G-35-02M technical baseline: passive 1-cell sensor, mass 100 kg, 150 structure points, powerConsumptionW 0 (no new power-network mechanic). Player 2400 and pirate 2000 world units. Install at free hull cell (3,4); Scanner remains at (4,3). These physical values are implementation assumptions, not accepted balance. Actual main Demo references shared starter-carrier.json. If EP34 is integrated, its separate demo manifest must also receive the sensor before acceptance. Use tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0035Us0007Tk0003Tests.cs instead of a Client test: test the actual loader/manifest without any UI or game executable.
+
+## Execution 2026-11-17
+Passive category, player/pirate modules and non-overlapping starter installation implemented. Release Engine.Tests build, scoped whitespace and diff checks PASS. Headless content tests compiled, NOT RUN until US0007 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-execution/sensor-content-build.log and sensor-content-format.log. Pirate world-group installation is verified by its owning group story, not claimed here.
+
+Full-suite correction scope: ScenarioEngineTests, TetrarchLoadoutTests and EP29 starter footprint oracle must include the real sensor at (3,4). Keep 24 hull cells, nonoverlap and every existing module assertion; shared starter now10modules/16cells, demo adds quarters =>11/17. Independent review confirmed changed sensor manifest is the cause; unrelated baseline failures remain separately reported.
+
+Full3 exposed two additional starter oracles: ModuleHealthBootstrapTests and EP29Us13 starter totals. Include sensor in counts and assert exact MOD-PLAYER-SENSOR-01 footprint3,4; all previous hull/health/reservation assertions retained.
+
+The manifest oracle now passed; its second loader-materialization assertion still expected9. Updated same approved10-module count, preserving crew/cabins/ammunition totals. Focused final-oracles:29/31 Client and118/120 Engine; other failures are explicitly tracked, not passed.

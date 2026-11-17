@@ -34,11 +34,6 @@ public sealed record DemoJobsDefinition(int SchemaVersion, DemoJobLimits Limits,
 // EP-0034 US-0003: cancellation/expiry penalty as permille of the promised payout (absent = 250, i.e. 25%).
 public sealed record DemoJobPenalties(int CancelPermille, int ExpiryPermille);
 public sealed record DemoRegion(double X, double Y, double Radius);
-public sealed record DemoPirateGroup(string Id, string LoadoutId, double X, double Y, double SightRadius, double PatrolSpeed);
-public sealed record DemoPursuit(double CaptureRadius, double EscapeRadius, long EscapeMotionTimeMs);
-public sealed record DemoLootRange(string GroupId, int TorpedoesMin, int TorpedoesMax, int ScrapMin, int ScrapMax);
-public sealed record DemoEncountersDefinition(int SchemaVersion, ImmutableArray<DemoPirateGroup> Groups,
-    DemoRegion Region, DemoPursuit Pursuit, ImmutableArray<DemoLootRange> Loot);
 public sealed record DemoExperienceAwards(int Participation, int VictoryBonus);
 public sealed record DemoSpecialization(string Id, string Skill, int Bonus);
 public sealed record DemoProgressionDefinition(int SchemaVersion, DemoExperienceAwards Awards,
@@ -120,10 +115,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                 if (!registry.ItemTypes.Contains(itemTypeId) ||
                     registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(itemTypeId)) is not { UnitMassKg: > 0, StorageKind: ItemStorageKind.Cargo })
                     throw new ScenarioException("Unknown demo job cargo: " + itemTypeId);
-        if (Encounters is { } encounters)
-            foreach (var group in encounters.Groups)
-                if (catalog is null || !catalog.Scenarios.Contains(group.LoadoutId))
-                    throw new ScenarioException("Unknown demo encounter composition: " + group.LoadoutId);
+        Encounters?.ValidateReferences(registry);
     }
 
     private void Validate()
@@ -169,16 +161,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                 j.FirstOffer.Count <= j.Limits.PassengerMax &&
                 j.RoleFilters.Any(f => f.Role == Cluster!.Roles[Cluster.StationIds.IndexOf(Cluster.StartStationId)]), "jobs first offer");
         }
-        if (Encounters is { } e)
-        {
-            Require(e.SchemaVersion == 1 && e.Region is { Radius: > 0 } && double.IsFinite(e.Region.X) && double.IsFinite(e.Region.Y) && double.IsFinite(e.Region.Radius) &&
-                e.Pursuit is { CaptureRadius: > 0, EscapeRadius: > 0, EscapeMotionTimeMs: > 0 } && double.IsFinite(e.Pursuit.CaptureRadius) && double.IsFinite(e.Pursuit.EscapeRadius), "encounters geometry");
-            Require(!e.Groups.IsDefault && e.Groups.All(g => g is not null && !string.IsNullOrWhiteSpace(g.Id) && !string.IsNullOrWhiteSpace(g.LoadoutId) &&
-                double.IsFinite(g.X) && double.IsFinite(g.Y) && double.IsFinite(g.SightRadius) && g.SightRadius > 0 && double.IsFinite(g.PatrolSpeed) && g.PatrolSpeed >= 0) &&
-                e.Groups.Select(g => g.Id).Distinct(StringComparer.Ordinal).Count() == e.Groups.Length, "encounter groups");
-            Require(!e.Loot.IsDefault && e.Loot.All(l => l is not null && e.Groups.Any(g => g.Id == l.GroupId) &&
-                l.TorpedoesMin >= 0 && l.TorpedoesMax >= l.TorpedoesMin && l.ScrapMin >= 0 && l.ScrapMax >= l.ScrapMin), "loot");
-        }
+        Encounters?.Validate();
         if (Progression is { } p)
             Require(p.SchemaVersion == 1 && p.Awards is { Participation: >= 0, VictoryBonus: >= 0 } && !p.Thresholds.IsDefaultOrEmpty &&
                 p.Thresholds.All(t => t > 0) && p.Thresholds.SequenceEqual(p.Thresholds.Distinct().Order()) && !p.Specializations.IsDefault &&

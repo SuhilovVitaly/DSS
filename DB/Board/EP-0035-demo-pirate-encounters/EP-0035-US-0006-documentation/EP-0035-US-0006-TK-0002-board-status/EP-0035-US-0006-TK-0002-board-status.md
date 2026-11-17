@@ -5,7 +5,7 @@ ticket: EP-0035-US-0006-TK-0002-board-status
 title: Board, реестр и состояние демо
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0035-US-0006-TK-0001-current-contracts]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Board, реестр и состояние демо
 
@@ -101,3 +101,16 @@ Durable prebattle pending checkpoint ДО tactical start: committed capture, fix
 Win/loss settlement exactly once, затем durable finished checkpoint до map/end. Failed write удерживает pending result/retry storage, не restart/reapply. Crash при atomic persistence даёт либо old durable pending battle replay, либо durable finished state. Intermediate damage persistence не обещается.
 G-35-19 CLOSED. US0016 owns engine checkpoint, local-client durable storage и client recovery. Legacy aborted settlement не используется для ordinary EP35 unfinished battle; debug/tutorial context отдельно.
 Tests NOT RUN: checkpoint-before-start; same composition/playerstate/seed replay; no navigable escape; failedwrite retryonly; atomicoldpending-orfinished; exactlyonce rewards/losses; no pending loss via autosave.
+Scope: Board status/card synchronization, ticket SHA inventory, relevant README/DemoPlan, Graphify scope and fresh rebuild. Publication receipt is verified after commit; full suite/final review follow this story. Historical planning and intermediate failures remain history.
+
+Final validation infrastructure correction scope: shared source-root helper and test-only source/fixture path lookups across projects, Directory.Build.targets compile inclusion, artifact-root override for performance fixtures. Full suite with external artifacts output reproduced binary-relative lookup failures; preserve deployed-content checks and all gameplay assertions. Motion historical JSON references use already-restored Engine Fixtures/V4. No production game path changes.
+
+Follow-up: ConnectionApiTests, LocalSessionBattleTests, WorldGuardTests incorrectly derived repository by walking four levels from relocated V4 fixtures. Replace with source-root helper; these are integration-path regressions exposed by full suite, not unrelated baseline failures.
+
+Bounded-corpus scope: EvasionCalibrationTests penalty10 full1000 seeds x5tactics exceeded300000ms and process tree was terminated. Split each penalty10..40 into20 explicit50-seed theory rows; preserve every original seed/tactic and per-battle parity/ratio assertions, record range in report filename and count. Decoy report similarly split into10x100-seed rows with all5tactics. Corpus completeness verified by expected matrix, never report a shard as full calibration.
+
+Final navigation scope excludes changing publication/review ledgers to avoid circular hashes, same convention as EP33. Current contracts describe complete calibration shard matrix and aggregation limits. Baseline managed-worktree create did not return and was terminated; list_artifacts remainedempty and Git worktree list showed only primary plus a foreign pre-existing checkout. No task checkout was used; runtime baseline comparison NOT RUN. Full-suite failures/limits now explicit in FinalValidation and ReviewFindings.
+
+Owner follow-up: change DB/Board/EpicExecutionPrompt.md to require only topic-related validation, not an automatic global suite; stop remaining unrelated long runs. Scope expanded to this canonical process prompt. Corpus stopped at500/640 completed PASS;140 remaining/interrupted cases are NOT RUN, not a complete corpus PASS. EP35-specific closing tests148/148 PASS. Final independent review, cleanup, publication and owner-requested PR to main remain required; no merge is authorized.
+
+PR integration scope: merge updated origin/main9cfd80af into this epic branch to resolve16 conflicts after EP34 publication. Preserve EP35 central guarded dispatcher/deferred commit, encounter partial DTO and Ship crew/services/sensor UI; retain upstream feasible-deadline content/formula and transport documentation. Employment schema/validation remain single definitions. Release solution build PASS0warnings/0errors (main-integration-build.log); targeted EP32/34/35, transport/route and campaign integration checks follow publication of this merge. No merge into main is authorized.

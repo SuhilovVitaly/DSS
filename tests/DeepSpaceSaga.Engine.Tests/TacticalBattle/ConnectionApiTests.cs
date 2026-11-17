@@ -7,7 +7,7 @@ public sealed class ConnectionApiTests
 {
     private static SimulationEngine Engine()
     {
-        string root = Path.GetFullPath(Path.Combine(ReferenceFixtureTests.Root, "../../../.."));
+        string root = TestPaths.Repository;
         var engine = SimulationEngine.CreateFromSettingsFile(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json"));
         engine.SetSpeed(SimulationSpeed.Speed0);
         return engine;

@@ -5,7 +5,7 @@ ticket: EP-0035-US-0002-TK-0004-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0002-TK-0002-engine]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # RU/EN условия, результаты и причины отказа
 
@@ -142,3 +142,6 @@ D-35-46: normal EP35 campaign battle заканчивается только win
 G-35-19 CLOSED D-35-47: durable pending same-battle restart; no perturn resume, no freeworld.
 Grounding LocalGameSessionConnection.cs:145–180: accepted settlement receipt cached by BattleId, повтор retry только continuation write; SortieSettlement.cs:17 применяет outcome до clear session. Переиспользовать existing exactly-once consequences; не считать Save failure повторной наградой.
 Tests NOT RUN: EarliestContinuousCapture_WinsArbitration; ExactTie_StableGroupId; NeighborGroup_NotMerged; Battle_FreezesWorldMotion; ReturnWorld_Paused; Resume_AnotherCaptureAllowedNoImmunity; OngoingCampaignBattle_RejectNormalExitAndEscapeLoad; TutorialDebugContext_ExplicitSeparation; SettlementReplay_ExactlyOnce.
+
+## Execution 2026-11-17
+Added RU/EN observed closing/receding/capture/end feedback and range/closing-speed units. Locale placeholder tests added; tests deferred to US2 boundary. Build evidence us2-tk4-build.log in D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/.

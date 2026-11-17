@@ -94,9 +94,13 @@ public sealed partial class SimulationEngine
                 throw new ScenarioException("Saved route events disconnect the trading network. Running world was not replaced.");
     }
 
-    private EffectiveTradingRoute? FindEffectiveDepartureRoute(string origin, string destination) => CurrentVoyageMap() is not { } map ? null :
-        TradingRouteEvaluator.Evaluate(map, BuildActiveRouteModifiers(_objects, _processedWorldTimeMs), _clusterMap is not null)
+    private EffectiveTradingRoute? FindEffectiveDepartureRoute(string origin, string destination)
+    {
+        if (CurrentVoyageMap() is not { } map) return null;
+        var route = TradingRouteEvaluator.Evaluate(map, BuildActiveRouteModifiers(_objects, _processedWorldTimeMs), _clusterMap is not null)
             .FirstOrDefault(e => Connects(e.BaseEdge, origin, destination));
+        return route is null ? null : ApplySelectedThreatRoute(route, destination);
+    }
 
     private ImmutableArray<TradingRouteSnapshot> BuildTradingRouteProjection(long time)
     {

@@ -138,8 +138,7 @@ public class ScenarioEngineTests
         // Walk up from the test output directory to find the repo root,
         // then into the Client project where the scenario lives.
         string scenarioPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Scenarios", "Default", "scenario.json"));
 
         // Fallback for environments where the output structure differs (CI / dotnet test from sln dir)
@@ -167,7 +166,7 @@ public class ScenarioEngineTests
         Assert.Equal(9, playerShip.HullLayout.Height);
         Assert.Equal(24, playerShip.HullLayout.Cells.Count);
 
-        Assert.Equal(9, playerShip.Modules?.Count);
+        Assert.Equal(10, playerShip.Modules?.Count);
         Assert.Equal("ship.tetrarch", playerShip.ShipClassId);
         var cargoModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         Assert.Equal("module.container.basic", cargoModule.ModuleTypeId);
@@ -234,8 +233,7 @@ public class ScenarioEngineTests
     public void Can_create_engine_from_real_settings_file()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))
@@ -250,7 +248,7 @@ public class ScenarioEngineTests
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
         // Settings.defaultScenario is the demo New Game: the shared starter plus one more four-cabin
         // living quarters for passengers (EP-0034-US-0001-TK-0002).
-        Assert.Equal(10, playerShip.Modules.Length);
+        Assert.Equal(11, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         // Module type registry order follows the deterministic (ordinal) sort of
@@ -281,11 +279,10 @@ public class ScenarioEngineTests
             stack => registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).TypeId == itemTypeId).Quantity;
 
     [Fact]
-    public void Real_default_scenario_occupies_16_of_24_hull_cells()
+    public void Real_default_scenario_occupies_17_of_24_hull_cells()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))
@@ -297,25 +294,26 @@ public class ScenarioEngineTests
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(10, playerShip.Modules.Length);
+        Assert.Equal(11, playerShip.Modules.Length);
         Assert.NotNull(playerShip.HullLayout);
         Assert.Equal(24, playerShip.HullLayout!.Cells.Count);
 
-        // The default (demo) scenario: the shared starter's seven 1-cell modules and two 2x2 medium bays
-        // (15 cells) plus the demo passenger quarters at (4,1) occupy 16 distinct hull cells (EP-0034-US-0001).
+        // The default (demo) scenario: the shared starter's eight 1-cell modules and two 2x2 medium bays
+        // (16 cells) plus the demo passenger quarters at (4,1) occupy 17 distinct hull cells (EP-0034-US-0001).
         var occupiedCells = playerShip.Modules.SelectMany(m => m.OccupiedCells).ToArray();
-        Assert.Equal(16, occupiedCells.Length);
+        Assert.Equal(17, occupiedCells.Length);
         Assert.DoesNotContain((3, 2), occupiedCells);
         Assert.Contains((4, 1), occupiedCells);
-        Assert.Equal(16, occupiedCells.Distinct().Count());
+        Assert.Contains((3, 4), occupiedCells);
+        Assert.Equal(17, occupiedCells.Distinct().Count());
 
         // Every occupied cell must belong to the object's hull layout.
         var hullCells = playerShip.HullLayout.Cells.Select(c => (c.X, c.Y)).ToHashSet();
         Assert.All(occupiedCells, cell => Assert.Contains(cell, hullCells));
 
-        // Eight authored hull cells, including both former weapon positions, remain unoccupied.
+        // Seven authored hull cells, including both former weapon positions, remain unoccupied.
         int freeCells = hullCells.Count - occupiedCells.Distinct().Count();
-        Assert.Equal(8, freeCells);
+        Assert.Equal(7, freeCells);
     }
 
     // --- story-20260901-112254 (Batch A, U3): AuthoritativeSnapshot.PlayerCrewCount / ---
@@ -454,8 +452,7 @@ public class ScenarioEngineTests
     private static string ResolveRealSettingsPath()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))
@@ -480,20 +477,8 @@ public class ScenarioEngineTests
     /// </summary>
     private static string ResolveClientBuildOutputSettingsPath()
     {
-        string repoRoot = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
-        string clientBinRoot = Path.Combine(repoRoot, "src", "DeepSpaceSaga.Client", "bin");
-
-        foreach (string configuration in new[] { "Debug", "Release" })
-        {
-            string candidate = Path.Combine(clientBinRoot, configuration, "net8.0", "Settings.json");
-            if (File.Exists(candidate))
-                return candidate;
-        }
-
-        throw new FileNotFoundException(
-            "DeepSpaceSaga.Client build output not found under " +
-            $"'{clientBinRoot}' (Debug or Release, net8.0). Build the Client project first.");
+        string path = Path.Combine(TestPaths.ClientOutput, "Settings.json");
+        return File.Exists(path) ? path : throw new FileNotFoundException("Build Client before running its deployment check.", path);
     }
 
     [Fact]
@@ -511,8 +496,7 @@ public class ScenarioEngineTests
     public void Real_default_scenario_active_module_types_have_valid_command_type_ids()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))
@@ -997,8 +981,7 @@ public class ScenarioEngineTests
     public void Public_settings_factory_loads_scenario_with_modules()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))

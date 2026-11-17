@@ -5,7 +5,7 @@ ticket: EP-0035-US-0011-TK-0002-schema-engine
 title: Схема сигнатур и приватного состава
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0011-TK-0001-contracts]
@@ -15,7 +15,7 @@ created: 2026-11-17T11:37:31Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Схема сигнатур и приватного состава
 
@@ -119,3 +119,9 @@ Stable ticket EP-0035-US-0011-TK-0003-medium-content сохраняет исто
 G-35-07 equipment pool/weights CLOSED D-35-39; G-35-08 CLOSED D-35-38. Schema/content валидируют exact IDs и ссылки, runtime использует seeded draws class+equipment per slot, сохраняет per-carrier origin. Hidden loadout не попадает в сенсорный доклад; actual materialization timing/persistence прежние D/A.
 Tests NOT RUN: ExactFourAllowedLayoutIds; ClassThenWeapon_IndependentDeterministicDraws; EachSlotUsesItsOwnDraws; LightOneShield_HeavyTwoShields; ExistingEquipmentReferencesValid; AllSameLayoutAllowed; Totals6_10_12Unchanged; PublicReport_NoLayoutDisclosure. Проверять deterministic RNG mapping, не случайные observed frequency.
 Debug override lifetime CLOSED D-35-40.
+
+## Execution scope 2026-11-17
+Replace the unused encounters draft schema with v2 profiles/weights/geometric limits: no shipped encounters.json or persisted materialized group exists at the execution base. Remove obsolete SightRadius/EscapeRadius/EscapeMotionTimeMs sources; sensors remain module-owned, lost-contact behavior has no cooldown. Add owning DemoEncounterDefinitions.cs and PirateCompositionData.cs to keep validated content/private save records separate. Early dependency only US1/US11 contract tickets, enabling US1 content without a semantic cycle. Optional missing save composition remains empty; no silent reroll/migration of a populated unsupported version.
+
+
+Implemented validated v2 content with fixed6/10 profiles, speed1.1/0.8, ordered independent class/weapon layout pool, module-owned sensor refs, four-group45/45/10 and capture/safe geometry. Private saved compositions reject malformed counts/duplicate identities/unsupported generation versions. Release Engine.Tests build PASS, zero warnings/errors; format/diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us11-tk2-build.log. Tests authored, NOT RUN until US11 boundary.

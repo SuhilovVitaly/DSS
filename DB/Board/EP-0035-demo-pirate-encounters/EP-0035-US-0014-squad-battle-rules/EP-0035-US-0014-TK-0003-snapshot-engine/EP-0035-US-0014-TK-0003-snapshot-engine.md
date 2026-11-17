@@ -4,7 +4,7 @@ story: EP-0035-US-0014-squad-battle-rules
 ticket: EP-0035-US-0014-TK-0003-snapshot-engine
 title: Снимок и состояние нескольких носителей
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0014-TK-0002-outcome-engine]
@@ -14,7 +14,7 @@ created: 2026-11-17
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Снимок и состояние нескольких носителей
 
@@ -77,3 +77,9 @@ Tests NOT RUN: DrawNoCombatCapability_PlayerDefeat; SimultaneousDefeat_PlayerDef
 EP35 campaign outcome/UI считает existing Timeout/SeriesTurnCap поражением игрока, как Draw по D-35-48. Сохранить actual hull/ammo/disabled/destroyed/pilot state; не фабриковать уничтожение носителя/дронов или смерть пилотов. Применить штатные defeat consequences exactlyonce, без victory rewards, затем durable finished checkpoint до map/end по D-35-47. Сам label defeat не вводит новый gameover при живом carrier.
 G-35-20T CLOSED. Продуктовый грумминг EP35 завершён; технические A/allowlist/schema drift проверяет owning implementation, это не новые user blockers. Implementation NOT STARTED, tests/build/native/product acceptance NOT RUN/OPEN.
 Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotState; Timeout_NoVictoryRewards; TimeoutSettlement_ExactlyOnce; TimeoutFinishedCheckpoint_DurableBeforeRelease; TimeoutReplayReceipt_NoReapply.
+
+## Execution scope 2026-11-17
+Existing snapshot enumeration already exports all carriers; US13 supplies every drone origin. Added session JSON/repeated-publication test for3carriers, origin/hull/ammo and no RNG advancement. Dynamic world encounter name now travels with assembled battle, avoiding catalog lookup by a generated group ID; scope includes OwnedBattleAssembly and world scenario builder for this actual integration boundary. Build evidence us14-tk3-build.log; tests after publication at story boundary.
+Build PASS under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Extended actual owned squad test to capture generated-scenario session name. Tests deferred until this publication.
+
+US14 story-boundary regression scope: the restored historical V4 oracle predates EP29 torpedo mass. Keep its independent order/turn/RNG assertions by explicitly constructing a historical comparison battle with zero ammo unit mass (only oracle comparisons); current production snapshots must include12kg loaded torpedoes (892kg, not880kg). Extend tests/AssemblyTests.cs,AiSteeringTests.cs,AiCommanderTests.cs,SessionTests.cs. This is fixture compatibility, not a change to live physics.

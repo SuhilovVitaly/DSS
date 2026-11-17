@@ -86,7 +86,7 @@ internal static class TacticalBattleSnapshotBuilder
                     e.Definition.MassKg, e.Definition.SpeedBonus, e.Definition.SpeedChange, e.Definition.TurnDeg)).ToImmutableArray(),
                 new(limits.Mass, limits.MassFactor, limits.MinSpeed, limits.MaxSpeed, limits.Change, limits.Turn), d.PreviousTurn, build, d.Accuracy, d.Maneuver,
                 battle.Catalog.Ai.Roles[d.Role].Name)
-            { Slots = Slots(d), InDust = TacticalBattleSalvo.InDust(battle, d), Initiative = d.Initiative, Consciousness = d.Consciousness, DecoyCharges = d.DecoyCharges, AmmoCurrent = d.AmmoCurrent, AmmoCapacity = d.AmmoCapacity });
+            { Slots = Slots(d), InDust = TacticalBattleSalvo.InDust(battle, d), Initiative = d.Initiative, Consciousness = d.Consciousness, DecoyCharges = d.DecoyCharges, AmmoCurrent = d.AmmoCurrent, AmmoCapacity = d.AmmoCapacity, OriginCarrierId = d.OriginCarrierId });
         }
         foreach (var c in battle.Carriers)
             units.Add(new(c.Id, c.Side, TacticalUnitKind.Carrier, TacticalBattleConstants.CarrierFrame, Pose(c.Pose), 0,

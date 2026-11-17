@@ -4,7 +4,7 @@ story: EP-0035-US-0015-squad-battle-continuation
 ticket: EP-0035-US-0015-TK-0004-save-engine
 title: Сохранение и продолжение эскадры
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0015-TK-0003-settlement-engine]
@@ -14,7 +14,7 @@ created: 2026-11-17
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Сохранение и продолжение эскадры
 
@@ -89,3 +89,7 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 После завершённого EP35 боя (win/loss, включая Draw и Timeout/SeriesTurnCap) участвовавшая pirate group становится retired: исчезает с карты, не патрулирует, не обнаруживает игрока и не может начать новый encounter. Это логическое завершение участия группы, не искусственное уничтожение: actual carrier hull/ammo и drone/pilot statuses сохраняются в settlement/history. Соседние группы не меняются; для них обычный перехват на resume сохраняется без иммунитета.
 Retirement входит в exactly-once settlement receipt и durable finished checkpoint. До завершённого settlement, включая pending battle/recovery или отказ записи результата, navigable world не публикуется; повтор callback/Load не создаёт группу заново и не повторяет последствия. Continue pending по D-35-47 восстанавливает тот же бой с начала; retirement не служит выходом из незавершённого боя. A-35-20 и остаток G-35-15 о surviving world group закрыты этим решением; no-respawn сохраняется.
 Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHullAndPilotStateNotFabricated; RetiredGroupNeverCapturesAgain; NeighborGroupsRemainActive; RetirementAndReceiptExactlyOnce; PendingRecoveryDoesNotRetireEarly; FinishedCheckpointRestoresRetirement. UI использует authoritative retired state, а не локальное скрытие маркера.
+
+Execution: expand Scenario/WorldEncounterData.cs with strict bounded result-history validation. Check unique bindings/unit IDs, exact group/member/drone ownership, retired/history equivalence and finished latest encounter. Legacy absent optional fields remain valid; provisional EP35 version1 world remains rejected. Active-turn save remains rejected; US16 supplies durable prebattle restart checkpoint. Roundtrip completed result and reject corrupted receipt before replacing live world.
+
+Build PASS us15-tk4-build.log. Story tests after this push: Engine Ep0035Us15/Ep0035Us3/Ep0035Us13/SortieSettlement; Client Ep0035Us15/Ep0035Us3/ResultsPhaseTests/PanelHeaderTests. Native NOT RUN.

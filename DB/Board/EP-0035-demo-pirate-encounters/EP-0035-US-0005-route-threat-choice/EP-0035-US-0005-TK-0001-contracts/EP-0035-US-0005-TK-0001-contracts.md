@@ -5,7 +5,7 @@ ticket: EP-0035-US-0005-TK-0001-contracts
 title: Контракт: Выбор маршрута с учётом угрозы и срока
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0035-US-0001-TK-0004-client, EP-0034-US-0002-TK-0003-client]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Контракт: Выбор маршрута с учётом угрозы и срока
 
@@ -108,3 +108,8 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+### Execution contract
+ThreatRoutesSnapshot carries revision, options, selected identity and authoritative reasons. Waypoints use world units; ETA/deadline calendar milliseconds; fuel kilograms through existing VoyageFuel. No hidden group positions. Route selection is revisioned DemoCampaign command and does not charge fuel; existing undock reserves once. Scope adds optional ThreatRoutes to DemoCampaignSnapshot and typed serialization regression. Technical assumption: unknown threats remain explicitly unknown; known exposure uses persisted player observations, never debug visibility.
+
+Implementation complete; Contracts build PASS, diff check PASS. Tests authored, NOT RUN until story boundary. Evidence us5-tk1-build.log in designated resume run.

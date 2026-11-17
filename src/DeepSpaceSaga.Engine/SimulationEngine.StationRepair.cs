@@ -9,38 +9,9 @@ public sealed partial class SimulationEngine
     private RepairQuote? _activeRepairQuote;
     private int _repairCarrierRevision;
 
-    partial void ValidateDemoCampaignSections(DemoCampaignData candidate, long gameTimeMs) =>
-        DemoCampaignData.Validate(candidate, gameTimeMs);
-
-    partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
-        ref bool handled, ref string? reason, ref Action? commit)
+    private void PrepareStationRepair(DemoCampaignCommand command, ref DemoCampaignData candidate,
+        ref string? reason, ref Action? commit)
     {
-        if (command is PayCrewDebtCommand debt)
-        {
-            handled = true;
-            PrepareCrewDebt(debt, ref candidate, ref reason, ref commit);
-            return;
-        }
-        if (command is HirePilotCommand or AssignPilotCommand)
-        {
-            handled = true;
-            PrepareRecruitment(command, ref candidate, ref reason, ref commit);
-            return;
-        }
-        if (command is PurchaseDroneCommand or EquipDroneCommand)
-        {
-            handled = true;
-            PrepareReplacement(command, ref candidate, ref reason, ref commit);
-            return;
-        }
-        if (command is DecoyQuoteRequest or ResupplyDecoyCommand)
-        {
-            handled = true;
-            PrepareSupply(command, ref candidate, ref reason, ref commit);
-            return;
-        }
-        if (command is not (RepairQuoteRequest or RepairCommand)) return;
-        handled = true;
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         if (ship is null || !ship.IsDocked || ship.DockedStationObjectId is null)
         { reason = CompanyServiceReasons.NotDocked; return; }

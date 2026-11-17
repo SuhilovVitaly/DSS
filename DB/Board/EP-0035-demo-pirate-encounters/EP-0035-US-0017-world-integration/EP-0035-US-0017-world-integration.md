@@ -4,7 +4,7 @@ story: EP-0035-US-0017-world-integration
 title: Единый шаг мира для встреч и существующих систем
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 dependencies: [EP-0033-US-0005-crew-upkeep]
 source_request: 'Проверь весь 35 эпик после грумминга: нет ли противоречий, пропущенных требований и проблем в зависимостях тикетов. Найденное исправь, пока без реализации.'
 current_review: complete

@@ -4,7 +4,7 @@ story: EP-0035-US-0012-pirate-squadrons
 ticket: EP-0035-US-0012-TK-0003-spawn-content
 title: Настройки demo squad
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0012-TK-0002-aggregate-engine]
@@ -14,7 +14,7 @@ created: 2026-11-17
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Настройки demo squad
 
@@ -125,3 +125,7 @@ G-35-18 CLOSED D-35-45: earliest continuous capture, deterministic tie, посл
 Остаток G-35-09/15: abnormal/partial battle outcomes и корректное world continuation без новой механики тактического отступления. Normal single capture/report/continue уже D-35-42.
 A-35-18 стартовая позиция игрока отдельно от станции требует проверки actual scenario; отдельный clearance не утверждён. При обычном старте у start station800 уже покрывает sensor separation.
 Прочие продуктовые decisions (radii,skill/ETA,equipment,spawn count/weights/norespawn,operator,fog,lifetime,batching) закрыты. Routine module physical stats/конкретные patrol waypoint coordinates остаются implementation/balance деталями; narrative deferred внеscope.
+
+
+## Execution 2026-11-17
+Content explicitly declares squadMembers=[lair,lair], validator rejects third/mixed members. Extend schema/generator to consume this content instead of a magic member count; existing signature fixture updated. Tests moved to Engine.Tests to exercise real loader/schema. Default weights remain45/45/10. Build PASS0 warnings/errors; diff PASS; evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us12-tk3-build.log. Tests NOT RUN until US12 boundary.

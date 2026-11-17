@@ -11,7 +11,7 @@ public sealed class Ep0029Us0008Tk0003Tests : IDisposable
 {
     private readonly string _directory = Path.Combine(Path.GetTempPath(), $"dss-ep0029-us0008-tk0003-{Guid.NewGuid():N}");
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private string SettingsPath => Path.Combine(ClientRoot, "Settings.json");
     private string ScenarioPath => Path.Combine(_directory, "scenario.json");
 

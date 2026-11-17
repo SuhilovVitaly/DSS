@@ -46,7 +46,7 @@ public sealed class DefinitionsTests
     [Fact]
     public void WeaponDefinitionReadsProductionFixtureAndPreservesOptionalRangeBonus()
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        var directory = new DirectoryInfo(TestPaths.Repository);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "DeepSpaceSaga.sln"))) directory = directory.Parent;
         Assert.NotNull(directory);
         string json = File.ReadAllText(Path.Combine(directory.FullName,

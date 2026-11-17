@@ -5,7 +5,7 @@ ticket: EP-0035-US-0011-TK-0005-generation-engine
 title: Материализация пиратских дронов при сенсорном контакте
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0011-TK-0004-signature-content, EP-0035-US-0001-TK-0003-engine, EP-0035-US-0009-TK-0005-sensor-skill]
@@ -15,7 +15,7 @@ created: 2026-11-17T11:37:31Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Материализация пиратских дронов при сенсорном контакте
 
@@ -128,3 +128,7 @@ Stable ticket EP-0035-US-0011-TK-0003-medium-content сохраняет исто
 G-35-07 equipment pool/weights CLOSED D-35-39; G-35-08 CLOSED D-35-38. Schema/content валидируют exact IDs и ссылки, runtime использует seeded draws class+equipment per slot, сохраняет per-carrier origin. Hidden loadout не попадает в сенсорный доклад; actual materialization timing/persistence прежние D/A.
 Tests NOT RUN: ExactFourAllowedLayoutIds; ClassThenWeapon_IndependentDeterministicDraws; EachSlotUsesItsOwnDraws; LightOneShield_HeavyTwoShields; ExistingEquipmentReferencesValid; AllSameLayoutAllowed; Totals6_10_12Unchanged; PublicReport_NoLayoutDisclosure. Проверять deterministic RNG mapping, не случайные observed frequency.
 Debug override lifetime CLOSED D-35-40.
+
+
+## Execution 2026-11-17
+Real authoritative contact path materializes each carrier once via independent named class/weapon streams per stable drone slot, persisting exact results and marker. Save preflight cross-validates all materialized member/group identities; public observation excludes layouts. Capture reuses EnsurePirateComposition before its future checkpoint. Added PirateWorldData materialization marker to scope. Estimate/report batching belongs to US10; debug command integration to US8/12. Build PASS0 warnings/errors, format/diff PASS; evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us11-tk5-build.log. Tests NOT RUN until immediate US11 boundary.

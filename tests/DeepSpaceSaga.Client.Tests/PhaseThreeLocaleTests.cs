@@ -8,7 +8,7 @@ public sealed class WorldLocaleParityTests
     [Fact]
     public void DeployedAndSourceLocaleKeysAndPlaceholdersMatchWithoutRetiredCombatText()
     {
-        string source = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client/Data/Locale"));
+        string source = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client/Data/Locale"));
         Dictionary<string, string> Read(string language)
         {
             var disk = File.ReadAllText(Path.Combine(source, language + ".json"));

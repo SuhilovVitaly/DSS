@@ -1,0 +1,21 @@
+{
+  "dialogues": [
+    {
+      "dialogueId": "dialogue.sensor-pirate-contact",
+      "displayName": "Observed pirate sensor contacts",
+      "entryNodeId": "report",
+      "canAbort": false,
+      "allowManualStart": false,
+      "nodes": [
+        {
+          "nodeId": "report",
+          "speakerRole": "Sensor Operator",
+          "textKey": "Demo.SensorReport.Intro",
+          "choices": [
+            { "choiceId": "acknowledge", "textKey": "Demo.SensorReport.Acknowledge" }
+          ]
+        }
+      ]
+    }
+  ]
+}

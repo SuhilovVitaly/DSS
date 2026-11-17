@@ -1319,6 +1319,8 @@ public sealed partial class GameSessionScreen : IScreen
             RenderStageCompleted?.Invoke("marker_geometry");
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera, buffered?.Snapshot.SolarSystemMap);
             if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)) AiMapPresentation.DrawSelectedPointLabel(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
+            DeepSpaceSaga.Client.UI.Demo.PirateGroupsPresentation.Draw(canvas,
+                buffered?.Snapshot.DemoCampaign?.Encounters, _camera, width, height);
             RenderStageCompleted?.Invoke("label_plaques");
             DrawOffscreenTargets(canvas);
             CompleteRenderStage("markers_and_labels");
@@ -2189,6 +2191,7 @@ public sealed partial class GameSessionScreen : IScreen
         _lastAutoTransitionCheckedSnapshotSequence = snapshot.SnapshotSequence;
 
         if (snapshot.ActiveDialogue is not null) return ScreenEvent.OpenDialogue;
+        if (snapshot.DemoCampaign?.WorldEncounter is { CanContinue: true } or { Phase: WorldEncounterPhases.PendingBattle }) return ScreenEvent.OpenTacticalBattle;
         bool docked = snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDocked && !o.IsDestroyed);
         bool justDocked = docked && !_wasDocked;
         _wasDocked = docked;

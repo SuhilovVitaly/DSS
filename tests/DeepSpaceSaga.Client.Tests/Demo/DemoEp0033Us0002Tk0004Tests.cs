@@ -15,6 +15,8 @@ public sealed class DemoEp0033Us0002Tk0004Tests
         var screen = new ShipScreen(ShipViewModel.From(carrier), 10, null, campaign: () => campaign,
             service: (c, _) => ValueTask.FromResult(new DemoCampaignResponse(c.CommandId, true, null, 1,
                 Supply: supply with { Quote = c is DecoyQuoteRequest ? new("q", "s", "d", 1, 1, 100, 1, 0, 25) : null })));
+        RenderSupply(screen);
+        screen.OnMouseDown(ShipLayout.PanelLeft(1920) + 1100, ShipLayout.PanelTop(1080) + 106);
         screen.RequestDecoys("d"); await screen.PendingService!;
         screen.ConfirmDecoys(); await screen.PendingService!;
         var before = RenderSupply(screen);

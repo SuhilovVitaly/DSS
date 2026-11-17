@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Client.Tests;
 internal sealed class PointCombatSessionFixture : IAsyncDisposable
 {
     internal const string Player = "SPC-0001", Enemy = "SPC-0002", Torpedo = "MOD-PLAYER-TORPEDO-01";
-    private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string Root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     internal SimulationEngine Engine { get; }
     internal LocalGameSessionConnection Connection { get; }
     private long _realMs;

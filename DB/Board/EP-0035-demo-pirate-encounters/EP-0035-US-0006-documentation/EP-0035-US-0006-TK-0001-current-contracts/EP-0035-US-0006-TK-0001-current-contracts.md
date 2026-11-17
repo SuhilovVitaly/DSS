@@ -5,7 +5,7 @@ ticket: EP-0035-US-0006-TK-0001-current-contracts
 title: Актуальные механики и технические контракты
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0035-US-0001-TK-0004-client, EP-0035-US-0002-TK-0003-client, EP-0035-US-0003-TK-0003-client, EP-0035-US-0004-TK-0002-encounter-ui, EP-0035-US-0005-TK-0003-client, EP-0035-US-0007-TK-0004-sensor-runtime, EP-0035-US-0008-TK-0003-console-and-map, EP-0035-US-0009-TK-0004-crew-presentation, EP-0035-US-0010-TK-0005-dialogue-client, EP-0035-US-0011-TK-0005-generation-engine, EP-0035-US-0012-TK-0005-debug-client, EP-0035-US-0013-TK-0004-content, EP-0035-US-0015-TK-0004-save-engine, EP-0035-US-0008-TK-0005-session-overrides, EP-0035-US-0016-TK-0003-recovery-client, EP-0035-US-0017-TK-0002-world-step]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Актуальные механики и технические контракты
 
@@ -144,3 +144,8 @@ Durable prebattle pending checkpoint ДО tactical start: committed capture, fix
 Win/loss settlement exactly once, затем durable finished checkpoint до map/end. Failed write удерживает pending result/retry storage, не restart/reapply. Crash при atomic persistence даёт либо old durable pending battle replay, либо durable finished state. Intermediate damage persistence не обещается.
 G-35-19 CLOSED. US0016 owns engine checkpoint, local-client durable storage и client recovery. Legacy aborted settlement не используется для ordinary EP35 unfinished battle; debug/tutorial context отдельно.
 Tests NOT RUN: checkpoint-before-start; same composition/playerstate/seed replay; no navigable escape; failedwrite retryonly; atomicoldpending-orfinished; exactlyonce rewards/losses; no pending loss via autosave.
+
+### Impact inventory / scope expansion
+Final diff requires DemoEncounters mechanic; EngineRequirements and FirstReleaseRequirements; DemoCampaign/SaveFormat/TacticalBattle/DebugConsole/ApproachRoutes; Station/Ship/Contracts/GameSession/Load/Save/TacticalBattle screens and ScreenCatalog; TacticalMapSpecification/NpcObservedTrajectories; README and tooling V4 fixture paths. Dependencies EP34 transport are merged and must no longer be described as UI shells. Inventory/evidence remains Board. Expand allowlist accordingly; current descriptions replace stale claims, dated histories remain historical. Full suite follows publication of both documentation tickets.
+
+Current contracts updated across requirements, mechanics, screens, architecture, persistence and tooling. Review identified and corrected stale transport shells, campaign abort/restore-speed statements, and missing legacy-source caveats. Geometry correction preserves old saved coordinates. US5 final expanded regression172/172 PASS (us5-outer-values-tests.log); native NOT RUN. Content/diff checks performed; full suite follows US6TK2 publication.

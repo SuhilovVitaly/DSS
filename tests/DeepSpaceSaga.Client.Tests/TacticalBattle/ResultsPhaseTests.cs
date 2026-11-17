@@ -44,7 +44,7 @@ public sealed partial class ResultsPhaseTests
         scene.Screen.OnKeyDown(Key.E);
         scene.Fixture.ManualAnimation = true;
         await scene.Fixture.Route(ScreenEvent.FireTacticalBattle);
-        scene.Screen.OnKeyDown(Key.Enter);
+        if (scene.Screen.CaptureFrame(1920, 1080)!.Salvo is { InFlight: true }) scene.Screen.OnKeyDown(Key.Enter);
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         var card = PilotCardModel.Project(frame).Single(c => c.UnitId == id);
         Assert.Equal("уклонение", card.Chip);

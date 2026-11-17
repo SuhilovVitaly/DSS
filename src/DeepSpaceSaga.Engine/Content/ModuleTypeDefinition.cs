@@ -44,4 +44,6 @@ internal sealed record ModuleTypeDefinition(
     /// <summary>Rectangular hangar footprint width in hull cells (positive when present).</summary>
     int? FootprintWidth = null,
     /// <summary>Rectangular hangar footprint height in hull cells (positive when present).</summary>
-    int? FootprintHeight = null) : ITypeDefinition;
+    int? FootprintHeight = null,
+    /// <summary>Passive sensor radius in world units; absent on non-sensor modules.</summary>
+    double? SensorRadiusWorldUnits = null) : ITypeDefinition;

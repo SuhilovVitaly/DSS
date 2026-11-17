@@ -1,0 +1,2458 @@
+{
+  "header": {
+    "formatVersion": 2,
+    "source": "independent-markdown",
+    "exporterPython": "3.12.3",
+    "exporterLibc": "glibc 2.39",
+    "exporterOs": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "sourceSha256": {
+      "battles.md": "2607b606c1a8eb135cfa9d68d16e24f974c77b81b429f26b1372b1904f29a458",
+      "trace-seed-1.md": "1411c33a1972bf8a159aa05ce654f1cb5fa6c9845c19193f9164ba73688583ab",
+      "series.md": "a2101b441c9d50f33f6d95fde860dab1ecf706388cebf58179d92c46f257a7a7"
+    },
+    "geometryEncoding": "little-endian IEEE-754 binary64 hex",
+    "tracePrecision": "decimal-6",
+    "missingCoverage": [
+      "original simulator environment",
+      "unrounded trace IEEE bits",
+      "all battle trig arguments",
+      "per-weapon statistics",
+      "rearKills in battle summaries",
+      "roleChanges",
+      "stage calls for battles other than seed 1",
+      "exact series integer sums and timeout counts"
+    ]
+  },
+  "data": [
+    {
+      "seed": 1,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 19,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        349
+      ],
+      "shots": 34,
+      "hits": 17,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 266,
+      "totalCalls": 308,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 2,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 18,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        344
+      ],
+      "shots": 24,
+      "hits": 16,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 221,
+      "totalCalls": 263,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 3,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 13,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 24,
+      "hits": 14,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 182,
+      "totalCalls": 224,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 4,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 20,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        283
+      ],
+      "shots": 35,
+      "hits": 20,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 283,
+      "totalCalls": 325,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 5,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 12,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 20,
+      "hits": 10,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 158,
+      "totalCalls": 200,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 6,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 12,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 16,
+      "hits": 11,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 155,
+      "totalCalls": 197,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 7,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 26,
+      "losses": [
+        3,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 27,
+      "hits": 18,
+      "rearHits": 7,
+      "systems": 1,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 270,
+      "totalCalls": 312,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 8,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 14,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 27,
+      "hits": 15,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 204,
+      "totalCalls": 246,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 9,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 26,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 25,
+      "hits": 14,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 291,
+      "totalCalls": 333,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 10,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 13,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 22,
+      "hits": 13,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 187,
+      "totalCalls": 229,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 11,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 18,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        79
+      ],
+      "shots": 26,
+      "hits": 18,
+      "rearHits": 4,
+      "systems": 1,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 241,
+      "totalCalls": 283,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 12,
+      "tactic": "dogfight",
+      "outcome": "B",
+      "turns": 49,
+      "losses": [
+        4,
+        4
+      ],
+      "carrierHull": [
+        169,
+        400
+      ],
+      "shots": 47,
+      "hits": 25,
+      "rearHits": 9,
+      "systems": 1,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 392,
+      "totalCalls": 434,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "A",
+        "text": "у «Скиталец» не осталось дронов"
+      }
+    },
+    {
+      "seed": 13,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 13,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 19,
+      "hits": 13,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 4,
+      "assemblyCalls": 42,
+      "turnCalls": 170,
+      "totalCalls": 212,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 14,
+      "tactic": "dogfight",
+      "outcome": "B",
+      "turns": 24,
+      "losses": [
+        4,
+        5
+      ],
+      "carrierHull": [
+        309,
+        331
+      ],
+      "shots": 44,
+      "hits": 21,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 4,
+      "assemblyCalls": 42,
+      "turnCalls": 316,
+      "totalCalls": 358,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "A",
+        "text": "у «Скиталец» не осталось дронов"
+      }
+    },
+    {
+      "seed": 15,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 19,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 24,
+      "hits": 10,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 215,
+      "totalCalls": 257,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 16,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 14,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 18,
+      "hits": 12,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 170,
+      "totalCalls": 212,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 17,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 16,
+      "hits": 12,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 167,
+      "totalCalls": 209,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 18,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 17,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 16,
+      "hits": 11,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 185,
+      "totalCalls": 227,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 19,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 12,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 20,
+      "hits": 12,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 158,
+      "totalCalls": 200,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 20,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 20,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 23,
+      "hits": 18,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 240,
+      "totalCalls": 282,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 21,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 30,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 37,
+      "hits": 20,
+      "rearHits": 8,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 344,
+      "totalCalls": 386,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 22,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 12,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 14,
+      "hits": 10,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 145,
+      "totalCalls": 187,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 23,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 12,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 21,
+      "hits": 12,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 164,
+      "totalCalls": 206,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 24,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 13,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 28,
+      "hits": 18,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 191,
+      "totalCalls": 233,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 25,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 17,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 19,
+      "hits": 16,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 188,
+      "totalCalls": 230,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 26,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 22,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 24,
+      "hits": 14,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 228,
+      "totalCalls": 270,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 27,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 19,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        314
+      ],
+      "shots": 32,
+      "hits": 17,
+      "rearHits": 0,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 262,
+      "totalCalls": 304,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 28,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 22,
+      "losses": [
+        2,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 24,
+      "hits": 18,
+      "rearHits": 9,
+      "systems": 2,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 259,
+      "totalCalls": 301,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 29,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 25,
+      "hits": 11,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 196,
+      "totalCalls": 238,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 30,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 22,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 20,
+      "hits": 10,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 228,
+      "totalCalls": 270,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 31,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 21,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        0
+      ],
+      "shots": 32,
+      "hits": 22,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 4,
+      "assemblyCalls": 42,
+      "turnCalls": 263,
+      "totalCalls": 305,
+      "reason": {
+        "kind": "CarrierDestroyed",
+        "side": "B",
+        "text": "«Логово» уничтожен"
+      }
+    },
+    {
+      "seed": 32,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 20,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        194
+      ],
+      "shots": 23,
+      "hits": 16,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 225,
+      "totalCalls": 267,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 33,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 19,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        227
+      ],
+      "shots": 29,
+      "hits": 16,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 259,
+      "totalCalls": 301,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 34,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 46,
+      "losses": [
+        2,
+        6
+      ],
+      "carrierHull": [
+        304,
+        334
+      ],
+      "shots": 41,
+      "hits": 20,
+      "rearHits": 7,
+      "systems": 1,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 390,
+      "totalCalls": 432,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 35,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 9,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        347
+      ],
+      "shots": 19,
+      "hits": 13,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 136,
+      "totalCalls": 178,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 36,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 23,
+      "losses": [
+        2,
+        6
+      ],
+      "carrierHull": [
+        400,
+        223
+      ],
+      "shots": 32,
+      "hits": 17,
+      "rearHits": 7,
+      "systems": 1,
+      "disabled": 5,
+      "assemblyCalls": 42,
+      "turnCalls": 288,
+      "totalCalls": 330,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 37,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 14,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 19,
+      "hits": 13,
+      "rearHits": 6,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 188,
+      "totalCalls": 230,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 38,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 21,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 25,
+      "hits": 14,
+      "rearHits": 2,
+      "systems": 1,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 240,
+      "totalCalls": 282,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 39,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 22,
+      "losses": [
+        2,
+        6
+      ],
+      "carrierHull": [
+        400,
+        348
+      ],
+      "shots": 27,
+      "hits": 16,
+      "rearHits": 6,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 253,
+      "totalCalls": 295,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 40,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 38,
+      "losses": [
+        3,
+        6
+      ],
+      "carrierHull": [
+        400,
+        288
+      ],
+      "shots": 42,
+      "hits": 20,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 379,
+      "totalCalls": 421,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 41,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 22,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 24,
+      "hits": 17,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 254,
+      "totalCalls": 296,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 42,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 34,
+      "losses": [
+        2,
+        5
+      ],
+      "carrierHull": [
+        400,
+        0
+      ],
+      "shots": 46,
+      "hits": 24,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 415,
+      "totalCalls": 457,
+      "reason": {
+        "kind": "CarrierDestroyed",
+        "side": "B",
+        "text": "«Логово» уничтожен"
+      }
+    },
+    {
+      "seed": 43,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        341
+      ],
+      "shots": 20,
+      "hits": 13,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 186,
+      "totalCalls": 228,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 44,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 28,
+      "losses": [
+        2,
+        6
+      ],
+      "carrierHull": [
+        400,
+        122
+      ],
+      "shots": 39,
+      "hits": 19,
+      "rearHits": 9,
+      "systems": 2,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 347,
+      "totalCalls": 389,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 45,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 12,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        269
+      ],
+      "shots": 17,
+      "hits": 15,
+      "rearHits": 0,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 146,
+      "totalCalls": 188,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 46,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 10,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        339
+      ],
+      "shots": 20,
+      "hits": 11,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 140,
+      "totalCalls": 182,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 47,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        237
+      ],
+      "shots": 24,
+      "hits": 14,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 206,
+      "totalCalls": 248,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 48,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 13,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        211
+      ],
+      "shots": 30,
+      "hits": 17,
+      "rearHits": 0,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 187,
+      "totalCalls": 229,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 49,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 27,
+      "hits": 15,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 216,
+      "totalCalls": 258,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 50,
+      "tactic": "dogfight",
+      "outcome": "A",
+      "turns": 19,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        276
+      ],
+      "shots": 24,
+      "hits": 14,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 234,
+      "totalCalls": 276,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 1,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 23,
+      "losses": [
+        2,
+        5
+      ],
+      "carrierHull": [
+        400,
+        0
+      ],
+      "shots": 33,
+      "hits": 21,
+      "rearHits": 6,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 181,
+      "totalCalls": 223,
+      "reason": {
+        "kind": "CarrierDestroyed",
+        "side": "B",
+        "text": "«Логово» уничтожен"
+      }
+    },
+    {
+      "seed": 2,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 9,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        350
+      ],
+      "shots": 17,
+      "hits": 11,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 77,
+      "totalCalls": 119,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 3,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 18,
+      "losses": [
+        3,
+        6
+      ],
+      "carrierHull": [
+        367,
+        343
+      ],
+      "shots": 37,
+      "hits": 22,
+      "rearHits": 5,
+      "systems": 2,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 179,
+      "totalCalls": 221,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 4,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 29,
+      "losses": [
+        3,
+        6
+      ],
+      "carrierHull": [
+        400,
+        281
+      ],
+      "shots": 33,
+      "hits": 18,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 4,
+      "assemblyCalls": 42,
+      "turnCalls": 204,
+      "totalCalls": 246,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 5,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 13,
+      "losses": [
+        1,
+        5
+      ],
+      "carrierHull": [
+        400,
+        0
+      ],
+      "shots": 28,
+      "hits": 21,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 123,
+      "totalCalls": 165,
+      "reason": {
+        "kind": "CarrierDestroyed",
+        "side": "B",
+        "text": "«Логово» уничтожен"
+      }
+    },
+    {
+      "seed": 6,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 38,
+      "losses": [
+        3,
+        6
+      ],
+      "carrierHull": [
+        351,
+        114
+      ],
+      "shots": 40,
+      "hits": 25,
+      "rearHits": 10,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 261,
+      "totalCalls": 303,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 7,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 18,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        9
+      ],
+      "shots": 27,
+      "hits": 15,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 129,
+      "totalCalls": 171,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 8,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 13,
+      "losses": [
+        0,
+        4
+      ],
+      "carrierHull": [
+        400,
+        0
+      ],
+      "shots": 20,
+      "hits": 14,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 102,
+      "totalCalls": 144,
+      "reason": {
+        "kind": "CarrierDestroyed",
+        "side": "B",
+        "text": "«Логово» уничтожен"
+      }
+    },
+    {
+      "seed": 9,
+      "tactic": "raid",
+      "outcome": "A",
+      "turns": 44,
+      "losses": [
+        3,
+        6
+      ],
+      "carrierHull": [
+        350,
+        170
+      ],
+      "shots": 39,
+      "hits": 20,
+      "rearHits": 6,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 268,
+      "totalCalls": 310,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 10,
+      "tactic": "raid",
+      "outcome": "B",
+      "turns": 14,
+      "losses": [
+        4,
+        1
+      ],
+      "carrierHull": [
+        368,
+        346
+      ],
+      "shots": 27,
+      "hits": 11,
+      "rearHits": 5,
+      "systems": 1,
+      "disabled": 4,
+      "assemblyCalls": 42,
+      "turnCalls": 125,
+      "totalCalls": 167,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "A",
+        "text": "у «Скиталец» не осталось дронов"
+      }
+    },
+    {
+      "seed": 1,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 30,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        342,
+        212
+      ],
+      "shots": 37,
+      "hits": 21,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 328,
+      "totalCalls": 370,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 2,
+      "tactic": "defence",
+      "outcome": "B",
+      "turns": 54,
+      "losses": [
+        4,
+        5
+      ],
+      "carrierHull": [
+        274,
+        400
+      ],
+      "shots": 36,
+      "hits": 23,
+      "rearHits": 9,
+      "systems": 2,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 347,
+      "totalCalls": 389,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "A",
+        "text": "у «Скиталец» не осталось дронов"
+      }
+    },
+    {
+      "seed": 3,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        281,
+        400
+      ],
+      "shots": 23,
+      "hits": 13,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 182,
+      "totalCalls": 224,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 4,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 24,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        356,
+        400
+      ],
+      "shots": 32,
+      "hits": 13,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 256,
+      "totalCalls": 298,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 5,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        358,
+        400
+      ],
+      "shots": 18,
+      "hits": 9,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 168,
+      "totalCalls": 210,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 6,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 36,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        341
+      ],
+      "shots": 28,
+      "hits": 16,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 256,
+      "totalCalls": 298,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 7,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 21,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 24,
+      "hits": 8,
+      "rearHits": 4,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 224,
+      "totalCalls": 266,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 8,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 17,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 17,
+      "hits": 12,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 155,
+      "totalCalls": 197,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 9,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 27,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 32,
+      "hits": 15,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 277,
+      "totalCalls": 319,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 10,
+      "tactic": "defence",
+      "outcome": "A",
+      "turns": 26,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        312,
+        400
+      ],
+      "shots": 23,
+      "hits": 16,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 200,
+      "totalCalls": 242,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 1,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 27,
+      "losses": [
+        2,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 27,
+      "hits": 18,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 4,
+      "assemblyCalls": 42,
+      "turnCalls": 194,
+      "totalCalls": 236,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 2,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 20,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        209
+      ],
+      "shots": 30,
+      "hits": 16,
+      "rearHits": 2,
+      "systems": 1,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 180,
+      "totalCalls": 222,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 3,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 36,
+      "losses": [
+        2,
+        6
+      ],
+      "carrierHull": [
+        344,
+        400
+      ],
+      "shots": 29,
+      "hits": 16,
+      "rearHits": 4,
+      "systems": 1,
+      "disabled": 0,
+      "assemblyCalls": 42,
+      "turnCalls": 277,
+      "totalCalls": 319,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 4,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 27,
+      "losses": [
+        2,
+        6
+      ],
+      "carrierHull": [
+        400,
+        232
+      ],
+      "shots": 35,
+      "hits": 18,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 248,
+      "totalCalls": 290,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 5,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 10,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 19,
+      "hits": 11,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 98,
+      "totalCalls": 140,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 6,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 18,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        209
+      ],
+      "shots": 24,
+      "hits": 17,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 160,
+      "totalCalls": 202,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 7,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 37,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        274
+      ],
+      "shots": 33,
+      "hits": 16,
+      "rearHits": 6,
+      "systems": 1,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 255,
+      "totalCalls": 297,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 8,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 17,
+      "hits": 11,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 138,
+      "totalCalls": 180,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 9,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 15,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        185
+      ],
+      "shots": 26,
+      "hits": 13,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 161,
+      "totalCalls": 203,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 10,
+      "tactic": "balanced",
+      "outcome": "A",
+      "turns": 18,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        229
+      ],
+      "shots": 21,
+      "hits": 14,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 141,
+      "totalCalls": 183,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 1,
+      "tactic": "commander",
+      "outcome": "A",
+      "turns": 11,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        347
+      ],
+      "shots": 16,
+      "hits": 10,
+      "rearHits": 1,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 116,
+      "totalCalls": 158,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 2,
+      "tactic": "commander",
+      "outcome": "A",
+      "turns": 24,
+      "losses": [
+        1,
+        5
+      ],
+      "carrierHull": [
+        400,
+        0
+      ],
+      "shots": 35,
+      "hits": 21,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 210,
+      "totalCalls": 252,
+      "reason": {
+        "kind": "CarrierDestroyed",
+        "side": "B",
+        "text": "«Логово» уничтожен"
+      }
+    },
+    {
+      "seed": 3,
+      "tactic": "commander",
+      "outcome": "B",
+      "turns": 24,
+      "losses": [
+        4,
+        3
+      ],
+      "carrierHull": [
+        269,
+        400
+      ],
+      "shots": 25,
+      "hits": 16,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 200,
+      "totalCalls": 242,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "A",
+        "text": "у «Скиталец» не осталось дронов"
+      }
+    },
+    {
+      "seed": 4,
+      "tactic": "commander",
+      "outcome": "A",
+      "turns": 23,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        400,
+        215
+      ],
+      "shots": 25,
+      "hits": 14,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 4,
+      "assemblyCalls": 42,
+      "turnCalls": 177,
+      "totalCalls": 219,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 5,
+      "tactic": "commander",
+      "outcome": "A",
+      "turns": 19,
+      "losses": [
+        1,
+        6
+      ],
+      "carrierHull": [
+        320,
+        344
+      ],
+      "shots": 25,
+      "hits": 17,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 1,
+      "assemblyCalls": 42,
+      "turnCalls": 180,
+      "totalCalls": 222,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 6,
+      "tactic": "commander",
+      "outcome": "A",
+      "turns": 23,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        357,
+        187
+      ],
+      "shots": 27,
+      "hits": 15,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 166,
+      "totalCalls": 208,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 7,
+      "tactic": "commander",
+      "outcome": "B",
+      "turns": 41,
+      "losses": [
+        4,
+        4
+      ],
+      "carrierHull": [
+        400,
+        400
+      ],
+      "shots": 40,
+      "hits": 16,
+      "rearHits": 11,
+      "systems": 2,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 353,
+      "totalCalls": 395,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "A",
+        "text": "у «Скиталец» не осталось дронов"
+      }
+    },
+    {
+      "seed": 8,
+      "tactic": "commander",
+      "outcome": "A",
+      "turns": 31,
+      "losses": [
+        2,
+        5
+      ],
+      "carrierHull": [
+        400,
+        0
+      ],
+      "shots": 34,
+      "hits": 23,
+      "rearHits": 3,
+      "systems": 0,
+      "disabled": 3,
+      "assemblyCalls": 42,
+      "turnCalls": 236,
+      "totalCalls": 278,
+      "reason": {
+        "kind": "CarrierDestroyed",
+        "side": "B",
+        "text": "«Логово» уничтожен"
+      }
+    },
+    {
+      "seed": 9,
+      "tactic": "commander",
+      "outcome": "A",
+      "turns": 32,
+      "losses": [
+        3,
+        6
+      ],
+      "carrierHull": [
+        400,
+        348
+      ],
+      "shots": 31,
+      "hits": 14,
+      "rearHits": 5,
+      "systems": 0,
+      "disabled": 7,
+      "assemblyCalls": 42,
+      "turnCalls": 270,
+      "totalCalls": 312,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    },
+    {
+      "seed": 10,
+      "tactic": "commander",
+      "outcome": "A",
+      "turns": 18,
+      "losses": [
+        0,
+        6
+      ],
+      "carrierHull": [
+        400,
+        117
+      ],
+      "shots": 26,
+      "hits": 16,
+      "rearHits": 2,
+      "systems": 0,
+      "disabled": 2,
+      "assemblyCalls": 42,
+      "turnCalls": 141,
+      "totalCalls": 183,
+      "reason": {
+        "kind": "NoDrones",
+        "side": "B",
+        "text": "у «Логово» не осталось дронов"
+      }
+    }
+  ]
+}

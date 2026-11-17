@@ -13,7 +13,7 @@ public class ApproachCameraIntegrationTests
     [Fact]
     public async Task Approach_can_be_retargeted_after_pan_with_player_offscreen()
     {
-        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        var root = new DirectoryInfo(TestPaths.Repository);
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "DeepSpaceSaga.sln"))) root = root.Parent;
         using var engine = SimulationEngine.CreateFromSettingsFile(Path.Combine(root!.FullName, "src/DeepSpaceSaga.Client/Settings.json"));
         engine.SetSpeed(SimulationSpeed.Speed0);
@@ -95,7 +95,7 @@ public class ApproachCameraIntegrationTests
     [Fact]
     public void Approach_repeated_in_full_scenario_after_speed100_sized_steps()
     {
-        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        var root = new DirectoryInfo(TestPaths.Repository);
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "DeepSpaceSaga.sln"))) root = root.Parent;
         using var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root!.FullName, "src/DeepSpaceSaga.Client/Settings.json"), Path.Combine(root.FullName, "src/DeepSpaceSaga.Client/Scenarios/Default_500/scenario.json"));
         engine.SetSpeed(SimulationSpeed.Speed0);
@@ -114,7 +114,7 @@ public class ApproachCameraIntegrationTests
     [Fact]
     public async Task Long_approach_survives_delayed_speed100_snapshot_without_event_overflow()
     {
-        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        var root = new DirectoryInfo(TestPaths.Repository);
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "DeepSpaceSaga.sln"))) root = root.Parent;
         using var engine = SimulationEngine.CreateFromSettingsFile(Path.Combine(root!.FullName, "src/DeepSpaceSaga.Client/Settings.json"));
         engine.SetSpeed(SimulationSpeed.Speed0);

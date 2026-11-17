@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class Ep0029Us0001Tk0003Tests
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private static GameDataRegistry Load() => EngineContentLoader.LoadRegistryFromSettingsFile(
         Path.Combine(ClientRoot, "Settings.json"), out _, out _);

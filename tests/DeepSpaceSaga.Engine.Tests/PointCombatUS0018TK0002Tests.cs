@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class PointCombatUS0018TK0002Tests
 {
     internal const string Player = "SPC-0001", Enemy = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
-    private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+    private static readonly string Root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client"));
     internal static GameDataRegistry Registry() => EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
     internal static SimulationEngine Create(ulong seed = 42)
     {

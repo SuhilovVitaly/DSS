@@ -51,12 +51,25 @@ internal sealed partial class TacticalBattle
         var defeated = new List<string>();
         foreach (string side in TacticalBattleConstants.SideOrder)
         {
-            var carrier = Carrier(side);
-            TacticalOutcomeReason? reason = carrier.Hull <= 0 ? new TacticalCarrierDestroyed(carrier.Id)
-                : !ActiveDrones(side).Any() ? new TacticalNoDrones(carrier.Id) : null;
-            if (reason is null) continue;
-            defeated.Add(side);
-            reasons.Add(reason);
+            var carriers = Carriers.Where(c => c.Side == side).ToArray();
+            if (carriers.All(c => !c.IsActive))
+            {
+                // Loss of command disables surviving drones; this is not hull damage or pilot death.
+                foreach (var drone in Drones.Where(d => d.Side == side && d.Status != TacticalDroneStatus.Destroyed))
+                {
+                    if (drone.Status == TacticalDroneStatus.Air) Statistics.Disabled++;
+                    drone.Status = TacticalDroneStatus.Disabled;
+                    drone.Speed = 0;
+                    drone.Order = new(0, 0);
+                }
+                defeated.Add(side);
+                reasons.AddRange(carriers.Select(c => new TacticalCarrierDestroyed(c.Id)));
+            }
+            else if (!ActiveDrones(side).Any())
+            {
+                defeated.Add(side);
+                reasons.AddRange(carriers.Where(c => c.IsActive).Select(c => new TacticalNoDrones(c.Id)));
+            }
         }
         if (defeated.Count == 0)
         {

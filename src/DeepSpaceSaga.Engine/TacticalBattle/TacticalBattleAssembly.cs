@@ -15,7 +15,7 @@ internal sealed partial class TacticalBattle
         IReadOnlyDictionary<string, string>? tactics = null, IReadOnlyDictionary<string, TacticalLoadoutOverride>? loadouts = null)
     {
         scenarioId ??= catalog.Scenarios.Entries[0].Id;
-        var scenario = catalog.Scenarios[scenarioId];
+        var scenario = TacticalBattleContentLoader.NormalizeScenario(catalog.Scenarios[scenarioId]);
         var random = new Mulberry32(seed);
         var drones = ImmutableArray.CreateBuilder<TacticalDrone>();
         var carriers = ImmutableArray.CreateBuilder<TacticalCarrier>();
@@ -25,11 +25,13 @@ internal sealed partial class TacticalBattle
             string tactic = tactics is not null && tactics.TryGetValue(side.Id, out var selected) ? selected : side.Tactic;
             _ = catalog.Ai.Tactics[tactic];
             selectedTactics.Add(tactic);
-            var carrierStart = side.Carrier;
-            var carrierLayout = catalog.Layouts[carrierStart.Layout];
             var carrierFrame = catalog.Frames[TacticalBattleConstants.CarrierFrame];
-            carriers.Add(new(carrierStart.Id, side.Id, new(carrierStart.X, carrierStart.Y, carrierStart.Course),
-                carrierFrame.Hull, catalog.Armor[carrierLayout.Armor].Armor, carrierFrame.Maneuver!.Value));
+            foreach (var carrierStart in side.CarrierGroup)
+            {
+                var carrierLayout = catalog.Layouts[carrierStart.Layout];
+                carriers.Add(new(carrierStart.Id, side.Id, new(carrierStart.X, carrierStart.Y, carrierStart.Course),
+                    carrierFrame.Hull, catalog.Armor[carrierLayout.Armor].Armor, carrierFrame.Maneuver!.Value));
+            }
             foreach (var start in side.Drones)
             {
                 var layout = catalog.Layouts[start.Layout];
@@ -69,6 +71,7 @@ internal sealed partial class TacticalBattle
                     AmmoCurrent = ammo,
                     AmmoCapacity = frame.AmmoCapacity,
                     AmmoUnitMassKg = 1.0, // A-02 technical torpedo unit mass
+                    OriginCarrierId = start.OriginCarrierId,
                 });
             }
         }

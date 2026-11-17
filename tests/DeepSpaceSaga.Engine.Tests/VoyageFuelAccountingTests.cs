@@ -38,7 +38,7 @@ public sealed class VoyageFuelAccountingTests
     [InlineData(10L, "module.storage", false)]
     public void Engine_efficiency_accepts_positive_optional_value_and_rejects_invalid_owner_or_value(long? efficiency, string owner, bool valid)
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        string root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
         var content = JsonNode.Parse(File.ReadAllText(Path.Combine(root, "Data", "Modules", "Engine", "modules-engine.json")))!;
         var module = content["moduleImplementations"]![0]!;
         module["type"] = owner;

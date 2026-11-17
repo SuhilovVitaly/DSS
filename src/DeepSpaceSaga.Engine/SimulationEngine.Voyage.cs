@@ -18,6 +18,22 @@ public sealed partial class SimulationEngine
                 ? new VoyageStateData(VoyagePhases.Docked) : null;
         if (state.TradingMap is null || ship is null)
             throw new ScenarioException("voyageState requires a materialized map and player ship.");
+        if (saved.ThreatRoute is { } selected)
+        {
+            var option = selected.Option;
+            if (option is null || !double.IsFinite(selected.OriginX) || !double.IsFinite(selected.OriginY) ||
+                option.RouteId != (option.IsDetour ? "detour:" : "direct:") + option.DestinationStationId ||
+                option.Waypoints.IsDefaultOrEmpty || option.Waypoints.Length != (option.IsDetour ? 3 : 1) ||
+                option.Waypoints.Any(p => p is null || !double.IsFinite(p.X) || !double.IsFinite(p.Y)) ||
+                selected.NextWaypoint < 0 || selected.NextWaypoint > option.Waypoints.Length ||
+                option.FuelRequiredKg is null or < 0 || option.EtaGameTimeMs < 0 || option.UnavailableReason is not null ||
+                !double.IsFinite(option.KnownExposureWorldUnits) || option.KnownExposureWorldUnits < 0 ||
+                option.KnownRiskBand is not ("unknown" or "exposed" or "lower") ||
+                !objects.Any(o => o.InitialMotion.ObjectId == option.DestinationStationId && o.ObjectType == SpaceObjectType.Station) ||
+                saved.Phase != VoyagePhases.Docked && saved.DestinationStationObjectId != option.DestinationStationId ||
+                saved.Phase == VoyagePhases.Docked && (selected.NextWaypoint != 0 || selected.NavigationStarted))
+                throw new ScenarioException("Invalid saved threat route.");
+        }
         if (saved.BlockReasonCode is not null && string.IsNullOrWhiteSpace(saved.BlockReasonCode))
             throw new ScenarioException("voyageState.blockReasonCode is invalid.");
         bool hasTerms = saved.TravelEstimateGameTimeMs is not null || saved.FuelMultiplierPermille is not null ||
@@ -149,6 +165,8 @@ public sealed partial class SimulationEngine
         double dx = targetMotion.X - shipMotion.X;
         double dy = targetMotion.Y - shipMotion.Y;
         double remaining = Math.Sqrt(dx * dx + dy * dy);
+        if (state.ThreatRoute is { } selected && !selected.Suspended)
+            remaining = ThreatPathLength(new(shipMotion.X, shipMotion.Y), selected.Option.Waypoints.Skip(selected.NextWaypoint));
         int progress = (int)Math.Round(Math.Clamp(1 - remaining / state.InitialDistanceWorldUnits, 0, 1) * 1000,
             MidpointRounding.AwayFromZero);
         _voyageState = state with

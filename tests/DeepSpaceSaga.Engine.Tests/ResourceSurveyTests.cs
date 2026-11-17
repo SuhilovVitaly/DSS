@@ -15,8 +15,7 @@ public sealed class ResourceSurveyTests
     private const string Scanner = "MOD-PLAYER-SCANNER-01";
     private const string EngineModule = "MOD-PLAYER-ENGINE-01";
     private const string Stream = "ResourceSurvey:" + Player + ":" + Scanner;
-    private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-        "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private static readonly Lazy<GameDataRegistry> Registry = new(() =>
         EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"), out _, out _));
 

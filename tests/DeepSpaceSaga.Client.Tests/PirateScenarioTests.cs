@@ -15,7 +15,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class PirateScenarioTests
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private static readonly string SettingsPath = Path.Combine(ClientRoot, "Settings.json");
     private static readonly string ScenarioPath = Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json");
     private static SimulationEngine Create() => EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, ScenarioPath);

@@ -5,7 +5,7 @@ ticket: EP-0035-US-0016-TK-0002-durable-storage
 title: Durable границы запуска и завершения боя
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: local-client
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0016-TK-0001-engine-checkpoint]
@@ -13,7 +13,7 @@ files_touched: 5
 serves: [AC01, AC02, AC03, AC04]
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Durable границы запуска и завершения боя
 
@@ -50,3 +50,8 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 После завершённого EP35 боя (win/loss, включая Draw и Timeout/SeriesTurnCap) участвовавшая pirate group становится retired: исчезает с карты, не патрулирует, не обнаруживает игрока и не может начать новый encounter. Это логическое завершение участия группы, не искусственное уничтожение: actual carrier hull/ammo и drone/pilot statuses сохраняются в settlement/history. Соседние группы не меняются; для них обычный перехват на resume сохраняется без иммунитета.
 Retirement входит в exactly-once settlement receipt и durable finished checkpoint. До завершённого settlement, включая pending battle/recovery или отказ записи результата, navigable world не публикуется; повтор callback/Load не создаёт группу заново и не повторяет последствия. Continue pending по D-35-47 восстанавливает тот же бой с начала; retirement не служит выходом из незавершённого боя. A-35-20 и остаток G-35-15 о surviving world group закрыты этим решением; no-respawn сохраняется.
 Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHullAndPilotStateNotFabricated; RetiredGroupNeverCapturesAgain; NeighborGroupsRemainActive; RetirementAndReceiptExactlyOnce; PendingRecoveryDoesNotRetireEarly; FinishedCheckpointRestoresRetirement. UI использует authoritative retired state, а не локальное скрытие маркера.
+Execution scope: reuse _saveGate and atomic replace with explicit capture/after-write hooks; Begin executes under the save gate only after pending rename. Cache pending checkpoint against queued autosave fallback. Extend Engine WorldEncounterBattle/TrySetSpeed/command guards with transient storage-pending gate for finished write failure. Finished destroyed carrier must overwrite continuation with terminal receipt instead of retaining playable pending battle. Fault tests cover before_replace start and finished write/retry.
+
+Scope also guards alternate StartTacticalBattle while finished storage is pending. Build PASS us16-tk2-build.log; tests deferred to US16 story boundary. No-save legacy adapter clears transient storage gate; real campaign Begin requires configured save directory.
+
+Independent review P1: direct Rearm bypassed captured/storage-pending gates and could mutate ammo between pending capture and Begin or failed finished-write retry. Expand SimulationEngine.Rearm.cs guard and fault test with suspended temp write; assert rejection/unchanged wing and hold. Story first boundary Engine5/5 Client21/21 PASS; regression rerun follows correction.

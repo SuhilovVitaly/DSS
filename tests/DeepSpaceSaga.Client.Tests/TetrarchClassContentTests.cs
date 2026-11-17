@@ -8,7 +8,7 @@ public sealed class TetrarchClassContentTests
     private const string ClassId = "ship.tetrarch";
     private const string ClassPath = "Data/Ships/ship-classes.json";
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private static ShipClassDefinition Tetrarch(GameDataRegistry registry) =>
         registry.ShipClasses.GetDefinition(registry.ShipClasses.GetIndex(ClassId));

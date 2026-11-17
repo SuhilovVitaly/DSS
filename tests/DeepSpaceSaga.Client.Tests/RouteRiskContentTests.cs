@@ -15,8 +15,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class RouteRiskContentTests
 {
     private const long Hour = GameCalendar.HourMs;
-    private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-        "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string Root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private static readonly GameDataRegistry Registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
     private static ScenarioFile Source(string name = "Docked") => ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", name, "scenario.json"));
 

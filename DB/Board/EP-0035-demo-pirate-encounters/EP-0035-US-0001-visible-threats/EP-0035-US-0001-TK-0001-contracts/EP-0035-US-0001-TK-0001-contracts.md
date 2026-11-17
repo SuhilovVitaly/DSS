@@ -5,7 +5,7 @@ ticket: EP-0035-US-0001-TK-0001-contracts
 title: Контракт: Наблюдаемая угроза на маршруте
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0032-US-0001-TK-0003-client, EP-0032-US-0004-TK-0004-client, EP-0035-US-0007-TK-0001-contracts]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Контракт: Наблюдаемая угроза на маршруте
 
@@ -170,3 +170,6 @@ G-35-18 CLOSED D-35-45: earliest continuous capture, deterministic tie, посл
 Остаток G-35-09/15: abnormal/partial battle outcomes и корректное world continuation без новой механики тактического отступления. Normal single capture/report/continue уже D-35-42.
 A-35-18 стартовая позиция игрока отдельно от станции требует проверки actual scenario; отдельный clearance не утверждён. При обычном старте у start station800 уже покрывает sensor separation.
 Прочие продуктовые decisions (radii,skill/ETA,equipment,spawn count/weights/norespawn,operator,fog,lifetime,batching) закрыты. Routine module physical stats/конкретные patrol waypoint coordinates остаются implementation/balance деталями; narrative deferred внеscope.
+
+## Execution 2026-11-17
+Implemented immutable observed group positions/velocities/time, sensor visibility and approximate total; private patrol/RNG/loadouts absent. Campaign encounter section defaults to empty; no unsupported gameplay command invented for read-only observation. Release Contracts.Tests build PASS0 warnings/errors, format/diff PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us1-tk1-build.log. Tests authored, NOT RUN until US1 boundary.

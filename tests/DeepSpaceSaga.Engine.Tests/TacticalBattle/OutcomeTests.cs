@@ -33,7 +33,13 @@ public sealed class OutcomeTests
         Assert.Equal(TacticalOutcomeKind.Draw, result.Kind);
         Assert.IsType<TacticalCarrierDestroyed>(result.Reasons[0]);
         Assert.Equal("Логово", Assert.IsType<TacticalNoDrones>(result.Reasons[1]).CarrierId);
-        Assert.Equal(new[] { 0, 6 }, result.Losses);
+        Assert.Equal(new[] { 4, 6 }, result.Losses);
+        Assert.All(battle.Drones.Where(d => d.Side == "A"), d =>
+        {
+            Assert.Equal(TacticalDroneStatus.Disabled, d.Status);
+            Assert.Equal(0, d.Speed);
+            Assert.True(d.Hull > 0);
+        });
         Assert.Equal(TacticalTurnPhase.Complete, battle.Phase);
     }
 

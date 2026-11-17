@@ -5,7 +5,7 @@ ticket: EP-0035-US-0011-TK-0004-signature-content
 title: Логово и Танкред как профили демо
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0011-TK-0003-medium-content]
@@ -15,7 +15,7 @@ created: 2026-11-17T11:37:31Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Логово и Танкред как профили демо
 
@@ -144,3 +144,7 @@ Stable ticket EP-0035-US-0011-TK-0003-medium-content сохраняет исто
 G-35-07 equipment pool/weights CLOSED D-35-39; G-35-08 CLOSED D-35-38. Schema/content валидируют exact IDs и ссылки, runtime использует seeded draws class+equipment per slot, сохраняет per-carrier origin. Hidden loadout не попадает в сенсорный доклад; actual materialization timing/persistence прежние D/A.
 Tests NOT RUN: ExactFourAllowedLayoutIds; ClassThenWeapon_IndependentDeterministicDraws; EachSlotUsesItsOwnDraws; LightOneShield_HeavyTwoShields; ExistingEquipmentReferencesValid; AllSameLayoutAllowed; Totals6_10_12Unchanged; PublicReport_NoLayoutDisclosure. Проверять deterministic RNG mapping, не случайные observed frequency.
 Debug override lifetime CLOSED D-35-40.
+
+
+## Execution 2026-11-17
+Profiles/pool supplied by US1-TK2 to keep intermediate content loadable. Added RU/EN carrier names and single approximate total template, no classes/equipment. Matching tests in Engine.Tests use real content loader and locale JSON; scope adjusted accordingly. Build PASS0 warnings/errors; diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us11-tk4-build.log. Tests NOT RUN until US11 boundary.

@@ -69,7 +69,8 @@ public sealed record CrewMemberSnapshot(
     CrewRole? Role = null,
     int Accuracy = 0,
     int Maneuver = 0,
-    int Initiative = 0);
+    int Initiative = 0,
+    int SensorRangeBonusPercent = 0);
 
 /// <summary>
 /// One owned drone of the player's persistent wing, placed at a unique hangar slot.

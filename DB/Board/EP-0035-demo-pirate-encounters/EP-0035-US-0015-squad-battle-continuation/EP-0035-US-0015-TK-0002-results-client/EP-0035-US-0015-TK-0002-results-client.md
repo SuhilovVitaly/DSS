@@ -4,7 +4,7 @@ story: EP-0035-US-0015-squad-battle-continuation
 ticket: EP-0035-US-0015-TK-0002-results-client
 title: Результаты по всем носителям
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0015-TK-0001-battle-client]
@@ -14,7 +14,7 @@ created: 2026-11-17
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Результаты по всем носителям
 
@@ -88,3 +88,14 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 После завершённого EP35 боя (win/loss, включая Draw и Timeout/SeriesTurnCap) участвовавшая pirate group становится retired: исчезает с карты, не патрулирует, не обнаруживает игрока и не может начать новый encounter. Это логическое завершение участия группы, не искусственное уничтожение: actual carrier hull/ammo и drone/pilot statuses сохраняются в settlement/history. Соседние группы не меняются; для них обычный перехват на resume сохраняется без иммунитета.
 Retirement входит в exactly-once settlement receipt и durable finished checkpoint. До завершённого settlement, включая pending battle/recovery или отказ записи результата, navigable world не публикуется; повтор callback/Load не создаёт группу заново и не повторяет последствия. Continue pending по D-35-47 восстанавливает тот же бой с начала; retirement не служит выходом из незавершённого боя. A-35-20 и остаток G-35-15 о surviving world group закрыты этим решением; no-respawn сохраняется.
 Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHullAndPilotStateNotFabricated; RetiredGroupNeverCapturesAgain; NeighborGroupsRemainActive; RetirementAndReceiptExactlyOnce; PendingRecoveryDoesNotRetireEarly; FinishedCheckpointRestoresRetirement. UI использует authoritative retired state, а не локальное скрытие маркера.
+
+Execution scope: PhasePanel.Outcome.cs adds separate actual carrier hull rows and campaign Draw/Timeout defeat label, with single return action; expand TacticalBattleFlow/Screen/Overlay for no campaign abort/new battle and matching tests. Engine settlement mapping remains TK3; no client damage or reward calculation.
+
+Build PASS us15-tk2-build.log. Tests deferred until US15 boundary. Separate hull rows retain actual damage; campaign result offers no new battle, Draw/Timeout display defeat.
+
+Story regression correction: existing Ep0019Scenes temporary content copied only the legacy starter manifest, while current default scenario uses demo-starter-carrier.json. Extend test fixture to copy both shipped manifests. This retains actual current scenario ownership; no production fallback. First run lacked DSS_VALIDATION_ROOT; rerun with absolute root exposed this missing fixture file. Engine5/5 PASS; Client18/26 with8 fixture failures; independent review no actionable defects.
+Follow-up fixture dependency: current Demo also resolves Data/Demo relative to settings root; copy shipped Demo JSON alongside manifests. Prior rerun remained18/26 due missing cluster.json, no gameplay assertion reached in8 failures.
+Demo content validation also requires actual recruitment portraits; isolated fixture copies precisely the declared portraits, retaining validation rather than disabling it. Previous rerun failed before scene creation on missing recruitment portrait.
+Last scene regression25/26: Own_evaded_drone_card_shows_evasion unconditionally pressed Enter after zero-projectile salvo, thereby dismissing already-visible results. Adjust only skip-flight input when InFlight; keep exact evasion chip/status/log assertions.
+
+Full-suite outcome text diagnostic: legacy scene expects five enemy losses after carrier destruction, while D35 disables all surviving drones. Retain existing exact reference assertions and add explicit missing-text diagnostic to determine actual differing value before correcting expected result.

@@ -66,7 +66,7 @@ public sealed class DebugTuningPanelInputTests
         Directory.CreateDirectory(directory);
         try
         {
-            string client = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+            string client = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client"));
             using var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(client, "Settings.json"), Path.Combine(client, "Scenarios/PlayerShipOnly/scenario.json"));
             var snapshot = engine.CaptureSnapshotForTests();
             snapshot = snapshot with { DebugTuning = snapshot.DebugTuning! with { StartupError = "invalid startup file" } };

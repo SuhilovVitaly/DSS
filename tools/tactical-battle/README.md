@@ -7,7 +7,7 @@ pwsh -NoProfile -File tools/tactical-battle/Export-Content.ps1
 pwsh -NoProfile -File tools/tactical-battle/Export-Content.ps1 -Check
 ```
 
-Base fields come from the marked Markdown tables in `VData/Planning/V4.0/Data`.
+Base fields historically came from marked Markdown tables in `VData/Planning/V4.0/Data`. That source tree is absent in the current checkout; legacy export/Check requires restoring it. Runtime JSON remains shipped content. Historical comparison JSON used by Engine tests is retained in `tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/Fixtures/V4`; it is not an oracle for current multi-carrier rules.
 Initiative alone comes from runtime pilots.json, joined by exact ordinal pilot ID.
 `-PilotInitiativeFile <absolute-path>` selects an isolated initiative source.
 All initiative entries and ID coverage are strictly validated before any write.

@@ -32,6 +32,43 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public StartTacticalBattleRequest? LastStart { get; private set; }
     /// <summary>Client-only tutorial mode: mid-battle exit leads to the main menu and a finished battle only returns to the map.</summary>
     public bool IsTutorial { get; init; }
+    public WorldEncounterSnapshot? CampaignEncounter { get; init; }
+    public bool IsCampaign => CampaignEncounter is not null;
+    internal bool AdoptRecoveredEncounter(TacticalBattleSnapshot state)
+    {
+        if (CampaignEncounter?.Binding.BattleId != state.BattleId) return false;
+        Volatile.Write(ref _observed, new(state, state));
+        return true;
+    }
+    public async Task<bool> StartEncounterAsync()
+    {
+        if (CampaignEncounter is null || Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;
+        try
+        {
+            if (await Session.GetTacticalBattleStateAsync() is { } recovered && AdoptRecoveredEncounter(recovered)) return true;
+            var current = Session.DemoCampaign;
+            var response = await Session.ExecuteDemoCampaignAsync(new BeginEncounterBattleCommand(
+                NewIdentity("encounter"), current?.Revision ?? 0, CampaignEncounter.Binding.EncounterId));
+            var state = await Session.GetTacticalBattleStateAsync();
+            if (state is not null && state.BattleId == CampaignEncounter.Binding.BattleId)
+            {
+                Volatile.Write(ref _observed, new(state, state));
+                Volatile.Write(ref _error, "");
+                return true;
+            }
+            string key = "Demo.Encounter." + response.Reason;
+            string reason = Localization.Get(key);
+            if (reason == key) reason = Localization.Get("Demo.Encounter.Unavailable");
+            Volatile.Write(ref _error, string.Format(Localization.Get("Demo.Encounter.Refused"), reason));
+            return false;
+        }
+        catch (Exception)
+        {
+            Volatile.Write(ref _error, Localization.Get("Demo.Encounter.Unavailable"));
+            return false;
+        }
+        finally { Volatile.Write(ref _pending, 0); }
+    }
     public void BeginLoadOptions() => OptionsTask ??= LoadOptionsAsync();
     private async Task LoadOptionsAsync()
     {
@@ -71,6 +108,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {
+        if (IsCampaign && !CheckpointPending && State?.Phase != TacticalBattlePhase.Over) return false;
         // A mapped Unavailable after the engine committed means the engine no longer has a battle
         // but the continuation checkpoint was not written. Retry only that pending BattleId: the
         // LocalClient cache replays the accepted settlement receipt and writes the file without
@@ -343,6 +381,7 @@ public class TacticalBattleModalScreen : IScreen
         if (Flow.Pending) return ScreenEvent.None;
         if (key == Key.Escape)
         {
+            if (Flow.IsCampaign && (IsSetup || Flow.State?.Phase != TacticalBattlePhase.Over)) return ScreenEvent.None;
             if (ConfirmExit) ConfirmExit = false;
             else if (IsSetup) return ScreenEvent.CloseTacticalBattle;
             else ConfirmExit = true;

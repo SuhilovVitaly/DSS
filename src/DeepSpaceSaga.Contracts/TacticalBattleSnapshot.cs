@@ -62,6 +62,8 @@ public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKi
     public string? SourceDroneId { get; init; }
     /// <summary>World ship id this unit originates from (carrier or drone).</summary>
     public string? SourceShipId { get; init; }
+    /// <summary>Specific carrier identity for every drone, including members of one enemy side.</summary>
+    public string? OriginCarrierId { get; init; }
     /// <summary>Remaining torpedoes. Null for legacy payloads = unknown, not infinite; 0 is an empty magazine.</summary>
     public int? AmmoCurrent { get; init; }
     public int? AmmoCapacity { get; init; }

@@ -646,7 +646,7 @@ public class TradeScreenTests
 
         internal RealTradeFixture(string marketProfile = "market.industrial")
         {
-            string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+            string root = Path.GetFullPath(Path.Combine(TestPaths.Repository));
             string client = Path.Combine(root, "src", "DeepSpaceSaga.Client");
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(client, "Settings.json"), out _, out _);
             var source = ScenarioLoader.LoadFromFile(Path.Combine(client, "Scenarios", "Default", "scenario.json"));

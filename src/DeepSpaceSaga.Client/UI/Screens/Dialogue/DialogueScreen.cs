@@ -122,10 +122,23 @@ internal sealed class DialogueScreen : IScreen
     }
     private string Text(string key)
     {
+        if (key == "Demo.SensorReport.Intro" && _state.Parameters.TryGetValue("sensorBatchId", out var id) &&
+            _buffer.Latest?.Snapshot.DemoCampaign?.PendingSensorReport is { } batch && batch.BatchId == id)
+            return SensorReportText(batch);
         string text = Localization.Get(key);
         foreach (var (name, value) in _state.Parameters) text = text.Replace("{" + name + "}", value, StringComparison.Ordinal);
         return text;
     }
+    internal static string SensorReportText(SensorContactReportBatch batch) =>
+        Localization.Get("Demo.SensorReport.Intro") + "\n\n" + string.Join("\n\n", batch.Reports.Select(report =>
+        {
+            string signatures = string.Join(" + ", report.SignatureTypeIds.Select(type =>
+                Localization.Get(type == PirateSignatureTypes.Lair ? "Demo.Pirate.Lair" : "Demo.Pirate.Tancred")));
+            string eta = report.EtaRealSecondsAt1X is { } seconds ? string.Format(Localization.Get("Demo.SensorReport.Eta"), seconds)
+                : Localization.Get("Demo.SensorReport.NoEta");
+            return string.Format(Localization.Get("Demo.SensorReport.Contact"), signatures, report.BearingDegrees,
+                report.RangeWorldUnits / 10, report.ApproximateDroneCount, eta);
+        })) + "\n\n" + Localization.Get("Demo.SensorReport.Footer");
     private static string ErrorText(string error)
     {
         string key = "Dialogue.Error." + error, text = Localization.Get(key);
@@ -139,13 +152,15 @@ internal sealed class DialogueScreen : IScreen
         TabletopStyle.Panel(canvas, panel);
         canvas.DrawText(Localization.Get("Dialogue.Title"), panel.MidX, panel.Top + 60, MenuStyle.TextTitle);
         var captain = _buffer.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == _buffer.Latest.Snapshot.PlayerShipObjectId);
-        string speakerPerson = _state.SpeakerRole == "Captain" && captain is not null ? captain.ObjectId :
+        bool sensorScript = _state.DialogueDefinitionId == "dialogue.sensor-pirate-contact" && _state.ParticipantId == "sensor-script";
+        string speakerPerson = _state.DialogueDefinitionId == "dialogue.sensor-pirate-contact" ? _state.ParticipantId :
+            _state.SpeakerRole == "Captain" && captain is not null ? captain.ObjectId :
             $"{_state.StationObjectId}/{_state.ParticipantId}/{_state.SpeakerRole}";
         var speakerKey = (_state.SpeakerPortraitImage, speakerPerson);
         if (_speakerKey != speakerKey)
         {
             _speakerPortrait?.Dispose(); _speakerKey = speakerKey;
-            _speakerPortrait = DialoguePortraitComposer.Compose(_state.SpeakerPortraitImage,
+            _speakerPortrait = sensorScript ? null : DialoguePortraitComposer.Compose(_state.SpeakerPortraitImage,
                 DialoguePortraitComposer.SexFor(_state.SpeakerPortraitImage, _state.SpeakerRole == "Captain" ? PersonSex.Male : PersonSex.Female), speakerPerson);
         }
         (string? Path, string Person)? captainKey = captain is null ? null : (captain.CaptainPortraitImage, captain.ObjectId);
@@ -155,7 +170,8 @@ internal sealed class DialogueScreen : IScreen
             if (captain is not null)
                 _captainPortrait = DialoguePortraitComposer.Compose(captain.CaptainPortraitImage, PersonSex.Male, captain.ObjectId);
         }
-        DrawPortrait(canvas, DialogueLayout.Operator(width, height), _speakerPortrait, _state.SpeakerDisplayName);
+        DrawPortrait(canvas, DialogueLayout.Operator(width, height), _speakerPortrait,
+            sensorScript ? Localization.Get("Demo.SensorReport.Script") : _state.SpeakerDisplayName);
         DrawPortrait(canvas, DialogueLayout.Captain(width, height), _captainPortrait, captain?.CaptainDisplayName);
         using var paint = new SKPaint { Color = MenuStyle.ColorText, TextSize = 18, Typeface = MenuStyle.TypefaceRegular, IsAntialias = true };
         var speech = SpeechField(panel);

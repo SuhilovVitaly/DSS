@@ -18,7 +18,7 @@ public sealed class PointCombatUS0002TK0003Tests
     [InlineData(true)]
     public void Tetrarch_has_dedicated_engine_and_basic_is_unchanged(bool deployed)
     {
-        string source = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        string source = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
         string root = deployed ? AppContext.BaseDirectory : source;
         const string canonical = "Data/Modules/Engine/modules-engine.json", candidate = "Data/CombatV3/Modules/Engine/modules-engine.json";
         bool staged = File.Exists(Path.Combine(source, candidate)); string relative = staged ? candidate : canonical;

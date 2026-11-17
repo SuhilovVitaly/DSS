@@ -25,6 +25,10 @@ internal interface IDebugCommand
 /// <summary>Window services available to console commands (implemented explicitly by <see cref="SkiaWindow"/>).</summary>
 internal interface IDebugConsoleHost
 {
+    Task<DebugCommandResult> ConfigureFogOfWarAsync(bool? enabled, CancellationToken cancellationToken) =>
+        Task.FromResult(DebugCommandResult.Error("Настройка демо недоступна"));
+    Task<DebugCommandResult> ConfigurePirateSquadChanceAsync(int? percent, CancellationToken cancellationToken) =>
+        Task.FromResult(DebugCommandResult.Error("Настройка демо недоступна"));
     GameSessionHandle? Session { get; }
     /// <summary>True while a screen transition holds the window transition lock.</summary>
     bool IsTransitionBusy { get; }

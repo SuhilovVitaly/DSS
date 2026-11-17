@@ -141,7 +141,8 @@ public sealed class BattleNavigationTests
         var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
         var request = battle.Flow.LastStart!;
         Assert.True(fixture.Engine.ExitTacticalBattle(new("TB-other-exit", battle.Flow.State!.BattleId)).Accepted);
-        var live = fixture.Engine.StartTacticalBattle(request with { CommandId = "TB-other-start" });
+        var live = fixture.Engine.StartTacticalBattle(request with { CommandId = "TB-other-start",
+            ExpectedCarrierRevision = fixture.Engine.CaptureSnapshot().CarrierOperations!.Revision });
         Assert.True(live.Accepted);
 
         await fixture.Route(ScreenEvent.CloseTacticalBattle);

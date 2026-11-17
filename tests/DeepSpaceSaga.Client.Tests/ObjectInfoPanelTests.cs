@@ -527,7 +527,7 @@ public class ObjectInfoPanelTests
     }
 
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private static string SettingsPath => Path.Combine(ClientRoot, "Settings.json");
     private static ObjectInfoPanelData FieldData(AsteroidSurveySnapshot survey) =>
         new("FIELD", "Secret field kind", 0, 90, "Asteroid", Survey: survey);

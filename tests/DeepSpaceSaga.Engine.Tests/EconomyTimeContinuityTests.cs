@@ -169,6 +169,7 @@ public class EconomyTimeContinuityTests
                     {
                         // This fixture replaces the ship with a synthetic cargo-only economy object.
                         ShipClassId = null,
+                        CarrierState = null,
                         Modules = o.ObjectType == "PlayerShip"
                         ? [new("cargo", "module.test-cargo", [new(4, 2)], 100, "On", "Ready", null,
                         rations > 0 ? [new("item.food-rations", rations, 0, ["produced"])] : [])] : [],
@@ -517,10 +518,12 @@ public class EconomyTimeContinuityTests
             SurplusThresholdPermille: 1500,
             BudgetRegenerationDivisorPerDay: 24));
 
+    private static string ContentRoot([System.Runtime.CompilerServices.CallerFilePath] string source = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(source)!, "../../src/DeepSpaceSaga.Client"));
+
     private static GameDataRegistry RealRegistry()
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        string root = ContentRoot();
         return EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
     }
 
@@ -1358,7 +1361,7 @@ public class EconomyTimeContinuityTests
     [InlineData("Undocked")]
     public void Shipping_explicit_cargo_is_preserved_bounded_and_validated_after_save_load(string scenarioName)
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+        string root = ContentRoot();
         string scenarioPath = Path.Combine(root, "Scenarios", scenarioName, "scenario.json");
         var authored = ScenarioLoader.LoadFromFile(scenarioPath).GameState.SpaceObjects.Single(obj => obj.ObjectId == "SPC-0002");
         using var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"), scenarioPath);

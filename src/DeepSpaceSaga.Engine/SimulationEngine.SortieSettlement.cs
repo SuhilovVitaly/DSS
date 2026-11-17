@@ -60,6 +60,7 @@ public sealed partial class SimulationEngine
                 updated.Add(owned);
 
             var pilotLosses = PreparePilotLosses(shipId, session.Id, wing, lostIds.ToArray());
+            var campaign = PrepareEncounterSettlement(pilotLosses.Campaign, session);
             long campaignRevision = checked(_demoCampaign.Revision + 1);
             long commitSequence = checked(_demoCampaign.CommitSequence + 1);
             _ownedWing[shipId] = updated.ToImmutable();
@@ -86,7 +87,7 @@ public sealed partial class SimulationEngine
                 ConsumedTorpedoes: consumedTorpedoes,
                 ExitKind: exitKind.ToString());
 
-            _demoCampaign = pilotLosses.Campaign with
+            _demoCampaign = campaign with
             {
                 Revision = campaignRevision,
                 CommitSequence = commitSequence

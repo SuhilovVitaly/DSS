@@ -208,8 +208,7 @@ public class MasterSeedTests
     private static string ResolveRealSettingsPath()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))

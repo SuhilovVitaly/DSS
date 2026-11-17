@@ -5,7 +5,7 @@ ticket: EP-0035-US-0004-TK-0001-encounter-roundtrip
 title: Непрерывность угроз и преследования
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0003-TK-0003-client]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Непрерывность угроз и преследования
 
@@ -171,3 +171,11 @@ Tests NOT RUN: checkpoint-before-start; same composition/playerstate/seed replay
 После завершённого EP35 боя (win/loss, включая Draw и Timeout/SeriesTurnCap) участвовавшая pirate group становится retired: исчезает с карты, не патрулирует, не обнаруживает игрока и не может начать новый encounter. Это логическое завершение участия группы, не искусственное уничтожение: actual carrier hull/ammo и drone/pilot statuses сохраняются в settlement/history. Соседние группы не меняются; для них обычный перехват на resume сохраняется без иммунитета.
 Retirement входит в exactly-once settlement receipt и durable finished checkpoint. До завершённого settlement, включая pending battle/recovery или отказ записи результата, navigable world не публикуется; повтор callback/Load не создаёт группу заново и не повторяет последствия. Continue pending по D-35-47 восстанавливает тот же бой с начала; retirement не служит выходом из незавершённого боя. A-35-20 и остаток G-35-15 о surviving world group закрыты этим решением; no-respawn сохраняется.
 Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHullAndPilotStateNotFabricated; RetiredGroupNeverCapturesAgain; NeighborGroupsRemainActive; RetirementAndReceiptExactlyOnce; PendingRecoveryDoesNotRetireEarly; FinishedCheckpointRestoresRetirement. UI использует authoritative retired state, а не локальное скрытие маркера.
+### Current implementation scope
+Existing retirement/recovery is supplied by US15/US16. This ticket adds saved private last-contact time and a separate player-observed location/time/velocity/pursuit sample, never the private AI target. Extend allowlist to PirateWorldData, PirateGroupsContracts, PirateComposition, MapEvasion and new engine observation partial plus tests. Validate finite fields and nonfuture times; absent additive fields remain compatible. Route comparison is owned by US5 and validated there. Tests run only after both US4 tickets.
+
+Implementation complete: persisted independent observations and private last-contact timestamps, strict additive validation, last-known projection without hidden motion. Five new phase/atomic-load cases plus US15/16 retirement/replay regressions queued for story boundary. Build and scoped formatting PASS; tests NOT RUN at ticket boundary. Evidence us4-tk1-build.log under designated resume run.
+
+Independent review found snapshot-dependent observation refresh. Fix refreshes established memory only at authoritative shared 250ms controller boundaries; initial acquisition still records immediately. Added one-shot vs 125ms snapshot partition regression after contact loss. Initial US4 Engine 95/95 PASS; this new regression remains queued until fix publication.
+
+Story validation after review correction: Engine 96/96 PASS (all Ep0035), Client 25/25 PASS (all Ep0035). Evidence us4-reviewed-tests.log and us4-Client-tests.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Route/cargo/passenger exposure acceptance remains owned by US5; native owner gate NOT RUN.

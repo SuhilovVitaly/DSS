@@ -6,8 +6,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class EngineCategoryDispatchTests
 {
-    private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-        "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     [Fact]
     public void Basic_engine_six_kms()

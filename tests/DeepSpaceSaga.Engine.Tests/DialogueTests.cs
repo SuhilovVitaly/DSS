@@ -12,11 +12,12 @@ public class DialogueTests
     {
         get
         {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            var dir = new DirectoryInfo(Path.GetDirectoryName(SourceFile())!);
             while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) dir = dir.Parent;
             return Path.Combine(dir!.FullName, "src/DeepSpaceSaga.Client/Data/Dialogues");
         }
     }
+    private static string SourceFile([System.Runtime.CompilerServices.CallerFilePath] string source = "") => source;
     internal static AuthoritativeSnapshot Choose(SimulationEngine engine, string choice, string? id = null, long time = 0)
     {
         var active = engine.CaptureSnapshotForTests(time).ActiveDialogue!;

@@ -19,7 +19,7 @@ public sealed class Ep0029Us0013Tk0003Tests
     private const string ManifestReference = "Data/Ships/starter-carrier.json";
 
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
     private static string TutorialPath => Path.Combine(AppContext.BaseDirectory, "Scenarios", "Tutorial", "scenario.json");
@@ -136,10 +136,13 @@ public sealed class Ep0029Us0013Tk0003Tests
         Assert.Equal(24, hullCells.Distinct().Count());
 
         var modules = manifest.RootElement.GetProperty("modules").EnumerateArray().ToArray();
-        Assert.Equal(9, modules.Length);
+        Assert.Equal(10, modules.Length);
         var occupied = modules.SelectMany(module => module.GetProperty("occupiedCells").EnumerateArray()
             .Select(cell => (X: cell.GetProperty("x").GetInt32(), Y: cell.GetProperty("y").GetInt32()))).ToArray();
-        Assert.Equal(15, occupied.Distinct().Count());
+        Assert.Equal(16, occupied.Distinct().Count());
+        var sensor = Assert.Single(modules, m => m.GetProperty("moduleId").GetString() == "MOD-PLAYER-SENSOR-01");
+        var sensorCell = Assert.Single(sensor.GetProperty("occupiedCells").EnumerateArray());
+        Assert.Equal((3, 4), (sensorCell.GetProperty("x").GetInt32(), sensorCell.GetProperty("y").GetInt32()));
         Assert.All(occupied, cell => Assert.Contains(cell, hullCells));
 
         var quarters = modules.Where(module =>
@@ -174,7 +177,7 @@ public sealed class Ep0029Us0013Tk0003Tests
             var scenario = ScenarioLoader.LoadFromFile(scenarioPath, contentRoot: AppContext.BaseDirectory);
             var ship = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
             Assert.Equal(24, ship.HullLayout!.Cells.Count);
-            Assert.Equal(9, ship.Modules!.Count);
+            Assert.Equal(10, ship.Modules!.Count);
             Assert.Equal(6, ship.Crew!.Count);
             Assert.Equal(2, ship.CarrierState!.ReservedCabins);
             Assert.Equal(78, ship.CarrierState.OwnedDrones!.Sum(drone => drone.AmmoCurrent) +

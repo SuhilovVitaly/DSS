@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Engine.Dialogue;
+using DeepSpaceSaga.Contracts;
 using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Engine.Scenario;
@@ -193,7 +194,11 @@ public sealed record VoyageStateData(
     [property: JsonPropertyName("arrivalGameTimeMs")] long? ArrivalGameTimeMs = null,
     [property: JsonPropertyName("fuelReservationParts")] IReadOnlyList<VoyageFuelReservationPartData>? FuelReservationParts = null,
     [property: JsonPropertyName("fuelDistanceKm")] decimal? FuelDistanceKm = null,
-    [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
+    [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null,
+    ThreatRouteSelectionData? ThreatRoute = null);
+
+public sealed record ThreatRouteSelectionData(ThreatRouteOption Option, double OriginX, double OriginY,
+    int NextWaypoint = 0, bool NavigationStarted = false, bool Suspended = false);
 
 public sealed record VoyageFuelReservationPartData(
     [property: JsonPropertyName("moduleId")] string ModuleId,
@@ -367,7 +372,8 @@ public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("gender")] string? Gender = null,
     [property: JsonPropertyName("portraitAssetId")] string? PortraitAssetId = null,
     [property: JsonPropertyName("role")] string? Role = null,
-    [property: JsonPropertyName("initiative")] int Initiative = 0);
+    [property: JsonPropertyName("initiative")] int Initiative = 0,
+    [property: JsonPropertyName("sensorRangeBonusPercent")] int SensorRangeBonusPercent = 0);
 
 /// <summary>
 /// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative

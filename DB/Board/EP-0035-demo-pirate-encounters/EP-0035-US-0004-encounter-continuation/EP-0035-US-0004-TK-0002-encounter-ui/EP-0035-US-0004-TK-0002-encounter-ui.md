@@ -5,7 +5,7 @@ ticket: EP-0035-US-0004-TK-0002-encounter-ui
 title: Восстановленное состояние встречи на карте
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0004-TK-0001-encounter-roundtrip]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 2
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Восстановленное состояние встречи на карте
 
@@ -167,3 +167,7 @@ Tests NOT RUN: checkpoint-before-start; same composition/playerstate/seed replay
 После завершённого EP35 боя (win/loss, включая Draw и Timeout/SeriesTurnCap) участвовавшая pirate group становится retired: исчезает с карты, не патрулирует, не обнаруживает игрока и не может начать новый encounter. Это логическое завершение участия группы, не искусственное уничтожение: actual carrier hull/ammo и drone/pilot statuses сохраняются в settlement/history. Соседние группы не меняются; для них обычный перехват на resume сохраняется без иммунитета.
 Retirement входит в exactly-once settlement receipt и durable finished checkpoint. До завершённого settlement, включая pending battle/recovery или отказ записи результата, navigable world не публикуется; повтор callback/Load не создаёт группу заново и не повторяет последствия. Continue pending по D-35-47 восстанавливает тот же бой с начала; retirement не служит выходом из незавершённого боя. A-35-20 и остаток G-35-15 о surviving world group закрыты этим решением; no-respawn сохраняется.
 Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHullAndPilotStateNotFabricated; RetiredGroupNeverCapturesAgain; NeighborGroupsRemainActive; RetirementAndReceiptExactlyOnce; PendingRecoveryDoesNotRetireEarly; FinishedCheckpointRestoresRetirement. UI использует authoritative retired state, а не локальное скрытие маркера.
+### Current implementation scope
+Existing US16 handles recovery/navigation and US15 result dismissal. Extend current PirateGroupsPresentation plus RU/EN locale and focused presentation tests: stale markers use only persisted observations, grey styling, explicit age in seconds at x1, last observed pursuit detail. No extrapolation of hidden coordinates. Native NOT RUN (owner).
+
+Implementation complete; Client test project build and scoped format PASS. Two-language frozen-coordinate/age/pursuit/debug separation tests authored. Tests NOT RUN until publication completes story. Existing US16 navigation recovery and US15 durable result flow reused. Evidence us4-tk2-build.log in designated resume run.

@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.EconomyBalance.Tests;
 
 public sealed class BalanceRunTests
 {
-    internal static string Root => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+    internal static string Root => Path.GetFullPath(Path.Combine(TestPaths.Repository));
     internal static string Settings => Path.Combine(Root, "src/DeepSpaceSaga.Client/Settings.json");
     internal static string Scenario => Path.Combine(Root, "src/DeepSpaceSaga.Client/Scenarios/Docked/scenario.json");
     internal static BalanceShipConfiguration Starter => new("starter", 1000, 1000);

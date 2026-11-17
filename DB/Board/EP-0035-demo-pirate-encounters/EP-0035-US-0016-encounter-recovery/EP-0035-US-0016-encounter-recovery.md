@@ -4,12 +4,12 @@ story: EP-0035-US-0016-encounter-recovery
 title: Восстановление того же боя и durable последствия
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 dependencies: [EP-0035-US-0015-squad-battle-continuation, EP-0035-US-0017-world-integration]
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; current execution and validation: [ExecutionStatus](../ExecutionStatus.md).
 
 # Восстановление того же боя и durable последствия
 

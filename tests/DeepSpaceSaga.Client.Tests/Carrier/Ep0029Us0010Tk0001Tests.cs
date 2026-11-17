@@ -11,7 +11,7 @@ public sealed class Ep0029Us0010Tk0001Tests : IDisposable
     // The real shipped W4 pilot portrait shared with the crew record (starter-carrier.json).
     private const string PilotAssetId = "Images/Persons/W4/Portraits/CHR-20260915-102448-E2757F.png";
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private readonly string _dir = Path.Combine(Path.GetTempPath(), $"dss-ep0010-tk0001-{Guid.NewGuid():N}");
     public Ep0029Us0010Tk0001Tests() => Directory.CreateDirectory(Path.Combine(_dir, "Data", "UI"));

@@ -5,7 +5,7 @@ ticket: EP-0035-US-0010-TK-0002-telemetry-engine
 title: Авторитетный доклад при сенсорном обнаружении
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0010-TK-0001-contracts, EP-0035-US-0009-TK-0002-engine, EP-0035-US-0001-TK-0003-engine, EP-0035-US-0011-TK-0005-generation-engine, EP-0035-US-0012-TK-0002-aggregate-engine, EP-0035-US-0002-TK-0002-engine]
@@ -15,7 +15,7 @@ created: 2026-11-17T11:37:31Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Авторитетный доклад при сенсорном обнаружении
 
@@ -152,3 +152,7 @@ D-35-42 пользователь: «Да, принимаем: если пере�
 При реальном pirate sensor contact и distance<=20км authoritative atomic capture фиксирует encounter. Player detection alone не capture. Для новой группы report+pause по batch policy; dismissal сохраняет Speed0; explicitcontinue начинает бой. Уже captured нельзя отменить сменой курса на паузе. Previously reported group не создаёт повторный automatic modal; используется существующий battle transition. Save/Load сохраняет pending capture, не даёт free escape. G-35-09 normal single-group inside-capture CLOSED; остаток: simultaneous capture CLOSED D-35-45: select earliest, no merge; recovery CLOSED D-35-47.
 Tests NOT RUN: MainMenuOverrides_NoSession; OverridesSurviveNewGameLoadUntilExit; Restart_NormalDefaults; Save_NoOverrides; Chance_ExistingGroupsUnchanged; IrinaAbsentUnassigned_Fallback; AssignedIrina_Bonus; BrokenSensor_NoDetection; Reassignment_NoDuplicateReport; NewlyRevealedGroup_NormalBatch; CaptureThenReport_StaysPaused; ExplicitContinue_StartsUnavoidableBattle; PausedCourse_CannotUndoCapture; LoadPendingCapture_NoEscape; PlayerDetectionOnly_NoCapture.
 Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-35-19; конкретные patrol routes ещё балансируются.
+
+## Execution scope 2026-11-17
+Extend existing acquisition in PirateComposition to atomically materialize composition, record one frozen observed report, mark consumed and queue a batch in DemoCampaignData. Archive is bounded by four stable groups. Named estimate RNG independent of composition; uniform inclusive integer error is a technical assumption. ETA uses observed constant relative velocity only, real seconds at1x. Dialogue/autopause wiring is TK3; authoritative in-step invocation is US17TK2.
+Build PASS us10-tk2-build.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests deferred to US10 boundary.

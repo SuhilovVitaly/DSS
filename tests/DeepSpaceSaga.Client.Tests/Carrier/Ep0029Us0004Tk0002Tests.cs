@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class Ep0029Us0004Tk0002Tests
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private static JsonDocument Frame(string id) => JsonDocument.Parse(File.ReadAllText(
         Path.Combine(ClientRoot, "Data", "TacticalBattle", "Frames", $"{id}.json")));

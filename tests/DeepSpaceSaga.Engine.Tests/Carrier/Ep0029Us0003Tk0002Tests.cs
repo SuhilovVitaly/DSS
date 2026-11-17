@@ -10,7 +10,7 @@ public sealed class Ep0029Us0003Tk0002Tests : IDisposable
     private string SettingsPath => Path.Combine(_directory, "settings.json");
     private string ScenarioPath => Path.Combine(_directory, "scenario.json");
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     public Ep0029Us0003Tk0002Tests()
     {

@@ -10,7 +10,7 @@ internal static class TacticalRoles
 {
     public static TacticalOrder Striker(TacticalBattle battle, TacticalDrone drone)
     {
-        var target = battle.Carrier(battle.EnemySide(drone.Side));
+        var target = battle.CarrierFor(drone, enemy: true);
         var settings = battle.Catalog.Ai.Striker;
         double distance = TacticalGeometry.Dist(drone.Pose.X, drone.Pose.Y, target.Pose.X, target.Pose.Y);
         if (drone.StrikeMode == "in" && distance < settings.BreakDistance) drone.StrikeMode = "out";

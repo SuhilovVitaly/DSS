@@ -4,17 +4,17 @@ story: EP-0035-US-0013-squad-battle-assembly
 ticket: EP-0035-US-0013-TK-0001-contracts
 title: Боевые identity и ownership
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
-depends_on: [EP-0035-US-0012-TK-0002-aggregate-engine, EP-0035-US-0003-TK-0002-engine]
+depends_on: [EP-0035-US-0012-TK-0002-aggregate-engine, EP-0035-US-0003-TK-0001-contracts]
 files_touched: 3
 serves: [AC-01]
 created: 2026-11-17
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Боевые identity и ownership
 
@@ -63,3 +63,6 @@ D-35-26 tests NOT RUN: FirstCarrierDeath_LeavesDronesActive; LastCarrierDeath_Di
 EP35 campaign outcome/UI считает existing Timeout/SeriesTurnCap поражением игрока, как Draw по D-35-48. Сохранить actual hull/ammo/disabled/destroyed/pilot state; не фабриковать уничтожение носителя/дронов или смерть пилотов. Применить штатные defeat consequences exactlyonce, без victory rewards, затем durable finished checkpoint до map/end по D-35-47. Сам label defeat не вводит новый gameover при живом carrier.
 G-35-20T CLOSED. Продуктовый грумминг EP35 завершён; технические A/allowlist/schema drift проверяет owning implementation, это не новые user blockers. Implementation NOT STARTED, tests/build/native/product acceptance NOT RUN/OPEN.
 Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotState; Timeout_NoVictoryRewards; TimeoutSettlement_ExactlyOnce; TimeoutFinishedCheckpoint_DurableBeforeRelease; TimeoutReplayReceipt_NoReapply.
+
+## Execution 2026-11-17
+Add explicit OriginCarrierId for all tactical drones; side is not carrier identity. Existing SourceShipId retains owned-world semantics. Corrected planning dependency cycle: battle assembly precedes world battle engine and uses US3 binding contracts. Added same-side distinct-origin JSON test. Build evidence us13-tk1-build.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests deferred to US13 boundary.

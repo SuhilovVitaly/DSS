@@ -4,7 +4,7 @@ story: EP-0035-US-0008-fog-of-war-debug
 ticket: EP-0035-US-0008-TK-0005-session-overrides
 title: Передача overrides перед запуском сессии
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: local-client
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0012-TK-0004-debug-engine, EP-0035-US-0008-TK-0001-contracts, EP-0035-US-0008-TK-0002-engine]
@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-03, AC-04]
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Передача overrides перед запуском сессии
 
@@ -45,3 +45,6 @@ D-35-42 пользователь: «Да, принимаем: если пере�
 При реальном pirate sensor contact и distance<=20км authoritative atomic capture фиксирует encounter. Player detection alone не capture. Для новой группы report+pause по batch policy; dismissal сохраняет Speed0; explicitcontinue начинает бой. Уже captured нельзя отменить сменой курса на паузе. Previously reported group не создаёт повторный automatic modal; используется существующий battle transition. Save/Load сохраняет pending capture, не даёт free escape. G-35-09 normal single-group inside-capture CLOSED; остаток: simultaneous capture CLOSED D-35-45: select earliest, no merge; recovery CLOSED D-35-47.
 Tests NOT RUN: MainMenuOverrides_NoSession; OverridesSurviveNewGameLoadUntilExit; Restart_NormalDefaults; Save_NoOverrides; Chance_ExistingGroupsUnchanged; IrinaAbsentUnassigned_Fallback; AssignedIrina_Bonus; BrokenSensor_NoDetection; Reassignment_NoDuplicateReport; NewlyRevealedGroup_NormalBatch; CaptureThenReport_StaysPaused; ExplicitContinue_StartsUnavoidableBattle; PausedCourse_CannotUndoCapture; LoadPendingCapture_NoEscape; PlayerDetectionOnly_NoCapture.
 Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-35-19; конкретные patrol routes ещё балансируются.
+
+## Execution 2026-11-17
+Process-scoped Engine state is reused through LocalClient before any connection loop starts; no duplicate persisted options model. Added real first-snapshot integration coverage. Build/static checks below; tests deferred to US-0008 boundary. Scope follows listed connection and Engine.Tests files.

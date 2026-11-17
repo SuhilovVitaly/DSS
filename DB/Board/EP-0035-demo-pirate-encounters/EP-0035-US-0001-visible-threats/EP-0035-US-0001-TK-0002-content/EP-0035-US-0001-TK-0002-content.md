@@ -5,7 +5,7 @@ ticket: EP-0035-US-0001-TK-0002-content
 title: Контент: Наблюдаемая угроза на маршруте
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0001-TK-0001-contracts, EP-0035-US-0007-TK-0003-sensor-content]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Контент: Наблюдаемая угроза на маршруте
 
@@ -208,3 +208,8 @@ G-35-18 CLOSED D-35-45: earliest continuous capture, deterministic tie, посл
 Остаток G-35-09/15: abnormal/partial battle outcomes и корректное world continuation без новой механики тактического отступления. Normal single capture/report/continue уже D-35-42.
 A-35-18 стартовая позиция игрока отдельно от станции требует проверки actual scenario; отдельный clearance не утверждён. При обычном старте у start station800 уже покрывает sensor separation.
 Прочие продуктовые decisions (radii,skill/ETA,equipment,spawn count/weights/norespawn,operator,fog,lifetime,batching) закрыты. Routine module physical stats/конкретные patrol waypoint coordinates остаются implementation/balance деталями; narrative deferred внеscope.
+## Execution scope 2026-11-17
+Consume validated v2 encounter schema from US11-TK2. Profiles and exact four-layout pool are included now so content is loadable before runtime work; US11-TK4 adds presentation/semantic checks. Region centered11000,11000 radius50000world units and patrol radius3000 are explicit technical initial-content assumptions, not accepted balance. Runtime must validate every spawn/patrol segment against all human stations and START safe circle; no validation claim from JSON alone. Move tests to Engine.Tests for actual definition/catalog loader.
+
+
+Added loadable encounter definitions and real loader test. Build PASS0 warnings/errors, diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us1-tk2-build.log. Tests NOT RUN until US1 boundary; runtime placement acceptance remains pending US1-TK3.

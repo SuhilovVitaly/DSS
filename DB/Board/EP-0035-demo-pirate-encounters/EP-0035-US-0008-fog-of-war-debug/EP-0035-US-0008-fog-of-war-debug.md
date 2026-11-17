@@ -4,14 +4,14 @@ story: EP-0035-US-0008-fog-of-war-debug
 title: Туман войны и консоль
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 priority: P0
 dependencies: [EP-0035-US-0007-carrier-sensors, EP-0035-US-0001-visible-threats]
 created: 2026-11-17T11:23:54Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; current execution and validation: [ExecutionStatus](../ExecutionStatus.md).
 
 # Туман войны и консоль
 

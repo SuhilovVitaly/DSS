@@ -10,18 +10,18 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 [Trait("Category", "Balance")]
 public sealed class EvasionCalibrationTests(ITestOutputHelper output)
 {
-    public static IEnumerable<object[]> Penalties() => Enumerable.Range(10, 31).Select(p => new object[] { p });
+    public static IEnumerable<object[]> Penalties() => from penalty in Enumerable.Range(10, 31) from shard in Enumerable.Range(0, 20) select new object[] { penalty, shard * 50 + 1, (shard + 1) * 50 };
 
     [Theory]
     [MemberData(nameof(Penalties))]
-    public void Report_expected_damage_ratio_for_penalties(int penalty)
+    public void Report_expected_damage_ratio_for_penalties(int penalty, int seedStart, int seedEnd)
     {
         var original = AssemblyTests.Catalog();
         var catalog = original with { Rules = original.Rules with { Evasion = original.Rules.Evasion with { HitPenalty = penalty } } };
         double withEvasion = 0, withoutEvasion = 0;
         long shots = 0, turns = 0, evadingTurns = 0, wins = 0, battles = 0;
         foreach (string tactic in new[] { "dogfight", "raid", "defence", "balanced", "commander" })
-            for (long seed = 1; seed <= 1000; seed++)
+            for (long seed = seedStart; seed <= seedEnd; seed++)
             {
                 var tactics = new Dictionary<string, string> { ["A"] = tactic };
                 var direct = Battle.Create(catalog, "initial", seed, tactics);
@@ -56,7 +56,7 @@ public sealed class EvasionCalibrationTests(ITestOutputHelper output)
                 if (direct.Result!.Kind == TacticalOutcomeKind.A) wins++;
                 battles++;
             }
-        Assert.Equal(5000, battles);
+        Assert.Equal(5 * (seedEnd - seedStart + 1), battles);
         Assert.True(shots > 0 && withoutEvasion > 0);
         double ratio = withEvasion / withoutEvasion;
         Assert.InRange(ratio, 0, 1);
@@ -67,7 +67,7 @@ public sealed class EvasionCalibrationTests(ITestOutputHelper output)
         Assert.True(Path.IsPathFullyQualified(root));
         string directory = Path.Combine(root, "ep0020-calibration");
         Directory.CreateDirectory(directory);
-        File.WriteAllLines(Path.Combine(directory, $"calibration-{penalty}.csv"),
+        File.WriteAllLines(Path.Combine(directory, $"calibration-{penalty}-{seedStart}-{seedEnd}.csv"),
             ["penalty,ratio,shots,evadingTurnFraction,meanTurns,winFractionA", row]);
         output.WriteLine(row);
     }

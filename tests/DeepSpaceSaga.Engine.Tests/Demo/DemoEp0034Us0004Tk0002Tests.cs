@@ -320,7 +320,7 @@ public sealed class DemoEp0034Us0004Tk0002Tests
                 Assert.Equal((StationJobStatuses.Failed, CargoHoldStates.Returned, offer.DestinationStationId, (long?)null),
                     (c.Status, c.HoldState, c.ReturnStationId, c.PaidCredits));
                 Assert.Equal(0, Cargo(s).ReservedMassKg);
-                Assert.Equal(creditsAtDeadline - penalty, s.PlayerCredits);
+                Assert.Equal(Math.Max(0, creditsAtDeadline - penalty), s.PlayerCredits);
             }
 
             // Overdue in open space: the cargo stays sealed in the hold until a human station takes it back.

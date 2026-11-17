@@ -5,7 +5,7 @@ ticket: EP-0035-US-0016-TK-0003-recovery-client
 title: Продолжение pending боя и ошибки checkpoint
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0016-TK-0002-durable-storage]
@@ -13,7 +13,7 @@ files_touched: 5
 serves: [AC01, AC02, AC03, AC04]
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Продолжение pending боя и ошибки checkpoint
 
@@ -50,3 +50,6 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 После завершённого EP35 боя (win/loss, включая Draw и Timeout/SeriesTurnCap) участвовавшая pirate group становится retired: исчезает с карты, не патрулирует, не обнаруживает игрока и не может начать новый encounter. Это логическое завершение участия группы, не искусственное уничтожение: actual carrier hull/ammo и drone/pilot statuses сохраняются в settlement/history. Соседние группы не меняются; для них обычный перехват на resume сохраняется без иммунитета.
 Retirement входит в exactly-once settlement receipt и durable finished checkpoint. До завершённого settlement, включая pending battle/recovery или отказ записи результата, navigable world не публикуется; повтор callback/Load не создаёт группу заново и не повторяет последствия. Continue pending по D-35-47 восстанавливает тот же бой с начала; retirement не служит выходом из незавершённого боя. A-35-20 и остаток G-35-15 о surviving world group закрыты этим решением; no-respawn сохраняется.
 Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHullAndPilotStateNotFabricated; RetiredGroupNeverCapturesAgain; NeighborGroupsRemainActive; RetirementAndReceiptExactlyOnce; PendingRecoveryDoesNotRetireEarly; FinishedCheckpointRestoresRetirement. UI использует authoritative retired state, а не локальное скрытие маркера.
+Execution scope includes GameSessionScreen auto-transition and SkiaWindow atomic screen adoption. Loaded active encounter is queried and adopted into campaign Flow before map screen can be rendered; no Begin rerun. Recovery view uses exact engine state. Existing checkpoint retry modal retains finished result. Campaign escape navigation is guarded even between report dismissal and modal activation. Tests cover matching recovered battle identity and no command resubmission.
+
+Build PASS us16-tk3-build.log; tests after publication: Engine Ep0035Us16/Us15/Us3 and Client Ep0035Us16/Us15/Us3/BattleNavigationTests. No native launch. Recovery adopts engine session before UI navigation and verifies exact battle binding.

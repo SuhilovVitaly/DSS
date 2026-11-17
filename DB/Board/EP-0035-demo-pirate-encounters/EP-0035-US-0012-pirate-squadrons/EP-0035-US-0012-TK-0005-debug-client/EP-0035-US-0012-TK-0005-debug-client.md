@@ -4,7 +4,7 @@ story: EP-0035-US-0012-pirate-squadrons
 ticket: EP-0035-US-0012-TK-0005-debug-client
 title: Команда pirate_squad_chance
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0012-TK-0004-debug-engine, EP-0035-US-0008-TK-0004-app-overrides]
@@ -14,7 +14,7 @@ created: 2026-11-17
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Команда pirate_squad_chance
 
@@ -111,3 +111,9 @@ G-35-18 CLOSED D-35-45: earliest continuous capture, deterministic tie, посл
 Остаток G-35-09/15: abnormal/partial battle outcomes и корректное world continuation без новой механики тактического отступления. Normal single capture/report/continue уже D-35-42.
 A-35-18 стартовая позиция игрока отдельно от станции требует проверки actual scenario; отдельный clearance не утверждён. При обычном старте у start station800 уже покрывает sensor separation.
 Прочие продуктовые decisions (radii,skill/ETA,equipment,spawn count/weights/norespawn,operator,fog,lifetime,batching) закрыты. Routine module physical stats/конкретные patrol waypoint coordinates остаются implementation/balance деталями; narrative deferred внеscope.
+
+## Execution scope 2026-11-17
+Sessionless command requires a factory-level debug adapter: extend IGameSessionFactory/Program.LocalGameSessionFactory, IDebugConsoleHost/SkiaWindow and LocalGameSessionConnection forwarding to the Engine process API. Command does not create a session or write settings/save files. Existing console registry/controller supplies serialization, busy gate and help. This closes the original main-menu path gap instead of applying the override after first generation.
+
+
+Implemented registered query/set command with exact integer0..100 parsing, sessionless host/factory/local adapter and explicit next-NewGame response. Rejected NaN/fraction/extra args do not invoke mutation. Build PASS0 warnings/errors, scoped format/diff PASS; evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us12-tk5-build.log. Tests NOT RUN until immediate US12 boundary; native main-menu check remains owner-only.

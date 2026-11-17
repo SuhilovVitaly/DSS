@@ -41,15 +41,13 @@ public sealed partial class SimulationEngine
             Action? commit = null;
             if (command.ExpectedRevision != _demoCampaign.Revision) reason = DemoCampaignReasons.StaleRevision;
             else if (_tacticalBattleSession is not null) reason = DemoCampaignReasons.BattleActive;
+            else if (_encounterStoragePending) reason = "encounter_checkpoint_pending";
+            else if (HasCapturedEncounter && command is not (BeginEncounterBattleCommand or DismissSensorContactReportRequest or SetFogOfWarRequest))
+                reason = "encounter_captured";
             else if (_objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
                 reason = DemoCampaignReasons.CarrierDestroyed;
             else
                 PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason, ref commit);
-            PrepareStationJobsCommand(command, ref candidate, ref handled, ref reason); // EP-0034 US-0006, explicit dispatch
-            var boarding = PreparePassengerBoarding(command, ref candidate, handled, ref reason); // EP-0034 US-0002
-            var cancellation = PrepareTransportCancellation(command, ref candidate, ref handled, ref reason); // EP-0034 US-0003
-            PrepareCargoSealing(command, ref candidate, handled, reason); // EP-0034 US-0004: sealed cargo record
-            PrepareCargoCancellationReturn(cancellation, ref candidate); // EP-0034 US-0004: docked cancellation returns cargo
 
             reason ??= handled ? null : DemoCampaignReasons.Unsupported;
             bool applied = handled && reason is null;
@@ -72,14 +70,15 @@ public sealed partial class SimulationEngine
             ValidateDemoCampaignSections(candidate, Math.Max(_clock.GameTimeMs, candidate.LastTickGameTimeMs));
             if (applied) commit?.Invoke();
             _demoCampaign = candidate;
-            if (applied && boarding is not null) BoardPassengers(boarding); // EP-0034 US-0002: same commit
-            if (applied && cancellation is not null) ApplyTransportCancellation(cancellation); // EP-0034 US-0003: same commit
             return response;
         }
     }
 
     private void TickDemoCampaign(long gameTimeMs)
     {
+        ObservePirateGroups(gameTimeMs);
+        PublishCapturedEncounter();
+        OpenPendingSensorReport(_processedSimulationTimeMs);
         PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
         DeliverPassengerContracts(gameTimeMs); // EP-0034 US-0002: idempotent, a Completed contract never pays again
         DeliverCargoContracts(gameTimeMs); // EP-0034 US-0004: idempotent, a Completed contract never pays again
@@ -94,14 +93,77 @@ public sealed partial class SimulationEngine
 
     private DemoCampaignSnapshot BuildDemoCampaignProjection() => new(
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
-        BuildDemoTransportProjection(), _demoCampaign.Encounters, _demoCampaign.Rewards,
-        _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection());
+        BuildDemoTransportProjection(), BuildPirateGroupsProjection(), _demoCampaign.Rewards,
+        _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
+        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes());
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
 
-    // Hooks must prepare immutable candidate state only; rejection cannot mutate the live world.
-    partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
-        ref bool handled, ref string? reason, ref Action? commit);
-    partial void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate);
-    partial void ValidateDemoCampaignSections(DemoCampaignData candidate, long gameTimeMs);
+    // Central dispatch owns ordering. Feature helpers prepare candidates and deferred commits;
+    // unsupported or rejected commands never mutate gameplay state.
+    private void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
+        ref bool handled, ref string? reason, ref Action? commit)
+    {
+        handled = true;
+        switch (command)
+        {
+            case SelectDemoRouteCommand route:
+                PrepareThreatRoute(route, ref reason, ref commit);
+                break;
+            case BeginEncounterBattleCommand begin:
+                PrepareEncounterBattle(begin, ref candidate, ref reason, ref commit);
+                break;
+            case DismissSensorContactReportRequest dismiss:
+                if (candidate.PendingSensorReport?.BatchId != dismiss.BatchId) reason = "sensor_batch_mismatch";
+                else if (_dialogue.Active is { DialogueDefinitionId: not SensorReportDialogueId }) reason = "dialogue_active";
+                else
+                {
+                    candidate = candidate with { PendingSensorReport = null };
+                    commit = () =>
+                    {
+                        if (_dialogue.Active is not null) EndDialogue(_processedSimulationTimeMs, dismiss.CommandId, "dialogue_completed");
+                        else _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, _processedSimulationTimeMs, _clock.Capture().MotionQuarterRemainder);
+                    };
+                }
+                break;
+            case SetFogOfWarRequest fog:
+                commit = () => ConfigureFogOfWar(fog.Enabled);
+                break;
+            case PayCrewDebtCommand debt:
+                PrepareCrewDebt(debt, ref candidate, ref reason, ref commit);
+                break;
+            case HirePilotCommand or AssignPilotCommand:
+                PrepareRecruitment(command, ref candidate, ref reason, ref commit);
+                break;
+            case PurchaseDroneCommand or EquipDroneCommand:
+                PrepareReplacement(command, ref candidate, ref reason, ref commit);
+                break;
+            case DecoyQuoteRequest or ResupplyDecoyCommand:
+                PrepareSupply(command, ref candidate, ref reason, ref commit);
+                break;
+            case RepairQuoteRequest or RepairCommand:
+                PrepareStationRepair(command, ref candidate, ref reason, ref commit);
+                break;
+            default:
+                handled = false;
+                PrepareStationJobsCommand(command, ref candidate, ref handled, ref reason);
+                var boarding = PreparePassengerBoarding(command, ref candidate, handled, ref reason);
+                var cancellation = PrepareTransportCancellation(command, ref candidate, ref handled, ref reason);
+                PrepareCargoSealing(command, ref candidate, handled, reason);
+                PrepareCargoCancellationReturn(cancellation, ref candidate);
+                if (reason is null && handled)
+                    commit = () =>
+                    {
+                        if (boarding is not null) BoardPassengers(boarding);
+                        if (cancellation is not null) ApplyTransportCancellation(cancellation);
+                    };
+                break;
+        }
+    }
+
+    private void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate) =>
+        TickCrewUpkeep(gameTimeMs, ref candidate);
+
+    private void ValidateDemoCampaignSections(DemoCampaignData candidate, long? gameTimeMs = null) =>
+        DemoCampaignData.Validate(candidate, gameTimeMs ?? Math.Max(_clock.GameTimeMs, _demoCampaign.LastTickGameTimeMs));
 }

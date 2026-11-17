@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class DebugTuningLocalizationTests
 {
-    private static string ClientRoot => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+    private static string ClientRoot => Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client"));
 
     [Theory]
     [InlineData("Russian")]

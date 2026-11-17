@@ -1631,8 +1631,7 @@ public class EngineCommandTests
         // fuelAmountKg = 750 explicitly for MOD-PLAYER-ENGINE-01 — 75% of the
         // module.engine.basic tank (fuelCapacityKg = 1000).
         string scenarioPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Scenarios", "Default", "scenario.json"));
 
         if (!File.Exists(scenarioPath))
@@ -1642,8 +1641,7 @@ public class EngineCommandTests
         }
 
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))

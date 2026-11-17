@@ -172,6 +172,9 @@ public sealed partial class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             if (_tacticalBattleSession is not null && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
+            if (_encounterStoragePending && speed != SimulationSpeed.Speed0) return "encounter_checkpoint_pending";
+            if (HasCapturedEncounter && speed != SimulationSpeed.Speed0) return "encounter_captured";
+            if (_demoCampaign.PendingSensorReport is not null && speed != SimulationSpeed.Speed0) return "sensor_report_pending";
             if (IsStoppedByStationSecurity) return StationSecurityStoppedReason;
             if (!Enum.IsDefined(speed)) throw new ArgumentOutOfRangeException(nameof(speed));
             if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return null; }
@@ -246,6 +249,7 @@ public sealed partial class SimulationEngine : IDisposable
         {
             var previous = _registry;
             ThrowIfTacticalBattleActive();
+            if (HasCapturedEncounter || _encounterStoragePending) throw new InvalidOperationException("encounter_captured");
             try
             {
                 _registry = tuning.Registry;
@@ -466,6 +470,7 @@ public sealed partial class SimulationEngine : IDisposable
                 _ = OrbitalMotionMath.At(candidate.InitialMotion, orbit, gs.MotionTimeMs);
         SynchronizeOrbitalBindings(runtimeObjects, gs.MotionTimeMs);
         ValidateMarketWorld(runtimeObjects);
+        ValidateSensorRanges(runtimeObjects);
         ValidateRestoredResourceSurveys(gs, runtimeObjects);
 
         // Market revisions (EP-0001-US-0015-TK-0003): a profile market resumes at its saved revision, a
@@ -509,6 +514,12 @@ public sealed partial class SimulationEngine : IDisposable
         if (scenario.Metadata.ScenarioId == "demo" || restoredDemoCampaign.CatalogFingerprint is not null)
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
         DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
+        restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
+        ValidateSensorDialogueSave(restoredDemoCampaign, scenario with { GameState = gs });
+        if (restoredDemoCampaign.WorldEncounter is { Phase: WorldEncounterPhases.PendingBattle } &&
+            (restoredDemoCampaign.PendingSensorReport is not null || gs.DialogueState?.ActiveDialogue is not null ||
+             speed != SimulationSpeed.Speed0 || _registry.TacticalBattle.Catalog is null))
+            throw new ScenarioException("Pending encounter requires paused, acknowledged, available battle content.");
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
@@ -521,6 +532,7 @@ public sealed partial class SimulationEngine : IDisposable
             SelectedObjectId = null;
             _clock.Reset(gs.GameTimeMs, speed, gs.MotionTimeMs, gs.MotionQuarterRemainder);
             _stationSecurityStop = null;
+            _piratePauseClock = null;
             lock (_commandGate) _tacticalBattleRefusedCommands.Clear();
             _nextEngineCycleId = 0;
             _nextShipEventId = 0;
@@ -570,7 +582,7 @@ public sealed partial class SimulationEngine : IDisposable
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
-
+            RestorePendingEncounterBattle();
         }
     }
 
@@ -695,6 +707,7 @@ public sealed partial class SimulationEngine : IDisposable
             // loop condition no-ops when no time has passed), so no external speed check is
             // needed here.
             AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
+            if (_piratePauseClock is { } pirateStop) { clockState = pirateStop; gameTimeMs = pirateStop.MotionTimeMs; }
             if (_stationSecurityStop is { } stopped)
             {
                 clockState = stopped;
@@ -1126,6 +1139,7 @@ public sealed partial class SimulationEngine : IDisposable
         // ticked since) would be captured stale. Idempotent: a cycle already caught up to
         // gameTimeMs is a no-op here (same guard BuildSnapshot relies on).
         AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
+        if (_piratePauseClock is { } pirateStop) { clockState = pirateStop; gameTimeMs = pirateStop.MotionTimeMs; }
         ThrowIfStoppedByStationSecurity();
 
         // Mirror BuildSnapshot's other half: a command the player sent in the narrow
@@ -1351,7 +1365,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         return new ShipCrewMemberData(member.Id, member.DisplayName,
             member.AccuracySkill, member.ManeuverabilitySkill,
-            member.Gender, member.PortraitAssetId, member.Role, member.Initiative);
+            member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent);
     }
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
@@ -1997,7 +2011,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName,
                 member.AccuracySkill, member.ManeuverabilitySkill,
-                member.Gender, member.PortraitAssetId, member.Role, member.Initiative));
+                member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent));
         }
 
         return crew.ToImmutable();
@@ -2306,7 +2320,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
-            if (_tacticalBattleSession is not null)
+            if (_tacticalBattleSession is not null || HasCapturedEncounter || _encounterStoragePending)
             {
                 RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, TacticalBattleActiveReason);
                 continue;
@@ -2477,11 +2491,11 @@ public sealed partial class SimulationEngine : IDisposable
             return TryStartTradeCommand(command, gameTimeMs);
 
         if (command.CommandType == ShipEngineCommandTypes.TurnHold)
-            return TryTurnHold(command, gameTimeMs);
+            return HandleThreatManualOverride(TryTurnHold(command, gameTimeMs));
         if (command.CommandType == ShipEngineCommandTypes.SpeedHold)
-            return TrySpeedHold(command, gameTimeMs);
+            return HandleThreatManualOverride(TrySpeedHold(command, gameTimeMs));
 
-        return ExecuteTurnHoldOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs));
+        return HandleThreatManualOverride(ExecuteTurnHoldOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs)));
     }
     /// <summary>1 world unit = 100 m (DB/Documentation/00-Process/CLAUDE.md developer guide), so 1 km = 10 world units.</summary>
     private const double WorldUnitsPerKm = 10.0;
@@ -2555,6 +2569,8 @@ public sealed partial class SimulationEngine : IDisposable
                 double departureDx = departureMotion.X - currentMotion.X;
                 double departureDy = departureMotion.Y - currentMotion.Y;
                 double distance = Math.Sqrt(departureDx * departureDx + departureDy * departureDy);
+                if (_voyageState?.ThreatRoute is { } planned && planned.Option.DestinationStationId == command.TargetObjectId)
+                    distance = ThreatPathLength(new(planned.OriginX, planned.OriginY), planned.Option.Waypoints);
                 if (!double.IsFinite(distance) || distance <= 0)
                     return CommandStartOutcome.Rejected(CommandReasonCodes.VoyageDestinationUnavailable);
                 var fuelBlocker = PrepareVoyageFuel(obj, route.BaseEdge.DistanceKm, route.EffectiveFuelMultiplierPermille,
@@ -2568,7 +2584,8 @@ public sealed partial class SimulationEngine : IDisposable
                     RiskProfileId: route.BaseEdge.RiskProfileId, ActiveEventIds: route.ActiveEventIds,
                     StartedGameTimeMs: _processedWorldTimeMs,
                     ArrivalGameTimeMs: checked(_processedWorldTimeMs + route.EffectiveTravelEstimateGameTimeMs),
-                    FuelReservationParts: fuelParts, FuelDistanceKm: fuelDistance, FuelEfficiencyKmPerKg: efficiency);
+                    FuelReservationParts: fuelParts, FuelDistanceKm: fuelDistance, FuelEfficiencyKmPerKg: efficiency,
+                    ThreatRoute: _voyageState?.ThreatRoute is { } chosen && chosen.Option.DestinationStationId == command.TargetObjectId ? chosen : null);
                 try { BeginVoyageLedger(departureVoyage, _processedWorldTimeMs); }
                 catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
                 _voyageState = departureVoyage;
@@ -2585,6 +2602,7 @@ public sealed partial class SimulationEngine : IDisposable
                 NextPortFeeDueGameTimeMs = null,
                 Modules = obj.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
             };
+            AdvanceThreatRoute(gameTimeMs);
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
         }
@@ -3511,7 +3529,7 @@ public sealed partial class SimulationEngine : IDisposable
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
         if (IsStoppedByStationSecurity) return;
-        if (!HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (_demoCampaign.PirateWorld is null && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _appliedMotionTimeMs = gameTimeMs;
@@ -3522,6 +3540,7 @@ public sealed partial class SimulationEngine : IDisposable
         while (true)
         {
             long next = gameTimeMs;
+            next = Math.Min(next, NextPirateControlTime());
             foreach (var obj in _objects)
             {
                 if (obj.InitialMotion.ObjectId != PlayerShipObjectId) continue;
@@ -3534,13 +3553,21 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
+            var pirateStep = AdvancePirateWorld(next);
+            next = pirateStep.Time;
             _appliedMotionTimeMs = next;
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
             if (IsStoppedByStationSecurity) return;
             CompleteActiveEngineCycles(next);
+            AdvanceThreatRoute(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
+            if (pirateStep.Stopped)
+            {
+                _piratePauseClock = new(surveyCalendarAt(next), SimulationSpeed.Speed0, next);
+                return;
+            }
             if (next >= gameTimeMs) break;
         }
     }
@@ -4096,7 +4123,8 @@ internal sealed record SpaceObjectRuntime(
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName,
     int AccuracySkill = 0, int ManeuverabilitySkill = 0,
-    string? Gender = null, string? PortraitAssetId = null, string? Role = null, int Initiative = 0);
+    string? Gender = null, string? PortraitAssetId = null, string? Role = null, int Initiative = 0,
+    int SensorRangeBonusPercent = 0);
 
 /// <summary>One named crew member displayed on a station (see <see cref="StationCrewMemberData"/>).</summary>
 internal sealed record StationCrewMemberRuntime(string Id, string Role, string DisplayName, string PortraitImage);

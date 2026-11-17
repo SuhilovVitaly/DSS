@@ -7,8 +7,7 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class VoyageFuelContentTests
 {
-    private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-        "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string Root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     [Fact]
     public void Packaged_basic_engine_declares_cluster_voyage_efficiency()

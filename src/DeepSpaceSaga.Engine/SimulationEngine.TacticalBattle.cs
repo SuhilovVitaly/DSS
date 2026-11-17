@@ -54,6 +54,7 @@ public sealed partial class SimulationEngine
         return ExecuteTactical(request.CommandId, request, () =>
         {
             if (_tacticalBattleSession is not null) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.AlreadyActive);
+            if (HasCapturedEncounter || _encounterStoragePending) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongPhase);
             if (_registry.TacticalBattle.Catalog is not { } catalog)
             {
                 var error = _registry.TacticalBattle.Error;
@@ -153,6 +154,8 @@ public sealed partial class SimulationEngine
             if (_tacticalBattleSession is null) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoBattle);
             if (_tacticalBattleSession.Id != request.BattleId) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongBattle);
             var session = _tacticalBattleSession;
+            if (HasCapturedEncounter && session.Battle.Result is null)
+                return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongPhase);
             SortieSettlementSnapshot? settlement = null;
             if (_tacticalBattleSourceShipId is not null)
             {

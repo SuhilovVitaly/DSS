@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
 internal sealed record StationRouteRow(string DestinationStationObjectId, string PrimaryText, string SecondaryText,
     string? ReasonText, bool IsEnabled, TradingRouteRisk Risk, TradingRouteAvailability Availability,
-    string? ActiveEventText = null);
+    string? ActiveEventText = null, string? RouteId = null);
 
 internal static class StationRoutePresentation
 {

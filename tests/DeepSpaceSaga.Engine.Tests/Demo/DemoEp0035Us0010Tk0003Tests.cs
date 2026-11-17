@@ -1,0 +1,89 @@
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Scenario;
+
+namespace DeepSpaceSaga.Engine.Tests.Demo;
+
+public sealed class DemoEp0035Us0010Tk0003Tests
+{
+    [Fact]
+    public void CorruptPendingBatchOrSpeakerRejectsLoadAtomically()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        engine.LoadScenario(DemoEp0035Us0010Tk0002Tests.ContactScenario(engine), true);
+        var save = engine.CaptureSaveState();
+        string before = ScenarioLoader.Serialize(save);
+        var campaign = save.GameState.DemoCampaign!;
+        var invalidBatch = save with { GameState = save.GameState with { DemoCampaign = campaign with
+        { PendingSensorReport = campaign.PendingSensorReport! with { Reports = [null!] } } } };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalidBatch, true));
+        var dialogue = save.GameState.DialogueState!;
+        var invalidSpeaker = save with { GameState = save.GameState with { DialogueState = dialogue with
+        { ActiveDialogue = dialogue.ActiveDialogue! with { ParticipantId = "sensor-script" } } } };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalidSpeaker, true));
+        var orphan = save with { GameState = save.GameState with { DemoCampaign = campaign with
+        { PirateWorld = null, PirateCompositions = [] } } };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(orphan, true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+    [Fact]
+    public void ReportReusesCrewPortraitAndDialogue_AcknowledgementStaysPausedAcrossLoad()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        var scenario = DemoEp0035Us0010Tk0002Tests.ContactScenario(engine);
+        var crew = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId).Crew!
+            .Single(c => c.CrewId == "CHR-PLAYER-DEFENSE");
+        engine.LoadScenario(scenario, true);
+        engine.SetSpeed(SimulationSpeed.Speed3);
+        var snapshot = engine.CaptureSnapshot();
+        var dialogue = Assert.IsType<DialogueState>(snapshot.ActiveDialogue);
+        Assert.Equal("dialogue.sensor-pirate-contact", dialogue.DialogueDefinitionId);
+        Assert.Equal(crew.DisplayName, dialogue.SpeakerDisplayName);
+        Assert.Equal(crew.PortraitAssetId, dialogue.SpeakerPortraitImage);
+        Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
+        Assert.Equal("sensor_report_pending", engine.TrySetSpeed(SimulationSpeed.Speed1));
+        var save = engine.CaptureSaveState();
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), true);
+        Assert.Equal(dialogue.InstanceId, engine.CaptureSnapshot().ActiveDialogue!.InstanceId);
+        engine.ReceiveDialogueCommand(new("ack-sensor", DialogueAction.Choose, dialogue.InstanceId, dialogue.Revision, "acknowledge"));
+        snapshot = engine.CaptureSnapshot();
+        Assert.Null(snapshot.ActiveDialogue);
+        Assert.Null(snapshot.DemoCampaign!.PendingSensorReport);
+        Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
+        Assert.Null(engine.CaptureSnapshot().ActiveDialogue);
+        Assert.Null(engine.TrySetSpeed(SimulationSpeed.Speed1));
+    }
+
+    [Fact]
+    public void MissingAssignmentUsesScriptWithoutPortrait()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        engine.LoadScenario(DemoEp0035Us0010Tk0002Tests.ContactScenario(engine, script: true), true);
+        var snapshot = engine.CaptureSnapshot();
+        Assert.Equal("sensor-script", snapshot.ActiveDialogue!.ParticipantId);
+        Assert.Null(snapshot.ActiveDialogue.SpeakerPortraitImage);
+        Assert.Null(snapshot.DemoCampaign!.PendingSensorReport!.Reports[0].OperatorCrewId);
+    }
+
+    [Fact]
+    public void ExistingDialogueIsPreservedAndReportWaitsForItsAcknowledgement()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        var scenario = DemoEp0035Us0010Tk0002Tests.ContactScenario(engine);
+        var active = new DialogueState("existing", "dialogue.station-docking", "SPC-0002", "operator", "request_ship_id", 0, true,
+            [], "Dialogue.Docking.RequestShipId", "Dock Operator", "Station Operator", null,
+            System.Collections.Immutable.ImmutableDictionary<string, string>.Empty);
+        scenario = scenario with { GameState = scenario.GameState with
+        {
+            DialogueState = new(active, DeepSpaceSaga.Engine.Dialogue.DialogueProgressState.Empty,
+                System.Collections.Immutable.ImmutableHashSet<string>.Empty, 1, 1, SimulationSpeed.Speed3)
+        } };
+        engine.LoadScenario(scenario, true);
+        var snapshot = engine.CaptureSnapshot();
+        Assert.Equal("existing", snapshot.ActiveDialogue!.InstanceId);
+        Assert.NotNull(snapshot.DemoCampaign!.PendingSensorReport);
+        engine.ReceiveDialogueCommand(new("close-existing", DialogueAction.Abort, "existing", 0));
+        snapshot = engine.CaptureSnapshot();
+        Assert.Equal("dialogue.sensor-pirate-contact", snapshot.ActiveDialogue!.DialogueDefinitionId);
+        Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
+    }
+}

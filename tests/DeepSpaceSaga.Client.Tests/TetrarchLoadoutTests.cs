@@ -9,7 +9,7 @@ public sealed class TetrarchLoadoutTests
 {
     private const string LauncherId = "module.torpedo.launcher.basic";
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     [Theory]
     [InlineData("Default")]
@@ -183,11 +183,11 @@ public sealed class TetrarchLoadoutTests
         var cells = ship.HullLayout.Cells.Select(c => (c.X, c.Y)).ToArray();
         if (starter)
         {
-            // EP-0029 starter manifest (Documentation.md:102): 24 cells, 9 modules, 15 occupied.
+            // EP-0029 starter manifest (Documentation.md:102): 24 cells, 10 modules, 16 occupied (EP-0035 sensor).
             Assert.Equal(24, cells.Length);
             Assert.Equal(24, cells.Distinct().Count());
             Assert.NotNull(ship.Modules);
-            Assert.Equal(9, ship.Modules.Count);
+            Assert.Equal(10, ship.Modules.Count);
             Assert.Equal(ship.Modules.Count, ship.Modules.Select(m => m.ModuleId).Distinct(StringComparer.Ordinal).Count());
             var starterOccupied = new HashSet<(int X, int Y)>();
             foreach (var module in ship.Modules)
@@ -196,7 +196,8 @@ public sealed class TetrarchLoadoutTests
                     Assert.Contains((cell.X, cell.Y), cells);
                     Assert.True(starterOccupied.Add((cell.X, cell.Y)), $"Module {module.ModuleId} overlaps another module.");
                 }
-            Assert.Equal(15, starterOccupied.Count);
+            Assert.Equal(16, starterOccupied.Count);
+            Assert.Equal([new HullCellCoordinate(3, 4)], ship.Modules.Single(m => m.ModuleId == "MOD-PLAYER-SENSOR-01").OccupiedCells);
             var quarters = ship.Modules.Where(m => m.ModuleTypeId == "living.quarters.mk1.four-cabins").ToArray();
             Assert.Equal(2, quarters.Length);
             Assert.Equal([new HullCellCoordinate(3, 1)],

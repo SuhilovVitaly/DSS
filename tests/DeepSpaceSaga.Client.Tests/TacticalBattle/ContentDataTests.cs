@@ -53,8 +53,7 @@ public sealed class ContentDataTests
         string relative = settings.RootElement.GetProperty("typeData").GetProperty("tacticalBattle").GetString()!;
         Assert.Equal("Data/TacticalBattle", relative);
         string source = Path.Combine(client, relative);
-        string configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
-        string output = Path.Combine(client, "bin", configuration, "net8.0", relative);
+        string output = Path.Combine(TestPaths.ClientOutput, relative);
         var files = Directory.GetFiles(source, "*.json", SearchOption.AllDirectories);
         Assert.Equal(30, files.Length);
         Assert.Contains(files, p => Path.GetRelativePath(source, p).Replace(Path.DirectorySeparatorChar, '/') == "Modules/Decoys/decoy.t1.json");
@@ -105,7 +104,7 @@ public sealed class ContentDataTests
 
     private static string FindRepository()
     {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        for (var dir = new DirectoryInfo(TestPaths.Repository); dir is not null; dir = dir.Parent)
             if (File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) return dir.FullName;
         throw new DirectoryNotFoundException("DSS repository not found.");
     }

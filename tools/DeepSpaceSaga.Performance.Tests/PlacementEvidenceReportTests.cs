@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Performance.Tests;
 [Collection("Solar map evidence")]
 public sealed class PlacementEvidenceReportTests
 {
-    private static string Root => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+    private static string Root => Path.GetFullPath(Path.Combine(TestPaths.Repository));
 
     [Fact]
     public void PlacementReportIncludesCriticalEpochs()

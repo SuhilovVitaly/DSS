@@ -115,7 +115,7 @@ public sealed class LocalSessionBattleTests
             Assert.Equal(originalWorld, ScenarioLoader.Serialize(engine.CaptureSaveState()));
             await connection.SaveAsync("after");
             Assert.Equal(originalSlot, await File.ReadAllBytesAsync(Path.Combine(directory, "after.json")));
-            string root = Path.GetFullPath(Path.Combine(ReferenceFixtureTests.Root, "../../../.."));
+            string root = TestPaths.Repository;
             using var loaded = EngineContentLoader.CreateEngineFromSaveFile(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json"),
                 Path.Combine(directory, "after.json"));
             Assert.Equal(originalWorld, ScenarioLoader.Serialize(loaded.CaptureSaveState()));
@@ -191,7 +191,7 @@ public sealed class LocalSessionBattleTests
 
     private static SimulationEngine RealEngine()
     {
-        string root = Path.GetFullPath(Path.Combine(ReferenceFixtureTests.Root, "../../../.."));
+        string root = TestPaths.Repository;
         var engine = SimulationEngine.CreateFromSettingsFile(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json"));
         engine.SetSpeed(SimulationSpeed.Speed0);
         return engine;

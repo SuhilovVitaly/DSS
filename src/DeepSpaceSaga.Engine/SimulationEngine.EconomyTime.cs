@@ -13,6 +13,7 @@ public sealed partial class SimulationEngine
     private void AdvanceWorldTo(long gameTimeMs, long simulationTimeMs)
     {
         if (ApplyStationSecurityStop()) return;
+        if (PreparePirateWorldStep()) return;
         PrepareStationSecurityClock(gameTimeMs, simulationTimeMs);
         long fromCalendar = _processedWorldTimeMs;
         long fromSimulation = _processedSimulationTimeMs;
@@ -60,6 +61,7 @@ public sealed partial class SimulationEngine
             // pending unload, meal, fee, deadline, then commit the calendar cursor.
             AdvanceMotionTo(MotionAt(next), SurveyCalendarAt);
             if (ApplyStationSecurityStop()) return;
+            if (_piratePauseClock is { } interrupted) next = interrupted.GameTimeMs;
             CompleteResourceSurveys(next);
             CompleteProduction(next);
             if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketEventAndHour(next);
@@ -70,9 +72,11 @@ public sealed partial class SimulationEngine
             ApplyContractDeadlines(next);
             CommitChangedMarketRevisions(next);
             _processedWorldTimeMs = next;
+            if (FinishPirateWorldStep()) return;
         }
         AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
         if (ApplyStationSecurityStop()) return;
+        if (FinishPirateWorldStep()) return;
         SynchronizeOrbitalBindings(_objects, simulationTimeMs);
         _processedSimulationTimeMs = simulationTimeMs;
         UpdateVoyageForMotion(simulationTimeMs);

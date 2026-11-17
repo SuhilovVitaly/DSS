@@ -17,13 +17,19 @@ public sealed record DemoCampaignSnapshot(
     DemoRewardsSnapshot? Rewards = null,
     DemoProgressionSnapshot? Progression = null,
     DemoStorySnapshot? Story = null,
-    DemoStartSnapshot? Start = null);
+    DemoStartSnapshot? Start = null,
+    CarrierSensorSnapshot? Sensor = null,
+    SensorOperatorSnapshot? SensorOperator = null,
+    FogOfWarSnapshot? FogOfWar = null,
+    SensorContactReportBatch? PendingSensorReport = null,
+    WorldEncounterSnapshot? WorldEncounter = null,
+    ThreatRoutesSnapshot? ThreatRoutes = null);
 
 public sealed record DemoCompanySnapshot(CampaignRoundtripSnapshot? Roundtrip = null, PilotLossSnapshot? PilotLoss = null,
     CampaignOutcomeSnapshot? Outcome = null, StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null,
     ReplacementSnapshot? Replacement = null, RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null);
 public sealed partial record DemoTransportSnapshot;
-public sealed record DemoEncountersSnapshot;
+public sealed partial record DemoEncountersSnapshot;
 public sealed record DemoRewardsSnapshot;
 public sealed record DemoProgressionSnapshot;
 public sealed record DemoStorySnapshot;

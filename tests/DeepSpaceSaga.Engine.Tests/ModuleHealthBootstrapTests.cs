@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class ModuleHealthBootstrapTests
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     [Fact]
     public void Configured_structure_is_projected()
@@ -40,8 +40,9 @@ public sealed class ModuleHealthBootstrapTests
     {
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"));
         var modules = engine.CaptureSnapshot().InstalledModules;
-        // Default New Game is the demo: the shared starter's 9 modules plus the passenger quarters (EP-0034-US-0001).
-        Assert.Equal(10, modules.Length);
+        // Default New Game is the demo: the shared starter's 10 modules plus the passenger quarters (EP-0034-US-0001).
+        Assert.Equal(11, modules.Length);
+        Assert.Single(modules, module => module.ModuleId == "MOD-PLAYER-SENSOR-01");
         // The starter manifest (EP-0029 US-0011 TK-0002) starts every module intact at its type max:
         // medium drone bays 250 SP, every other starter module 150 SP.
         Assert.All(modules, module =>

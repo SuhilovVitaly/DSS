@@ -5,7 +5,7 @@ ticket: EP-0035-US-0010-TK-0003-dialogue-engine
 title: Диалоговый доклад реального члена экипажа
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0010-TK-0002-telemetry-engine]
@@ -15,7 +15,7 @@ created: 2026-11-17T11:37:31Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Диалоговый доклад реального члена экипажа
 
@@ -150,3 +150,14 @@ D-35-42 пользователь: «Да, принимаем: если пере�
 При реальном pirate sensor contact и distance<=20км authoritative atomic capture фиксирует encounter. Player detection alone не capture. Для новой группы report+pause по batch policy; dismissal сохраняет Speed0; explicitcontinue начинает бой. Уже captured нельзя отменить сменой курса на паузе. Previously reported group не создаёт повторный automatic modal; используется существующий battle transition. Save/Load сохраняет pending capture, не даёт free escape. G-35-09 normal single-group inside-capture CLOSED; остаток: simultaneous capture CLOSED D-35-45: select earliest, no merge; recovery CLOSED D-35-47.
 Tests NOT RUN: MainMenuOverrides_NoSession; OverridesSurviveNewGameLoadUntilExit; Restart_NormalDefaults; Save_NoOverrides; Chance_ExistingGroupsUnchanged; IrinaAbsentUnassigned_Fallback; AssignedIrina_Bonus; BrokenSensor_NoDetection; Reassignment_NoDuplicateReport; NewlyRevealedGroup_NormalBatch; CaptureThenReport_StaysPaused; ExplicitContinue_StartsUnavoidableBattle; PausedCourse_CannotUndoCapture; LoadPendingCapture_NoEscape; PlayerDetectionOnly_NoCapture.
 Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-35-19; конкретные patrol routes ещё балансируются.
+
+## Execution scope 2026-11-17
+Existing dialogue runtime resolves ship crew name/portrait, opens pending batch only when no other dialogue is active, blocks speed resume while pending, and acknowledges without restoring pre-report speed. Campaign dispatcher supports revisioned dismissal; load preflight checks dialogue/batch identity. Scope adds central DemoCampaign dispatcher wiring; no parallel dialogue runtime. Tests cover actual crew identity, script fallback, pending save/load and explicit resume; station regression at story boundary.
+Build PASS us10-tk3-build.log in D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests NOT RUN until story completion.
+
+### Story boundary fixture correction 2026-11-17
+InitialEngine9new tests PASS;12existing station dialogue tests failed solely in ContentPath discovery because build output is correctly outside repository. Scope adds DialogueTests.cs source-anchored content lookup; all semantic assertions preserved. Added queued report behind active station dialogue integration. Client14/Contracts2PASS; Engine rerun follows corrective publication.
+
+Independent review: null pending report is now rejected with ScenarioException before dereference; saved sensor dialogue must match batch participant and actual crew name/portrait (script requires no portrait). Added atomic rejected-load regressions. Build evidence us10-review-build.log; corrected story tests follow publication.
+
+Review orphan-report correction: PreparePirateWorldForLoad rejects reports/pending batches when their world is absent, before publishing loaded state. Atomic orphan regression added. Build evidence us10-orphan-build.log.

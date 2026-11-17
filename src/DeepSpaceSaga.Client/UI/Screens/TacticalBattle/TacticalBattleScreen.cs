@@ -98,7 +98,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         Flow.State?.Phase == (evt == ScreenEvent.MoveTacticalBattle ? TacticalBattlePhase.Move : TacticalBattlePhase.Fire);
 
     private bool SalvoInFlight => Volatile.Read(ref _presentation)?.Results?.InFlight(ClockMilliseconds()) == true;
-    internal bool CanStartNewBattle => !Flow.IsTutorial && !TurnBusy && !SalvoInFlight && !ConfirmExit && Flow.State is not null;
+    internal bool CanStartNewBattle => !Flow.IsTutorial && !Flow.IsCampaign && !TurnBusy && !SalvoInFlight && !ConfirmExit && Flow.State is not null;
     private bool OutcomeVisible => Flow.State?.Phase == TacticalBattlePhase.Over && !SalvoInFlight;
 
     internal TacticalBattleFrame? CaptureFrame(int width, int height)
@@ -424,6 +424,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private ScreenEvent ExitAction()
     {
         if (OutcomeVisible) return ScreenEvent.CloseTacticalBattle;
+        if (Flow.IsCampaign) return ScreenEvent.None;
         ConfirmExit = true;
         return ScreenEvent.None;
     }

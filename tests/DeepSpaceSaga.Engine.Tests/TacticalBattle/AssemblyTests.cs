@@ -78,6 +78,15 @@ public sealed class AssemblyTests
         };
     }
 
+    internal static Battle HistoricalTraceBattle()
+    {
+        var battle = Battle.Create(WithoutModules(), "initial", 1);
+        // V4 oracle predates EP29 loaded-torpedo mass. Preserve that historical
+        // comparison explicitly; live catalog assembly continues to include ammo.
+        foreach (var drone in battle.Drones) drone.AmmoUnitMassKg = 0;
+        return battle;
+    }
+
     private static string SourceFile([System.Runtime.CompilerServices.CallerFilePath] string file = "") => file;
 
     internal static TacticalBattleCatalog Catalog()

@@ -21,7 +21,7 @@
     "cargoPermille": 1300,
     "minimumGameTimeMs": 3600000,
     "maneuverGameTimeMs": 32400000,
-    "cruisePermille": 3200
+    "cruisePermille": 5000
   },
   "penalties": {
     "cancelPermille": 250,

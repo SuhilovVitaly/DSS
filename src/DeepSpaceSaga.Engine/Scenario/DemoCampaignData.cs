@@ -5,7 +5,7 @@ using DeepSpaceSaga.Contracts;
 namespace DeepSpaceSaga.Engine.Scenario;
 
 /// <summary>Campaign metadata only. Resources remain in the existing authoritative world.</summary>
-public sealed record DemoCampaignData(
+public sealed partial record DemoCampaignData(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,
     [property: JsonPropertyName("revision")] long Revision = 0,
     [property: JsonPropertyName("commitSequence")] long CommitSequence = 0,
@@ -35,6 +35,17 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("receipts")]
     public ImmutableArray<DemoCampaignReceiptData> Receipts { get; init; } = [];
 
+    [JsonPropertyName("pirateCompositions")]
+    public ImmutableArray<PirateCompositionData> PirateCompositions { get; init; } = [];
+
+    [JsonPropertyName("pirateWorld")]
+    public PirateWorldData? PirateWorld { get; init; }
+
+    public ImmutableArray<SensorContactReport> SensorReports { get; init; } = [];
+    public SensorContactReportBatch? PendingSensorReport { get; init; }
+    public WorldEncounterData? WorldEncounter { get; init; }
+    public ImmutableArray<WorldEncounterResultData> EncounterResults { get; init; } = [];
+
     /// <summary>EP-0034 US-0006: published offers and the obligations journal; null until the first publication.</summary>
     [JsonPropertyName("stationJobs")]
     public StationJobsStateData? StationJobs { get; init; }
@@ -54,6 +65,37 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        ValidateEncounterHistory(data);
+        if (data.WorldEncounter is { } encounter && (encounter.Binding is null || encounter.Seed < 0 ||
+            encounter.Phase is not (WorldEncounterPhases.Captured or WorldEncounterPhases.PendingBattle or WorldEncounterPhases.Finished) ||
+            encounter.Binding.EncounterId != "encounter:" + encounter.Binding.GroupId ||
+            encounter.Binding.BattleId != "battle:" + encounter.Binding.GroupId ||
+            data.PirateWorld?.Groups.SingleOrDefault(g => g.GroupId == encounter.Binding.GroupId) is not { CompositionMaterialized: true } group ||
+            (encounter.Phase == WorldEncounterPhases.Finished ? !group.Retired : group.Retired || group.Phase != "captured")))
+            throw new ScenarioException("Invalid world encounter binding.");
+        if (data.SensorReports.IsDefault || data.SensorReports.Length > 4 || data.SensorReports.Any(r => r is null ||
+            r.ReportId != "report:" + r.GroupId || string.IsNullOrWhiteSpace(r.GroupId) || r.ObservedMotionTimeMs < 0 ||
+            !double.IsFinite(r.BearingDegrees) || r.BearingDegrees < 0 || r.BearingDegrees >= 360 ||
+            !double.IsFinite(r.RangeWorldUnits) || r.RangeWorldUnits < 0 || r.ApproximateDroneCount < 0 ||
+            r.EtaRealSecondsAt1X is { } eta && (!double.IsFinite(eta) || eta < 0) ||
+            (r.EtaRealSecondsAt1X is null ? r.EtaUnavailableReason != "no_intercept" : r.EtaUnavailableReason is not null) ||
+            r.SignatureTypeIds.IsDefaultOrEmpty || r.SignatureTypeIds.Length > 2 || r.SignatureTypeIds.Any(s => s is not ("lair" or "tancred"))) ||
+            data.SensorReports.Select(r => r.GroupId).Distinct(StringComparer.Ordinal).Count() != data.SensorReports.Length)
+            throw new ScenarioException("Invalid frozen sensor reports.");
+        if (data.PendingSensorReport is { } batch && (string.IsNullOrWhiteSpace(batch.BatchId) || batch.Reports.IsDefaultOrEmpty ||
+            batch.Reports.Any(r => r is null) ||
+            batch.Reports.Select(r => r.ReportId).Distinct(StringComparer.Ordinal).Count() != batch.Reports.Length ||
+            batch.Reports.Any(r => r is null || !data.SensorReports.Any(saved => System.Text.Json.JsonSerializer.Serialize(saved) == System.Text.Json.JsonSerializer.Serialize(r)))))
+            throw new ScenarioException("Invalid pending sensor report batch.");
+        if (data.PirateCompositions.IsDefault || data.PirateCompositions.Any(c => c is null ||
+            string.IsNullOrWhiteSpace(c.GroupId) || string.IsNullOrWhiteSpace(c.CarrierId) || c.GenerationVersion != 1 ||
+            c.SignatureTypeId is not (PirateSignatureTypes.Lair or PirateSignatureTypes.Tancred) || c.Drones.IsDefault ||
+            c.Drones.Length != (c.SignatureTypeId == PirateSignatureTypes.Lair ? 6 : 10) ||
+            c.Drones.Any(d => d is null || string.IsNullOrWhiteSpace(d.DroneId) ||
+                d.LayoutId is not ("light.sword.shield" or "light.spear" or "heavy.sword.shield" or "heavy.spear.shield"))) ||
+            data.PirateCompositions.Select(c => c.CarrierId).Distinct(StringComparer.Ordinal).Count() != data.PirateCompositions.Length ||
+            data.PirateCompositions.SelectMany(c => c.Drones).Select(d => d.DroneId).Distinct(StringComparer.Ordinal).Count() != data.PirateCompositions.Sum(c => c.Drones.Length))
+            throw new ScenarioException("Invalid saved pirate composition.");
         if (data.CommittedCommandHashes is null || data.CommittedCommandHashes.Any(p => string.IsNullOrWhiteSpace(p.Key) ||
             p.Value is not { Length: 64 } || !p.Value.All(Uri.IsHexDigit)))
             throw new ScenarioException("Invalid committed campaign identities.");
@@ -80,6 +122,10 @@ public sealed record DemoCampaignData(
             data.NextCrewSequence < 1 || data.NextDroneSequence < 1 || data.ServiceOfferUsage is null ||
             data.ServiceOfferUsage.Any(p => string.IsNullOrWhiteSpace(p.Key) || p.Value < 0) || data.PilotMemorial.IsDefault)
             throw new ScenarioException("Invalid demo campaign version or counters.");
+        if (data.HiredOfferIds is null || data.Employment.IsDefault || data.Employment.Any(e => e is null ||
+            string.IsNullOrWhiteSpace(e.CrewId) || e.DailyWage < 0 || e.HiredAt < 0 || e.HiredAt > gameTimeMs) ||
+            data.Employment.Select(e => e.CrewId).Distinct().Count() != data.Employment.Length)
+            throw new ScenarioException("Invalid crew employment terms.");
         // EP-0034 US-0001: passenger capacity is derived from the world on projection, never trusted from a file.
         if (data.Transport?.PassengerCapacity is not null)
             throw new ScenarioException("Invalid demo campaign transport: passenger capacity is derived, not persisted.");
@@ -87,10 +133,6 @@ public sealed record DemoCampaignData(
         ValidatePassengerContracts(data, gameTimeMs);
         ValidateTransportFailures(data, gameTimeMs);
         ValidateCargoContracts(data, gameTimeMs);
-        if (data.HiredOfferIds is null || data.Employment.IsDefault || data.Employment.Any(e => e is null ||
-            string.IsNullOrWhiteSpace(e.CrewId) || e.DailyWage < 0 || e.HiredAt < 0 || e.HiredAt > gameTimeMs) ||
-            data.Employment.Select(e => e.CrewId).Distinct().Count() != data.Employment.Length)
-            throw new ScenarioException("Invalid crew employment terms.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;
         long previousRevision = 0;
@@ -260,6 +302,7 @@ public sealed record DemoCampaignData(
     }
 }
 
+public sealed record DemoCrewEmploymentData(string CrewId, long DailyWage, long HiredAt);
 /// <summary>
 /// Persisted cargo contract part (EP-0034 US-0004): the durable voyage posting and, once settled, either the delivery
 /// (arrival time and credited payout) or the return of failed cargo (time and station). Item, quantity, mass, route,
@@ -312,7 +355,6 @@ public sealed record StationJobsStateData(
     [property: JsonPropertyName("publishedBucket")] long PublishedBucket,
     [property: JsonPropertyName("offers")] ImmutableArray<JobOffer> Offers,
     [property: JsonPropertyName("obligations")] ImmutableArray<JobObligation> Obligations);
-public sealed record DemoCrewEmploymentData(string CrewId, long DailyWage, long HiredAt);
 
 public sealed record DemoCampaignReceiptData(
     [property: JsonPropertyName("payloadHash")] string PayloadHash,
