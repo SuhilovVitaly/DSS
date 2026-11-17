@@ -17,15 +17,20 @@ public static class SaveSlotRepository
             string path = Path.Combine(saveDirectory, SaveSlotNaming.ToFileName(slot.SlotId));
             try
             {
-                if (settingsPath is null) Scenario.ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true, isSave: true);
+                if (settingsPath is null)
+                {
+                    var world = Scenario.ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true, isSave: true);
+                    if (world.GameState.SpaceObjects.Any(o => o.ObjectId == world.GameState.PlayerShipObjectId && o.IsDestroyed)) continue;
+                }
                 else
                 {
                     using var candidate = Content.EngineContentLoader.CreateEngineFromSaveFile(settingsPath, path);
+                    var snapshot = candidate.CaptureSnapshot();
+                    if (snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDestroyed)) continue;
                 }
                 return slot;
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or
-                Scenario.ScenarioException or Content.ContentException or InvalidOperationException or ArgumentException)
+            catch (Exception error) when (error is not (OutOfMemoryException or OperationCanceledException))
             { /* Candidate is never adopted; continue to the previous durable slot. */ }
         }
         return null;
