@@ -97,6 +97,10 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     public static DemoDebugSettings ConfigurePirateSquadChance(int? percent = null) =>
         SimulationEngine.ConfigurePirateSquadChance(percent);
 
+    // Process state is consulted by Engine before the first publication, including loaded sessions.
+    public static DemoDebugSettings ConfigureFogOfWar(bool? enabled = null) =>
+        SimulationEngine.ConfigureFogOfWar(enabled);
+
     private async Task RunEngineLoopAsync(CancellationToken ct)
     {
         try
