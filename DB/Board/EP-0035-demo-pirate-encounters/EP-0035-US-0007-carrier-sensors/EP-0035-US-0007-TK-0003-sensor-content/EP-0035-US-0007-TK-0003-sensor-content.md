@@ -135,3 +135,5 @@ Passive category, player/pirate modules and non-overlapping starter installation
 Full-suite correction scope: ScenarioEngineTests, TetrarchLoadoutTests and EP29 starter footprint oracle must include the real sensor at (3,4). Keep 24 hull cells, nonoverlap and every existing module assertion; shared starter now10modules/16cells, demo adds quarters =>11/17. Independent review confirmed changed sensor manifest is the cause; unrelated baseline failures remain separately reported.
 
 Full3 exposed two additional starter oracles: ModuleHealthBootstrapTests and EP29Us13 starter totals. Include sensor in counts and assert exact MOD-PLAYER-SENSOR-01 footprint3,4; all previous hull/health/reservation assertions retained.
+
+The manifest oracle now passed; its second loader-materialization assertion still expected9. Updated same approved10-module count, preserving crew/cabins/ammunition totals. Focused final-oracles:29/31 Client and118/120 Engine; other failures are explicitly tracked, not passed.

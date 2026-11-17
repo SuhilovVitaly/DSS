@@ -177,7 +177,7 @@ public sealed class Ep0029Us0013Tk0003Tests
             var scenario = ScenarioLoader.LoadFromFile(scenarioPath, contentRoot: AppContext.BaseDirectory);
             var ship = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
             Assert.Equal(24, ship.HullLayout!.Cells.Count);
-            Assert.Equal(9, ship.Modules!.Count);
+            Assert.Equal(10, ship.Modules!.Count);
             Assert.Equal(6, ship.Crew!.Count);
             Assert.Equal(2, ship.CarrierState!.ReservedCabins);
             Assert.Equal(78, ship.CarrierState.OwnedDrones!.Sum(drone => drone.AmmoCurrent) +
