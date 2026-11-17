@@ -13,10 +13,12 @@ public sealed class DemoEp0036Us0004Tk0003Tests
     [InlineData(true)]
     public async Task ActualLoadRouterAdoptsPendingCombatOrFrozenLootWithoutCommand(bool finished)
     {
-        using var engine = DemoEp0036Us0007Tk0004Tests.Won(finished, finished);
-        var campaign = engine.CaptureSnapshot().DemoCampaign!;
-        var saved = finished ? engine.CaptureSaveState() : engine.CapturePendingEncounterCheckpoint(
+        using var source = DemoEp0036Us0007Tk0004Tests.Won(finished, finished);
+        var campaign = source.CaptureSnapshot().DemoCampaign!;
+        var saved = finished ? source.CaptureSaveState() : source.CapturePendingEncounterCheckpoint(
             new("checkpoint", campaign.Revision, campaign.WorldEncounter!.Binding.EncounterId));
+        using var engine = DeepSpaceSaga.Engine.Content.EngineContentLoader.CreateEngineFromScenarioFile(
+            AppContext.BaseDirectory + "/Settings.json", AppContext.BaseDirectory + "/Scenarios/Demo/scenario.json");
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true, true), true);
         await using var connection = new LocalGameSessionConnection(engine);
         await using var handle = new GameSessionHandle(connection);
