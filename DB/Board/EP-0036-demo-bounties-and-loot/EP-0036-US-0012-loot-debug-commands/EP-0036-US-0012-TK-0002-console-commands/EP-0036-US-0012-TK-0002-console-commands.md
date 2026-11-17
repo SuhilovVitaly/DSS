@@ -89,3 +89,6 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite-создатели новых файлов указаны в depends_on. Draft означает ожидаемую сверку плана, не отсутствующую игровую реализацию.
+
+## Execution
+Registered engineer_bonus, loot_force and read-only loot_state in default help registry. Commands validate before transport, use active session and exclusive host gate, reject busy combat/changed sessions and acknowledge only Applied. Console prints effective engineer source, modes and loot sources/attempts/free mass. Client/test build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us12-tk2-build.log); both tickets complete, boundary tests next.
