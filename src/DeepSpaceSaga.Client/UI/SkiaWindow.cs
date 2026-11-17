@@ -861,6 +861,11 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
 
     GameSessionHandle? IDebugConsoleHost.Session => _session;
 
+    Task<DebugCommandResult> IDebugConsoleHost.ConfigureFogOfWarAsync(bool? enabled, CancellationToken cancellationToken) =>
+        ((IDebugConsoleHost)this).RunExclusiveAsync(token => AppDebugOverrides.FogAsync(enabled,
+            value => _sessionFactory.ConfigureFogOfWar(value), _session?.DemoCampaign?.Revision,
+            _session is null ? null : (command, ct) => _session.ExecuteDemoCampaignAsync(command, ct).AsTask(), token), cancellationToken);
+
     Task<DebugCommandResult> IDebugConsoleHost.ConfigurePirateSquadChanceAsync(int? percent, CancellationToken cancellationToken) =>
         ((IDebugConsoleHost)this).RunExclusiveAsync(_ =>
         {

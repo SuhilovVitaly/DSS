@@ -42,6 +42,8 @@ public static class Program
     {
         public DemoDebugSettings ConfigurePirateSquadChance(int? percent = null) =>
             LocalGameSessionConnection.ConfigurePirateSquadChance(percent);
+        public DemoDebugSettings ConfigureFogOfWar(bool? enabled = null) =>
+            LocalGameSessionConnection.ConfigureFogOfWar(enabled);
         public bool IsDemoProfile => UI.Demo.DemoStartPresentation.IsDemoProfile(SettingsPath);
         public SaveSlotInfo? GetLatestValidSave() => SaveSlotRepository.GetLatestValidSlot(SaveDirectory, SettingsPath);
         // The only place that knows about Saves/ on disk (mirrors Settings.json).

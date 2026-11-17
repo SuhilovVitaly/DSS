@@ -5,6 +5,7 @@ namespace DeepSpaceSaga.Client;
 public interface IGameSessionFactory
 {
     DemoDebugSettings ConfigurePirateSquadChance(int? percent = null) => throw new NotSupportedException();
+    DemoDebugSettings ConfigureFogOfWar(bool? enabled = null) => throw new NotSupportedException();
     bool IsDemoProfile => false;
     SaveSlotInfo? GetLatestValidSave() => null;
     IGameSessionConnection CreateSession();
