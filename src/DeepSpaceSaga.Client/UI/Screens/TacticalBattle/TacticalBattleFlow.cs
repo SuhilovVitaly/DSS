@@ -101,6 +101,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {
+        if (IsCampaign && !CheckpointPending && State?.Phase != TacticalBattlePhase.Over) return false;
         // A mapped Unavailable after the engine committed means the engine no longer has a battle
         // but the continuation checkpoint was not written. Retry only that pending BattleId: the
         // LocalClient cache replays the accepted settlement receipt and writes the file without
@@ -373,6 +374,7 @@ public class TacticalBattleModalScreen : IScreen
         if (Flow.Pending) return ScreenEvent.None;
         if (key == Key.Escape)
         {
+            if (Flow.IsCampaign && (IsSetup || Flow.State?.Phase != TacticalBattlePhase.Over)) return ScreenEvent.None;
             if (ConfirmExit) ConfirmExit = false;
             else if (IsSetup) return ScreenEvent.CloseTacticalBattle;
             else ConfirmExit = true;

@@ -4,7 +4,7 @@ story: EP-0035-US-0015-squad-battle-continuation
 ticket: EP-0035-US-0015-TK-0002-results-client
 title: Результаты по всем носителям
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0015-TK-0001-battle-client]
@@ -88,3 +88,7 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 После завершённого EP35 боя (win/loss, включая Draw и Timeout/SeriesTurnCap) участвовавшая pirate group становится retired: исчезает с карты, не патрулирует, не обнаруживает игрока и не может начать новый encounter. Это логическое завершение участия группы, не искусственное уничтожение: actual carrier hull/ammo и drone/pilot statuses сохраняются в settlement/history. Соседние группы не меняются; для них обычный перехват на resume сохраняется без иммунитета.
 Retirement входит в exactly-once settlement receipt и durable finished checkpoint. До завершённого settlement, включая pending battle/recovery или отказ записи результата, navigable world не публикуется; повтор callback/Load не создаёт группу заново и не повторяет последствия. Continue pending по D-35-47 восстанавливает тот же бой с начала; retirement не служит выходом из незавершённого боя. A-35-20 и остаток G-35-15 о surviving world group закрыты этим решением; no-respawn сохраняется.
 Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHullAndPilotStateNotFabricated; RetiredGroupNeverCapturesAgain; NeighborGroupsRemainActive; RetirementAndReceiptExactlyOnce; PendingRecoveryDoesNotRetireEarly; FinishedCheckpointRestoresRetirement. UI использует authoritative retired state, а не локальное скрытие маркера.
+
+Execution scope: PhasePanel.Outcome.cs adds separate actual carrier hull rows and campaign Draw/Timeout defeat label, with single return action; expand TacticalBattleFlow/Screen/Overlay for no campaign abort/new battle and matching tests. Engine settlement mapping remains TK3; no client damage or reward calculation.
+
+Build PASS us15-tk2-build.log. Tests deferred until US15 boundary. Separate hull rows retain actual damage; campaign result offers no new battle, Draw/Timeout display defeat.
