@@ -11,7 +11,7 @@ public sealed class Ep0035Us12Tk1Tests
             Members: [new("group:carrier:1", "lair"), new("group:carrier:2", "lair")]);
         var restored = JsonSerializer.Deserialize<PirateGroupSnapshot>(JsonSerializer.Serialize(source))!;
         Assert.Equal(source.Id, restored.Id);
-        Assert.Equal(source.Members, restored.Members);
+        Assert.Equal(source.Members.ToArray(), restored.Members.ToArray());
         Assert.Equal(2, restored.Members.Select(m => m.CarrierId).Distinct().Count());
     }
 
