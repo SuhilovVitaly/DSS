@@ -1246,5 +1246,15 @@
   "Trade.Item.item.trophy.weapon.gun.spear.t1": "Трофей: Копьё I",
   "Trade.Description.item.trophy.weapon.gun.spear.t1": "Исправный трофейный модуль. Только для продажи; установка недоступна.",
   "Trade.Item.item.trophy.weapon.gun.sword.t1": "Трофей: Меч I",
-  "Trade.Description.item.trophy.weapon.gun.sword.t1": "Исправный трофейный модуль. Только для продажи; установка недоступна."
+  "Trade.Description.item.trophy.weapon.gun.sword.t1": "Исправный трофейный модуль. Только для продажи; установка недоступна.",
+  "loot.prisoner_already_captured": "Этот пилот уже под арестом.",
+  "loot.prisoner_no_cabin": "Нет свободной каюты без обязательств.",
+  "loot.prisoner_not_capturable": "Этого пилота нельзя арестовать.",
+  "Prisoners.Arrest": "Арестовать пилота",
+  "Prisoners.CabinCount": "Пленных: {0} · Свободных кают: {1}",
+  "Prisoners.Captured": "Под арестом",
+  "Prisoners.Empty": "Пленных на борту нет.",
+  "Prisoners.Pending": "Арест выполняется…",
+  "Prisoners.Title": "Пленные",
+  "Prisoners.Upkeep": "Одна каюта и обычные пайки на пленного; без жалованья."
 }

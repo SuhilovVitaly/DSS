@@ -1246,5 +1246,15 @@
   "Trade.Item.item.trophy.weapon.gun.spear.t1": "Trophy: Spear I",
   "Trade.Description.item.trophy.weapon.gun.spear.t1": "Intact salvaged module. For sale only; installation is unavailable.",
   "Trade.Item.item.trophy.weapon.gun.sword.t1": "Trophy: Sword I",
-  "Trade.Description.item.trophy.weapon.gun.sword.t1": "Intact salvaged module. For sale only; installation is unavailable."
+  "Trade.Description.item.trophy.weapon.gun.sword.t1": "Intact salvaged module. For sale only; installation is unavailable.",
+  "loot.prisoner_already_captured": "This pilot is already in custody.",
+  "loot.prisoner_no_cabin": "No uncommitted cabin available.",
+  "loot.prisoner_not_capturable": "This pilot cannot be arrested.",
+  "Prisoners.Arrest": "Arrest pilot",
+  "Prisoners.CabinCount": "Prisoners: {0} · Free cabins: {1}",
+  "Prisoners.Captured": "In custody",
+  "Prisoners.Empty": "No prisoners aboard.",
+  "Prisoners.Pending": "Arrest pending…",
+  "Prisoners.Title": "Prisoners",
+  "Prisoners.Upkeep": "One cabin and standard rations per prisoner; no wages."
 }

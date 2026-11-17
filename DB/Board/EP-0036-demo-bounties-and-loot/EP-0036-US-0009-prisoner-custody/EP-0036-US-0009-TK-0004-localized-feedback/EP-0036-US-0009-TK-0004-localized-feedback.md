@@ -99,3 +99,6 @@ Owning build: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Execution
+Added RU/EN custody, pending, cabin and upkeep text plus all refusal codes under loot.* to use the existing shared loot reason renderer. Authored key/placeholder parity test; deferred to US9 boundary. Both locale dictionaries parse successfully; no API changes.
