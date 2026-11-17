@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01, AC-04]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: implemented-tests-pending
+implementation_status: implemented-tested
 ---
 
 # Отдельный инженер в стартовом составе демо

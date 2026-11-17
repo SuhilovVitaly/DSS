@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: implemented-tests-pending
+implementation_status: implemented-tested
 ---
 
 # Создание и сохранение личного навыка инженера

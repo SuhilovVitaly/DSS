@@ -48,3 +48,7 @@ Published tickets: TK1 813fad2d; TK5 13e1fc38; TK4 d280058e; TK2 7b1651ea; TK3 0
 ## US2 completion — 2026-11-17
 
 Published: TK1 d0c6a409; TK2 f8c687be; TK4 b80b8fb1; TK3 3fa67841. Combined bounty US1/US2 thematic checks PASS: Contracts 5/5, Engine 20/20, Client 11/11. These include live local-session claim/reopen for both unaccepted and cancelled targets, overflow and corrupted posting rejection. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us2-*-tests.log and matching results directories. Independent review of a37646de..3fa67841 found no actionable defects. Native NOT RUN.
+
+## US8 completion — 2026-11-17
+
+Published TK1 893e7ebd, TK2 1a57a0a2, TK3 04e35b79, TK4 edb3c880, TK5 bb04160c. Corrections: test analyzer 3f1b9201; independent review role-parser consistency b3de91b7. Thematic US1/US2/US8 checks: Contracts 8/8, Engine 26/26, Client 16/16 (after analyzer correction). Post-review engineer-only Engine 8/8. Evidence under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/: us8-Contracts-tests.log, us8-Engine-tests.log, us8-Client-repeat.log, us8-review-Engine.log and matching TRX directories. Native NOT RUN. Next: shared loot contracts/schema/content, module salvage and lifecycle.

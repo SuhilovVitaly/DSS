@@ -10,7 +10,7 @@ revision: 1
 created: 2026-11-17T19:18:11Z
 source_request: "Интерактивный груминг EP-0036 и запись принятых решений через сабагентов."
 dependencies: [EP-0033-US-0005-crew-upkeep]
-implementation_status: not-started
+implementation_status: implemented-tested
 ---
 
 # Стартовый инженер и личный навык демонтажа
