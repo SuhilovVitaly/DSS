@@ -12,7 +12,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class Ep0029Us0011Tk0002Tests
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private static string BaseDir => AppContext.BaseDirectory;
     private static string ManifestPath => Path.Combine(BaseDir, "Data", "Ships", "starter-carrier.json");

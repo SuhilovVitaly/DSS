@@ -6,8 +6,7 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class StationMarketEventContentTests
 {
-    private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-        "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private static GameDataRegistry Load(string root) => EngineContentLoader.LoadRegistryFromSettingsFile(
         Path.Combine(root, "Settings.json"), out _, out _);
     private const string All = "hydroponic,industrial,mining,scientific-military,transit";

@@ -97,7 +97,7 @@ public sealed class ManualManeuverInputTests
         internal Fixture()
         {
             Directory.CreateDirectory(_directory);
-            string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+            string root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client"));
             var source = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
             _engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"), Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
             _engine.LoadScenario(source with

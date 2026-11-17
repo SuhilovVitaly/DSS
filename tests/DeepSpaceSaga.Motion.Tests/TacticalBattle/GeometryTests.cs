@@ -8,10 +8,10 @@ public sealed class GeometryTests
 {
     public static IEnumerable<object[]> Vectors()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        var dir = new DirectoryInfo(TestPaths.Repository);
         while (dir is not null && !File.Exists(System.IO.Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) dir = dir.Parent;
         if (dir is null) throw new DirectoryNotFoundException("DSS repository not found.");
-        using var doc = JsonDocument.Parse(File.ReadAllText(System.IO.Path.Combine(dir.FullName, "VData/Planning/V4.0/Reference/geometry.json")));
+        using var doc = JsonDocument.Parse(File.ReadAllText(System.IO.Path.Combine(dir.FullName, "tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/Fixtures/V4/geometry.json")));
         Assert.Equal(TacticalGeometry.HypotCPythonVersion, doc.RootElement.GetProperty("header").GetProperty("exporterPython").GetString());
         int index = 0;
         foreach (var vector in doc.RootElement.GetProperty("data").EnumerateArray())

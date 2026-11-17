@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class PointCombatUS0019TK0001Tests
 {
-    private static readonly string Source = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string Source = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     [Theory]
     [InlineData(false)]

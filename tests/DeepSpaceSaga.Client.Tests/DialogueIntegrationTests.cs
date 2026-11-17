@@ -13,7 +13,7 @@ public class DialogueIntegrationTests
     [Fact]
     public async Task Local_connection_publishes_paused_dialogue_then_paid_docking_and_resumes()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        var dir = new DirectoryInfo(TestPaths.Repository);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) dir = dir.Parent;
         string settings = Path.Combine(dir!.FullName, "src/DeepSpaceSaga.Client/Settings.json");
         var engine = SimulationEngine.CreateFromSettingsFile(settings);

@@ -19,7 +19,7 @@ public sealed class Ep0029Us0013Tk0003Tests
     private const string ManifestReference = "Data/Ships/starter-carrier.json";
 
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
     private static string TutorialPath => Path.Combine(AppContext.BaseDirectory, "Scenarios", "Tutorial", "scenario.json");

@@ -13,7 +13,7 @@ public sealed class StationMarketCatalogContentTests
         "0E0C8DCBDBB06051AC1D7DBA5321DA8DFD0A2CA29C7980AAA4F56486FA300555";
 
     private static readonly string RepoRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        TestPaths.Repository));
 
     private static readonly string ClientRoot = Path.Combine(RepoRoot, "src", "DeepSpaceSaga.Client");
     private static readonly string SettingsPath = Path.Combine(ClientRoot, "Settings.json");

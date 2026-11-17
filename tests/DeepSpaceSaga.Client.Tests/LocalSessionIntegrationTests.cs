@@ -706,7 +706,7 @@ public class LocalSessionIntegrationTests
     private static string ResolveClientBuildOutputSettingsPath()
     {
         string repositoryRoot = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+            TestPaths.Repository));
         string clientBinRoot = Path.Combine(repositoryRoot, "src", "DeepSpaceSaga.Client", "bin");
 
         foreach (string configuration in new[] { "Debug", "Release" })
@@ -1359,8 +1359,7 @@ public class LocalSessionIntegrationTests
     private static string ResolveRealSettingsPath()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))

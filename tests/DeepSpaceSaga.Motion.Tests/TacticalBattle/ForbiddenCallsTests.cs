@@ -14,7 +14,7 @@ public sealed class ForbiddenCallsTests
     [Fact]
     public void ProductionTacticalBattleSourceUsesOnlyApprovedOperations()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        var dir = new DirectoryInfo(TestPaths.Repository);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) dir = dir.Parent;
         Assert.NotNull(dir);
         var files = Directory.GetFiles(Path.Combine(dir!.FullName, "src"), "*.cs", SearchOption.AllDirectories)

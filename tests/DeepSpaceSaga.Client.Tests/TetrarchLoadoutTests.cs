@@ -9,7 +9,7 @@ public sealed class TetrarchLoadoutTests
 {
     private const string LauncherId = "module.torpedo.launcher.basic";
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     [Theory]
     [InlineData("Default")]

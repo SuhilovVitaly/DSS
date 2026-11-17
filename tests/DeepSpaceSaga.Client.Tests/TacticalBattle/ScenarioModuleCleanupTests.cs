@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class ScenarioModuleCleanupTests
 {
     private static readonly string Source = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src/DeepSpaceSaga.Client"));
 
     [Theory]
     [InlineData(false)]

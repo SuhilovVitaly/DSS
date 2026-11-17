@@ -11,7 +11,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class StationResourceFieldContentTests
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private static readonly string SettingsPath = Path.Combine(ClientRoot, "Settings.json");
     private static readonly string[] MvpScenarios = ["Default", "Docked", "Undocked"];
 

@@ -15,7 +15,7 @@ namespace DeepSpaceSaga.Client.Tests;
 internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFactory
 {
     internal const string Player = "SPC-0001", Enemy = "SPC-0002", Torpedo = "MOD-PLAYER-TORPEDO-01";
-    internal static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+    internal static readonly string Root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client"));
     internal readonly SimulationEngine Engine;
     internal readonly LocalGameSessionConnection Connection;
     internal readonly GameSessionHandle Handle;

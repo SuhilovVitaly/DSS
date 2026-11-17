@@ -7,11 +7,11 @@ public sealed class V2MapAcceptanceReportTests
 {
     internal static string Root
     {
-        get { var d = new DirectoryInfo(AppContext.BaseDirectory); while (!File.Exists(Path.Combine(d!.FullName, "DeepSpaceSaga.sln"))) d = d.Parent; return d.FullName; }
+        get { var d = new DirectoryInfo(TestPaths.Repository); while (!File.Exists(Path.Combine(d!.FullName, "DeepSpaceSaga.sln"))) d = d.Parent; return d.FullName; }
     }
     internal static string NewDirectory()
     {
-        string path = Path.GetFullPath(Path.Combine(Root, "../artifacts/validation/ep-0018-map-geography-and-scale/report-tests-" + Guid.NewGuid().ToString("N")));
+        string path = Path.GetFullPath(Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.Combine(Root, "../artifacts/validation/ep-0018-map-geography-and-scale"), "report-tests-" + Guid.NewGuid().ToString("N")));
         Directory.CreateDirectory(path); return path;
     }
     internal static string[] Arguments(string output) => [Root, output, "--map-v2-acceptance", "--seeds", "42", "--scenarios", "Default", "--viewports", "1280x720", "--ui-scales", "1", "--warmup", "1", "--frames", "2"];

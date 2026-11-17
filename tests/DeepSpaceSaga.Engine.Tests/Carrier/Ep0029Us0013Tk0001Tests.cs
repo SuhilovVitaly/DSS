@@ -19,13 +19,13 @@ public sealed class Ep0029Us0013Tk0001Tests
     private const string ReducedDroneId = "DRN-PLAYER-01";
 
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private static string SettingsPath => Path.Combine(ClientRoot, "Settings.json");
     private static string TutorialScenarioPath => Path.Combine(ClientRoot, "Scenarios", "Tutorial", "scenario.json");
 
     private static string SaveFixtures => Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "Fixtures", "Saves"));
+        TestPaths.Project(), "Fixtures", "Saves"));
 
     private static SimulationEngine LoadTutorial()
     {

@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class ModuleHealthBootstrapTests
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     [Fact]
     public void Configured_structure_is_projected()

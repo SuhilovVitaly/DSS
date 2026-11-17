@@ -8,7 +8,7 @@ public sealed class SystemPerformanceReportTests
 {
     private static string Root
     {
-        get { var dir = new DirectoryInfo(AppContext.BaseDirectory); while (!File.Exists(Path.Combine(dir!.FullName, "DeepSpaceSaga.sln"))) dir = dir.Parent; return dir.FullName; }
+        get { var dir = new DirectoryInfo(TestPaths.Repository); while (!File.Exists(Path.Combine(dir!.FullName, "DeepSpaceSaga.sln"))) dir = dir.Parent; return dir.FullName; }
     }
     [Fact]
     public void ReportHasReproductionAndBackend()

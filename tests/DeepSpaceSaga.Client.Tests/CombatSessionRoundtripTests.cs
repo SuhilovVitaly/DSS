@@ -32,7 +32,7 @@ public sealed class CombatSessionRoundtripTests
 internal sealed class CombatSessionFixture : IAsyncDisposable
 {
     internal const string Player = "SPC-0001", Target = "SPC-0002", EngineModule = "MOD-PLAYER-ENGINE-01";
-    private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string Root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private static string Settings => Path.Combine(Root, "Settings.json");
     internal string DirectoryPath { get; } = Path.Combine(Path.GetTempPath(), "dss-combat-session-" + Guid.NewGuid().ToString("N"));
     internal SimulationEngine Engine { get; }

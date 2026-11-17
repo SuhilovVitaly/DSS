@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class PointCombatUS0019TK0005Tests
 {
-    private static readonly string Source = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+    private static readonly string Source = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
     private const string Player = "SPC-0001", EngineModule = "MOD-PLAYER-ENGINE-01";
     private static AuthoritativeSnapshot At(SimulationEngine engine, long time = 0) => engine.CaptureSnapshotForTests(time * 4, simulationTimeMs: time);
     private static ObjectMotionSnapshot Ship(AuthoritativeSnapshot state) => state.Objects.Single(o => o.ObjectId == Player);

@@ -20,7 +20,7 @@ public sealed class MarketFlowContentTests
     private const string EngineModuleId = "MOD-MARKET-ENGINE";
 
     private static readonly string RepoRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        TestPaths.Repository));
 
     private static readonly string ClientRoot = Path.Combine(RepoRoot, "src", "DeepSpaceSaga.Client");
     private static readonly string SettingsPath = Path.Combine(ClientRoot, "Settings.json");

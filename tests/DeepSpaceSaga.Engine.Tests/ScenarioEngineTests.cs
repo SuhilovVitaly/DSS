@@ -138,8 +138,7 @@ public class ScenarioEngineTests
         // Walk up from the test output directory to find the repo root,
         // then into the Client project where the scenario lives.
         string scenarioPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Scenarios", "Default", "scenario.json"));
 
         // Fallback for environments where the output structure differs (CI / dotnet test from sln dir)
@@ -234,8 +233,7 @@ public class ScenarioEngineTests
     public void Can_create_engine_from_real_settings_file()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))
@@ -284,8 +282,7 @@ public class ScenarioEngineTests
     public void Real_default_scenario_occupies_16_of_24_hull_cells()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))
@@ -454,8 +451,7 @@ public class ScenarioEngineTests
     private static string ResolveRealSettingsPath()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))
@@ -480,20 +476,8 @@ public class ScenarioEngineTests
     /// </summary>
     private static string ResolveClientBuildOutputSettingsPath()
     {
-        string repoRoot = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
-        string clientBinRoot = Path.Combine(repoRoot, "src", "DeepSpaceSaga.Client", "bin");
-
-        foreach (string configuration in new[] { "Debug", "Release" })
-        {
-            string candidate = Path.Combine(clientBinRoot, configuration, "net8.0", "Settings.json");
-            if (File.Exists(candidate))
-                return candidate;
-        }
-
-        throw new FileNotFoundException(
-            "DeepSpaceSaga.Client build output not found under " +
-            $"'{clientBinRoot}' (Debug or Release, net8.0). Build the Client project first.");
+        string path = Path.Combine(TestPaths.ClientOutput, "Settings.json");
+        return File.Exists(path) ? path : throw new FileNotFoundException("Build Client before running its deployment check.", path);
     }
 
     [Fact]
@@ -511,8 +495,7 @@ public class ScenarioEngineTests
     public void Real_default_scenario_active_module_types_have_valid_command_type_ids()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))
@@ -997,8 +980,7 @@ public class ScenarioEngineTests
     public void Public_settings_factory_loads_scenario_with_modules()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
+            TestPaths.Repository,
             "src", "DeepSpaceSaga.Client", "Settings.json"));
 
         if (!File.Exists(settingsPath))

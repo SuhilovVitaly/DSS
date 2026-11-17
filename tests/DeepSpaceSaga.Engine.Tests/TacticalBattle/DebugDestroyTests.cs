@@ -19,7 +19,7 @@ public sealed class DebugDestroyTests : IDisposable
     private static readonly Lazy<TacticalBattleCatalog> Catalog = new(AssemblyTests.Catalog);
     private readonly string _directory = Path.Combine(Path.GetTempPath(), $"dss-ep0030-us0003-tk0002-{Guid.NewGuid():N}");
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     public void Dispose()
     {

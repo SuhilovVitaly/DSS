@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class DebugTuningFileWriterTests : IDisposable
 {
     private readonly string _directory = Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath(), "debug-writer-fixtures", Guid.NewGuid().ToString("N"));
-    private static string ClientRoot => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+    private static string ClientRoot => Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client"));
     private static SimulationEngine Engine() => SimulationEngine.CreateFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"),
         Path.Combine(ClientRoot, "Scenarios/PlayerShipOnly/scenario.json"));
     private static DebugTuningSnapshot Catalog()

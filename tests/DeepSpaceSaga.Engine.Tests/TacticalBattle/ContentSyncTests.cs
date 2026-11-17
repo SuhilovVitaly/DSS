@@ -11,7 +11,7 @@ public sealed class ContentSyncTests
     {
         get
         {
-            for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+            for (var dir = new DirectoryInfo(TestPaths.Repository); dir is not null; dir = dir.Parent)
                 if (File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) return dir.FullName;
             throw new DirectoryNotFoundException("DSS repository not found.");
         }

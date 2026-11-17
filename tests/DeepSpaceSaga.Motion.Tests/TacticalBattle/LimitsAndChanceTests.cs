@@ -150,7 +150,7 @@ public sealed class LimitsAndChanceTests
             using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(content, file)));
             return cache[file] = doc.RootElement.Clone();
         }
-        using var trace = JsonDocument.Parse(File.ReadAllText(Path.Combine(repo, "VData/Planning/V4.0/Reference/trace-seed-1.json")));
+        using var trace = JsonDocument.Parse(File.ReadAllText(Path.Combine(repo, "tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/Fixtures/V4/trace-seed-1.json")));
         var data = trace.RootElement.GetProperty("data");
         var units = data.GetProperty("assembly").GetProperty("units").EnumerateArray().ToDictionary(e => e.GetProperty("id").GetString()!, StringComparer.Ordinal);
         var scenario = Read("scenarios.json").GetProperty("initial");
@@ -199,7 +199,7 @@ public sealed class LimitsAndChanceTests
     private static double N(JsonElement element, string name) => element.GetProperty(name).GetDouble();
     private static string Repository()
     {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        for (var dir = new DirectoryInfo(TestPaths.Repository); dir is not null; dir = dir.Parent)
             if (File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) return dir.FullName;
         throw new DirectoryNotFoundException("DSS repository not found.");
     }

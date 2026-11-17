@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class Ep0029Us0004Tk0003Tests
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private static TacticalBattleCatalog Catalog() =>
         TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data", "TacticalBattle"));

@@ -12,7 +12,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class Ep0029Us0005Tk0002Tests : IDisposable
 {
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        TestPaths.Repository, "src", "DeepSpaceSaga.Client"));
 
     private readonly string _directory = Path.Combine(Path.GetTempPath(), $"dss-ep0029-us0005-tk0002-{Guid.NewGuid():N}");
 

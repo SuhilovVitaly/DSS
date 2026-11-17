@@ -85,7 +85,7 @@ public class PhaseThreeSessionRoundtripTests
     {
         internal const string Player = "SPC-0001";
         internal static readonly string[] Defenses = ["MOD-PLAYER-COUNTERMEASURE-01", "MOD-PLAYER-COUNTERMEASURE-02"];
-        private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+        private static readonly string Root = Path.GetFullPath(Path.Combine(TestPaths.Repository, "src/DeepSpaceSaga.Client"));
         internal string DirectoryPath { get; } = Path.Combine(Path.GetTempPath(), "dss-phase-three-ui-" + Guid.NewGuid().ToString("N"));
         internal SimulationEngine Engine { get; }
         internal LocalGameSessionConnection Connection { get; }
