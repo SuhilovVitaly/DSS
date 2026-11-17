@@ -50,6 +50,7 @@ public sealed record DemoLootDefinitions(int SchemaVersion, string ScrapItemType
             "decoy" when catalog.Decoys.Contains(m.CatalogId) => catalog.Decoys[m.CatalogId].MassKg,
             _ => throw new ScenarioException("Unknown loot module catalog identity.")
         };
+        Require(ModuleItems is not null);
         if (ModuleItems is { } modules)
         {
             Require(!modules.IsDefault && modules.All(m => m is not null) &&
@@ -65,11 +66,20 @@ public sealed record DemoLootDefinitions(int SchemaVersion, string ScrapItemType
             }
         }
         Require(!ConsumableItems.IsDefault && ConsumableItems.All(m => m is not null) &&
-            ConsumableItems.Select(m => (m.Category, m.CatalogId)).Distinct().Count() == ConsumableItems.Length);
+            ConsumableItems.Select(m => (m.Category, m.CatalogId)).Distinct().Count() == ConsumableItems.Length &&
+            ConsumableItems.Select(m => m.ItemTypeId).Distinct(StringComparer.Ordinal).Count() == ConsumableItems.Length);
         foreach (var m in ConsumableItems)
         {
             Item(m.ItemTypeId);
             Require(m.Category == "ammo" && m.CatalogId == "torpedo.t1" || m.Category == "decoy" && catalog.Decoys.Contains(m.CatalogId));
+        }
+        foreach (var id in encounters.DroneLayouts)
+        {
+            var layout = catalog.Layouts[id];
+            if (catalog.Frames[layout.Class].AmmoCapacity > 0)
+                Require(ConsumableItems.Any(m => m.Category == "ammo" && m.CatalogId == "torpedo.t1"));
+            if (layout.Module is { } decoy && catalog.Decoys[decoy].Charges > 0)
+                Require(ConsumableItems.Any(m => m.Category == "decoy" && m.CatalogId == decoy));
         }
     }
 }

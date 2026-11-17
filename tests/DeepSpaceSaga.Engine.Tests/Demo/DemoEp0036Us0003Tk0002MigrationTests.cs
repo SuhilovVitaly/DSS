@@ -5,6 +5,22 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0036Us0003Tk0002MigrationTests
 {
+    [Fact]
+    public void IncompleteOrAliasedLootMappings_RejectBeforeGameplay()
+    {
+        var root = DemoEp0033Us0001Tk0003Tests.Root();
+        var registry = EngineContentLoader.LoadFromSettingsFile(root + "/Settings.json").Registry;
+        var definitions = DemoCampaignDefinitions.Load(root);
+        var loot = definitions.Loot!;
+        Assert.Throws<ScenarioException>(() => (loot with { ConsumableItems = [] }).ValidateReferences(registry, definitions.Encounters));
+        Assert.Throws<ScenarioException>(() => (loot with { ModuleItems = null }).ValidateReferences(registry, definitions.Encounters));
+        var duplicate = loot.ConsumableItems.SetItem(1, loot.ConsumableItems[1] with { ItemTypeId = loot.ConsumableItems[0].ItemTypeId });
+        Assert.Throws<ScenarioException>(() => (loot with { ConsumableItems = duplicate }).ValidateReferences(registry, definitions.Encounters));
+        var profile = registry.StationMarketProfiles.GetDefinition(registry.StationMarketProfiles.GetIndex("market.industrial"));
+        string previous = LootCatalogCompatibility.Previous(profile).Fingerprint;
+        Assert.False(LootCatalogCompatibility.IsPrevious(profile with { InitialCredits = profile.InitialCredits + 1 }, previous));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

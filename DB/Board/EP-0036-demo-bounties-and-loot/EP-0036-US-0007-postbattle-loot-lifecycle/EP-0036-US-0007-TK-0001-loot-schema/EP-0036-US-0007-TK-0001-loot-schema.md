@@ -102,3 +102,7 @@ Typed loot schema and optional loader integrated, including explicit quantities,
 ## Corrective implementation — canonical fingerprint
 
 Review while connecting the lifecycle identified recursive serialization of the computed Fingerprint property. Replaced whole-record serialization with an explicit payload, ignored the computed property, and sorted dictionary/mapping keys ordinally. Added order-invariance assertion. Engine build PASS; tests remain NOT RUN until US7 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk1-fingerprint-build.log.
+
+## US3 independent-review correction — complete runtime mappings
+
+The earlier staging allowance for missing ModuleItems ends now that runtime salvage is present. Loader requires module mappings and complete ammo/decoy coverage for actual demo layouts, with unique consumable output item IDs. This prevents accepted content from throwing during victory settlement. Add US3 migration/content negative tests (allowlist extension to DemoEp0036Us0003Tk0002MigrationTests.cs) for incomplete/aliased mappings and unrelated profile drift. Engine build PASS; corrected behavior will be checked at the completed US3 boundary. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk1-coverage-build.log.
