@@ -109,5 +109,14 @@ internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, stri
     }
     public IEnumerable<TacticalDrone> ActiveDrones(string side) => Drones.Where(d => d.Side == side && d.IsActive);
     public TacticalCarrier Carrier(string side) => Carriers.First(c => c.Side == side);
+    public IEnumerable<TacticalCarrier> ActiveCarriers(string side) => Carriers.Where(c => c.Side == side && c.IsActive);
+    public TacticalCarrier CarrierFor(TacticalDrone drone, bool enemy = false)
+    {
+        string side = enemy ? EnemySide(drone.Side) : drone.Side;
+        var live = ActiveCarriers(side).ToArray();
+        if (!enemy && live.FirstOrDefault(c => c.Id == drone.OriginCarrierId) is { } origin) return origin;
+        return live.OrderBy(c => TacticalGeometry.Dist(drone.Pose.X, drone.Pose.Y, c.Pose.X, c.Pose.Y))
+            .ThenBy(c => c.Id, StringComparer.Ordinal).FirstOrDefault() ?? Carrier(side);
+    }
     public string EnemySide(string side) => side == TacticalBattleConstants.SideOrder[0] ? TacticalBattleConstants.SideOrder[1] : TacticalBattleConstants.SideOrder[0];
 }

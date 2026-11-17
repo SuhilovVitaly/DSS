@@ -7,20 +7,20 @@ internal static class TacticalCommander
 {
     public static ImmutableArray<TacticalDrone> Threats(TacticalBattle battle, string side)
     {
-        var carrier = battle.Carrier(side);
+        var carriers = battle.ActiveCarriers(side).ToArray();
         var tuning = battle.Catalog.Ai.Commander;
-        return battle.ActiveDrones(battle.EnemySide(side)).Where(enemy =>
+        return battle.ActiveDrones(battle.EnemySide(side)).Where(enemy => carriers.Any(carrier =>
         {
             double distance = Distance(enemy, carrier);
             return distance <= tuning.ThreatRadius
                 || Math.Abs(TacticalGeometry.Norm(TacticalGeometry.Bearing(enemy.Pose.X, enemy.Pose.Y, carrier.Pose.X, carrier.Pose.Y)
                     - enemy.Pose.Course)) <= tuning.ThreatHeadingDeg && distance <= tuning.ThreatTurns * enemy.Limits.MaxSpeed;
-        }).OrderBy(enemy => Distance(enemy, carrier)).ToImmutableArray();
+        })).OrderBy(enemy => carriers.Min(carrier => Distance(enemy, carrier))).ToImmutableArray();
     }
 
     public static TacticalOrder Interceptor(TacticalBattle battle, TacticalDrone drone)
     {
-        var carrier = battle.Carrier(drone.Side);
+        var carrier = battle.CarrierFor(drone);
         var tuning = battle.Catalog.Ai.Interceptor;
         var close = battle.ActiveDrones(battle.EnemySide(drone.Side)).Where(e => Distance(e, carrier) <= tuning.PatrolRadius)
             .OrderBy(e => Distance(e, carrier)).FirstOrDefault();
@@ -59,12 +59,13 @@ internal static class TacticalCommander
         int rest = own.Length - interceptors;
         int enemies = battle.ActiveDrones(battle.EnemySide(side)).Count();
         int strikers = enemies == 0 ? rest : (int)PyMath.Min(rest, PyMath.Max(0, own.Length - enemies));
-        var enemyCarrier = battle.Carrier(battle.EnemySide(side));
+        var enemyCarrier = battle.ActiveCarriers(battle.EnemySide(side)).OrderBy(c => (double)c.Hull / c.MaxHull)
+            .ThenBy(c => c.Id, StringComparer.Ordinal).FirstOrDefault() ?? battle.Carrier(battle.EnemySide(side));
         if (strikers == 0 && enemies > 0 && rest > 0 && enemyCarrier.Hull < tuning.StrikeWhenEnemyCarrierBelow * enemyCarrier.MaxHull) strikers = 1;
         var free = own.ToList();
         var planned = new List<(TacticalDrone Drone, string Role)>();
-        AssignSlots("interceptor", interceptors, battle.Carrier(side));
-        AssignSlots("striker", strikers, enemyCarrier);
+        AssignSlots("interceptor", interceptors, d => battle.CarrierFor(d));
+        AssignSlots("striker", strikers, d => battle.CarrierFor(d, enemy: true));
         planned.AddRange(free.Select(d => (d, "fighter")));
         foreach (var drone in own)
         {
@@ -73,11 +74,11 @@ internal static class TacticalCommander
             ChangeRole(battle, drone, role, false);
         }
 
-        void AssignSlots(string role, int count, TacticalCarrier anchor)
+        void AssignSlots(string role, int count, Func<TacticalDrone, TacticalCarrier> anchor)
         {
             for (int i = 0; i < count; i++)
             {
-                var drone = free.OrderBy(d => d.Role != role).ThenBy(d => Distance(d, anchor)).First();
+                var drone = free.OrderBy(d => d.Role != role).ThenBy(d => Distance(d, anchor(d))).First();
                 free.Remove(drone);
                 planned.Add((drone, role));
             }
