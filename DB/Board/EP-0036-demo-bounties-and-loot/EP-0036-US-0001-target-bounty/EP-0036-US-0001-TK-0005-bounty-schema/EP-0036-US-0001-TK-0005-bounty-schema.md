@@ -5,7 +5,7 @@ ticket: EP-0036-US-0001-TK-0005-bounty-schema
 title: Схема фиксированных станционных bounty
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0001-TK-0001-contracts]
@@ -112,3 +112,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj
 ## Self-containment check
 
 Описаны authority, identity, отсутствие acceptance prerequisite, frozen definitions, schema, dependencies, allowlist, шаги и named tests. Открытого продуктового вопроса по этому результату нет; численный content baseline — A-B05 для плейтеста, не обещание доказанного баланса.
+
+## Execution — 2026-11-17
+
+Optional Bounties defaults to an empty immutable array. Loader/reference validation rejects duplicate IDs/targets, unknown issuer/target and nonpositive rewards. Compatibility decision: separate BountyFingerprint; existing cluster Fingerprint remains unchanged, preserving legacy Save22. Runtime ticket persists/validates the new section identity. Engine Release build PASS (0 warnings/errors); scoped whitespace and diff checks PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us1-tk5-build.log. Named tests added; NOT RUN until US1 completion.
