@@ -32,6 +32,20 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        if (data.Company?.StationRepair is { } repair)
+        {
+            if (repair.Postings.IsDefault || repair.Postings.Any(p => p is null || string.IsNullOrWhiteSpace(p.Id) ||
+                string.IsNullOrWhiteSpace(p.TargetId) || p.Kind != "repair" || p.Amount < 0 || p.GameTimeMs < 0 || p.GameTimeMs > gameTimeMs) ||
+                repair.Postings.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != repair.Postings.Length)
+                throw new ScenarioException("Invalid company repair postings.");
+            if (repair.LastResult is { } result && (result.Paid < 0 ||
+                !repair.Postings.Any(p => p.Id == result.PostingId && p.Amount == result.Paid && p.TargetId == result.TargetId)))
+                throw new ScenarioException("Invalid company repair result.");
+            if (repair.Quote is { } quote && (string.IsNullOrWhiteSpace(quote.Id) || quote.Total < 0 ||
+                quote.Items.IsDefault || quote.Items.Any(i => i is null || i.Quantity < 0 || i.UnitPrice < 0 ||
+                    (decimal)i.Quantity * i.UnitPrice != i.Total) || quote.Items.Sum(i => (decimal)i.Total) != quote.Total))
+                throw new ScenarioException("Invalid company repair quote.");
+        }
         if (data.SchemaVersion != 1 || data.Revision < 0 || data.CommitSequence < data.Revision ||
             data.LastTickGameTimeMs < 0 || data.LastTickGameTimeMs > gameTimeMs || data.Receipts.IsDefault ||
             data.NextCrewSequence < 1 || data.PilotMemorial.IsDefault)

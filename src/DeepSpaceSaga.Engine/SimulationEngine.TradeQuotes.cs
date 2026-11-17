@@ -306,6 +306,7 @@ public sealed partial class SimulationEngine
     /// <summary>Forget every issued quote and start a new id space. Called by the constructor and every load.</summary>
     private void ResetQuoteSession()
     {
+        _activeRepairQuote = null;
         _issuedQuotes.Clear();
         _quoteIdByRequestId.Clear();
         _issuedQuoteOrder.Clear();

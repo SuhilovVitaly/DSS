@@ -36,18 +36,20 @@ public sealed partial class SimulationEngine
             string? reason = null;
             var candidate = _demoCampaign;
             bool handled = false;
+            Action? commit = null;
             if (command.ExpectedRevision != _demoCampaign.Revision) reason = DemoCampaignReasons.StaleRevision;
             else if (_tacticalBattleSession is not null) reason = DemoCampaignReasons.BattleActive;
             else if (_objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
                 reason = DemoCampaignReasons.CarrierDestroyed;
             else
-                PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason);
+                PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason, ref commit);
 
             reason ??= handled ? null : DemoCampaignReasons.Unsupported;
             bool applied = handled && reason is null;
             long revision = applied ? checked(_demoCampaign.Revision + 1) : _demoCampaign.Revision;
             long sequence = checked(_demoCampaign.CommitSequence + 1);
-            var response = new DemoCampaignResponse(command.CommandId, applied, reason, revision);
+            var response = new DemoCampaignResponse(command.CommandId, applied, reason, revision,
+                applied ? candidate.Company?.StationRepair : null);
             candidate = (applied ? candidate : _demoCampaign) with
             {
                 Revision = revision,
@@ -55,6 +57,7 @@ public sealed partial class SimulationEngine
                 Receipts = (_demoCampaign.Receipts.Length >= 1024 ? _demoCampaign.Receipts.RemoveRange(0, _demoCampaign.Receipts.Length - 1023) : _demoCampaign.Receipts).Add(new(hash, sequence, response))
             };
             ValidateDemoCampaignSections(candidate);
+            if (applied) commit?.Invoke();
             _demoCampaign = candidate;
             return response;
         }
@@ -78,7 +81,7 @@ public sealed partial class SimulationEngine
 
     // Hooks must prepare immutable candidate state only; rejection cannot mutate the live world.
     partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
-        ref bool handled, ref string? reason);
+        ref bool handled, ref string? reason, ref Action? commit);
     partial void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate);
     partial void ValidateDemoCampaignSections(DemoCampaignData candidate);
 }

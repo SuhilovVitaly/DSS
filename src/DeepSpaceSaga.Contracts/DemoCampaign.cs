@@ -3,7 +3,8 @@ namespace DeepSpaceSaga.Contracts;
 /// <summary>Identity and optimistic concurrency shared by explicitly supported campaign actions.</summary>
 public abstract record DemoCampaignCommand(string CommandId, long ExpectedRevision);
 
-public sealed record DemoCampaignResponse(string CommandId, bool Applied, string? Reason, long Revision);
+public sealed record DemoCampaignResponse(string CommandId, bool Applied, string? Reason, long Revision,
+    StationRepairSnapshot? StationRepair = null);
 
 /// <summary>Absent sections indicate unavailable features, never implicit resources or entitlements.</summary>
 public sealed record DemoCampaignSnapshot(

@@ -128,6 +128,7 @@ public sealed partial class SimulationEngine
             SettleVoyageFuel(state, arrived: false);
             _voyageLedgers = terminalFinance;
             _voyageState = null;
+            _activeRepairQuote = null;
             int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
             if (shipIndex >= 0 && _objects[shipIndex].IsDocked)
                 _objects[shipIndex] = _objects[shipIndex] with

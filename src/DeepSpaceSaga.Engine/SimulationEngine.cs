@@ -2569,6 +2569,7 @@ public sealed partial class SimulationEngine : IDisposable
                 catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
                 _voyageState = departureVoyage;
             }
+            _activeRepairQuote = null;
             _objects[objectIndex] = obj with
             {
                 InitialMotion = currentMotion with { Orbit = null, OrbitSampleSimulationTimeMs = null, WorldOffsetX = 0, WorldOffsetY = 0 },
