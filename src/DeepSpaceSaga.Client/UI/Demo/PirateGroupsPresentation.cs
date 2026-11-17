@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Client.UI.Demo;
 
 internal static class PirateGroupsPresentation
 {
-    internal sealed record Marker(string Id, double X, double Y, string Label, bool Confirmed);
+    internal sealed record Marker(string Id, double X, double Y, string Label, bool Confirmed, string Detail);
 
     internal static IReadOnlyList<Marker> Markers(DemoEncountersSnapshot? encounters) =>
         encounters is null || encounters.Groups.IsDefaultOrEmpty ? [] : encounters.Groups.Select(group =>
@@ -20,7 +20,8 @@ internal static class PirateGroupsPresentation
             });
             string count = group.IsDetected && group.ApproximateDroneCount is { } approximate
                 ? " · " + string.Format(Localization.Get("Demo.Pirate.ApproximateDrones"), approximate) : "";
-            return new Marker(group.Id, group.X, group.Y, status + ": " + type + count, group.IsDetected);
+            return new Marker(group.Id, group.X, group.Y, status + ": " + type + count, group.IsDetected,
+                group.IsDetected ? MapEvasionPresentation.Describe(group.Pursuit) : "");
         }).ToArray();
 
     internal static void Draw(SKCanvas canvas, DemoEncountersSnapshot? encounters, CameraState camera, int width, int height)
@@ -41,6 +42,13 @@ internal static class PirateGroupsPresentation
             float left = Math.Clamp(x + 14, 8, Math.Max(8, width - paint.MeasureText(label) - 8));
             float top = Math.Clamp(y - 14, 20, Math.Max(20, height - 8));
             canvas.DrawText(label, left, top, paint);
+            if (marker.Detail.Length > 0)
+            {
+                string detail = marker.Detail;
+                while (detail.Length > 1 && paint.MeasureText(detail) > width - 24) detail = detail[..^1];
+                float detailLeft = Math.Clamp(left, 8, Math.Max(8, width - paint.MeasureText(detail) - 8));
+                canvas.DrawText(detail, detailLeft, Math.Clamp(top + 18, 20, Math.Max(20, height - 8)), paint);
+            }
         }
     }
 }
