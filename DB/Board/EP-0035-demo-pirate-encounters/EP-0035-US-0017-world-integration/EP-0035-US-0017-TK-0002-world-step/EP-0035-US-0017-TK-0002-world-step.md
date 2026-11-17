@@ -52,3 +52,5 @@ Build PASS us17-tk2-build.log; scoped whitespace format performed. Tests after p
 Independent review found fractional motion remainder loss on repeated paused snapshots. Scope includes PirateWorldStep, regression test, source-anchored EconomyTimeContinuity fixtures and structural JSON comparisons in TK-0001 tests (immutable collection reference equality is not save equality). Initial story run: 103 passed / 79 failed; 77 content-root failures, two collection equality failures. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us17-engine-tests.log. Fix validation pending.
 
 Repeated run: fractional regressions and EP-0035 tests pass; 77 fixture errors remain because CallerFilePath resolves at the caller. Economy fixture now owns its correctly anchored root. Revalidation pending.
+
+Scope also includes shared RationScheduleTests fixture used by EconomyTimeContinuity: its transitive binary-relative content path caused the remaining 74 errors. Direct scenario fixtures now pass. No production expectation changed.

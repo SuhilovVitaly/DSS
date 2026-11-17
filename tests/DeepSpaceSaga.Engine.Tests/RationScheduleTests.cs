@@ -5,9 +5,12 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class RationScheduleTests
 {
+    private static string ContentRoot([System.Runtime.CompilerServices.CallerFilePath] string source = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(source)!, "../../src/DeepSpaceSaga.Client"));
+
     internal static SimulationEngine CreateEngine(long time = 0, int passengers = 0, long rations = 200)
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+        string root = ContentRoot();
         var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"),
             Path.Combine(root, "Scenarios/Docked/scenario.json"));
         // Ration/economy fixtures deliberately exercise the legacy stationary world.
