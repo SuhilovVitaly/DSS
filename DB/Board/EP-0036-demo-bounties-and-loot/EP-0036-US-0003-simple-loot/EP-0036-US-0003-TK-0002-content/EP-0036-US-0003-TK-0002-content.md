@@ -5,7 +5,7 @@ ticket: EP-0036-US-0003-TK-0002-content
 title: Металлолом и расходники в каталоге и рынках
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tested
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0007-TK-0001-loot-schema]

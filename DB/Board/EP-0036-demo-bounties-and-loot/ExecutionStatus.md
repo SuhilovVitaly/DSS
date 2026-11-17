@@ -52,3 +52,17 @@ Published: TK1 d0c6a409; TK2 f8c687be; TK4 b80b8fb1; TK3 3fa67841. Combined boun
 ## US8 completion — 2026-11-17
 
 Published TK1 893e7ebd, TK2 1a57a0a2, TK3 04e35b79, TK4 edb3c880, TK5 bb04160c. Corrections: test analyzer 3f1b9201; independent review role-parser consistency b3de91b7. Thematic US1/US2/US8 checks: Contracts 8/8, Engine 26/26, Client 16/16 (after analyzer correction). Post-review engineer-only Engine 8/8. Evidence under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/: us8-Contracts-tests.log, us8-Engine-tests.log, us8-Client-repeat.log, us8-review-Engine.log and matching TRX directories. Native NOT RUN. Next: shared loot contracts/schema/content, module salvage and lifecycle.
+
+## US3 boundary validation plan
+
+All four US3 tickets published. Run Contracts/Engine/Client filters FullyQualifiedName~DemoEp0036Us0003 (contracts, additive catalogs/profile migration, loot ledger/cargo, selected panel/pending). No whole-project test execution. Integration of real map input and durable LocalClient checkpoint remains US7/US4 and will receive separate boundary checks. Current Engine test compilation also compiles authored future-story fixtures but does not execute them.
+
+### Validation scheduling correction
+
+The preceding US3 boundary count was incorrect: US3 has five tickets, including TK0005 localized feedback. The Contracts3/Engine9/Client6 checks were therefore run prematurely after four tickets, contrary to the requested story-only schedule. These are actual focused results, not evidence that the whole story was complete. Complete/publish TK0005 before the final story review and newly affected locale check; no further premature test execution.
+
+## US3 completed implementation boundary
+
+All five tickets and corrections published through 050046c3. Contracts3/3 unchanged; final Engine10/10 and Client10/10 PASS. Independent review identified incomplete consumable/module coverage; corrected before boundary closure. Content schema error and test assertion/nullable issues corrected in separate immediately pushed commits. Full map/session-checkpoint integration remains allocated to US7/US4; no native/product acceptance claimed.
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us3-contracts.log; us3-engine-reviewed.log and us3-engine-reviewed-results/; us3-client-complete.log and us3-client-complete-results/. All paths share the same absolute run directory. Prior scheduling deviation recorded above.
