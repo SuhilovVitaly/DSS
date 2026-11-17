@@ -83,7 +83,7 @@ public sealed partial class SimulationEngine
     private DemoCampaignSnapshot BuildDemoCampaignProjection() => new(
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
         _demoCampaign.Transport, _demoCampaign.Encounters, _demoCampaign.Rewards,
-        _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection());
+        _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection());
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
 
