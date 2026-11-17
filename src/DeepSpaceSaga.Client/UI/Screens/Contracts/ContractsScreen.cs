@@ -79,6 +79,12 @@ public sealed class ContractsScreen : IScreen
     private bool _jobsFeedbackIsError;
     private int _hoveredAcceptIndex = -1;
     private string? _acceptedOfferId; // EP-0034 US-0002: last applied acceptance, its boarding read from snapshots
+    // EP-0034 US-0003: cancellation of active transport orders (two-step confirm, one command in flight).
+    private readonly List<(SKRect Rect, string ContractId)> _cancelButtons = [];
+    private string? _armedContractId;
+    private string? _cancelledContractId; // last applied cancellation, its result read from snapshots
+    private int _hoveredCancelIndex = -1;
+    private const float CancelButtonWidth = 150f;
 
     private const float JobsLeftMargin = 40f;
     private const float JobsColumnWidth = 960f;
@@ -131,6 +137,84 @@ public sealed class ContractsScreen : IScreen
 
     internal IReadOnlyList<(SKRect Rect, string OfferId)> AcceptButtons => _acceptButtons;
 
+    /// <summary>Test seam — failures and cancellations section exactly as drawn (EP-0034 US-0003).</summary>
+    internal TransportFailuresView FailuresView =>
+        TransportFailurePresentation.Build(Campaign?.Transport?.TransportFailures, Campaign?.Transport?.StationJobs, StationName);
+
+    /// <summary>
+    /// Test seam — confirmed result of the last applied cancellation on this screen, from the authoritative snapshot
+    /// once it lists the failure; null before that and on a freshly opened screen.
+    /// </summary>
+    internal string? CancelFeedback
+    {
+        get
+        {
+            string? contractId;
+            lock (_jobsGate) contractId = _cancelledContractId;
+            return TransportFailurePresentation.Cancelled(Campaign?.Transport?.TransportFailures, contractId);
+        }
+    }
+
+    internal IReadOnlyList<(SKRect Rect, string ContractId)> CancelButtons => _cancelButtons;
+
+    /// <summary>
+    /// Cancel an active order the engine marked cancellable. The first request only shows the published penalty and
+    /// asks for confirmation; the second sends one command. A blocked or unknown order, or a request while another
+    /// command is in flight, sends nothing.
+    /// </summary>
+    internal Task? TryCancelContract(string contractId)
+    {
+        var campaign = Campaign;
+        var section = campaign?.Transport?.TransportFailures;
+        string? blocker = _execute is null || campaign is null
+            ? DemoCampaignReasons.Unavailable
+            : TransportFailureReasons.CancelBlocker(section, contractId);
+        CancelTransportCommand command;
+        lock (_jobsGate)
+        {
+            if (_pendingCommandId is not null) return null;
+            if (blocker is not null)
+            {
+                _armedContractId = null;
+                _jobsFeedback = TransportFailurePresentation.Reason(blocker);
+                _jobsFeedbackIsError = true;
+                return null;
+            }
+            if (_armedContractId != contractId)
+            {
+                _armedContractId = contractId;
+                var terms = section!.Terms.First(t => t is not null && t.ContractId == contractId);
+                _jobsFeedback = TransportFailurePresentation.Confirm(terms.CancelPenaltyCredits);
+                _jobsFeedbackIsError = false;
+                return null;
+            }
+            _armedContractId = null;
+            command = new CancelTransportCommand("jobs-cancel-" + Guid.NewGuid().ToString("N"), campaign!.Revision, contractId);
+            _pendingCommandId = command.CommandId;
+            _acceptedOfferId = null;
+            _cancelledContractId = null;
+            _jobsFeedback = TransportFailurePresentation.Pending;
+            _jobsFeedbackIsError = false;
+        }
+        return CompleteCancelAsync(command);
+    }
+
+    private async Task CompleteCancelAsync(CancelTransportCommand command)
+    {
+        DemoCampaignResponse response;
+        try { response = await _execute!(command).ConfigureAwait(false); }
+        catch (Exception) { response = new(command.CommandId, false, DemoCampaignReasons.Unavailable, command.ExpectedRevision); }
+        lock (_jobsGate)
+        {
+            if (_pendingCommandId != command.CommandId) return;
+            _pendingCommandId = null;
+            _jobsFeedbackIsError = !response.Applied;
+            if (response.Applied) _cancelledContractId = command.ContractId;
+            // Until the snapshot publishes the failure the line keeps saying "waiting for confirmation".
+            _jobsFeedback = response.Applied ? TransportFailurePresentation.Pending : TransportFailurePresentation.Reason(response.Reason);
+        }
+    }
+
     /// <summary>
     /// Send one acceptance for an offer the engine marked acceptable. A second click while a command is in flight,
     /// or a click on an offer with an engine blocker, sends nothing and only shows the reason.
@@ -154,6 +238,8 @@ public sealed class ContractsScreen : IScreen
             command = new AcceptJobOfferCommand("jobs-accept-" + Guid.NewGuid().ToString("N"), campaign!.Revision, offerId);
             _pendingCommandId = command.CommandId;
             _acceptedOfferId = null;
+            _cancelledContractId = null;
+            _armedContractId = null;
             _jobsFeedback = StationJobsPresentation.Pending;
             _jobsFeedbackIsError = false;
         }
@@ -187,9 +273,13 @@ public sealed class ContractsScreen : IScreen
         _tokensHoverStartedAtMs = null;
         _fuelHoverStartedAtMs = null;
         _hoveredAcceptIndex = -1;
+        _hoveredCancelIndex = -1;
     }
 
-    public void OnDeactivated() { }
+    public void OnDeactivated()
+    {
+        lock (_jobsGate) _armedContractId = null; // a confirmation never survives closing the screen
+    }
 
     public ScreenEvent OnKeyDown(Key key) =>
         key == Key.Escape ? ScreenEvent.CloseContracts : ScreenEvent.None;
@@ -212,6 +302,13 @@ public sealed class ContractsScreen : IScreen
                 return ScreenEvent.None;
             }
 
+        foreach (var (rect, contractId) in _cancelButtons)
+            if (rect.Contains(x, y))
+            {
+                _ = TryCancelContract(contractId);
+                return ScreenEvent.None;
+            }
+
         // Click on the dimmed background outside the panel also closes it.
         if (!ContractsLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseContracts;
@@ -227,6 +324,7 @@ public sealed class ContractsScreen : IScreen
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
         _hoveredAcceptIndex = _acceptButtons.FindIndex(b => b.Rect.Contains(x, y));
+        _hoveredCancelIndex = _cancelButtons.FindIndex(b => b.Rect.Contains(x, y));
 
         // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
         // not affect the interactive-cursor swap the way the name link / exit button do.
@@ -250,7 +348,7 @@ public sealed class ContractsScreen : IScreen
         else
             _fuelHoverStartedAtMs = null;
 
-        return _isStationNameHovered || _isExitButtonHovered || _hoveredAcceptIndex >= 0;
+        return _isStationNameHovered || _isExitButtonHovered || _hoveredAcceptIndex >= 0 || _hoveredCancelIndex >= 0;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -347,6 +445,7 @@ public sealed class ContractsScreen : IScreen
             }
             jy += 8;
         }
+        jy = DrawFailures(canvas, journalLeft, jy + 12, journalWidth, journalBottom);
         DrawPassengers(canvas, journalLeft, jy + 12, journalWidth, journalBottom);
 
         string? feedback;
@@ -354,9 +453,64 @@ public sealed class ContractsScreen : IScreen
         lock (_jobsGate) { feedback = _jobsFeedback; error = _jobsFeedbackIsError; }
         // A confirmed passenger boarding replaces the generic "accepted" line once the snapshot shows it.
         if (!error && PassengerFeedback is { } boarded) feedback = boarded;
+        if (!error && CancelFeedback is { } cancelled) feedback = cancelled; // EP-0034 US-0003
         if (feedback is not null)
             Text(canvas, feedback, left, pt + ContractsLayout.PanelHeight - 44, ContractsLayout.PanelWidth - 2 * JobsLeftMargin,
                 error ? JobsWarnPaint : JobsOkPaint);
+    }
+
+    /// <summary>
+    /// EP-0034 US-0003: calendar rule, terms of every active order with its cancel button, failures with penalty split
+    /// and passenger whereabouts, contract debt. Returns the next free y.
+    /// </summary>
+    private float DrawFailures(SKCanvas canvas, float left, float y, float width, float bottom)
+    {
+        _cancelButtons.Clear();
+        if (y + ContractsLayout.BodyLineHeight > bottom) return y;
+        var view = FailuresView;
+        Text(canvas, view.Title, left, y, width, JobsHeadingPaint);
+        y += 30;
+        foreach (string? note in new[] { view.Calendar, view.Debt })
+            y = Wrapped(canvas, note, left, y, width, bottom, note == view.Debt ? JobsWarnPaint : JobsDimPaint);
+
+        bool pending = IsAcceptPending;
+        string? armed;
+        lock (_jobsGate) armed = _armedContractId;
+        float textWidth = width - CancelButtonWidth - 12;
+        foreach (var row in view.Active)
+        {
+            if (y + 2 * ContractsLayout.BodyLineHeight > bottom) break;
+            float top = y;
+            Text(canvas, row.Headline, left, y, textWidth, JobsTextPaint);
+            y += 20;
+            y = Wrapped(canvas, row.Terms, left, y, textWidth, bottom, JobsDimPaint);
+            if (row.Blocker is { } blocker) y = Wrapped(canvas, blocker, left, y, textWidth, bottom, JobsWarnPaint);
+            var button = new SKRect(left + width - CancelButtonWidth, top, left + width, top + 34);
+            int index = _cancelButtons.Count;
+            _cancelButtons.Add((button, row.ContractId));
+            var state = !row.CanCancel || pending ? ButtonState.Disabled
+                : index == _hoveredCancelIndex || armed == row.ContractId ? ButtonState.Hovered : ButtonState.Normal;
+            TabletopStyle.Button(canvas, button, state, primary: false);
+            var label = JobsButtonPaint;
+            label.Color = TabletopStyle.ButtonInk(state, primary: false);
+            TabletopStyle.Label(canvas, button, TransportFailurePresentation.CancelLabel, label);
+            y = Math.Max(y, button.Bottom + 4) + 4;
+        }
+
+        foreach (string? line in view.Lines.Cast<string?>().Append(view.Empty))
+            y = Wrapped(canvas, line, left, y, width, bottom, JobsTextPaint);
+        return y;
+    }
+
+    private static float Wrapped(SKCanvas canvas, string? line, float left, float y, float width, float bottom, SKPaint paint)
+    {
+        if (line is null || y + ContractsLayout.BodyLineHeight > bottom) return y;
+        foreach (string wrapped in ControlText.Wrap(ControlText.SafeSymbols(line), width, paint).Take(2))
+        {
+            Text(canvas, wrapped, left, y, width, paint);
+            y += 20;
+        }
+        return y + 6;
     }
 
     /// <summary>EP-0034 US-0002: people aboard (life support), each passenger contract and its confirmed delivery.</summary>
