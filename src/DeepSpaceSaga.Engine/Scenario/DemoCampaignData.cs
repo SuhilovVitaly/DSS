@@ -26,6 +26,9 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("nextCrewSequence")]
     public long NextCrewSequence { get; init; } = 1;
 
+    public long NextDroneSequence { get; init; } = 1;
+    public ImmutableDictionary<string, int> ServiceOfferUsage { get; init; } = ImmutableDictionary<string, int>.Empty;
+
     [JsonPropertyName("receipts")]
     public ImmutableArray<DemoCampaignReceiptData> Receipts { get; init; } = [];
 
@@ -35,7 +38,7 @@ public sealed record DemoCampaignData(
         if (data.Company?.StationRepair is { } repair)
         {
             if (repair.Postings.IsDefault || repair.Postings.Any(p => p is null || string.IsNullOrWhiteSpace(p.Id) ||
-                string.IsNullOrWhiteSpace(p.TargetId) || p.Kind is not ("repair" or "decoy") || p.Amount < 0 || p.GameTimeMs < 0 || p.GameTimeMs > gameTimeMs) ||
+                string.IsNullOrWhiteSpace(p.TargetId) || p.Kind is not ("repair" or "decoy" or "drone" or "equipment") || p.Amount < 0 || p.GameTimeMs < 0 || p.GameTimeMs > gameTimeMs) ||
                 repair.Postings.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != repair.Postings.Length)
                 throw new ScenarioException("Invalid company repair postings.");
             if (repair.LastResult is { } result && (result.Paid < 0 ||
@@ -48,7 +51,8 @@ public sealed record DemoCampaignData(
         }
         if (data.SchemaVersion != 1 || data.Revision < 0 || data.CommitSequence < data.Revision ||
             data.LastTickGameTimeMs < 0 || data.LastTickGameTimeMs > gameTimeMs || data.Receipts.IsDefault ||
-            data.NextCrewSequence < 1 || data.PilotMemorial.IsDefault)
+            data.NextCrewSequence < 1 || data.NextDroneSequence < 1 || data.ServiceOfferUsage is null ||
+            data.ServiceOfferUsage.Any(p => string.IsNullOrWhiteSpace(p.Key) || p.Value < 0) || data.PilotMemorial.IsDefault)
             throw new ScenarioException("Invalid demo campaign version or counters.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;

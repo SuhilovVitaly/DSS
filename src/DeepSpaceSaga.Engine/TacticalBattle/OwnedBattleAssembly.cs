@@ -42,11 +42,13 @@ internal static class OwnedBattleAssembly
                 // deployableDroneIds null means the default rule (non-destroyed, non-disabled);
                 // disabling a drone is always a caller decision, so the persisted disabled restore
                 // stays reachable only through an explicit direct-caller set.
-                var ordered = wing.OrderBy(d => d.DroneId, StringComparer.Ordinal).ToArray();
+                var ordered = wing.GroupBy(d => (d.HangarModuleId, d.SlotIndex))
+                    .OrderBy(g => g.Min(d => d.DroneId), StringComparer.Ordinal)
+                    .Select(g => g.FirstOrDefault(d => !d.Destroyed) ?? g.First()).ToArray();
                 for (int i = 0; i < ordered.Length && i < side.Drones.Length; i++)
                 {
                     var owned = ordered[i];
-                    bool deployable = !owned.Destroyed && (deployableDroneIds is null
+                    bool deployable = !owned.Destroyed && crewById.ContainsKey(owned.CrewId) && (deployableDroneIds is null
                         ? !owned.Disabled
                         : deployableDroneIds.Contains(owned.DroneId));
                     if (!deployable) continue;

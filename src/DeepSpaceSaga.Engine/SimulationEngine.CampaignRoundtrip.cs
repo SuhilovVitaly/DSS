@@ -17,6 +17,7 @@ public sealed partial class SimulationEngine
         return company with
         {
             Supply = BuildSupplyProjection(),
+            Replacement = BuildReplacementProjection(_demoCampaign),
             PilotLoss = BuildPilotLossProjection(),
             Outcome = BuildCampaignOutcome(),
             Roundtrip = PlayerShipObjectId is { } ship && _carrierSettlement.TryGetValue(ship, out var receipt)

@@ -31,16 +31,16 @@ public partial class SimulationEngine
         var layout = catalog.Layouts[drone.FrameId];
         if (catalog.Frames.Contains(layout.Class))
             mass += catalog.Frames[layout.Class].FrameMassKg;
-        if (catalog.Armor.Contains(layout.Armor))
-            mass += catalog.Armor[layout.Armor].MassKg;
-        if (layout.Weapon is { } weaponId && catalog.Weapons.Contains(weaponId))
+        if (catalog.Armor.Contains(drone.ArmorId))
+            mass += catalog.Armor[drone.ArmorId].MassKg;
+        if (drone.WeaponId is { } weaponId && catalog.Weapons.Contains(weaponId))
             mass += catalog.Weapons[weaponId].MassKg;
-        if (layout.Shield is { } shieldId && catalog.Shields.Contains(shieldId))
+        if (drone.ShieldId is { } shieldId && catalog.Shields.Contains(shieldId))
             mass += catalog.Shields[shieldId].MassKg * drone.ShieldCount;
-        foreach (string engineId in layout.Engines)
+        foreach (string engineId in drone.EngineIds ?? [])
             if (catalog.Engines.Contains(engineId))
                 mass += catalog.Engines[engineId].MassKg;
-        if (layout.Module is { } decoyId && catalog.Decoys.Contains(decoyId))
+        if (drone.DecoyId is { } decoyId && catalog.Decoys.Contains(decoyId))
             mass += catalog.Decoys[decoyId].MassKg;
         return mass;
     }
@@ -162,14 +162,14 @@ internal static class OwnedWingValidator
             // capacity dictionary probe instead of a clean scenario rejection.
             if (string.IsNullOrWhiteSpace(drone.HangarModuleId))
                 throw new ScenarioException($"Drone '{drone.DroneId}' has empty hangarModuleId.");
-            if (!slots.Add((drone.HangarModuleId, drone.SlotIndex)))
+            if (!drone.Destroyed && !slots.Add((drone.HangarModuleId, drone.SlotIndex)))
                 throw new ScenarioException($"Duplicate hangar slot '{drone.HangarModuleId}/{drone.SlotIndex}'.");
             if (!hangarCapacity.TryGetValue(drone.HangarModuleId, out int capacity))
                 throw new ScenarioException($"Drone '{drone.DroneId}' references unknown hangar '{drone.HangarModuleId}'.");
             if (drone.SlotIndex < 0 || drone.SlotIndex >= capacity)
                 throw new ScenarioException($"Drone '{drone.DroneId}' slot '{drone.SlotIndex}' is outside hangar '{drone.HangarModuleId}' capacity {capacity}.");
 
-            if (!(drone.Destroyed && drone.CrewId == ""))
+            if (drone.CrewId != "")
             {
                 if (!pilots.Add(drone.CrewId))
                     throw new ScenarioException($"Duplicate pilot '{drone.CrewId}'.");
