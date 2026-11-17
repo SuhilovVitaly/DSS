@@ -29,7 +29,7 @@ public sealed partial class ShipScreen
     }
     private async Task SubmitReplacement(DemoCampaignCommand command)
     {
-        _repairState = null; _supply = null;
+        _repairState = null; _decoyQuote = null;
         ReplacementStatus = Localization.Get("Demo.Repair.Pending");
         try
         {

@@ -8,12 +8,12 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 
 /// <summary>
-/// Ship overlay (ТЗ DB/Documentation/02-FirstRelease/Screens/Ship.md). Renders the authoritative
+/// Ship overlay (Ð¢Ð— DB/Documentation/02-FirstRelease/Screens/Ship.md). Renders the authoritative
 /// carrier surface, the persistent wing and the between-battle rearm controls. The screen selects
 /// one drone and one quantity, previews the magazine/hold transition and confirms through the
 /// injected rearm transport; the local display is updated only from the authoritative response,
-/// never optimistically. Closes via the × button, Escape, or a click outside the panel. Pause-on-
-/// open/resume-on-close is handled generically by SkiaWindow's PushModalAsync/PopModalAsync — this
+/// never optimistically. Closes via the Ã— button, Escape, or a click outside the panel. Pause-on-
+/// open/resume-on-close is handled generically by SkiaWindow's PushModalAsync/PopModalAsync â€” this
 /// screen has no speed/pause logic of its own.
 /// </summary>
 public sealed partial class ShipScreen : IScreen
@@ -40,7 +40,7 @@ public sealed partial class ShipScreen : IScreen
     private int _screenHeight;
     private bool _isCloseHovered;
 
-    /// <summary>Legacy open path: no carrier surface yet — renders the explicit unsupported state.</summary>
+    /// <summary>Legacy open path: no carrier surface yet â€” renders the explicit unsupported state.</summary>
     public ShipScreen() : this(ShipViewModel.From(null)) { }
 
     public ShipScreen(ShipViewModel model) : this(model, 0, null) { }
@@ -126,7 +126,7 @@ public sealed partial class ShipScreen : IScreen
         return ScreenEvent.None;
     }
 
-    /// <summary>Convenience shortcut for a left click — kept for existing call sites/tests.</summary>
+    /// <summary>Convenience shortcut for a left click â€” kept for existing call sites/tests.</summary>
     public ScreenEvent OnMouseDown(float x, float y) => OnMouseDown(x, y, MouseButton.Left);
 
     public bool OnMouseMove(float x, float y)
@@ -223,7 +223,7 @@ public sealed partial class ShipScreen : IScreen
             var request = new RearmDroneRequest(_commandId(), _model.ShipId, droneId, quantity, revision);
             var response = await _rearm!(request, CancellationToken.None).ConfigureAwait(true);
             if (response.Snapshot is { } snapshot) Rebuild(snapshot);
-            // Every authoritative response — accepted or rejected — carries the current revision, so a
+            // Every authoritative response â€” accepted or rejected â€” carries the current revision, so a
             // stale-revision retry uses it even when the engine sends no Snapshot with the rejection.
             _revision = response.Revision;
             if (response.Accepted)
@@ -298,12 +298,12 @@ public sealed partial class ShipScreen : IScreen
         else
         {
             using var bodyPaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 16, IsAntialias = true, TextAlign = SKTextAlign.Left };
-            canvas.DrawText($"{_model.Name} ({_model.ShipClassId}) — hull {_model.HullCurrent}/{_model.HullMax}",
+            canvas.DrawText($"{_model.Name} ({_model.ShipClassId}) â€” hull {_model.HullCurrent}/{_model.HullMax}",
                 cx, pt + 80, MenuStyle.TextStatus);
 
             // Wing panel (left half): one row per owned drone, destroyed/disabled never shown ready.
             var (wl, wt, _, _) = ShipLayout.WingPanelLocalRect();
-            canvas.DrawText($"wing · torpedoes in hold {_torpedoStock}", pl + wl + ShipLayout.WingRowInset,
+            canvas.DrawText($"wing Â· torpedoes in hold {_torpedoStock}", pl + wl + ShipLayout.WingRowInset,
                 pt + wt + 20, bodyPaint);
             for (int i = 0; i < _drones.Length; i++)
             {
@@ -315,9 +315,9 @@ public sealed partial class ShipScreen : IScreen
                     using var highlight = new SKPaint { Color = MenuStyle.ColorButtonHover, Style = SKPaintStyle.Fill };
                     canvas.DrawRect(rect, highlight);
                 }
-                string marker = i == _selectedRow ? "› " : "  ";
+                string marker = i == _selectedRow ? "â€º " : "  ";
                 string state = ShipWingPanel.DroneStateLabel(drone.Destroyed, drone.Disabled, drone.Uncrewed);
-                canvas.DrawText($"{marker}{drone.Id} — ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
+                canvas.DrawText($"{marker}{drone.Id} â€” ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
                     rect.Left + 6, rect.Top + 19, bodyPaint);
             }
             if (_selectedRow >= 0)
@@ -351,7 +351,7 @@ public sealed partial class ShipScreen : IScreen
     internal void RequestRepair(string target)
     {
         if (_service is null || PendingService is { IsCompleted: false } || IsPending) return;
-        _supply = null;
+        _decoyQuote = null;
         PendingService = SubmitService(new RepairQuoteRequest(_commandId(),
             Math.Max(_serviceRevision ?? 0, _campaign?.Invoke()?.Revision ?? 0), target));
     }
@@ -402,8 +402,8 @@ public sealed partial class ShipScreen : IScreen
                 y += 24;
             }
         if (_repairState?.LastResult is { } result && _repairState.Quote is null)
-            canvas.DrawText($"{Localization.Get("Demo.Repair.hull")}: {result.Before.Hull} → {result.After.Hull}; " +
-                $"{Localization.Get("Demo.Repair.armor")}: {result.Before.Armor} → {result.After.Armor}", pl + 730, y, paint);
+            canvas.DrawText($"{Localization.Get("Demo.Repair.hull")}: {result.Before.Hull} â†’ {result.After.Hull}; " +
+                $"{Localization.Get("Demo.Repair.armor")}: {result.Before.Armor} â†’ {result.After.Armor}", pl + 730, y, paint);
         canvas.Restore();
         DrawLocalButton(canvas, pl, pt, (730, 530, 1340, 562), Localization.Get("Demo.Repair.Confirm"), ready && _repairState?.Quote is not null);
     }
@@ -416,7 +416,7 @@ public sealed partial class ShipScreen : IScreen
         int quantity = ShipWingPanel.ClampQuantity(_quantity, max);
         bool confirmEnabled = _rearm is not null && quantity > 0 && !_controller.IsPending;
 
-        DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmMinusLocalRect(_drones.Length), "−",
+        DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmMinusLocalRect(_drones.Length), "âˆ’",
             quantity > 0 && !_controller.IsPending);
         DrawLocalButton(canvas, panelLeft, panelTop, ShipLayout.RearmPlusLocalRect(_drones.Length), "+",
             quantity < max && !_controller.IsPending);
@@ -428,7 +428,7 @@ public sealed partial class ShipScreen : IScreen
         var preview = max > 0
             ? ShipWingPanel.PreviewText(drone.AmmoCurrent, drone.AmmoCapacity, _torpedoStock, quantity)
             : Explanation(_selectedRow);
-        canvas.DrawText($"quantity {quantity} · {preview}", x, panelTop + controls.Top + 52, bodyPaint);
+        canvas.DrawText($"quantity {quantity} Â· {preview}", x, panelTop + controls.Top + 52, bodyPaint);
         if (_status.Length > 0)
             canvas.DrawText(_status, x, panelTop + controls.Top + 72, bodyPaint);
     }
@@ -445,6 +445,6 @@ public sealed partial class ShipScreen : IScreen
         var (left, top, right, bottom) = ShipLayout.CloseButtonLocalRect();
         var rect = new SKRect(panelLeft + left, panelTop + top, panelLeft + right, panelTop + bottom);
 
-        MenuStyle.DrawButton(canvas, rect, "×", _isCloseHovered ? ButtonState.Hovered : ButtonState.Normal);
+        MenuStyle.DrawButton(canvas, rect, "Ã—", _isCloseHovered ? ButtonState.Hovered : ButtonState.Normal);
     }
 }

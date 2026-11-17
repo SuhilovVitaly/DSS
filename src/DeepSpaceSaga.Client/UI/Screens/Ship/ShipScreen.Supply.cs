@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 
 public sealed partial class ShipScreen
 {
-    private SupplySnapshot? _supply;
+    private DecoySupplyQuote? _decoyQuote;
     internal string SupplyStatus { get; private set; } = "";
     internal void RequestDecoys(string droneId)
     {
@@ -17,7 +17,7 @@ public sealed partial class ShipScreen
     }
     internal void ConfirmDecoys()
     {
-        if (_service is null || PendingService is { IsCompleted: false } || IsPending || _supply?.Quote is not { } quote) return;
+        if (_service is null || PendingService is { IsCompleted: false } || IsPending || _decoyQuote is not { } quote) return;
         PendingService = SubmitSupply(new ResupplyDecoyCommand(_commandId(), quote.Revision, quote.DroneId, quote.Id, quote.Quantity));
     }
     private async Task SubmitSupply(DemoCampaignCommand command)
@@ -27,16 +27,17 @@ public sealed partial class ShipScreen
         {
             var response = await _service!(command, CancellationToken.None);
             _serviceRevision = response.Revision;
-            _supply = response.Applied ? response.Supply : null;
+            _decoyQuote = response.Applied ? response.Supply?.Quote : null;
             SupplyStatus = !response.Applied ? StationRepairPresentation.Reason(response.Reason) :
-                _supply?.Quote is { } q ? string.Format(Localization.Get("Demo.Supply.Price"), q.Quantity, q.Total) :
+                _decoyQuote is { } q ? string.Format(Localization.Get("Demo.Supply.Price"), q.Quantity, q.Total) :
                 Localization.Get("Demo.Supply.Confirmed");
         }
-        catch (Exception) { _supply = null; SupplyStatus = StationRepairPresentation.Reason("unavailable"); }
+        catch (Exception) { _decoyQuote = null; SupplyStatus = StationRepairPresentation.Reason("unavailable"); }
     }
     private void DrawSupply(SKCanvas canvas, float left, float top)
     {
-        var supply = _supply ?? _campaign?.Invoke()?.Company?.Supply;
+        // A quote is command state, never a cache of current cargo or magazines.
+        var supply = _campaign?.Invoke()?.Company?.Supply;
         using var text = new SKPaint { Color = SKColors.LightGray, TextSize = 16, IsAntialias = true };
         canvas.Save();
         canvas.ClipRect(new(left + 730, top + 570, left + 1370, top + 790));
@@ -50,7 +51,7 @@ public sealed partial class ShipScreen
         canvas.DrawText(SupplyStatus, left + 730, top + 640, text);
         bool ready = PendingService is not { IsCompleted: false } && !IsPending;
         DrawLocalButton(canvas, left, top, (730, 650, 1340, 682), Localization.Get("Demo.Supply.Quote"), ready && _selectedRow >= 0 && supply?.DecoyUnitPrice is not null);
-        DrawLocalButton(canvas, left, top, (730, 690, 1340, 722), Localization.Get("Demo.Supply.Confirm"), ready && _supply?.Quote is not null);
+        DrawLocalButton(canvas, left, top, (730, 690, 1340, 722), Localization.Get("Demo.Supply.Confirm"), ready && _decoyQuote is not null);
         canvas.DrawText(Localization.Get("Demo.Supply.Market"), left + 730, top + 748, text);
         canvas.Restore();
     }
