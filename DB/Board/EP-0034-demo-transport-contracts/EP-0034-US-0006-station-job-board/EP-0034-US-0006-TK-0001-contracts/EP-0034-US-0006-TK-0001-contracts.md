@@ -5,7 +5,7 @@ ticket: EP-0034-US-0006-TK-0001-contracts
 title: Контракт: Доска заказов станции
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-validation-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0032-US-0004-TK-0004-client]
@@ -106,3 +106,20 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution result (2026-11-17)
+
+Status: implemented; **validation pending at story end** (owner cadence: per-ticket build, story-scoped tests at the end of US-0006). No story PASS is claimed here.
+
+Changed files (within the allowlist; `DemoCampaign.cs` did not need a change because `DemoTransportSnapshot` is already `partial` since US-0001):
+
+- `src/DeepSpaceSaga.Contracts/StationJobsContracts.cs` — new: `StationJobTypes` (`passenger`, `urgent_passenger`, `cargo`, `bounty` — the last one published by EP-0036), `StationJobRiskBands` (`safe/normal/elevated`), `StationJobStatuses` (`active/completed/failed/cancelled`), `JobPayoutTerms(BaseTokens, LoadTokens, DistanceTokens, UrgencyPermille, RiskPermille)`, `JobOffer(Id, Type, OriginStationId, DestinationStationId, Count, MassKg, Payout, DeadlineDurationMs, PublishedAtGameTimeMs, ExpiresAtGameTimeMs, RiskBand, RouteDistanceKm, Terms, ItemTypeId?)`, `JobObligation(ContractId, OfferId, Type, Origin, Destination, Count, MassKg, Payout, AcceptedAtGameTimeMs, DeadlineGameTimeMs, Status, RiskBand, ItemTypeId?, ClosedAtGameTimeMs?)`, `JobOfferAvailability(OfferId, Blocker)`, `StationJobsSnapshot(Offers, Obligations, ObservedAtGameTimeMs, DockedStationId?, Availability)`, partial `DemoTransportSnapshot.StationJobs`, typed `AcceptJobOfferCommand(CommandId, ExpectedRevision, OfferId) : DemoCampaignCommand`, stable `StationJobReasons` (`offer_not_found`, `offer_expired`, `offer_already_accepted`, `not_docked_at_origin`, `insufficient_cargo_space`) and `AcceptBlocker(board, offerId)`.
+- `tests/DeepSpaceSaga.Contracts.Tests/Demo/DemoEp0034Us0006Tk0001Tests.cs` — `Payload_RoundTrips`, `LegacyPayload_UsesSafeDefaults`, `ReasonCodes_AreStable`.
+
+Checks: `dotnet build tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj -c Release` — succeeded, 0 warnings/0 errors. A quick focused run `--filter FullyQualifiedName~DemoEp0034Us0006Tk0001Tests` gave 3/3 (results `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0006-20261117/tk0001`); the story run at the end is the evidence of record.
+
+Assumptions:
+
+- A-01 (technical): the board owns one generic `AcceptJobOfferCommand(offerId)`; it turns an offer into an `Active` journal obligation. The planned typed accept commands of US-0002 (`AcceptPassengerCommand`) and US-0004 (`AcceptCargoCommand`) either extend what acceptance does for their order type (boarding, sealed cargo, payout on delivery) or delegate to the same acceptance core; the board does not duplicate those rules. Capacity blockers reuse `PassengerCapacityReasons` from US-0001.
+- A-02 (technical): acceptance verdicts are published per offer (`Availability`); an offer without a verdict, a board without verdicts or a missing board mean `unavailable`, never "acceptable". Missing JSON arrays deserialize as default arrays, so readers use `IsDefaultOrEmpty`.
+- A-03 (technical): payout is explained by fixed integer terms (Tokens and permille), matching the determinism rule "factors fixed-point (1000 = 1.0)"; no `double` crosses the contract for money or time.
