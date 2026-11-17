@@ -1099,5 +1099,12 @@
   "Demo.Replacement.Item.plate.heavy": "Тяжёлая броня",
   "Demo.Replacement.Item.shield.t1": "Щит I",
   "Demo.Replacement.Item.decoy.t1": "Ловушки I",
-  "Demo.Replacement.Item.drive.standard": "Стандартный двигатель"
+  "Demo.Replacement.Item.drive.standard": "Стандартный двигатель",
+  "Demo.Pursuit.Approaching": "Сближается",
+  "Demo.Pursuit.Receding": "Удаляется",
+  "Demo.Pursuit.Captured": "Перехват — впереди бой",
+  "Demo.Pursuit.Escaped": "Преследование завершено",
+  "Demo.Pursuit.Safe": "Безопасная зона START",
+  "Demo.Pursuit.Lost": "Контакт потерян",
+  "Demo.Pursuit.Telemetry": "{0:0.0} км · скорость сближения {1:0.00} км/с"
 }

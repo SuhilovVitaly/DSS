@@ -1099,5 +1099,12 @@
   "Demo.Replacement.Item.plate.heavy": "Heavy armor",
   "Demo.Replacement.Item.shield.t1": "Shield I",
   "Demo.Replacement.Item.decoy.t1": "Decoy I",
-  "Demo.Replacement.Item.drive.standard": "Standard engine"
+  "Demo.Replacement.Item.drive.standard": "Standard engine",
+  "Demo.Pursuit.Approaching": "Closing in",
+  "Demo.Pursuit.Receding": "Moving away",
+  "Demo.Pursuit.Captured": "Intercepted — battle ahead",
+  "Demo.Pursuit.Escaped": "Pursuit ended",
+  "Demo.Pursuit.Safe": "START safe zone",
+  "Demo.Pursuit.Lost": "Contact lost",
+  "Demo.Pursuit.Telemetry": "{0:0.0} km · closing speed {1:0.00} km/s"
 }
