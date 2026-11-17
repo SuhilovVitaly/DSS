@@ -16,6 +16,8 @@ public sealed class BattleLootPresentation(Func<DemoCampaignCommand, Task<DemoCa
     public string? LastReason { get; private set; }
     public LootSessionSnapshot? State { get { lock (_gate) return _state; } }
     public LootObjectSnapshot? Selected { get { lock (_gate) return _state?.Objects.FirstOrDefault(s => s.ObjectId == _selected); } }
+    public DemoCampaignCommand? RetryCommand { get { lock (_gate) return _retryCommand; } }
+    public Task<bool> RetryAsync() => SubmitAsync((_, _, _, _) => RetryCommand ?? throw new InvalidOperationException(), false);
 
     public void Observe(LootSessionSnapshot? state, long revision)
     {
@@ -56,7 +58,10 @@ public sealed class BattleLootPresentation(Func<DemoCampaignCommand, Task<DemoCa
             {
                 if (_state is null || needsSource && _selected is null) return false;
                 battle = _state.BattleId;
-                command = _retryCommand ?? commandFactory("loot:" + Guid.NewGuid().ToString("N"), _revision, battle, _selected ?? "");
+                var proposed = commandFactory("loot:" + Guid.NewGuid().ToString("N"), _revision, battle, _selected ?? "");
+                if (_retryCommand is { } retry && proposed with { CommandId = retry.CommandId, ExpectedRevision = retry.ExpectedRevision } != retry)
+                { LastReason = "loot_retry_pending"; return false; }
+                command = _retryCommand ?? proposed;
                 _retryCommand = command;
             }
             var response = await execute(command);

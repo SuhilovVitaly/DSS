@@ -1264,5 +1264,8 @@
   "loot.jettison.shortage": "Need {0} kg more — use Jettison cargo.",
   "loot.jettison.title": "Jettison cargo",
   "loot.loot_not_cargo_item": "Only cargo goods can be jettisoned.",
-  "loot.loot_not_enough_quantity": "Not enough of this cargo aboard."
+  "loot.loot_not_enough_quantity": "Not enough of this cargo aboard.",
+  "loot.jettison.retry": "Retry jettison: {0} × {1}",
+  "loot.loot_retry_pending": "Resolve the previous operation using Retry.",
+  "loot.retry": "Retry the previous operation"
 }

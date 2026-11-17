@@ -1264,5 +1264,8 @@
   "loot.jettison.shortage": "Не хватает {0} кг — выбросьте груз.",
   "loot.jettison.title": "Выбросить груз",
   "loot.loot_not_cargo_item": "Можно выбросить только товары из трюма.",
-  "loot.loot_not_enough_quantity": "На борту недостаточно этого груза."
+  "loot.loot_not_enough_quantity": "На борту недостаточно этого груза.",
+  "loot.jettison.retry": "Повторить выброс: {0} × {1}",
+  "loot.loot_retry_pending": "Завершите предыдущую операцию кнопкой повтора.",
+  "loot.retry": "Повторить предыдущую операцию"
 }

@@ -95,3 +95,8 @@ Include TacticalBattleScreen.Overlay.cs/Loot.cs to make the jettison button an a
 
 ## Execution
 Added scrollable authoritative cargo list, item sell-step quantity controls, explicit permanent/no-payment confirmation, shared pending/receipt updates and mass-shortage hint. No optimistic cargo changes. Client/test build PASS after correcting shared trade helper reference (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us10-tk4-build-repeat.log). All four US10 tickets now ready for boundary tests; native NOT RUN.
+
+## Independent review scope correction
+Include BattleLootPresentation.cs to distinguish a new intent from a frozen command retry after Unavailable. A new item/quantity/action must not silently execute the old confirmed command. Add an explicit retry action with original cargo/quantity and a regression for changed selection after transport failure.
+
+Review correction PASS: new intent is compared against the frozen retry payload excluding identity/revision; a mismatch is rejected without transport execution. Dedicated Retry shows original jettison item/quantity. Changed-selection regression plus affected shared retry/lifecycle UI: 11/11 PASS in us10-client-review.log. Original US10+prisoner/client corpus22/22 PASS in us10-client.log.

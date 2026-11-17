@@ -17,6 +17,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
     private readonly LootJettisonPanel _jettison = new(presentation);
     private bool _showJettison;
     internal SKRect JettisonBounds { get; private set; }
+    internal SKRect RetryBounds { get; private set; }
     private float _scroll, _contentHeight;
     public SKRect Bounds { get; private set; }
     public SKRect LeaveBounds { get; private set; }
@@ -41,6 +42,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
     public void Draw(SKCanvas canvas, float width, float height, bool flowPending, string? flowError = null)
     {
         _actions.Clear();
+        RetryBounds = default;
         ArrestBounds = default;
         LeaveBounds = new(16, height - 54, 250, height - 14);
         Button(canvas, LeaveBounds, L("leave"), !presentation.Pending && !flowPending);
@@ -126,7 +128,14 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
             long shortage = shortages.DefaultIfEmpty(0).Max();
             Text(canvas, shortage > 0 ? string.Format(L("jettison.shortage"), shortage) : L("estimate_notice"), Bounds.Left + 16, Bounds.Bottom - 19, 12);
         }
-        if (presentation.LastReason is { } last) Wrapped(canvas, L(last), 270, height - 37, Math.Max(100, width - 550), 13);
+        if (presentation.RetryCommand is { } retry && !presentation.Pending)
+        {
+            RetryBounds = new(270, height - 54, width - 270, height - 14);
+            string label = retry is JettisonCargoCommand discard ? string.Format(L("jettison.retry"),
+                UI.Screens.Trade.TradeItemPresentation.ItemDisplayName(discard.ItemTypeId), discard.Quantity) : L("retry");
+            Button(canvas, RetryBounds, label, !flowPending);
+        }
+        else if (presentation.LastReason is { } last) Wrapped(canvas, L(last), 270, height - 37, Math.Max(100, width - 550), 13);
         else if (!string.IsNullOrWhiteSpace(flowError)) Wrapped(canvas, flowError, 270, height - 37, Math.Max(100, width - 550), 13);
         if (ConfirmDiscard)
         {
@@ -155,6 +164,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
             return ConfirmBounds.Contains(point);
         }
         if (LeaveBounds.Contains(point)) return RequestExit();
+        if (!RetryBounds.IsEmpty && RetryBounds.Contains(point)) { LastActionTask = presentation.RetryAsync(); return false; }
         if (JettisonBounds.Contains(point)) { _showJettison = !_showJettison; _scroll = 0; return false; }
         if ((presentation.Selected is not null || _showJettison) && CloseBounds.Contains(point)) { _showJettison = false; presentation.ClearSelection(); return false; }
         if (_showJettison) { _jettison.Click(point); LastActionTask = _jettison.PendingTask; return false; }
