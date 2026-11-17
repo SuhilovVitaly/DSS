@@ -5,7 +5,7 @@ ticket: EP-0033-US-0006-TK-0002-board-status
 title: Board, реестр и состояние демо
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0033-US-0006-TK-0001-current-contracts]
@@ -87,3 +87,9 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Expanded allowlist before final reconciliation
+This ticket owns all epic execution ledgers (ExecutionStatus, FinalValidation, AcceptanceCoverage, Tickets), epic Documentation.md and US-0006 status, DB/Board/README.md and EP-0031 DemoPlan current delivery note. It records story-end documentation validation, native limitations, graph evidence and cleanup. Existing historical entries remain historical.
+
+## Story-end validation
+Documentation links/IDs/dependency targets/cycles PASS (6 stories, 26 tickets, 432 relative links). Graphify rebuilt with 1993 checked source hashes, six fresh semantic inputs and recorded parser limitations. FinalValidation distinguishes 131 automated PASS tests, limited native smoke and open full native/product/EP-0034 integration gates. Cleanup verified at D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-final/cleanup.json. Publication SHA is recorded after this commit in Tickets.md.

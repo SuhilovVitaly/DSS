@@ -191,3 +191,6 @@ US-0005 привела текущие описания к Save21 и settlement E
 ## Delivery update — EP-0032
 
 Campaign continuity, permanent pilot loss, Save22, five-station start and autosave/Continue implemented. [Execution and remaining manual acceptance](../EP-0032-demo-campaign-continuity/ExecutionStatus.md). This does not complete services, transport jobs, encounters, progression or the full demo release.
+
+## Текущая поставка сервисов — 2026-11-17
+EP-0033 реализует ремонт, снабжение, ограниченную замену/оснащение, наём и содержание компании: 6 историй, 26 тикетов, включая документацию. [Статус и доказательства](../EP-0033-demo-company-services/ExecutionStatus.md). Интеграция реального пассажирского контракта EP-0034-US-0002 и продуктовая/балансовая приёмка остаются открытыми. Исторические NOT STARTED выше относятся к этапу планирования. Полный демо-цикл этим не закрывается.

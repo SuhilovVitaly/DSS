@@ -12,7 +12,7 @@ epic_approval_utc: 2026-11-16T19:49:59Z
 priority: P0
 workstream: feature
 dependencies: [EP-0032-demo-campaign-continuity, EP-0034-demo-transport-contracts]
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # EP-0033 — Обслуживание и восстановление компании
@@ -25,7 +25,7 @@ implementation_status: not-started
 
 Запрос разрешает создание/уточнение Board. Ранее приложенный расширенный план — продуктовый материал, заменённый одобренной сокращённой версией; он не разрешает исполнение или публикацию. Исходное поручение ограничивало этап историями. Текущее поручение ниже разрешает тикеты и дополнительные истории; реализация и публикация не запрашивались.
 
-## Grounding
+## Historical planning grounding (superseded by current delivery)
 
 `src/DeepSpaceSaga.Client/UI/Screens/Hire/HireScreen.cs:69` — placeholder. `src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipScreen.cs:157` — StartRearm уже существует. EP-0021 Documentation.md, таблица историй: обслуживание, supply и найм запланированы; наличие approved тикетов не доказывает реализацию.
 
@@ -105,3 +105,6 @@ Planning: подготовлено по одобренному плану. Imple
 Порядок ниже — локальная проекция глобального dependency order (не числовая сортировка): EP-0033-US-0001-station-repairs → EP-0033-US-0002-ammunition-supply → EP-0033-US-0003-drone-replacement → EP-0033-US-0004-pilot-recruitment → EP-0033-US-0005-crew-upkeep → EP-0033-US-0006-documentation. Документационная история исполняется после всех функциональных, включая добавленные с большим ID.
 
 [Глобальная карта, полные пути, release gates и открытые допущения](../EP-0041-demo-validation-and-release/TicketPlan.md). Новые API/файлы в тикетах — проект, а не текущая реализация.
+
+## Current delivery — 2026-11-17
+The owner explicitly authorized autonomous execution, a new feature/ branch, tests at each story end, and a commit/push for every ticket. All 26 tickets have implementation/documentation delivered; full epic acceptance remains OPEN. [Execution status](ExecutionStatus.md), [coverage](AcceptanceCoverage.md), [current services contract](../../Documentation/04-Engineering/CompanyServices.md). Historical statements above describe the planning stage, not current runtime. EP-0034-US-0002 passenger-contract integration is still external and not implemented here.

@@ -1,26 +1,25 @@
 # EP-0033 execution
 
-Started 2026-11-17 from main `83782f77394c652435df2341977bf99df751ef82`.
 Branch: `feature/ep-0033-demo-company-services`; remote: origin, https://github.com/SuhilovVitaly/DSS.
-The owner's current request authorizes implementation, one commit and immediate push per ticket.
-Tests run at the end of each user story, overriding the original per-ticket test cadence.
-Ticket commits before that boundary are implemented with validation pending, never test PASS.
+Base: `83782f77394c652435df2341977bf99df751ef82`. User authorized autonomous execution and per-ticket commit/immediate push; tests ran at each story end. `feature/` is the owner's standing epic branch preference.
 
-## Order and dependencies
+## Delivery and remaining acceptance
 
-US-0001 → US-0002 → US-0003 → US-0004 → US-0005 → US-0006 (documentation last).
-EP-0032 is merged in the base. EP-0034-US-0002 is not implemented in this checkout;
-passenger integration and its story acceptance remain open until its real runtime exists.
-Do not substitute a mock passenger-contract implementation.
+Six stories / 26 tickets implemented, including final documentation. Repair, finite supply, replacement/equipment, recruitment/assignment, payroll/debt and current contracts are delivered. This is **implementation delivered, full epic acceptance OPEN**, not release approval.
 
-## Documentation scope
+EP-0032 is in the base. EP-0034-US-0002 has no implemented passenger-contract runtime in this checkout. Existing actual ShipPassengerData participates in cabins and food, but is not a substitute for the missing contract integration. Native full service-flow, independent player/product and economic balance acceptance remain open unless explicitly evidenced in FinalValidation. No independent review is claimed; implementation received self-review and corrections.
 
-US-0006 includes source-based impact inventory across the repository, current requirements,
-mechanics, screens, save/content contracts, README, Board and offline Graphify.
-Its initial three-file lists may be expanded with the impact inventory before editing.
-Product/native/balance acceptance remains separate from automated checks.
+## Evidence
 
-## Progress
+- [Validation and native scope](FinalValidation.md)
+- [Acceptance coverage](AcceptanceCoverage.md)
+- [Every ticket → SHA → push](Tickets.md)
+- [Whole-project documentation impact](DocumentationImpact.md)
+- [Current service contract](../../Documentation/04-Engineering/CompanyServices.md)
 
-US-0001 repair and US-0002 supply implemented and pushed. Latest combined checks: 7 Engine, 6 Contracts, 43 Client PASS. Native/product/balance acceptance OPEN. US-0003 onward pending. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-us0002/.
+Retained evidence root: D:/DeepSpaceSaga/artifacts/validation/ep-0033/.
+Final graph and documentation checks: D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-final/.
 
+## Final verification
+
+131 focused final regression tests PASS (19 Engine / 12 Contracts / 100 Client); real screen service flow rerun PASS. Native smoke verified safe monitor placement, New Game, Continue, Ship/Shipyard, repair refusal while undocked and Finance; full native station flow and product gates remain OPEN. Documentation checks and Graphify PASS with the parser/coverage limitations in FinalValidation. Temporary task outputs are removed; retained evidence remains under the canonical artifact root.
