@@ -89,6 +89,7 @@ public sealed class DemoEp0036Us0001Tk0002Tests
         Assert.True(engine.ExecuteDemoCampaign(new AcceptBountyCommand("track", engine.CaptureSnapshot().DemoCampaign!.Revision, Order(engine).BountyId)).Applied);
         var before = Order(engine);
         var save = engine.CaptureSaveState();
+        Assert.Equal("demo_pirate_region", before.SearchRegion);
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), true);
         Assert.Equal(before, Order(engine));
         var state = save.GameState.DemoCampaign!;

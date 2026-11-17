@@ -1136,6 +1136,7 @@
   "Demo.SensorReport.Acknowledge": "Acknowledged — remain paused",
   "Demo.SensorReport.Footer": "Change course if needed. Resume explicitly when ready.",
   "bounty.title": "Bounties",
+  "bounty.demo_pirate_region": "Search area: pirate patrol region of the demo cluster",
   "bounty.track": "Track",
   "bounty.untrack": "Stop tracking",
   "bounty.no_deadline": "No deadline",

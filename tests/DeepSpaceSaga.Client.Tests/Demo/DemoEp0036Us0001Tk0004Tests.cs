@@ -15,6 +15,15 @@ public sealed class DemoEp0036Us0001Tk0004Tests
             Path.Combine(AppContext.BaseDirectory, "Scenarios/Demo/scenario.json"));
         var groups = engine.CaptureSaveState().GameState.DemoCampaign!.PirateWorld!.Groups;
         Assert.Equal(2, definitions.Jobs!.Bounties.Length);
+        var campaign = engine.CaptureSnapshot().DemoCampaign!;
+        Assert.True(engine.ExecuteDemoCampaign(new DeepSpaceSaga.Contracts.AcceptBountyCommand("track-area",
+            campaign.Revision, "bounty:pirate:01")).Applied);
+        var screen = new DeepSpaceSaga.Client.UI.Screens.Contracts.ContractsScreen(
+            campaign: () => engine.CaptureSnapshot().DemoCampaign);
+        var region = Assert.Single(screen.BountyRows).Order.SearchRegion;
+        Assert.Equal("demo_pirate_region", region);
+        Assert.Contains("bounty." + region, BountyText("English").Keys);
+        Assert.Contains("bounty." + region, BountyText("Russian").Keys);
         foreach (var bounty in definitions.Jobs.Bounties)
         {
             Assert.Contains(groups, g => g.GroupId == bounty.TargetGroupId);

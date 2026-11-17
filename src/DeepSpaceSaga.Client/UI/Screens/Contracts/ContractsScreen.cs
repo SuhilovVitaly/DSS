@@ -483,7 +483,7 @@ public sealed class ContractsScreen : IScreen
             Text(canvas, row.Status, left + 12, y + 56, textWidth, JobsTextPaint);
             Text(canvas, row.PaymentLocation, left + 12, y + 80, textWidth, JobsDimPaint);
             if (row.Order.SearchRegion is { } region)
-                Text(canvas, region, left + 12, y + 104, textWidth, JobsDimPaint);
+                Text(canvas, Localization.Get("bounty." + region), left + 12, y + 104, textWidth, JobsDimPaint);
             var button = new SKRect(card.Right - 200, y + 20, card.Right - 12, y + 56);
             var state = row.CanToggle && !IsAcceptPending ? ButtonState.Normal : ButtonState.Disabled;
             TabletopStyle.Button(canvas, button, state, primary: false);

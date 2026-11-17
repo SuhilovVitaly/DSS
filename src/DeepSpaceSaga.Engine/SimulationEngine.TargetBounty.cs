@@ -49,6 +49,7 @@ public sealed partial class SimulationEngine
             : available ? BountyEligibility.TargetAvailable : BountyEligibility.Unavailable;
         return new(order.Id, order.IssuerStationId, order.TargetGroupId, order.RewardTokens,
             order.Tracking, eligibility, victory?.Binding.BattleId,
+            SearchRegion: "demo_pirate_region",
             Reason: eligibility == BountyEligibility.Unavailable ? TargetBountyReasons.Unavailable : null);
     }
 
