@@ -5,7 +5,7 @@ ticket: EP-0035-US-0009-TK-0005-sensor-skill
 title: Навык оператора и прибавка к базовому радиусу
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0009-TK-0001-contracts, EP-0035-US-0007-TK-0004-sensor-runtime, EP-0035-US-0009-TK-0002-engine]
@@ -134,3 +134,8 @@ D-35-42 пользователь: «Да, принимаем: если пере�
 При реальном pirate sensor contact и distance<=20км authoritative atomic capture фиксирует encounter. Player detection alone не capture. Для новой группы report+pause по batch policy; dismissal сохраняет Speed0; explicitcontinue начинает бой. Уже captured нельзя отменить сменой курса на паузе. Previously reported group не создаёт повторный automatic modal; используется существующий battle transition. Save/Load сохраняет pending capture, не даёт free escape. G-35-09 normal single-group inside-capture CLOSED; остаток: simultaneous capture CLOSED D-35-45: select earliest, no merge; recovery CLOSED D-35-47.
 Tests NOT RUN: MainMenuOverrides_NoSession; OverridesSurviveNewGameLoadUntilExit; Restart_NormalDefaults; Save_NoOverrides; Chance_ExistingGroupsUnchanged; IrinaAbsentUnassigned_Fallback; AssignedIrina_Bonus; BrokenSensor_NoDetection; Reassignment_NoDuplicateReport; NewlyRevealedGroup_NormalBatch; CaptureThenReport_StaysPaused; ExplicitContinue_StartsUnavoidableBattle; PausedCourse_CannotUndoCapture; LoadPendingCapture_NoEscape; PlayerDetectionOnly_NoCapture.
 Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-35-19; конкретные patrol routes ещё балансируются.
+## Execution scope 2026-11-17
+Add ScenarioLoader.cs to validate nonnegative serialized skill before publication and update US7 sensor regression expectations to use current authoritative radius. No arbitrary progression cap: nonnegative Int32 storage; finite effective radius required. Player fallback is 80% base, pirate sensors retain their configured base without player operator fallback. Existing module assignment is sole identity source (TK-0002 decision).
+
+
+Implemented saved crew skill, authoritative projection and effective module range. Release Engine.Tests build PASS (0 warnings/errors); scoped formatting/diff PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us9-tk5-build.log. Tests NOT RUN until US9 boundary; authored save/load, fallback, zero-skill and non-compounding checks.

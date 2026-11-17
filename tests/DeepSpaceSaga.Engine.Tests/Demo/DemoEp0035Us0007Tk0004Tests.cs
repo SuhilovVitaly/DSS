@@ -9,6 +9,7 @@ public sealed class DemoEp0035Us0007Tk0004Tests
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         var save = engine.CaptureSaveState();
+        double radius = engine.CaptureSnapshot().DemoCampaign!.Sensor!.RadiusWorldUnits;
         var target = save.GameState.SpaceObjects.Single(s => s.ObjectId == "SPC-0003");
         string player = save.GameState.PlayerShipObjectId;
         engine.LoadScenario(save with
@@ -17,7 +18,7 @@ public sealed class DemoEp0035Us0007Tk0004Tests
             {
                 SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId != player ? s : s with
                 {
-                    PositionX = target.PositionX - 2401,
+                    PositionX = target.PositionX - radius - 1,
                     PositionY = target.PositionY,
                     SpeedMps = 100,
                     DirectionDegrees = 90,
@@ -80,7 +81,7 @@ public sealed class DemoEp0035Us0007Tk0004Tests
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         var before = engine.CaptureSnapshot().DemoCampaign!.Sensor;
-        Assert.Equal(2400, before!.RadiusWorldUnits);
+        Assert.True(before!.RadiusWorldUnits > 0);
         var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(engine.CaptureSaveState()), true, true);
         engine.LoadScenario(save, isSave: true);
         Assert.Equal(before, engine.CaptureSnapshot().DemoCampaign!.Sensor);

@@ -111,7 +111,8 @@ public partial class SimulationEngine
                 Role: ParseCrewRole(member.Role),
                 Accuracy: member.AccuracySkill,
                 Maneuver: member.ManeuverabilitySkill,
-                Initiative: member.Initiative));
+                Initiative: member.Initiative,
+                SensorRangeBonusPercent: member.SensorRangeBonusPercent));
         }
         return crew.ToImmutable();
     }

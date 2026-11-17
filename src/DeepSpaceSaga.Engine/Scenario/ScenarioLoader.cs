@@ -636,6 +636,8 @@ public static class ScenarioLoader
             if (crew is null)
                 throw new ScenarioException($"Ship '{obj.ObjectId}' has a null crew member.");
             crewIds.Add(crew.CrewId);
+            if (crew.SensorRangeBonusPercent < 0)
+                throw new ScenarioException($"Crew '{crew.CrewId}' sensorRangeBonusPercent must be nonnegative.");
             // World crew skills use the tactical 0..100 scale (EP-0029 US-0011 remediation).
             if (crew.AccuracySkill is < 0 or > 100)
                 throw new ScenarioException($"Crew '{crew.CrewId}' accuracySkill must be in 0..100.");

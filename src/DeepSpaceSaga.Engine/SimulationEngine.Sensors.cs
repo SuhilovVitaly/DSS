@@ -21,6 +21,13 @@ public sealed partial class SimulationEngine
             bool operational = !ship.IsDestroyed && !module.Destroyed && module.StructurePoints > 0 &&
                 module.PowerState == "On" && module.OperationalState == "Ready";
             double effective = operational ? radius : 0;
+            if (operational && ship.InitialMotion.ObjectId == PlayerShipObjectId)
+            {
+                var crew = ship.Crew.FirstOrDefault(c => c.Id == module.OperatorCrewId);
+                effective = radius * (crew is null ? 0.8 : 1 + crew.SensorRangeBonusPercent / 100.0);
+                if (!double.IsFinite(effective))
+                    throw new Scenario.ScenarioException("Effective sensor radius must be finite.");
+            }
             if (best is null || effective > best.RadiusWorldUnits)
                 best = new(module.ModuleId, effective, operational);
         }

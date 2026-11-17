@@ -367,7 +367,8 @@ public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("gender")] string? Gender = null,
     [property: JsonPropertyName("portraitAssetId")] string? PortraitAssetId = null,
     [property: JsonPropertyName("role")] string? Role = null,
-    [property: JsonPropertyName("initiative")] int Initiative = 0);
+    [property: JsonPropertyName("initiative")] int Initiative = 0,
+    [property: JsonPropertyName("sensorRangeBonusPercent")] int SensorRangeBonusPercent = 0);
 
 /// <summary>
 /// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative
