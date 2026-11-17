@@ -30,7 +30,8 @@ public sealed class DemoEp0033Us0002Tk0004Tests
         { calls++; return ValueTask.FromResult(new DemoCampaignResponse(c.CommandId, false, "service_not_docked", 0)); });
         screen.RequestDecoys("d"); await screen.PendingService!;
         screen.ConfirmDecoys();
-        Assert.Single(new[] { calls }.Where(n => n == 1));
+        Assert.Equal(1, calls);
         Assert.DoesNotContain("service_not_docked", screen.SupplyStatus);
     }
 }
+

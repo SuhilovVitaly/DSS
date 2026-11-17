@@ -207,7 +207,7 @@ public sealed class FinanceScreen : IScreen
         if (ServicePostings.LastOrDefault() is { } service)
         {
             using var servicePaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 16, IsAntialias = true };
-            canvas.DrawText(Localization.Get("Demo.Repair.Title"), pl + 40, pt + 300, servicePaint);
+            canvas.DrawText(Localization.Get(service.Kind == "decoy" ? "Demo.Supply.Confirmed" : "Demo.Repair.Title"), pl + 40, pt + 300, servicePaint);
             canvas.DrawText(string.Format(Localization.Get("Demo.Repair.Confirmed"), service.Amount), pl + 40, pt + 325, servicePaint);
         }
         DrawVoyageFinances(canvas, pl, pt);

@@ -22,4 +22,5 @@ Product/native/balance acceptance remains separate from automated checks.
 
 ## Progress
 
-Preparation only. No implementation tests or native validation have run.
+US-0001 repair and US-0002 supply implemented and pushed. Latest combined checks: 7 Engine, 6 Contracts, 43 Client PASS. Native/product/balance acceptance OPEN. US-0003 onward pending. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-us0002/.
+
