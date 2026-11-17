@@ -134,3 +134,5 @@ Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-3
 
 ## Execution 2026-11-17
 Engine selects the maximum operational installed sensor (stable ID tie ordering), publishes actual player coverage, and evaluates directional contact against authoritative predicted positions at processed motion time. SensorCovers excludes zero/nonfinite radius and uses overflow-safe normalized geometry. Existing module persistence suffices; no duplicate DemoCampaignData state is introduced. Release Engine.Tests build PASS; scoped formatting applied, diff check PASS. Tests NOT RUN until this ticket is published, then US0007 headless boundary runs. Operator bonus/fallback belongs to US0009; pirate group wiring belongs to US0001/0012. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-execution/sensor-runtime-build.log.
+
+Independent review found missing direct ObserveSensorContact coverage (no confirmed production defect). Added authoritative object observation with calendar300000/motion1000, directional detection, pause and serialized Save/Load; build PASS. Follow-up validation runs at corrected US0007 boundary after publication.

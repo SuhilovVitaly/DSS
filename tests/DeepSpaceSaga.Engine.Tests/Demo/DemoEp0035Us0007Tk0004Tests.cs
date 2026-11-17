@@ -4,6 +4,42 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0035Us0007Tk0004Tests
 {
+    [Fact]
+    public void AuthoritativeContact_UsesMotionTime_AndSurvivesPausedLoad()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        var save = engine.CaptureSaveState();
+        var target = save.GameState.SpaceObjects.Single(s => s.ObjectId == "SPC-0003");
+        string player = save.GameState.PlayerShipObjectId;
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId != player ? s : s with
+                {
+                    PositionX = target.PositionX - 2401,
+                    PositionY = target.PositionY,
+                    SpeedMps = 100,
+                    DirectionDegrees = 90,
+                    IsDocked = false,
+                    DockedStationObjectId = null,
+                    Orbit = null
+                }).ToArray()
+            }
+        }, isSave: true);
+        Assert.False(engine.ObserveSensorContact(player, target.ObjectId).IsDetected);
+        engine.CaptureSnapshotForTests(300000, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 1000);
+        var observed = engine.ObserveSensorContact(player, target.ObjectId);
+        Assert.True(observed.IsDetected);
+        Assert.Equal(1000, observed.ObservedMotionTimeMs);
+        Assert.False(engine.ObserveSensorContact(target.ObjectId, player).IsDetected);
+        var checkpoint = engine.CaptureSaveStateForTests(300000, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 1000);
+        engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(checkpoint), true, true), isSave: true);
+        Assert.Equal(observed, engine.ObserveSensorContact(player, target.ObjectId));
+        engine.CaptureSnapshot();
+        Assert.Equal(observed, engine.ObserveSensorContact(player, target.ObjectId));
+    }
+
     [Theory]
     [InlineData(2400, true)]
     [InlineData(2400.001, false)]
