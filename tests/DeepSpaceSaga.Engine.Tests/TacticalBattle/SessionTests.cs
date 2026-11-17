@@ -271,7 +271,7 @@ public sealed class SessionTests
         Assert.Equal(80, frame.Units[0].MaxArmor);
         Assert.Equal(2, frame.Units[0].Engines.Length);
         Assert.Equal(50, frame.Units[0].Build!.DamageMin);
-        Assert.Equal(880, frame.Units[0].Limits!.Mass);
+        Assert.Equal(880 + 12, frame.Units[0].Limits!.Mass); // EP29: twelve loaded torpedoes, 1kg each.
         var moved = engine.MoveTacticalBattle(new("move", frame.BattleId, frame.Revision));
         Assert.True(moved.Accepted);
         Assert.Equal(original, JsonSerializer.Serialize(frame));
