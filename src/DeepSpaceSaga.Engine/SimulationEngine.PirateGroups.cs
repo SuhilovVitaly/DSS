@@ -20,8 +20,8 @@ public sealed partial class SimulationEngine
             ValidatePirateCompositions(campaign);
             return campaign;
         }
-        if (!campaign.PirateCompositions.IsEmpty)
-            throw new ScenarioException("Pirate compositions require their saved world groups.");
+        if (!campaign.PirateCompositions.IsEmpty || !campaign.SensorReports.IsEmpty || campaign.PendingSensorReport is not null)
+            throw new ScenarioException("Pirate compositions and reports require their saved world groups.");
         if (isSave || campaign.CatalogFingerprint is null || _demoDefinitions.Encounters is not { } definition)
             return campaign;
         var player = objects.Single(o => o.InitialMotion.ObjectId == state.PlayerShipObjectId);

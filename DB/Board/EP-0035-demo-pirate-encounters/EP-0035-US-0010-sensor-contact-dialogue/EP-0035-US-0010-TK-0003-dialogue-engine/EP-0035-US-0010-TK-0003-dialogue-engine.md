@@ -159,3 +159,5 @@ Build PASS us10-tk3-build.log in D:/DeepSpaceSaga/artifacts/validation/ep-0035/2
 InitialEngine9new tests PASS;12existing station dialogue tests failed solely in ContentPath discovery because build output is correctly outside repository. Scope adds DialogueTests.cs source-anchored content lookup; all semantic assertions preserved. Added queued report behind active station dialogue integration. Client14/Contracts2PASS; Engine rerun follows corrective publication.
 
 Independent review: null pending report is now rejected with ScenarioException before dereference; saved sensor dialogue must match batch participant and actual crew name/portrait (script requires no portrait). Added atomic rejected-load regressions. Build evidence us10-review-build.log; corrected story tests follow publication.
+
+Review orphan-report correction: PreparePirateWorldForLoad rejects reports/pending batches when their world is absent, before publishing loaded state. Atomic orphan regression added. Build evidence us10-orphan-build.log.

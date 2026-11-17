@@ -20,6 +20,9 @@ public sealed class DemoEp0035Us0010Tk0003Tests
         var invalidSpeaker = save with { GameState = save.GameState with { DialogueState = dialogue with
         { ActiveDialogue = dialogue.ActiveDialogue! with { ParticipantId = "sensor-script" } } } };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalidSpeaker, true));
+        var orphan = save with { GameState = save.GameState with { DemoCampaign = campaign with
+        { PirateWorld = null, PirateCompositions = [] } } };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(orphan, true));
         Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
     }
     [Fact]
