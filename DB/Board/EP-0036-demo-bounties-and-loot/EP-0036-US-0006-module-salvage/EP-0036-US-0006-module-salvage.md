@@ -10,7 +10,7 @@ created: 2026-11-17T19:21:02Z
 priority: P0
 workstream: feature
 dependencies: [EP-0036-US-0003-simple-loot]
-implementation_status: not-started
+implementation_status: implemented-tested
 planning_status: decomposed
 ---
 

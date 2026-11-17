@@ -66,3 +66,11 @@ The preceding US3 boundary count was incorrect: US3 has five tickets, including 
 All five tickets and corrections published through 050046c3. Contracts3/3 unchanged; final Engine10/10 and Client10/10 PASS. Independent review identified incomplete consumable/module coverage; corrected before boundary closure. Content schema error and test assertion/nullable issues corrected in separate immediately pushed commits. Full map/session-checkpoint integration remains allocated to US7/US4; no native/product acceptance claimed.
 
 Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us3-contracts.log; us3-engine-reviewed.log and us3-engine-reviewed-results/; us3-client-complete.log and us3-client-complete-results/. All paths share the same absolute run directory. Prior scheduling deviation recorded above.
+
+## US6 boundary validation plan
+
+Verified five ticket files; all five published through b8cefc63. Run FullyQualifiedName~DemoEp0036Us0006 in Contracts (identity/chance DTO), Engine (exact chance formula, slots, cargo refusal, terminal attempts, persisted results), Client (mapping/masses, finite market, pending/locale/item naming). Shared US3 loader/presentation behavior changed; include Client US3 filter as targeted regression. Independent review requested; no native game.
+
+## US6 completed implementation boundary
+
+All five tickets published through b8cefc63. Contracts4/4, Engine11/11, Client20/20 (US6+affected US3) PASS. Independent read-only review found no actionable defects in checked salvage/mapping/capacity/market/presentation scope. Map integration remains US7; native acceptance NOT RUN. Evidence under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/: us6-contracts.log, us6-engine.log, us6-client.log and correspondingly named -results/ directories.

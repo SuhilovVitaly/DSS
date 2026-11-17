@@ -5,7 +5,7 @@ ticket: EP-0036-US-0006-TK-0001-contracts
 title: Контракт экземпляров трофейных модулей
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tested
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0036-US-0003-TK-0001-contracts]
