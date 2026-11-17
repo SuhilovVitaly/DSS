@@ -5,7 +5,7 @@ ticket: EP-0034-US-0001-TK-0001-contracts
 title: Контракт: Готовый носитель с пассажирскими местами
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-validation-pending
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0032-US-0001-TK-0003-client, EP-0032-US-0004-TK-0004-client]
@@ -123,3 +123,5 @@ Assumptions:
 
 - A-01 (technical): US-0001 has no player command. Capacity is derived from the world each snapshot, so no `DemoCampaignCommand` subtype, CommandId or ExpectedRevision is introduced here; boarding commands with identity/revision belong to EP-0034-US-0002. This also leaves the single-implementation partial hooks of `SimulationEngine.DemoCampaign.cs` unimplemented, avoiding a merge collision with EP-0033.
 - A-02 (technical): the DTO field names are `TotalCabins/CrewCabins/PassengerCabins/ReservedCabins/FreeCabins/LifeSupportReason` (the plan's `total,crew,passengers,reserved,free,lifeSupportReason`).
+
+Story-end validation (2026-11-17): focused tests of this ticket PASS — see the story card «Story validation». Native/product acceptance remains OPEN.

@@ -28,4 +28,15 @@ EP-0033-US-0005-crew-upkeep depends on EP-0034-US-0002; nothing in EP-0034 depen
 
 ## Progress
 
-Preparation only. No implementation tests or native validation have run.
+| Ticket | Commit(s) | Status |
+|---|---|---|
+| EP-0034-US-0001-TK-0001-contracts | `89c2c929` | implemented, story tests PASS |
+| EP-0034-US-0001-TK-0002-content | `af463f4e`, `a6cbce6d` | implemented, story tests PASS |
+| EP-0034-US-0001-TK-0003-engine | `1329c059` | implemented, story tests PASS |
+| EP-0034-US-0001-TK-0005-localized-feedback | `bc87d851`, `ba14ef23` | implemented, story tests PASS |
+| EP-0034-US-0001-TK-0004-client | `406522f3` | implemented, story tests PASS |
+
+US-0001 evidence: [story validation](EP-0034-US-0001-passenger-ready-start/EP-0034-US-0001-passenger-ready-start.md#story-validation-2026-11-17). Native/product gates OPEN.
+Save format: no bump in US-0001 (passenger capacity is derived, not persisted); A-P2 not triggered yet.
+Shared files touched by US-0001 (EP-0033 merge watch): `DemoCampaign.cs` (Contracts, `partial` keyword), `SimulationEngine.DemoCampaign.cs` (projection token), `SimulationEngine.DemoStart.cs`, `DemoCampaignData.cs`, `StarterCarrierManifest.cs`, `Scenarios/Demo/scenario.json`, `English.json`/`Russian.json` (block after `Demo.Rearm.*`), `ShipScreen.cs`, `ScenarioEngineTests.cs`, `ModuleHealthBootstrapTests.cs`, `DemoEp0032Us0004Tk0002Tests.cs`.
+Open issue: EP-0032 demo tests hard-code `D:/DeepSpaceSaga/DSS` content and fail while EP-0033 content is in progress there.

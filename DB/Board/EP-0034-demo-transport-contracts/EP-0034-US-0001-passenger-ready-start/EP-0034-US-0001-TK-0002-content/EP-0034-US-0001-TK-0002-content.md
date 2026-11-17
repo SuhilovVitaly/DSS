@@ -5,7 +5,7 @@ ticket: EP-0034-US-0001-TK-0002-content
 title: Контент: Готовый носитель с пассажирскими местами
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-validation-pending
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0001-TK-0001-contracts]
@@ -132,3 +132,5 @@ Assumptions/limits:
 Allowlist expansion (recorded before the change): `tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs` and `tests/DeepSpaceSaga.Engine.Tests/ModuleHealthBootstrapTests.cs`. Their "real default scenario" tests load `Settings.defaultScenario`, which is the demo since EP-0032; the demo New Game now has 10 modules, 3 four-cabin quarters (12 cabins, 4 free) and 16 of 24 occupied hull cells. Expectations were updated to the new agreed contract (`Real_default_scenario_occupies_15_of_24_hull_cells` renamed to `..._16_of_24_...`, now also asserting cell (4,1)); the shared 8-cabin starter stays covered by Tutorial/Default assertions in `DemoEp0034Us0001Tk0002Tests` and the EP-0029 Tutorial tests.
 
 Story-end results: see the story card «Story validation».
+
+Story-end validation (2026-11-17): focused tests of this ticket PASS — see the story card «Story validation». Native/product acceptance remains OPEN.

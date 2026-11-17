@@ -5,7 +5,7 @@ ticket: EP-0034-US-0001-TK-0005-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-validation-pending
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0001-TK-0003-engine]
@@ -109,3 +109,5 @@ Assumption A-06: US-0001 has no player command (TK-0001 A-01), so no pending/con
 ## Story-end correction (2026-11-17)
 
 Story run found `NoRawReasonCodeLeaks` too strict: the stable code `unavailable` is also an ordinary English word in the explanation ("Passenger data is unavailable…"). The test now forbids verbatim snake_case codes, any `_`, and text equal to the code; dictionaries unchanged.
+
+Story-end validation (2026-11-17): focused tests of this ticket PASS — see the story card «Story validation». Native/product acceptance remains OPEN.
