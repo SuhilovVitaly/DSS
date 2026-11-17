@@ -70,3 +70,4 @@ Report requires authoritative collected consumable quantity absent from prior pr
 
 ## Implementation evidence
 Read-only report wired to loot map and Contracts screen; authoritative original quantities, separate due/paid postings, collected/remaining/failed/discarded goods, estimates, custody and actual sortie/pilot losses. Unknown costs/profit explicitly remain unknown. Tests run at US4 boundary; native NOT RUN.
+Review correction: report selects latest settlement battle and includes loot only for the same battle, preventing stale victory loot hiding losses after a subsequent non-victory.

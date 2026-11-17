@@ -12,7 +12,8 @@ public static class RewardReportPresentation
         var lines = new List<string> { L("title") };
         var loot = campaign?.Rewards?.Loot;
         var settlement = campaign?.Company?.Roundtrip?.Settlement;
-        string? battleId = loot?.BattleId ?? settlement?.BattleId;
+        string? battleId = settlement?.BattleId ?? loot?.BattleId;
+        if (loot?.BattleId != battleId) loot = null;
         if (battleId is null) return [L("title"), L("empty")];
         lines.Add(battleId);
         foreach (var payment in campaign?.Rewards?.BountyPayment?.Entries ?? [])

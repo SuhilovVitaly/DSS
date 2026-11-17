@@ -38,5 +38,12 @@ public sealed class DemoEp0036Us0004Tk0002Tests
         Assert.Equal(0, campaign.Rewards!.BountyPayment!.Entries[0].PaidTokens);
         Assert.Equal(LootAttemptStates.Failed, loot.Objects[0].Modules[0].State);
         Assert.Contains(Localization.Get("reward_report.notice"), text);
+        var later = campaign with { Company = new(Roundtrip: new(new("later-battle", "ship", 2, false,
+            ["new-loss"], 11, SortieExitKind.Completed))) };
+        string laterText = string.Join('\n', RewardReportPresentation.Lines(later));
+        Assert.Contains("later-battle", laterText);
+        Assert.Contains("new-loss", laterText);
+        Assert.DoesNotContain("Jane", laterText);
+        Assert.DoesNotContain("1500", laterText);
     }
 }
