@@ -73,6 +73,11 @@ public sealed partial class SimulationEngine
 
     private void TickDemoCampaign(long gameTimeMs)
     {
+        PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
+        DeliverPassengerContracts(gameTimeMs); // EP-0034 US-0002: idempotent, a Completed contract never pays again
+        DeliverCargoContracts(gameTimeMs); // EP-0034 US-0004: idempotent, a Completed contract never pays again
+        ResolveTransportFailures(gameTimeMs); // EP-0034 US-0003: expiry/loss/disembarkation, each obligation closes once
+        ReturnFailedContractCargo(gameTimeMs); // EP-0034 US-0004: failed cargo is taken back once at a human station
         if (gameTimeMs <= _demoCampaign.LastTickGameTimeMs) return;
         var candidate = _demoCampaign;
         TickDemoCampaignSections(gameTimeMs, ref candidate);
@@ -82,7 +87,7 @@ public sealed partial class SimulationEngine
 
     private DemoCampaignSnapshot BuildDemoCampaignProjection() => new(
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
-        _demoCampaign.Transport, _demoCampaign.Encounters, _demoCampaign.Rewards,
+        BuildDemoTransportProjection(), _demoCampaign.Encounters, _demoCampaign.Rewards,
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
         BuildSensorOperatorProjection());
 
@@ -113,6 +118,17 @@ public sealed partial class SimulationEngine
                 break;
             default:
                 handled = false;
+                PrepareStationJobsCommand(command, ref candidate, ref handled, ref reason);
+                var boarding = PreparePassengerBoarding(command, ref candidate, handled, ref reason);
+                var cancellation = PrepareTransportCancellation(command, ref candidate, ref handled, ref reason);
+                PrepareCargoSealing(command, ref candidate, handled, reason);
+                PrepareCargoCancellationReturn(cancellation, ref candidate);
+                if (reason is null && handled)
+                    commit = () =>
+                    {
+                        if (boarding is not null) BoardPassengers(boarding);
+                        if (cancellation is not null) ApplyTransportCancellation(cancellation);
+                    };
                 break;
         }
     }
@@ -120,6 +136,6 @@ public sealed partial class SimulationEngine
     private void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate) =>
         TickCrewUpkeep(gameTimeMs, ref candidate);
 
-    private void ValidateDemoCampaignSections(DemoCampaignData candidate) =>
-        DemoCampaignData.Validate(candidate, _clock.GameTimeMs);
+    private void ValidateDemoCampaignSections(DemoCampaignData candidate, long? gameTimeMs = null) =>
+        DemoCampaignData.Validate(candidate, gameTimeMs ?? Math.Max(_clock.GameTimeMs, _demoCampaign.LastTickGameTimeMs));
 }

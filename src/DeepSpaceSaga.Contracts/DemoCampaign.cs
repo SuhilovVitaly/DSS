@@ -24,7 +24,7 @@ public sealed record DemoCampaignSnapshot(
 public sealed record DemoCompanySnapshot(CampaignRoundtripSnapshot? Roundtrip = null, PilotLossSnapshot? PilotLoss = null,
     CampaignOutcomeSnapshot? Outcome = null, StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null,
     ReplacementSnapshot? Replacement = null, RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null);
-public sealed record DemoTransportSnapshot;
+public sealed partial record DemoTransportSnapshot;
 public sealed record DemoEncountersSnapshot;
 public sealed record DemoRewardsSnapshot;
 public sealed record DemoProgressionSnapshot;

@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0032-US-0004-demo-campaign-start]
 created: 2026-11-16T20:31:00Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Доска заказов станции
@@ -48,7 +48,7 @@ implementation_status: not-started
 
 - 2026-11-16T20:31:00Z — время фиксации поручения в Board, не доказанное время отправки: «Эпики с 32 по 41 это твоя совместная работа с другим агентом. вы дополняете друг друга. твоя задача пройти по всем этим эпикам, понять их цель, решить достаточны ли эти истории или нет и если нет добавить новые. Цель - подготовить эпики с 32 по 41 к первой демо игры».
 - Проверка автора: результат демонстрируем, зависимости указаны, completion evidence наблюдаемо; тикетная декомпозиция не выполнялась. Если детализация не помещается в пять тикетов, сначала разделить story.
-- Implementation: NOT STARTED. Automated/runtime/native/product acceptance: NOT RUN / OPEN.
+- Implementation: 5/5 tickets published (see Story validation below). Automated story-scoped tests: PASS for own tests, no new regression vs base. Native/manual/product acceptance: NOT RUN / OPEN.
 
 ## Текущая декомпозиция и review log
 
@@ -91,3 +91,30 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story validation (2026-11-17)
+
+Implementation: 5/5 tickets implemented and published on `feature/ep-0034-demo-transport-contracts` (origin). Automated story-scoped tests: own tests PASS; neighbouring regressions show no new failure versus the US-0001 base. Native window, manual playtest and product acceptance: **NOT RUN / OPEN** (headless raster renders of the Contracts screen were inspected, which is not a native check).
+
+| Ticket | Commit(s) |
+|---|---|
+| EP-0034-US-0006-TK-0001-contracts | `759692d7` |
+| EP-0034-US-0006-TK-0002-content | `81e358c1` |
+| EP-0034-US-0006-TK-0003-engine | `7aec0af0`, test correction `4c1e3689` |
+| EP-0034-US-0006-TK-0005-localized-feedback | `559ce508` |
+| EP-0034-US-0006-TK-0004-client | `ec009bf5` |
+
+Result: in a demo session the engine publishes, per calendar day, up to 6 offers on each of the 5 cluster boards (passenger, urgent passenger, cargo; `bounty` reserved for EP-0036) from the named stream `station-jobs/v1:{station}:{bucket}:{slot}`; offers keep frozen terms for 2 days and are saved. The first publication guarantees an ordinary 3-passenger job on the shortest route from the start station. Accepting (`AcceptJobOfferCommand` through the campaign command path) records one `Active` obligation with a calendar deadline from acceptance; duplicates return the receipt, stale/expired/foreign-station/no-capacity offers are refused with stable codes. The Contracts screen shows the docked station's board with explained payout and the journal; from the map (J button, Ctrl+J) it shows the journal in flight.
+
+AC contribution: AC-01 — deterministic per seed and role (twin sessions equal), cap 6, publication bucket/expiry by game calendar, unchanged by repeated snapshots/reopen, paused New Game already has a board (engine tests). AC-02 — payout = ceil((base + load + 3/km × route km) × urgency‰ × risk‰), terms shown on the card; destinations are direct cluster neighbours with known risk; counts/mass bounded by carrier cabins/hold (engine + content tests). AC-03 — placeholder replaced; board types passenger/urgent/cargo shown, `bounty` type and texts ready for EP-0036; journal from station and map (client tests). AC-04 — RU/EN reason texts for every code, pending/confirmed/rejected states, no resubmit on reopen, Save/Load keeps offers/journal/receipts, corrupted board rejects Load atomically (engine + client tests). Native/product evidence for AC-01…AC-04 remains OPEN; delivery, payout and failure of obligations are delivered by US-0002/US-0003/US-0004.
+
+Commands (repository root `D:/DeepSpaceSaga/Dss-Main`, each process ≤ 300000 ms, artifacts in `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0006-20261117/story/`):
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests -c Release --filter "Demo.|ArchitectureTests|Ep0029"` → 29 passed (`contracts.log`).
+- `dotnet test tests/DeepSpaceSaga.Engine.Tests -c Release --filter "<US-0001 regression-filter.txt>|DeepSpaceSaga.Engine.Tests.Demo."` → 352 passed / 8 failed (`engine-reg.log`); the 8 are exactly the US-0001 baseline set (`engine-failed.txt` vs `us0001-20261117/engine-failed-final.txt`): MasterSeed default scenario, ModuleHealthBootstrap ×2, ScenarioGroupTranslation ×2, LocalSessionBattle ×3. All `DemoEp0034*` and `DemoEp0032*` demo tests pass, including `DemoEp0034Us0006Tk0003Tests` 3/3.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests -c Release --filter "<US-0001 client-filter.txt>|DemoEp0034|ContractsScreenTests|MechanicsPanelTests|StationScreenTests|ManualManeuverInputTests|GameSessionDockAutoOpenTests|Locali"` → 297 passed / 32 failed (`client-reg.log`); 30 = the US-0001 baseline set, 2 = `SessionHandleBattleTests.EveryRefusalHasRealLocalizedText…` (EN/RU) newly selected by the `Locali` filter, failing on the missing key `TacticalBattle.Refusal.NoAmmo`, which is absent at base `c7d39b24` too (not touched by this story). Own client tests `DemoEp0034Us0006Tk0002/Tk0004/Tk0005Tests` 3 + 6 + 3 passed.
+- Builds: Contracts.Tests, Engine.Tests, Client.Tests (Release) — 0 warnings, 0 errors.
+
+Defects found and fixed during the story run (`4c1e3689`, tests only): US-0001 purity check compared transport records whose new `ImmutableArray` members compare by reference; EP-0032 demo tests read the sibling EP-0033 checkout (`ContentRoot`) — now this checkout.
+
+Assumptions (details in tickets): TK-0001 A-01…A-03 (generic accept command, explicit verdicts, integer terms); TK-0002 A-01…A-03 (baseline numbers for EP-0037, fingerprint unaffected, ordinary goods); TK-0003 A-01…A-05 (2-day offers, explicit dispatch instead of shared partial hooks, bucket-start times and frozen whole-km distance, acceptance only records the obligation, no save-format bump); TK-0005 A-01/A-02; TK-0004 A-01…A-03 (no remote boards in flight, refresh with next snapshot, Ctrl+J). Self-review only; no independent review is claimed.

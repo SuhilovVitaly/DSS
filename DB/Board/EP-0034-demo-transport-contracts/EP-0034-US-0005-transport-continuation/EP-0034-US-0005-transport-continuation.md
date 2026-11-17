@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0034-US-0003-contract-failure, EP-0034-US-0004-cargo-contract, EP-0032-US-0003-persistent-outcomes]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Продолжение рейса со всеми обязательствами
@@ -93,3 +93,50 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Native checklist (EP-0034-US-0005-TK-0002, 2026-11-17)
+
+Статус: **NOT RUN** — нативная сессия на меньшем мониторе (isolated profile, явный индекс монитора, `DSS_VALIDATION_SMALL_MONITOR=1`) в этой среде не выполнялась; автотесты TK-0001/TK-0002 её не заменяют. Колонка «Actual» заполняется при прогоне. Проверять на RU и EN (переключение в Settings), checkpoint — имя слота и игровое время.
+
+| # | Шаг | Expected | Actual | Язык | Checkpoint |
+|---|---|---|---|---|---|
+| 1 | New Game (демо), у стартовой станции открыть Contracts | доска станции, журнал пуст, строка трюма: опечатано 0 / свои товары / свободно | NOT RUN | RU, EN | — |
+| 2 | Принять срочный и обычный заказы пассажиров (в сумме ≤ свободных кают) | по каждому подтверждение посадки со станцией и сроком; каюты заняты; кнопки не отправляют повторно | NOT RUN | RU, EN | — |
+| 3 | Купить свой товар в Trade | товар в трюме; в Contracts «свои товары» выросли | NOT RUN | RU | — |
+| 4 | Закрыть/открыть Contracts, открыть Finance и вернуться | журнал и пассажиры те же, сообщений о новой отправке нет | NOT RUN | RU | — |
+| 5 | Выбрать маршрут к станции срочного заказа, отстыковаться, лететь; в полёте Save в слот | журнал (Ctrl+J) показывает «в полёте», сроки и состояния; Save без ошибки | NOT RUN | EN | слот 1, время в полёте |
+| 6 | Load слота 1 (Load-экран и «Продолжить» после перезапуска) | те же люди, сроки, баланс, условия отмены | NOT RUN | RU | слот 1 |
+| 7 | Пристыковаться, пройти диалог стыковки | одна выплата за срочный заказ; результат в Contracts; Finance рейса: «Выплаты по контрактам» = выплата; баланс в toolbar совпадает | NOT RUN | RU, EN | автосохранение после выплаты |
+| 8 | Открыть Contracts сразу после диалога, нажать «Отменить» у обычного заказа дважды | если состояние уже изменилось — понятный текст «Состояние кампании изменилось…», без кода; повтор работает | NOT RUN | RU | — |
+| 9 | У станции принять грузовой заказ, продать свой товар | груз опечатан, продать его нельзя, своё продаётся; Finance: выручка рейса | NOT RUN | RU | — |
+| 10 | Повторно открыть доску, перезагрузить «Продолжить» у станции | вторая выплата не появляется, баланс тот же | NOT RUN | EN | слот продолжения |
+| 11 | Дождаться/пропустить срок второго заказа в полёте, Save/Load | исход «просрочен», штраф, долг (если не хватило Tokens), пассажиры до стыковки | NOT RUN | RU | слот 2 |
+| 12 | Проверить переносы и перекрытия текста на Contracts/Finance в 1280×720 и масштабе UI | нет обрезанных сумм/сроков, строки не перекрываются | NOT RUN | RU, EN | — |
+
+## Story validation (2026-11-17)
+
+Implementation: 2/2 тикета реализованы и опубликованы в `feature/ep-0034-demo-transport-contracts` (origin). Автоматические story-тесты: собственные PASS; соседние регрессии без новых падений относительно baseline. Нативное окно, ручной плейтест и продуктовая приёмка: **NOT RUN / OPEN** (см. native checklist выше; headless-рендер экранов не является нативной проверкой).
+
+| Ticket | Commit |
+|---|---|
+| EP-0034-US-0005-TK-0001-transport-roundtrip | `7cb9ac48` |
+| EP-0034-US-0005-TK-0002-transport-flow | `02646620` |
+
+Результат: смешанный мирный рейс (обычные и срочные пассажиры, опечатанный груз, отменённый груз с долгом, свой товар) сохраняется и загружается через реальные файлы сохранения на каждой границе (до приёма, у станции после приёма, в полёте, при открытом диалоге стыковки, после выплаты, после отмены, в конце рейса) и продолжается с теми же людьми, грузом, сроками, деньгами, журналом и voyage ledger; продолжение после загрузки в полёте заканчивается ровно так же, как непрерывный рейс. Найдено и исправлено: (1) выплата за пассажиров не была коммитом кампании — автосохранение после неё не срабатывало (теперь `Revision`/`CommitSequence` + 1, как у груза и отказов); (2) отчёт рейса называл колонку всех контрактных выплат/штрафов «пассажирской» (RU/EN «Выплаты/Штрафы по контрактам»). Сессии игрока, открытые из слотов (`CreateFromSaveFile`) и сохранённые через сессию, показывают тот же журнал, сроки, каюты и баланс; подтверждённое прибытие — одну выплату в результате, журнале и финансах рейса.
+
+Вклад в AC: AC-01 — сверка до/после загрузки всех секций транспорта, людей, трюма, денег и ledger на 7 checkpoints (engine) и отображения журнала/сроков/кают/баланса после Load из слота (client). AC-02 — повторные снапшоты, чтение доски, дубликат и новая команда, повторная загрузка пристыкованной игры, реальное повторное прибытие и повторные открытия экранов не дают второй выплаты/posting (engine + client). AC-03 — сквозной мирный рейс SPC-0002 → SPC-0005 → SPC-0008 со срочным и обычным заказами, грузом и своим товаром (купить/продать), все сроки соблюдены реальным полётом (engine); принятие, итог и Save/Load через экраны (client). AC-04 — RU/EN результат, причина `stale_revision` и просрочки, финансовый отчёт, Save/Load через слот и атомарный отказ Load повреждённых данных (live-игра не меняется). Native/product evidence AC-01…AC-04 — OPEN.
+
+Команды (корень `D:/DeepSpaceSaga/Dss-Main`, каждый процесс ≤ 300000 ms, артефакты `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0005-20261117/story/`):
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests -c Release --filter "FullyQualifiedName~Demo.|FullyQualifiedName~ArchitectureTests|FullyQualifiedName~Ep0029"` → 38 passed (`contracts.log`).
+- `dotnet test tests/DeepSpaceSaga.Engine.Tests -c Release --filter "<engine-filter.txt>"` (фильтр US-0004) → 377 passed / 8 failed (`engine-reg.log`); 8 — ровно baseline (`engine-failed.txt` совпадает с `us0004-20261117/story/engine-failed.txt`); `DemoEp0034Us0005Tk0001Tests` 3/3 и все тесты US-0001/0006/0002/0003/0004 проходят.
+- Торговля/трюм/рынок `--filter "<engine-trade-filter.txt>"` → 316 passed / 0 failed (`engine-trade.log`).
+- Сохранение/загрузка/слоты/автосохранение/продолжение/финансы `--filter "<save-filter.txt>"`: Engine → 270 passed / 21 failed (`engine-save.log`); 21 (`ClusterSaveStateTests`, `FullMapLocalLoadTests`, `MapEnvironmentSaveTests`: `solarSystem: invalid distance scale`, `insufficient_voyage_fuel`) — pre-existing: идентичный список при базовой версии `SimulationEngine.PassengerContracts.cs` из `75c801cf` (`engine-save-base.log`, `engine-save-base-failed.txt`). Client → 106 passed / 3 failed (`client-save.log`): 2 `LocalSessionIntegrationTests` входят в client baseline; `Ep0029Us0012Tk0001Tests.CheckpointFailureKeepsRetryWithoutResettlement` (IOException каталога `Saves` во временной папке) — pre-existing: падает так же на базовых исходниках `75c801cf` (`client-checkpoint-base.log`).
+- Соседи `EconomyTimeContinuityTests` и `ClusterVoyageIntegrationTests` (раздельно) → 7 + 7 failed (`engine-econ.log`, `engine-cluster.log`); `head-econ-cluster-failed.txt` идентичен baseline US-0004.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests -c Release --filter "<client-filter.txt>"` (фильтр US-0004) → 512 passed / 32 failed (`client-reg.log`); 32 — ровно набор US-0004 (30 + 2 `NoAmmo`, `client-failed.txt`); `DemoEp0034Us0005Tk0002Tests` 6/6.
+- Финальный прогон на HEAD: `--filter FullyQualifiedName~DemoEp0034Us0005` Engine 3/3, Client 6/6 (`engine-us0005.log`, `client-us0005.log`).
+- Сборки Engine, Client, Engine.Tests, Client.Tests (Release, TreatWarningsAsErrors) — без ошибок.
+
+Изменения прежних ожиданий: нет — существующие тесты не правились. Save format: bump нет (A-P2 не сработал).
+
+Решения по открытым вопросам: выдача груза диалогом без учёта резерва — оставлена ограничением (в демо-контенте нет `AddCargoItem`); трюм, повреждённый ниже резерва, — проверено, что загрузка, резерв и единственная выплата сохраняются; `stale_revision` после тиковых переходов — отказ виден и понятен, клиент не застревает, повтор с актуальным snapshot проходит (TK-0002 A-03). Допущения: TK-0001 A-01…A-03, TK-0002 A-01…A-03. Только self-review; независимое review не заявляется.

@@ -1684,7 +1684,9 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
     /// Push the Contracts overlay (DB/Documentation/02-FirstRelease/Screens/Contracts.md) on top of
     /// Station (StationScreen's `CONTRACTS` button → ScreenEvent.OpenContracts). Split
     /// out of Hire (passenger contracts vs. crew hiring) — a nested modal exactly like
-    /// Trade/Hire, no Contracts-specific handling needed.
+    /// Trade/Hire, no Contracts-specific handling needed. EP-0034 US-0006: also opened from the map (journal
+    /// button / Ctrl+J); in flight it shows the obligations journal and the engine refuses acceptance until the
+    /// ship docks. The board reads the session's campaign projection and sends typed commands through it.
     /// </summary>
     private async Task OpenContractsAsync()
     {
@@ -1692,7 +1694,9 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         if (_screens.Current is ContractsScreen)
             return;
 
-        await PushModalAsync(new ContractsScreen(_session?.Buffer));
+        var session = _session;
+        await PushModalAsync(new ContractsScreen(session?.Buffer, session is null ? null : () => session.DemoCampaign,
+            session is null ? null : command => session.ExecuteDemoCampaignAsync(command)));
     }
 
     private async Task OpenSettingsAsync()

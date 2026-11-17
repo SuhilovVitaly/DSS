@@ -16,9 +16,19 @@ public sealed record DemoRecruitment(ImmutableArray<string> Portraits, int Skill
 public sealed record DemoServicesDefinition(int SchemaVersion, ImmutableArray<string> StationIds,
     DemoRepairRates RepairRates, DemoRecruitment? Recruitment,
     ImmutableArray<DemoOffer> DroneOffers, ImmutableArray<DemoOffer> UpgradeOffers);
-public sealed record DemoJobLimits(int Offers, long PublicationGameTimeMs, long ExpiryGameTimeMs, int PassengerMax);
-public sealed record DemoJobRates(long Base, long PerPassenger, long PerCargoUnit, long PerCalendarDay, double UrgencyMultiplier);
-public sealed record DemoJobsDefinition(int SchemaVersion, DemoJobLimits Limits, DemoJobRates Rates, ImmutableArray<string> RoleFilters);
+// EP-0034 US-0006: station job board. Money is whole Tokens, factors are permille (1000 = 1.0), times are calendar ms.
+public sealed record DemoJobLimits(int Offers, long PublicationGameTimeMs, long ExpiryGameTimeMs, int PassengerMax,
+    int CargoTonnesMin, int CargoTonnesMax);
+public sealed record DemoJobRates(long Base, long PerPassenger, long PerCargoTonne, long PerDistanceKm, int UrgencyPermille);
+public sealed record DemoJobDeadlines(int OrdinaryPermille, int UrgentPermille, int CargoPermille, long MinimumGameTimeMs);
+public sealed record DemoJobRisk(string RiskProfileId, string Band, int Permille);
+public sealed record DemoJobRoleFilter(string Role, int PassengerWeight, int UrgentPassengerWeight, int CargoWeight);
+public sealed record DemoJobFirstOffer(string Type, int Count);
+public sealed record DemoJobsDefinition(int SchemaVersion, DemoJobLimits Limits, DemoJobRates Rates, DemoJobDeadlines Deadlines,
+    ImmutableArray<DemoJobRisk> Risk, ImmutableArray<string> CargoItemTypeIds, ImmutableArray<DemoJobRoleFilter> RoleFilters,
+    DemoJobFirstOffer FirstOffer, DemoJobPenalties? Penalties = null);
+// EP-0034 US-0003: cancellation/expiry penalty as permille of the promised payout (absent = 250, i.e. 25%).
+public sealed record DemoJobPenalties(int CancelPermille, int ExpiryPermille);
 public sealed record DemoRegion(double X, double Y, double Radius);
 public sealed record DemoPirateGroup(string Id, string LoadoutId, double X, double Y, double SightRadius, double PatrolSpeed);
 public sealed record DemoPursuit(double CaptureRadius, double EscapeRadius, long EscapeMotionTimeMs);
@@ -101,6 +111,11 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                 if (catalog is null || !(catalog.Weapons.Contains(offer.CatalogId) || catalog.Armor.Contains(offer.CatalogId) || catalog.Shields.Contains(offer.CatalogId)))
                     throw new ScenarioException("Unknown demo upgrade: " + offer.CatalogId);
         }
+        if (Jobs is { } jobs)
+            foreach (var itemTypeId in jobs.CargoItemTypeIds)
+                if (!registry.ItemTypes.Contains(itemTypeId) ||
+                    registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(itemTypeId)) is not { UnitMassKg: > 0, StorageKind: ItemStorageKind.Cargo })
+                    throw new ScenarioException("Unknown demo job cargo: " + itemTypeId);
         if (Encounters is { } encounters)
             foreach (var group in encounters.Groups)
                 if (catalog is null || !catalog.Scenarios.Contains(group.LoadoutId))
@@ -128,9 +143,27 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                     recruitment.Price >= 0 && recruitment.DailyWage >= 0 && recruitment.RefreshGameTimeMs > 0, "recruitment");
         }
         if (Jobs is { } j)
-            Require(j.SchemaVersion == 1 && j.Limits is { Offers: > 0, PublicationGameTimeMs: > 0, ExpiryGameTimeMs: > 0, PassengerMax: > 0 } &&
-                j.Rates is { Base: >= 0, PerPassenger: >= 0, PerCargoUnit: >= 0, PerCalendarDay: >= 0, UrgencyMultiplier: >= 0 } && double.IsFinite(j.Rates.UrgencyMultiplier) &&
-                !j.RoleFilters.IsDefault && Cluster is not null && j.RoleFilters.All(role => Cluster.Roles.Contains(role, StringComparer.Ordinal)), "jobs");
+        {
+            Require(j.SchemaVersion == 1 && j.Limits is { Offers: > 0 and <= 12, PublicationGameTimeMs: > 0, PassengerMax: > 0, CargoTonnesMin: > 0 } &&
+                j.Limits.ExpiryGameTimeMs >= j.Limits.PublicationGameTimeMs && j.Limits.CargoTonnesMax >= j.Limits.CargoTonnesMin &&
+                j.Rates is { Base: >= 0, PerPassenger: >= 0, PerCargoTonne: >= 0, PerDistanceKm: >= 0, UrgencyPermille: >= 1000 } &&
+                j.Deadlines is { OrdinaryPermille: >= 1000, UrgentPermille: >= 1000, CargoPermille: >= 1000, MinimumGameTimeMs: > 0 } &&
+                j.Deadlines.UrgentPermille <= j.Deadlines.OrdinaryPermille &&
+                j.Penalties is null or { CancelPermille: >= 0 and <= 1000, ExpiryPermille: >= 0 and <= 1000 }, "jobs");
+            Require(!j.Risk.IsDefaultOrEmpty && j.Risk.All(r => r is not null && !string.IsNullOrWhiteSpace(r.RiskProfileId) &&
+                    DeepSpaceSaga.Contracts.StationJobRiskBands.IsKnown(r.Band) && r.Permille >= 1000) &&
+                j.Risk.Select(r => r.RiskProfileId).Distinct(StringComparer.Ordinal).Count() == j.Risk.Length, "jobs risk");
+            Require(!j.CargoItemTypeIds.IsDefault && j.CargoItemTypeIds.All(id => !string.IsNullOrWhiteSpace(id)) &&
+                j.CargoItemTypeIds.Distinct(StringComparer.Ordinal).Count() == j.CargoItemTypeIds.Length, "jobs cargo");
+            Require(!j.RoleFilters.IsDefault && Cluster is not null && j.RoleFilters.All(f => f is not null &&
+                    Cluster.Roles.Contains(f.Role, StringComparer.Ordinal) && f.PassengerWeight >= 0 && f.UrgentPassengerWeight >= 0 &&
+                    f.CargoWeight >= 0 && (f.CargoWeight == 0 || j.CargoItemTypeIds.Length > 0) &&
+                    checked(f.PassengerWeight + f.UrgentPassengerWeight + f.CargoWeight) > 0) &&
+                j.RoleFilters.Select(f => f.Role).Distinct(StringComparer.Ordinal).Count() == j.RoleFilters.Length, "jobs role filters");
+            Require(j.FirstOffer is { Count: > 0 } && DeepSpaceSaga.Contracts.StationJobTypes.CarriesPassengers(j.FirstOffer.Type) &&
+                j.FirstOffer.Count <= j.Limits.PassengerMax &&
+                j.RoleFilters.Any(f => f.Role == Cluster!.Roles[Cluster.StationIds.IndexOf(Cluster.StartStationId)]), "jobs first offer");
+        }
         if (Encounters is { } e)
         {
             Require(e.SchemaVersion == 1 && e.Region is { Radius: > 0 } && double.IsFinite(e.Region.X) && double.IsFinite(e.Region.Y) && double.IsFinite(e.Region.Radius) &&

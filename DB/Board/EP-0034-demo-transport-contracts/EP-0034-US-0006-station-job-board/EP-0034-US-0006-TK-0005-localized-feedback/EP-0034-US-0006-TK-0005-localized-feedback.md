@@ -5,7 +5,7 @@ ticket: EP-0034-US-0006-TK-0005-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0006-TK-0003-engine]
@@ -94,3 +94,19 @@ No API change. Существующие словари Russian/English; язык
 ## Self-containment check
 
 История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+
+## Execution result (2026-11-17)
+
+Status: implemented; **validation pending at story end**. No story PASS is claimed here.
+
+Changed files (exactly the 3 allowed):
+
+- `src/DeepSpaceSaga.Client/Data/Locale/English.json`, `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` — one additive block of 43 `Demo.Jobs.*` keys right after `Demo.Passengers.unavailable` (no existing translation changed): screen texts (`Title`, `Journal`, `BoardEmpty`, `JournalEmpty`, `Unavailable`, `InFlight`, `Accept`, `Pending`, `Accepted`, `Rejected`), formatted lines (`OfferPassengers` {0..1}, `OfferCargo` {0..1}, `OfferTerms` {0..2}, `OfferPayout` {0..5} — base/load/distance/km/urgency/risk, `ObligationLine` {0..5}, `Duration` {0..1}, `Time` {0..2}), order types `Type.*` (incl. `bounty` for EP-0036), route risk `Risk.*`, journal statuses `Status.*`, and `Reason.*` for every code an acceptance can return (5 board codes, 3 US-0001 capacity codes, 7 shared campaign codes).
+- `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0006Tk0005Tests.cs` — `StoryKeysExistInBothLocales`, `FormatArgumentsMatch`, `NoRawReasonCodeLeaks`; the key list (`AllKeys`) is reused by the UI ticket.
+
+Checks: `dotnet build tests/DeepSpaceSaga.Client.Tests -c Release` — 0 warnings/0 errors; quick focused run with US-0001 locale tests 6/6 (`D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0006-20261117/tk0005`). Story run is the evidence of record.
+
+Assumptions:
+
+- A-01 (technical): capacity reasons get their own `Demo.Jobs.Reason.*` texts instead of reusing `Demo.Passengers.*`, so the board explains the reason in its own context ("for these passengers") and the Ship screen keys stay untouched.
+- A-02 (technical): cargo lines show mass and destination only; the goods name and sealed-cargo wording belong to EP-0034-US-0004.

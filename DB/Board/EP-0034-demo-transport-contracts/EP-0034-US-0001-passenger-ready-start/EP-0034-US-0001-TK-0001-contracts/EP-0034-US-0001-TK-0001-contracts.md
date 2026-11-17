@@ -5,7 +5,7 @@ ticket: EP-0034-US-0001-TK-0001-contracts
 title: Контракт: Готовый носитель с пассажирскими местами
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0032-US-0001-TK-0003-client, EP-0032-US-0004-TK-0004-client]
@@ -106,3 +106,22 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution result (2026-11-17)
+
+Status: implemented; **validation pending at story end** (owner cadence: per-ticket build only, story-scoped tests at the end of US-0001). No test PASS is claimed here.
+
+Changed files (all within the allowlist):
+
+- `src/DeepSpaceSaga.Contracts/PassengerCapacityContracts.cs` — new `PassengerCapacitySnapshot(TotalCabins, CrewCabins, PassengerCabins, ReservedCabins, FreeCabins, LifeSupportReason)`, partial `DemoTransportSnapshot.PassengerCapacity` (init, nullable), stable `PassengerCapacityReasons` (`no_free_cabins`, `cabins_overcommitted`, `insufficient_food_rations`) and `BoardingBlocker(capacity)`; missing capacity maps to `DemoCampaignReasons.Unavailable`.
+- `src/DeepSpaceSaga.Contracts/DemoCampaign.cs` — one keyword: `DemoTransportSnapshot` became `partial` so transport parts live in their own files (merge-friendly with EP-0033, A-P1).
+- `tests/DeepSpaceSaga.Contracts.Tests/Demo/DemoEp0034Us0001Tk0001Tests.cs` — `Payload_RoundTrips`, `LegacyPayload_UsesSafeDefaults`, `ReasonCodes_AreStable`.
+
+Checks: `dotnet build tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj -c Release` — succeeded, 0 warnings/0 errors; `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj -c Release` — succeeded. Logs: `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0001-20261117/tk0001-*.log`.
+
+Assumptions:
+
+- A-01 (technical): US-0001 has no player command. Capacity is derived from the world each snapshot, so no `DemoCampaignCommand` subtype, CommandId or ExpectedRevision is introduced here; boarding commands with identity/revision belong to EP-0034-US-0002. This also leaves the single-implementation partial hooks of `SimulationEngine.DemoCampaign.cs` unimplemented, avoiding a merge collision with EP-0033.
+- A-02 (technical): the DTO field names are `TotalCabins/CrewCabins/PassengerCabins/ReservedCabins/FreeCabins/LifeSupportReason` (the plan's `total,crew,passengers,reserved,free,lifeSupportReason`).
+
+Story-end validation (2026-11-17): focused tests of this ticket PASS — see the story card «Story validation». Native/product acceptance remains OPEN.

@@ -5,7 +5,7 @@ ticket: EP-0034-US-0004-TK-0001-contracts
 title: Контракт: Доставка контрактного груза
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0034-US-0002-TK-0003-client, EP-0034-US-0006-TK-0004-client]
@@ -106,3 +106,20 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution result (2026-11-17)
+
+Статус: implemented; **validation pending at story end** (каденция владельца: на тикет — сборка, story-тесты в конце US-0004). PASS истории здесь не заявляется.
+
+Изменённые файлы (`files_touched` 3; `DemoCampaign.cs` правок не потребовал — `DemoTransportSnapshot` уже `partial`):
+
+- `src/DeepSpaceSaga.Contracts/CargoContractsContracts.cs` — новый: `CargoHoldStates` (`aboard`/`overdue`/`delivered`/`return_pending`/`returned`/`lost`, `IsKnown`, `OccupiesHold`); `CargoContract(ContractId, OfferId, ItemTypeId, MassKg, Quantity, OriginStationId, DestinationStationId, AcceptedAtGameTimeMs, DeadlineGameTimeMs, Payout, Status, PostingId, HoldState, DeliveredAtGameTimeMs?, PaidCredits?, ReturnedAtGameTimeMs?, ReturnStationId?)`; `CargoContractsSnapshot(Contracts, ObservedAtGameTimeMs, ReservedMassKg, HoldCapacityKg, PlayerCargoMassKg)` с вычисляемыми `FreeHoldKg` (≥0) и `Active`; partial `DemoTransportSnapshot.CargoContracts`; `CargoContractReasons` — posting `cargo:{contractId}`, `HoldState(section, id)` (отсутствие данных/неизвестный код → `unavailable`).
+- `tests/DeepSpaceSaga.Contracts.Tests/Demo/DemoEp0034Us0004Tk0001Tests.cs` — `Payload_RoundTrips`, `LegacyPayload_UsesSafeDefaults`, `ReasonCodes_AreStable`.
+
+Проверки: red — сборка тестового проекта падала с CS0246 (`CargoContract` отсутствует) до реализации; после реализации быстрый прогон `dotnet test tests/DeepSpaceSaga.Contracts.Tests --filter FullyQualifiedName~DemoEp0034` — 15/15 (TRX `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0004-tk0001/contracts.trx`). Доказательством остаётся story-прогон в конце US-0004.
+
+Допущения:
+
+- A-01 (technical): планируемая `AcceptCargoCommand(offerId)` не вводится — приём груза, как и пассажиров (US-0002), идёт единой командой доски `AcceptJobOfferCommand(offerId)`; клиент не передаёт товар, массу, цену или срок.
+- A-02 (technical): «ReservedCargo entries» — это опечатанные записи контракта (`CargoContract` + персистентная запись engine-тикета), а не стеки модуля трюма. Поэтому обычная торговля физически не видит их как товар игрока (продать/израсходовать нельзя); масса учитывается в разбиении трюма `ReservedMassKg` / `PlayerCargoMassKg` / `FreeHoldKg`.
+- A-03 (technical): отказы приёма переиспользуют `StationJobReasons` (`insufficient_cargo_space` и др.), отмена/просрочка/потеря — `TransportFailureReasons` (US-0003); собственных кодов отказа груз не вводит. Состояние `return_pending` — груз проваленного контракта ещё в трюме до возврата на человеческой станции.
