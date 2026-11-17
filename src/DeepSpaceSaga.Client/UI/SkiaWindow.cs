@@ -861,6 +861,17 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
 
     GameSessionHandle? IDebugConsoleHost.Session => _session;
 
+    Task<DebugCommandResult> IDebugConsoleHost.ConfigurePirateSquadChanceAsync(int? percent, CancellationToken cancellationToken) =>
+        ((IDebugConsoleHost)this).RunExclusiveAsync(_ =>
+        {
+            try
+            {
+                var settings = _sessionFactory.ConfigurePirateSquadChance(percent);
+                return Task.FromResult(DebugCommandResult.Ok($"pirate_squad_chance = {settings.PirateSquadChancePercent}% — для следующей новой кампании"));
+            }
+            catch (NotSupportedException) { return Task.FromResult(DebugCommandResult.Error("Настройка демо недоступна")); }
+        }, cancellationToken);
+
     bool IDebugConsoleHost.IsTransitionBusy => _transitionLock.CurrentCount == 0;
 
     TacticalBattleScreen? IDebugConsoleHost.ActiveBattle => _screens.Current as TacticalBattleScreen;

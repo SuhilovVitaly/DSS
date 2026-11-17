@@ -94,6 +94,9 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     public static DebugTuningSnapshot LoadDebugTuningDefaults(string settingsPath) =>
         Content.EngineContentLoader.LoadDebugTuningDefaults(settingsPath);
 
+    public static DemoDebugSettings ConfigurePirateSquadChance(int? percent = null) =>
+        SimulationEngine.ConfigurePirateSquadChance(percent);
+
     private async Task RunEngineLoopAsync(CancellationToken ct)
     {
         try
