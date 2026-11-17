@@ -5,11 +5,11 @@ ticket: EP-0034-US-0001-TK-0002-content
 title: Контент: Готовый носитель с пассажирскими местами
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-validation-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0001-TK-0001-contracts]
-files_touched: 3
+files_touched: 4
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
 revision: 1
@@ -105,3 +105,24 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Allowlist expansion (recorded before the change)
+
+- `tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0032Us0004Tk0002Tests.cs` — EP-0032 regression asserted that the demo references the shared `starter-carrier.json`; this ticket deliberately changes that contract. The test also read content from a hard-coded sibling checkout `D:/DeepSpaceSaga/DSS`, so in this checkout it would validate foreign content; it now resolves the content root from its own source path. Renamed to `DemoUsesFiveFrozenStationsAndDemoStarter`; the five-station/seed assertions are kept unchanged.
+
+## Execution result (2026-11-17)
+
+Status: implemented; **validation pending at story end** (owner cadence). No test PASS claimed.
+
+- `src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json` — new schemaVersion 1 manifest, byte-identical to the shared starter except one module `MOD-PLAYER-LIVING-QUARTERS-03` (`living.quarters.mk1.four-cabins`, cell (4,1), the free hull cell between both existing quarters). Result: 12 cabins = 6 crew + 2 reserved + 4 free for passengers. Same crew IDs, wing, drones, hold (200 food rations = 24 meals for 12 people at 2 meals/day → ≥ 1 day full complement).
+- `src/DeepSpaceSaga.Client/Scenarios/Demo/scenario.json` — only `starterCarrierManifest` now points to the demo manifest.
+- `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0001Tk0002Tests.cs` — `Content_LoadsAndReferencesResolve`, `DemoLimits_AreSatisfied` (production engine load: placement/overlap validated, 12/6/2/4, module mass 2000 kg and 0 W, rations), `LegacyScenario_DoesNotReceiveDemoGrant` (Tutorial/Default stay at 8/0).
+- `tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0032Us0004Tk0002Tests.cs` — see expansion above.
+
+Checks: `dotnet build` of Client.Tests and Engine.Tests (Release) — succeeded, 0 warnings/0 errors. Logs: `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0001-20261117/tk0002-*.log`.
+
+Assumptions/limits:
+
+- A-03: the Tetrarch class has no hull mass limit in the current engine; "mass" admissibility means the module is a real catalog module with its catalog mass, not a free weightless cabin. Life support = food rations (power draw of living quarters is 0 W).
+- Shared starter, Tutorial and Default scenarios are unchanged; existing Save22 demo saves carry their expanded 8-cabin carrier and receive nothing (manifest is resolved only on a version-0 New Game). The cluster fingerprint does not include the manifest, so no save-version bump.
+- Other EP-0032 tests still read `D:/DeepSpaceSaga/DSS` via `DemoEp0032Us0001Tk0002Tests.ContentRoot` (pre-existing); not changed here — recorded for the epic report.
