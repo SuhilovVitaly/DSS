@@ -7,6 +7,8 @@ public sealed record CollectLootConsumablesCommand(string CommandId, long Expect
     string ObjectId, string ItemTypeId, long Quantity) : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
 public sealed record AttemptScrapCommand(string CommandId, long ExpectedRevision, string BattleId, string ObjectId)
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
+public sealed record AttemptModuleSalvageCommand(string CommandId, long ExpectedRevision, string BattleId,
+    string ObjectId, string InstanceId) : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
 public sealed record FinishBattleLootCommand(string CommandId, long ExpectedRevision, string BattleId, bool ConfirmDiscard = false)
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
 

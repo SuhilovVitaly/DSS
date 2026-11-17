@@ -87,3 +87,7 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution — 2026-11-17
+
+Added identity-only AttemptModuleSalvageCommand; shared module rows retain independent instance IDs and integer basis-point chances. No installation/repair commands. Contracts build/scoped format/diff PASS. Tests NOT RUN until US6 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us6-tk1-build.log.
