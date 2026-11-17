@@ -44,10 +44,8 @@ public sealed record HangarSlotSnapshot(
     string? DroneId = null);
 
 /// <summary>
-/// Cabin occupancy across all installed living modules. Reserved cabins are held for
-/// future prisoners and never create crew members; occupied/used cabins are the crew.
-/// <see cref="ReservedCabins"/> is a held-count, not a prisoner count — <see cref="PrisonerCount"/>
-/// stays 0 until capture mechanics exist (explicitly out of scope for EP-0029).
+/// Cabin occupancy across all installed living modules: crew, passengers and actual prisoners.
+/// ReservedCabins remains for payload compatibility; current producers use zero.
 /// </summary>
 public sealed record CabinReservationSnapshot(
     int TotalCabins,

@@ -106,3 +106,6 @@ Owning build: `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Execution
+Implemented command with shared loot identity, optional company prisoners, prisoner cabin count and immutable identity projection. Gender is a trailing backward-compatible field required by TK6 portrait body selection. Contracts build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk1-build.log); tests authored, deferred to US9 boundary.
