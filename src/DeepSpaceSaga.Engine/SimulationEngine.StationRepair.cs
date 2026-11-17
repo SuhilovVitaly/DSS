@@ -15,6 +15,12 @@ public sealed partial class SimulationEngine
     partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
         ref bool handled, ref string? reason, ref Action? commit)
     {
+        if (command is PayCrewDebtCommand debt)
+        {
+            handled = true;
+            PrepareCrewDebt(debt, ref candidate, ref reason, ref commit);
+            return;
+        }
         if (command is HirePilotCommand or AssignPilotCommand)
         {
             handled = true;

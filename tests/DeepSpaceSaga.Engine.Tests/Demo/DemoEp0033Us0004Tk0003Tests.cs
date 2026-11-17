@@ -35,7 +35,7 @@ public sealed class DemoEp0033Us0004Tk0003Tests
         engine.ExecuteDemoCampaign(command);
         Assert.Equal(4700, engine.PlayerCredits);
         Assert.Single(engine.CaptureSnapshot().CarrierOperations!.Crew, c => c.Id == offer.CrewId);
-        Assert.Equal(offer.DailyWage, engine.CaptureSaveState().GameState.DemoCampaign!.Employment.Single().DailyWage);
+        Assert.Equal(offer.DailyWage, engine.CaptureSaveState().GameState.DemoCampaign!.Employment.Single(e => e.CrewId == offer.CrewId).DailyWage);
         Assert.False(engine.ExecuteDemoCampaign(new HirePilotCommand("again", 1, offer.Id)).Applied);
     }
     [Fact]

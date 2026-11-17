@@ -52,7 +52,8 @@ public sealed partial class SimulationEngine
                 applied ? candidate.Company?.StationRepair : null,
                 applied ? candidate.Company?.Supply : null,
                 applied ? candidate.Company?.Replacement : null,
-                applied ? candidate.Company?.Recruitment : null);
+                applied ? candidate.Company?.Recruitment : null,
+                applied ? candidate.Company?.Upkeep : null);
             candidate = (applied ? candidate : _demoCampaign) with
             {
                 Revision = revision,
@@ -71,7 +72,7 @@ public sealed partial class SimulationEngine
         if (gameTimeMs <= _demoCampaign.LastTickGameTimeMs) return;
         var candidate = _demoCampaign;
         TickDemoCampaignSections(gameTimeMs, ref candidate);
-        ValidateDemoCampaignSections(candidate);
+        DemoCampaignData.Validate(candidate, gameTimeMs);
         _demoCampaign = candidate with { LastTickGameTimeMs = gameTimeMs };
     }
 

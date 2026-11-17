@@ -37,6 +37,10 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        if (data.Company?.Upkeep is { } upkeep && (upkeep.Accrued < 0 || upkeep.Paid < 0 || upkeep.Paid > upkeep.Accrued ||
+            upkeep.Outstanding != upkeep.Accrued - upkeep.Paid || upkeep.LastProcessedDay < 0 ||
+            upkeep.LastProcessedDay > gameTimeMs / 86400000 || upkeep.PeopleFed < 0 || upkeep.FoodRemaining < 0 || upkeep.MissingRations < 0))
+            throw new ScenarioException("Invalid crew upkeep ledger.");
         if (data.Company?.StationRepair is { } repair)
         {
             if (repair.Postings.IsDefault || repair.Postings.Any(p => p is null || string.IsNullOrWhiteSpace(p.Id) ||
