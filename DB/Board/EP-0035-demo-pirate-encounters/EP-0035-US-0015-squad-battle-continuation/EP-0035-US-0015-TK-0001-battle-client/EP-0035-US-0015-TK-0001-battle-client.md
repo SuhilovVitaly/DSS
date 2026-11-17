@@ -4,7 +4,7 @@ story: EP-0035-US-0015-squad-battle-continuation
 ticket: EP-0035-US-0015-TK-0001-battle-client
 title: Отображение и выбор обоих носителей
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0014-TK-0003-snapshot-engine]
@@ -89,3 +89,6 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 После завершённого EP35 боя (win/loss, включая Draw и Timeout/SeriesTurnCap) участвовавшая pirate group становится retired: исчезает с карты, не патрулирует, не обнаруживает игрока и не может начать новый encounter. Это логическое завершение участия группы, не искусственное уничтожение: actual carrier hull/ammo и drone/pilot statuses сохраняются в settlement/history. Соседние группы не меняются; для них обычный перехват на resume сохраняется без иммунитета.
 Retirement входит в exactly-once settlement receipt и durable finished checkpoint. До завершённого settlement, включая pending battle/recovery или отказ записи результата, navigable world не публикуется; повтор callback/Load не создаёт группу заново и не повторяет последствия. Continue pending по D-35-47 восстанавливает тот же бой с начала; retirement не служит выходом из незавершённого боя. A-35-20 и остаток G-35-15 о surviving world group закрыты этим решением; no-respawn сохраняется.
 Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHullAndPilotStateNotFabricated; RetiredGroupNeverCapturesAgain; NeighborGroupsRemainActive; RetirementAndReceiptExactlyOnce; PendingRecoveryDoesNotRetireEarly; FinishedCheckpointRestoresRetirement. UI использует authoritative retired state, а не локальное скрытие маркера.
+
+
+Execution: current renderer/minimap enumerate all units, camera includes all opening carriers, sides cards and fire orders already use stable IDs. Added explicit three-carrier camera/card/target-selection regression without unnecessary production rewrite. US3 boundary Engine3/3 Client25/25 PASS, independent review no findings. US15 test run deferred until all4 tickets published.
