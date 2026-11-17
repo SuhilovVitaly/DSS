@@ -17,7 +17,8 @@ public sealed record PirateGroupSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PirateSignatureObservation>))]
     ImmutableArray<PirateSignatureObservation> Signatures = default,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PirateMemberSnapshot>))]
-    ImmutableArray<PirateMemberSnapshot> Members = default)
+    ImmutableArray<PirateMemberSnapshot> Members = default,
+    PursuitSnapshot? Pursuit = null)
 {
     public bool IsDebugVisible => !IsDetected && Status == PirateGroupStatuses.DebugVisible;
 }

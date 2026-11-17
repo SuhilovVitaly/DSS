@@ -5,7 +5,7 @@ ticket: EP-0035-US-0002-TK-0001-contracts
 title: Контракт: Манёвр ухода от преследования
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0035-US-0001-TK-0004-client]
@@ -177,3 +177,6 @@ D-35-46: normal EP35 campaign battle заканчивается только win
 G-35-19 CLOSED D-35-47: durable pending same-battle restart; no perturn resume, no freeworld.
 Grounding LocalGameSessionConnection.cs:145–180: accepted settlement receipt cached by BattleId, повтор retry только continuation write; SortieSettlement.cs:17 применяет outcome до clear session. Переиспользовать existing exactly-once consequences; не считать Save failure повторной наградой.
 Tests NOT RUN: EarliestContinuousCapture_WinsArbitration; ExactTie_StableGroupId; NeighborGroup_NotMerged; Battle_FreezesWorldMotion; ReturnWorld_Paused; Resume_AnotherCaptureAllowedNoImmunity; OngoingCampaignBattle_RejectNormalExitAndEscapeLoad; TutorialDebugContext_ExplicitSeparation; SettlementReplay_ExactlyOnce.
+
+## Execution scope/result 2026-11-17
+PursuitSnapshot exposes observed range/closing velocity and stable event identity; no private AI target or next waypoint. Scope replaces unused DemoCampaign extension with PirateGroupsContracts observation property. Immutable DTO roundtrip added. Tests deferred to US2 boundary; build evidence us2-tk1-build.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/.
