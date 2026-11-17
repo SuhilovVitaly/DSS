@@ -56,3 +56,5 @@ Repeated run: fractional regressions and EP-0035 tests pass; 77 fixture errors r
 Scope also includes shared RationScheduleTests fixture used by EconomyTimeContinuity: its transitive binary-relative content path caused the remaining 74 errors. Direct scenario fixtures now pass. No production expectation changed.
 
 Next run: 178 passed / 7 failed. Synthetic cargo-only economy fixture removed ShipClassId but retained starter CarrierState; clear both consistently, keeping all independent economy assertions. Evidence us17-accepted-tests.log.
+
+Final story boundary: PASS 185/185 Engine (Ep0035|EconomyTime|StationSecurity), 12 seconds, process-tree cap 300000ms. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us17-verified-tests.log. Independent reviewer confirmed remainder fix; no other confirmed US17 findings. Native NOT RUN by owner instruction.
