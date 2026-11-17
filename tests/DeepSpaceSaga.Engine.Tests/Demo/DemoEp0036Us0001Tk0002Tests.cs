@@ -20,6 +20,8 @@ public sealed class DemoEp0036Us0001Tk0002Tests
         }
         else session.Battle.EndWithTimeout(1);
         Assert.True(engine.ExitTacticalBattle(new("finish", session.Id)).Accepted);
+        if (engine.CaptureSnapshot().DemoCampaign is { Rewards.Loot.Phase: LootPhases.Open } campaign)
+            Assert.True(engine.ExecuteDemoCampaign(new FinishBattleLootCommand("finish-loot", campaign.Revision, session.Id, true)).Applied);
     }
 
     [Fact]

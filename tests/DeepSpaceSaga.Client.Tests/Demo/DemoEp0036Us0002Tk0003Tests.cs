@@ -50,6 +50,7 @@ public sealed class DemoEp0036Us0002Tk0003Tests
         foreach (var drone in battle.Battle.Drones.Where(d => d.Side == "B")) drone.Status = TacticalDroneStatus.Disabled;
         battle.Battle.CheckVictory();
         Assert.True(engine.ExitTacticalBattle(new("finish", battle.Id)).Accepted);
+        Assert.True(engine.ExecuteDemoCampaign(new FinishBattleLootCommand("finish-loot", engine.CaptureSnapshot().DemoCampaign!.Revision, battle.Id, true)).Applied);
         save = engine.CaptureSaveState();
         engine.LoadScenario(save with
         {

@@ -110,3 +110,7 @@ Lifecycle requires extending actual direct-entry gates beyond the planned six fi
 ## Execution — 2026-11-17
 
 Victory atomically settles owned sortie and encounter with frozen loot before the response, then clears live combat while preserving command/clock gates. Loot commands return authoritative Rewards; finish requires explicit discard when unclaimed sources remain. Load validates victory, frozen map, source identity/status/pose, exact scrap output and module/consumable mappings, then restores pause without combat. Independent review found missing mapping validation; corrected before publication with corruption regression cases. Wrong-battle Exit is validated before transition. Engine build/scoped formatting/diff PASS; tests NOT RUN until US7 completion. LocalClient checkpoint and map-panel integration remain the designated dependent tickets. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk3-reviewed-build.log.
+
+## Bounty regression fixture adaptation
+
+Extend test allowlist to DemoEp0036Us0001Tk0002Tests.cs and Client DemoEp0036Us0002Tk0003Tests.cs: old victory helpers previously exited directly to world; they now explicitly confirm closing the added loot phase before tracking/claim-at-station checks. This preserves their original bounty purpose without weakening the LootOpen world-action gate. Regression run follows publication.
