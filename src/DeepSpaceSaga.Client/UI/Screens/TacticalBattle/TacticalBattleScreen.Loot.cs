@@ -40,7 +40,7 @@ public sealed partial class TacticalBattleScreen
             Flow.ConfirmLootDiscard = _lootWindow.ConfirmDiscard;
             return ScreenEvent.CloseTacticalBattle;
         }
-        if (!_lootWindow.ConfirmDiscard && !_lootWindow.Bounds.Contains(point) && !Flow.Pending && !_lootWindow.Presentation.Pending &&
+        if (!_lootWindow.ConfirmDiscard && !_lootWindow.Bounds.Contains(point) && !_lootWindow.JettisonBounds.Contains(point) && !Flow.Pending && !_lootWindow.Presentation.Pending &&
             _lootWindow.Presentation.State is { } loot && TacticalBattleMapRenderer.PickLootSource(View, loot, point) is { } id)
             _lootWindow.Select(id);
         return ScreenEvent.None;

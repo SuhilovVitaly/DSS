@@ -14,6 +14,9 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
     private readonly List<ActionHit> _actions = [];
     private readonly BattleLootConsumablesPanel _consumables = new(presentation);
     private readonly ModuleSalvagePresentation _modules = new(presentation);
+    private readonly LootJettisonPanel _jettison = new(presentation);
+    private bool _showJettison;
+    internal SKRect JettisonBounds { get; private set; }
     private float _scroll, _contentHeight;
     public SKRect Bounds { get; private set; }
     public SKRect LeaveBounds { get; private set; }
@@ -43,13 +46,22 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
         Button(canvas, LeaveBounds, L("leave"), !presentation.Pending && !flowPending);
         float panelWidth = Math.Min(500, width - 40);
         Bounds = new(width - panelWidth - 18, 34, width - 18, height - 70);
-        if (presentation.Selected is null) Bounds = new(16, 34, Math.Min(width - 18, 516), 185);
+        if (presentation.Selected is null && !_showJettison) Bounds = new(16, 34, Math.Min(width - 18, 516), 185);
         using var background = new SKPaint { Color = new(12, 23, 29, 245) };
         canvas.DrawRoundRect(Bounds, 8, 8, background);
         Text(canvas, L("title"), Bounds.Left + 16, Bounds.Top + 27, 19);
         CloseBounds = new(Bounds.Right - 42, Bounds.Top + 8, Bounds.Right - 10, Bounds.Top + 38);
-        if (presentation.Selected is not null) Button(canvas, CloseBounds, "×", !presentation.Pending && !flowPending);
-        if (presentation.Selected is not { } source)
+        if (presentation.Selected is not null || _showJettison) Button(canvas, CloseBounds, "×", !presentation.Pending && !flowPending);
+        JettisonBounds = new(width - 250, height - 54, width - 16, height - 14);
+        Button(canvas, JettisonBounds, Localization.Get("loot.jettison.title"), !presentation.Pending && !flowPending);
+        if (_showJettison)
+        {
+            var clip = new SKRect(Bounds.Left + 12, Bounds.Top + 45, Bounds.Right - 12, Bounds.Bottom - 12);
+            canvas.Save(); canvas.ClipRect(clip);
+            _contentHeight = _jettison.Draw(canvas, clip, clip.Top - _scroll, flowPending);
+            canvas.Restore();
+        }
+        else if (presentation.Selected is not { } source)
             Wrapped(canvas, L("select_source"), Bounds.Left + 16, Bounds.Top + 62, panelWidth - 32, 15);
         else
         {
@@ -107,7 +119,12 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
             _contentHeight = y - top;
             canvas.Restore();
             _scroll = Math.Clamp(_scroll, 0, Math.Max(0, _contentHeight - clip.Height));
-            Text(canvas, L("estimate_notice"), Bounds.Left + 16, Bounds.Bottom - 19, 12);
+            long free = presentation.State?.FreeCargoKg ?? 0;
+            var shortages = source.Modules.Where(m => m.Reason == BattleLootReasons.CargoFull).Select(m => m.RequiredMassKg - free)
+                .Concat(source.Scrap?.Reason == BattleLootReasons.CargoFull ? [source.Scrap.RequiredMassKg - free] : [])
+                .Concat(source.Consumables.Where(c => c.Reason == BattleLootReasons.CargoFull).Select(c => c.UnitMassKg - free));
+            long shortage = shortages.DefaultIfEmpty(0).Max();
+            Text(canvas, shortage > 0 ? string.Format(L("jettison.shortage"), shortage) : L("estimate_notice"), Bounds.Left + 16, Bounds.Bottom - 19, 12);
         }
         if (presentation.LastReason is { } last) Wrapped(canvas, L(last), 270, height - 37, Math.Max(100, width - 550), 13);
         else if (!string.IsNullOrWhiteSpace(flowError)) Wrapped(canvas, flowError, 270, height - 37, Math.Max(100, width - 550), 13);
@@ -138,7 +155,9 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
             return ConfirmBounds.Contains(point);
         }
         if (LeaveBounds.Contains(point)) return RequestExit();
-        if (presentation.Selected is not null && CloseBounds.Contains(point)) { presentation.ClearSelection(); return false; }
+        if (JettisonBounds.Contains(point)) { _showJettison = !_showJettison; _scroll = 0; return false; }
+        if ((presentation.Selected is not null || _showJettison) && CloseBounds.Contains(point)) { _showJettison = false; presentation.ClearSelection(); return false; }
+        if (_showJettison) { _jettison.Click(point); LastActionTask = _jettison.PendingTask; return false; }
         foreach (var hit in _actions)
             if (hit.Bounds.Contains(point)) { LastActionTask = hit.Action(); break; }
         return false;

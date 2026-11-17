@@ -24,6 +24,7 @@ public sealed partial class TacticalBattleScreen
         {
             yield return _lootWindow!.Bounds;
             yield return _lootWindow.LeaveBounds;
+            yield return _lootWindow.JettisonBounds;
             yield return _logTab.Bounds;
             yield break;
         }

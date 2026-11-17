@@ -89,3 +89,9 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite-создатели новых файлов указаны в depends_on. Draft означает ожидаемую сверку плана, не отсутствующую игровую реализацию.
+
+## Scope correction
+Include TacticalBattleScreen.Overlay.cs/Loot.cs to make the jettison button an actual modal input region, preventing map clicks through it. Quantity/step/mass and shortage derive from the new authoritative US10-TK3 projection.
+
+## Execution
+Added scrollable authoritative cargo list, item sell-step quantity controls, explicit permanent/no-payment confirmation, shared pending/receipt updates and mass-shortage hint. No optimistic cargo changes. Client/test build PASS after correcting shared trade helper reference (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us10-tk4-build-repeat.log). All four US10 tickets now ready for boundary tests; native NOT RUN.

@@ -1257,5 +1257,12 @@
   "Prisoners.Pending": "Арест выполняется…",
   "Prisoners.Title": "Пленные",
   "Prisoners.Upkeep": "Одна каюта и обычные пайки на пленного; без жалованья.",
-  "TacticalBattle.Log.CarrierSelfDestructed": "Носитель {0} самоуничтожился — крыло потеряно."
+  "TacticalBattle.Log.CarrierSelfDestructed": "Носитель {0} самоуничтожился — крыло потеряно.",
+  "loot.jettison.action": "Выбросить",
+  "loot.jettison.confirm": "Груз исчезнет безвозвратно.|Оплаты не будет. Выбросить?",
+  "loot.jettison.empty": "Нет доступного груза.",
+  "loot.jettison.shortage": "Не хватает {0} кг — выбросьте груз.",
+  "loot.jettison.title": "Выбросить груз",
+  "loot.loot_not_cargo_item": "Можно выбросить только товары из трюма.",
+  "loot.loot_not_enough_quantity": "На борту недостаточно этого груза."
 }
