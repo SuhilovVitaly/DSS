@@ -145,3 +145,9 @@ Current requirements, mechanics, screen behavior, persistence, tooling and Board
 - `DB/Documentation/06-Tooling/CarrierWingSim.md`
 - `DB/Documentation/README.md`
 - `tools/tactical-battle/README.md`
+## Final owner request and main integration
+
+- `DB/Board/EpicExecutionPrompt.md`: thematic validation at both story/epic boundaries; no automatic global suite or unrelated long corpus; aggregate independent review remains mandatory.
+- `DB/Documentation/04-Engineering/DemoTransportContracts.md`: retain upstream deadline formula and frozen terms; document cruisePermille5000 for EP35 outer routes.
+- Main transport documentation and EP35 encounter documentation reconciled across requirements, CrewAndHabitation, Contracts/Ship/Station/ScreenCatalog, TabletopClient, DemoCampaign and SaveFormat. Final relative-link audit38documents/430links/0missing.
+- Current root Board implementation summaries replace stale NOT STARTED statements; historical planning entries remain historical. FinalValidation/ReviewFindings/ExecutionStatus distinguish final thematic PASS, older general failures, owner-stopped long cases and native NOT RUN.

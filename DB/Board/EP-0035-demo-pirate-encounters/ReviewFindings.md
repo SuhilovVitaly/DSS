@@ -2,6 +2,8 @@
 
 Independent reviewer: `/root/dependency_review`. Preparatory review read all150 Markdown documents in the EP35/current-documentation snapshot and inspected code/fixtures. Final independent review of base-to-2c308fbb plus closing documentation/prompt edits completed after owner stopped unrelated long runs: no new confirmed actionable EP35 production findings. Integration with newly updated main is reviewed separately before the requested PR.
 
+Final integration review through6f8eb85c also completed: no new unresolved actionable findings. Merge preserves guarded central dispatch/deferred commit; deadline5000 covers the measured minimum4696 for outer routes without recalculating saved offers. Engine194/194,Client143/143,Contracts51/51 passed in the final thematic checks. The reviewer inspected source/diff independently and did not claim to have run those tests himself.
+
 ## Confirmed EP35 corrections
 
 | Finding | Correction / evidence |
@@ -14,6 +16,7 @@ Independent reviewer: `/root/dependency_review`. Preparatory review read all150 
 | Relocated historical fixture consumers derived wrong repository root | 26fe6a56 replaces parent walking in ConnectionApi/LocalSessionBattle/WorldGuard with source root. Focused integration checks run in final-oracles-Engine. |
 | Existing starter count/footprint expectations omitted new sensor | 1b00a0e1/054a9401/32ac7b3d include literal sensor cell(3,4), retain hull/nonoverlap/crew/cargo assertions. |
 | Old loss oracle omitted surviving drones disabled after final carrier destruction | d94234c1 expects4/6 structural losses and explicitly checks Disabled, Speed0, positive hull. |
+| Main integration supplied short-cluster deadlines that were infeasible on outer EP35 routes |6f8eb85c calibrates new offers with cruisePermille5000; real directed-route flights, cargo delivery and mixed voyage tests pass, existing saved terms remain frozen. |
 
 ## Existing source/test mismatches found by full suite
 

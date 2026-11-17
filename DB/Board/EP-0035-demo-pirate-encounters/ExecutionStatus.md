@@ -2,7 +2,7 @@
 
 Branch `codex/ep-0035-demo-pirate-encounters`; origin `https://github.com/SuhilovVitaly/DSS`.
 Base `0c06524b5e1c9fb631ff6c6dc49ca2da48717a23`. [66 ticket publication ledger](Tickets.md).
-17 stories implemented; US0006 documentation is the final story. Thematic EP35 checks148/148 passed and independent final review found no new confirmed actionable EP35 production findings. Owner stopped unrelated long runs at500PASS/140NOTRUN and requested a conflict-free PR to main; final integration/publication follows. General suite failures remain explicit in FinalValidation.
+17 stories/66 tickets implemented and published; US0006 documentation is the final story. Thematic EP35 checks148/148 passed before main integration. Merge6e0c2642 and correction6f8eb85c are verified by final Engine194/194,Client143/143,Contracts51/51 checks and independent final integration review with no unresolved actionable findings. Owner stopped unrelated long runs at500PASS/140NOTRUN and requested a conflict-free PR to main. General suite failures remain explicit in [FinalValidation](FinalValidation.md).
 EP0034 prerequisite implementation was integrated (merge721e3a5e, UIc1c71929, fixturesc27c6e95); old dependency-blocked notes are [history](ExecutionHistory.md).
 
 ## Story evidence
@@ -39,4 +39,4 @@ Independent preparatory review read all 150 Board/current-documentation Markdown
 
 Game was not launched. Native/window/GPU/input/product acceptance: NOT RUN by explicit owner instruction. Owner checklist: [OwnerAcceptance](OwnerAcceptance.md). First close safe job, outer route risk, report batching/pause, Irina/script, pursuit escape/safe entry, squad battle, replay after close, failed-write retry, actual-loss settlement and retired group persistence require owner inspection.
 
-Foreign EP0034 ticket edits remain excluded. No additional worktree was created. Cleanup and final remote SHA are recorded after the closing checks.
+Foreign EP0034 ticket bytes are preserved exactly; only upstream committed EP34 changes were integrated. No additional worktree was created. Temporary build/scripts/caches were removed; retained evidence and cleanup are recorded in FinalValidation. Final remote SHA and requested PR mergeability are checked after the final evidence commit, with receipt in artifact publication-final.json.
