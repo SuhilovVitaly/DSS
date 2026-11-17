@@ -58,7 +58,12 @@ public sealed partial class SimulationEngine
                 }
                 double speedBound = (Math.Max(plan.Origin.SpeedKmS, plan.Origin.MaxSpeedKmS ?? 0) +
                     Math.Max(Math.Max(fromPlayer.SpeedKmS, pose.SpeedKmS), fromPlayer.MaxSpeedKmS ?? 0)) * .01;
-                double? crossing = TrajectoryCircleEntry(RelativeAt, dt * 1000, speedBound, 200);
+                double SafeClearance(double offset)
+                {
+                    var target = PlayerAtFractionalTime(player, world.LastMotionTimeMs + offset);
+                    return Distance(target.X, target.Y, safe.X, safe.Y) - 8000;
+                }
+                double? crossing = TrajectoryCircleEntry(RelativeAt, dt * 1000, speedBound, 200, SafeClearance);
                 if (crossing is { } fraction)
                 {
                     var at = PlayerAtFractionalTime(player, world.LastMotionTimeMs + fraction);
@@ -152,9 +157,15 @@ public sealed partial class SimulationEngine
 
     // Adaptive continuous path search. The speed bound proves exclusion; left-first traversal gives earliest entry.
     // Terminal uncertainty is at most 0.000001 world units (0.1 mm), including tangencies.
-    internal static double? TrajectoryCircleEntry(Func<double, PiratePoint> relativeAt, double durationMs, double speedPerMs, double radius)
+    internal static double? TrajectoryCircleEntry(Func<double, PiratePoint> relativeAt, double durationMs, double speedPerMs, double radius,
+        Func<double, double>? safeClearance = null)
     {
-        double DistanceAt(double t) { var p = relativeAt(t); return Math.Sqrt(p.X * p.X + p.Y * p.Y); }
+        double DistanceAt(double t)
+        {
+            var p = relativeAt(t);
+            return Math.Max(Math.Sqrt(p.X * p.X + p.Y * p.Y),
+                safeClearance is null ? 0 : radius - safeClearance(t) + 1e-7);
+        }
         if (DistanceAt(0) <= radius) return 0;
         if (speedPerMs <= 0) return null;
         double? Search(double left, double right, int depth)
@@ -162,7 +173,13 @@ public sealed partial class SimulationEngine
             double mid = (left + right) / 2, reach = speedPerMs * (right - left) / 2;
             double distance = DistanceAt(mid);
             if (distance - reach > radius) return null;
-            if (reach <= 1e-6 || depth >= 48) return left;
+            if (reach <= 1e-6 || depth >= 48)
+            {
+                // A safety boundary is open: choose the first sampled point strictly outside, never its inside edge.
+                if (safeClearance is null || safeClearance(left) > 0) return left;
+                if (safeClearance(mid) > 0) return mid;
+                return safeClearance(right) > 0 ? right : null;
+            }
             return Search(left, mid, depth + 1) ?? Search(mid, right, depth + 1);
         }
         return Search(0, durationMs, 0);

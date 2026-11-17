@@ -7,6 +7,15 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 public sealed class DemoEp0035Us0002Tk0002Tests
 {
     [Fact]
+    public void CaptureSearchContinuesPastInitialSafeZoneUntilOutside()
+    {
+        double? crossing = SimulationEngine.TrajectoryCircleEntry(t => new(101 - t * .01, 0),
+            250, .01, 200, t => -1 + t * .01);
+        Assert.NotNull(crossing);
+        Assert.InRange(crossing.Value, 100, 100.001);
+        Assert.True(-1 + crossing.Value * .01 > 0);
+    }
+    [Fact]
     public void CurvedTangentUsesActualPathInsteadOfChord()
     {
         // The chord crosses the capture circle; the upper semicircle remains 201 units away.
