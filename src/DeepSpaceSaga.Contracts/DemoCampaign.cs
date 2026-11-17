@@ -20,7 +20,8 @@ public sealed record DemoCampaignSnapshot(
     DemoStartSnapshot? Start = null,
     CarrierSensorSnapshot? Sensor = null,
     SensorOperatorSnapshot? SensorOperator = null,
-    FogOfWarSnapshot? FogOfWar = null);
+    FogOfWarSnapshot? FogOfWar = null,
+    SensorContactReportBatch? PendingSensorReport = null);
 
 public sealed record DemoCompanySnapshot(CampaignRoundtripSnapshot? Roundtrip = null, PilotLossSnapshot? PilotLoss = null,
     CampaignOutcomeSnapshot? Outcome = null, StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null,
