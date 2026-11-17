@@ -125,4 +125,3 @@ Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-3
 
 ## Execution 2026-11-17
 Ship roster identifies the existing assigned crew; sensor summary uses authoritative base/effective values and localized availability. Every current carrier snapshot refreshes the view even when a loaded revision matches, preventing stale assignment. No extra character row. Release Client.Tests build PASS (0 warnings/errors); scoped format/diff PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us9-tk4-build.log. Tests NOT RUN until US9 boundary; native NOT RUN, owner-only.
-

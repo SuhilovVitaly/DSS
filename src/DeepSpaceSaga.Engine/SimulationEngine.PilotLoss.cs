@@ -16,7 +16,12 @@ public sealed partial class SimulationEngine
         foreach (var pilot in BuildCrewProjection(ship).Where(p => lostPilots.Contains(p.Id)))
             if (!memorial.Any(m => m.Pilot.Id == pilot.Id))
                 memorial.Add(new(pilot, battleId, _clock.GameTimeMs));
-        return (ship with { Crew = ship.Crew.Where(c => !lostPilots.Contains(c.Id)).ToImmutableArray() },
+        return (ship with
+        {
+            Crew = ship.Crew.Where(c => !lostPilots.Contains(c.Id)).ToImmutableArray(),
+            Modules = ship.Modules.Select(m => m.OperatorCrewId is { } crewId && lostPilots.Contains(crewId)
+                ? m with { OperatorCrewId = null } : m).ToImmutableArray()
+        },
             _demoCampaign with { PilotMemorial = memorial.ToImmutable() });
     }
 

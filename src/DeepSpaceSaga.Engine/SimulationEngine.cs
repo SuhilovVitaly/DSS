@@ -466,6 +466,7 @@ public sealed partial class SimulationEngine : IDisposable
                 _ = OrbitalMotionMath.At(candidate.InitialMotion, orbit, gs.MotionTimeMs);
         SynchronizeOrbitalBindings(runtimeObjects, gs.MotionTimeMs);
         ValidateMarketWorld(runtimeObjects);
+        ValidateSensorRanges(runtimeObjects);
         ValidateRestoredResourceSurveys(gs, runtimeObjects);
 
         // Market revisions (EP-0001-US-0015-TK-0003): a profile market resumes at its saved revision, a

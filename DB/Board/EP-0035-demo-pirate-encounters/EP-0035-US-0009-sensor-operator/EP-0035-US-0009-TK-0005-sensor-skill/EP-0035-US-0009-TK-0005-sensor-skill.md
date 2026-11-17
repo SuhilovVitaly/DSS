@@ -139,3 +139,8 @@ Add ScenarioLoader.cs to validate nonnegative serialized skill before publicatio
 
 
 Implemented saved crew skill, authoritative projection and effective module range. Release Engine.Tests build PASS (0 warnings/errors); scoped formatting/diff PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us9-tk5-build.log. Tests NOT RUN until US9 boundary; authored save/load, fallback, zero-skill and non-compounding checks.
+
+## Independent review correction 2026-11-17
+Reviewer confirmed two P2 edge cases: finite base times valid skill could overflow after publication; lost drone pilot assigned to sensor left dangling module ID. Expand scope to SensorOperator preflight, SimulationEngine load, PilotLoss assignment clearing and DemoEp0035Us0009ReviewTests. Validate ranges on candidate world; clear assignments when crew is removed. Real load-atomicity and battle-loss/save/load tests authored. Original story tests PASS 28 Engine, 4 Contracts, 1 Client; corrected boundary rerun pending publication.
+
+Correction build PASS 0 warnings/errors; D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us9-review-build.log. Test rerun NOT RUN until correction published.
