@@ -50,12 +50,10 @@ public sealed partial class GameSessionHandle
         {
             var response = await _connection.ExecuteDemoCampaignAsync(command, lifetime.Token).AsTask()
                 .WaitAsync(lifetime.Token).ConfigureAwait(false);
-            lifetime.Token.ThrowIfCancellationRequested();
-            ObjectDisposedException.ThrowIf(_disposed, this);
             if (response.CommandId != command.CommandId) throw new IOException("Campaign response identity mismatch.");
             bool present;
             lock (_demoGate) present = _demoPresented.Add(command.CommandId);
-            if (present)
+            if (present && !_disposed && !lifetime.IsCancellationRequested)
             {
                 try { DemoCampaignResponded?.Invoke(response); }
                 catch (Exception error) { WriteDiagnostic("CAMPAIGN observer failed: " + error.Message); }

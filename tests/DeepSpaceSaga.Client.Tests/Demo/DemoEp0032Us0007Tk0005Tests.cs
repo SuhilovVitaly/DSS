@@ -58,15 +58,28 @@ public sealed class DemoEp0032Us0007Tk0005Tests
         Assert.Equal(1, presented);
     }
 
+    [Fact]
+    public async Task AlreadyConfirmedReceiptIsNotReplacedWhenClosingBegins()
+    {
+        var connection = new Connection();
+        await using var handle = new GameSessionHandle(connection, deferDebugTuningWrites: true);
+        var receipt = new DemoCampaignResponse("committed", true, null, 1);
+        connection.Response.SetResult(receipt);
+        connection.BeforeReturn = () => _ = handle.DisposeAsync();
+        Assert.Equal(receipt, await handle.ExecuteDemoCampaignAsync(new Command("committed", 0)));
+    }
+
     private sealed record Command(string CommandId, long ExpectedRevision) : DemoCampaignCommand(CommandId, ExpectedRevision);
 
     private sealed class Connection : IGameSessionConnection
     {
         public readonly TaskCompletionSource<DemoCampaignResponse> Response = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int Calls;
+        public Action? BeforeReturn;
         public ValueTask<DemoCampaignResponse> ExecuteDemoCampaignAsync(DemoCampaignCommand command, CancellationToken cancellationToken = default)
         {
             Calls++;
+            BeforeReturn?.Invoke();
             return new(Response.Task);
         }
         public ValueTask SendDialogueCommandAsync(DialogueCommand command, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
