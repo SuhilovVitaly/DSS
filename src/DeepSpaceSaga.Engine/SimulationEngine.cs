@@ -502,6 +502,9 @@ public sealed partial class SimulationEngine : IDisposable
         ValidateCarrierStateForLoad(gs, runtimeObjects);
         var restoredDemoCampaign = DemoCampaignData.Validate(gs.DemoCampaign, gs.GameTimeMs);
         ValidatePilotLossForLoad(restoredDemoCampaign, gs);
+        ValidatePassengerContractsForLoad(restoredDemoCampaign, gs); // EP-0034 US-0002
+        ValidateTransportFailuresForLoad(restoredDemoCampaign, gs); // EP-0034 US-0003
+        ValidateCargoContractsForLoad(restoredDemoCampaign); // EP-0034 US-0004
         _demoDefinitions.ValidateWorld(scenario with { GameState = gs });
         if (scenario.Metadata.ScenarioId == "demo" || restoredDemoCampaign.CatalogFingerprint is not null)
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
@@ -2746,7 +2749,7 @@ public sealed partial class SimulationEngine : IDisposable
             long currentCargoMassKg = ComputeCargoMassKg(module.Cargo);
 
             long addedMassKg = checked(qty * itemType.UnitMassKg);
-            if (checked(currentCargoMassKg + addedMassKg) > cargoCapacityKg)
+            if (checked(currentCargoMassKg + addedMassKg) > cargoCapacityKg || addedMassKg > PlayerFreeHoldKg(obj)) // sealed contract cargo, EP-0034 US-0004
                 return CommandStartOutcome.Rejected(CommandReasonCodes.CargoCapacityExceeded);
 
             long updatedCredits = checked(PlayerCredits - cost);

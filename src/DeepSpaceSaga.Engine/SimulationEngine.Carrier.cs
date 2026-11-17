@@ -129,7 +129,9 @@ public partial class SimulationEngine
             }
         }
 
-        int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
+        // EP-0034 US-0002: boarded contract passengers occupy cabins exactly like the crew.
+        int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) +
+            (ship.Passengers.IsDefaultOrEmpty ? 0 : ship.Passengers.Length);
         int reserved = ReservedPrisonerCabins;
         return new CabinReservationSnapshot(
             TotalCabins: operationalCabins,

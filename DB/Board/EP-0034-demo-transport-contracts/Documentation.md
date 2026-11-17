@@ -12,12 +12,12 @@ epic_approval_utc: 2026-11-16T19:49:59Z
 priority: P0
 workstream: feature
 dependencies: [EP-0032-demo-campaign-continuity]
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # EP-0034 — Контракты пассажирских и грузовых перевозок
 
-Д4 одобренного плана. **Объём: 7 пользовательских историй, 26 тикетов.** Порядок определяется зависимостями конкретных историй, а не номером эпика.
+Д4 одобренного плана. **Объём: 7 пользовательских историй, 27 тикетов** (26 по исходной декомпозиции + исправляющий EP-0034-US-0006-TK-0006-feasible-deadlines, 2026-11-17). Порядок определяется зависимостями конкретных историй, а не номером эпика.
 
 ## Исходный запрос и граница поручения
 
@@ -103,9 +103,17 @@ Planning: подготовлено по одобренному плану. Imple
 | [EP-0034-US-0003-contract-failure](EP-0034-US-0003-contract-failure/EP-0034-US-0003-contract-failure.md) | 4 | EP-0034-US-0002-passenger-contract |
 | [EP-0034-US-0004-cargo-contract](EP-0034-US-0004-cargo-contract/EP-0034-US-0004-cargo-contract.md) | 4 | EP-0034-US-0002-passenger-contract, EP-0034-US-0006-station-job-board |
 | [EP-0034-US-0005-transport-continuation](EP-0034-US-0005-transport-continuation/EP-0034-US-0005-transport-continuation.md) | 2 | EP-0034-US-0003-contract-failure, EP-0034-US-0004-cargo-contract, EP-0032-US-0003-persistent-outcomes |
-| [EP-0034-US-0006-station-job-board](EP-0034-US-0006-station-job-board/EP-0034-US-0006-station-job-board.md) | 5 | EP-0032-US-0004-demo-campaign-start |
+| [EP-0034-US-0006-station-job-board](EP-0034-US-0006-station-job-board/EP-0034-US-0006-station-job-board.md) | 6 (5 + исправляющий TK-0006) | EP-0032-US-0004-demo-campaign-start |
 | [EP-0034-US-0007-documentation](EP-0034-US-0007-documentation/EP-0034-US-0007-documentation.md) | 2 | EP-0034-US-0001-passenger-ready-start, EP-0034-US-0002-passenger-contract, EP-0034-US-0003-contract-failure, EP-0034-US-0004-cargo-contract, EP-0034-US-0005-transport-continuation, EP-0034-US-0006-station-job-board |
 
 Порядок ниже — локальная проекция глобального dependency order (не числовая сортировка): EP-0034-US-0001-passenger-ready-start → EP-0034-US-0006-station-job-board → EP-0034-US-0002-passenger-contract → EP-0034-US-0003-contract-failure → EP-0034-US-0004-cargo-contract → EP-0034-US-0005-transport-continuation → EP-0034-US-0007-documentation. Документационная история исполняется после всех функциональных, включая добавленные с большим ID.
 
 [Глобальная карта, полные пути, release gates и открытые допущения](../EP-0041-demo-validation-and-release/TicketPlan.md). Новые API/файлы в тикетах — проект, а не текущая реализация.
+
+## Итог исполнения (2026-11-17)
+
+Исполнено по поручению владельца 2026-11-17 («бери EP-0034 в новой ветке после каждого тикета коммит и пуш…») в ветке `feature/ep-0034-demo-transport-contracts`: **7/7 историй, 27/27 тикетов** реализованы и опубликованы, порядок US-0001 → US-0006 → US-0002 → US-0003 → US-0004 → US-0005 → (TK-0006) → US-0007. Соответствие тикетов коммитам, проверки, ограничения и merge watch — в [ExecutionStatus](ExecutionStatus.md).
+
+Результат: демо-носитель с четырьмя свободными пассажирскими каютами; доска заказов станций (обычные/срочные пассажиры, груз) с объяснимой оплатой и выполнимыми сроками; посадка, доставка и единственная выплата; опечатанный груз с резервом трюма; отмена, просрочка, потеря носителя, штраф и долг; журнал на карте (J / Ctrl+J); сохранение всего рейса в Save22 без смены версии. Текущие контракты: [механика](../../Documentation/02-FirstRelease/Mechanics/DemoTransportContracts.md), [технический контракт](../../Documentation/04-Engineering/DemoTransportContracts.md), [экран Contracts](../../Documentation/02-FirstRelease/Screens/Contracts.md).
+
+Заменённые записи: «Статусы поставки» выше (Implementation NOT STARTED) и grounding «экран пока заглушка» описывают состояние до исполнения и сохранены как история. Gaps A-02/A-03 закрыты рабочими A-assumptions тикетов (четыре каюты; штраф 25%, высадка на следующей стыковке), а не human decisions. Automated story-тесты — PASS с известными baseline-падениями; финальный полный прогон solution — запись оркестратора; native window, ручной плейтест и продуктовая приёмка — **NOT RUN / OPEN**. Независимое review не проводилось.

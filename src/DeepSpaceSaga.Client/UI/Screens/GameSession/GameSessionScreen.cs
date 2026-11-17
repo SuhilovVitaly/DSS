@@ -205,7 +205,7 @@ public sealed partial class GameSessionScreen : IScreen
     private const float MechanicsPanelPadding = 6f;
     private const float MechanicsButtonWidth = 56f;
     private const float PortraitButtonWidth = 188f;
-    private const float MechanicsPanelWidth = (MechanicsButtonWidth + MechanicsButtonGap + MechanicsPanelPadding) * 2 + PortraitButtonWidth;
+    private const float MechanicsPanelWidth = (MechanicsButtonWidth + MechanicsButtonGap + MechanicsPanelPadding) * 3 + PortraitButtonWidth;
     private const float MechanicsButtonHeight = 32f;
     private const float MechanicsButtonGap = 6f;
 
@@ -471,6 +471,8 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.OpenFinance;
         if (_lastShipButtonRect.Contains(uiX, uiY))
             return ScreenEvent.OpenShip;
+        if (_lastJournalButtonRect.Contains(uiX, uiY))
+            return ScreenEvent.OpenContracts;
         if (_lastTempCharacterImageButtonRect.Contains(uiX, uiY))
             return ScreenEvent.OpenTempCharacterImage;
 
@@ -572,7 +574,7 @@ public sealed partial class GameSessionScreen : IScreen
         {
             _panLastScreenX = x; _panLastScreenY = y;
             _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
-            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            _isFinanceButtonHovered = _isShipButtonHovered = _isJournalButtonHovered = _isTempCharacterImageButtonHovered = false;
             SetActiveObjectId(null); return true;
         }
         if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
@@ -592,13 +594,14 @@ public sealed partial class GameSessionScreen : IScreen
         RecomputeActiveObjectId();
         _isFinanceButtonHovered = _lastFinanceButtonRect.Contains(_uiMouseX, _uiMouseY);
         _isShipButtonHovered = _lastShipButtonRect.Contains(_uiMouseX, _uiMouseY);
+        _isJournalButtonHovered = _lastJournalButtonRect.Contains(_uiMouseX, _uiMouseY);
         _isTempCharacterImageButtonHovered = _lastTempCharacterImageButtonRect.Contains(_uiMouseX, _uiMouseY);
         bool objectInfoHovered = _objectInfoPanel.OnMouseMove(_uiMouseX, _uiMouseY);
         bool infoOverlayHovered = _panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY);
         bool commandHovered = infoOverlayHovered
             ? _commandsPanel.OnMouseMove(-1, -1) : _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY);
         bool battleHovered = CanOpenTacticalBattle && _tacticalBattleEntry.OnMouseMove(_uiMouseX, _uiMouseY);
-        return battleHovered || commandHovered || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered || _isTempCharacterImageButtonHovered ||
+        return battleHovered || commandHovered || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered || _isJournalButtonHovered || _isTempCharacterImageButtonHovered ||
             _mapViewButtons.Where((_, i) => IsMapViewAvailable(i)).Any(r => r.Contains(_uiMouseX, _uiMouseY));
     }
 
@@ -678,6 +681,9 @@ public sealed partial class GameSessionScreen : IScreen
 
         if (key == Key.S && IsCtrlDown)
             return ScreenEvent.OpenShip;
+
+        if (key == Key.J && IsCtrlDown)
+            return ScreenEvent.OpenContracts; // EP-0034 US-0006 obligations journal
 
         if (key == Key.Space)
         {
@@ -1074,6 +1080,8 @@ public sealed partial class GameSessionScreen : IScreen
         if (_lastFinanceButtonRect.Contains(uiX, uiY))
             return true;
         if (_lastShipButtonRect.Contains(uiX, uiY))
+            return true;
+        if (_lastJournalButtonRect.Contains(uiX, uiY))
             return true;
         if (_commandsPanel.CaptionRect.Contains(uiX, uiY) || _commandsPanel.BodyRect.Contains(uiX, uiY))
             return true;
@@ -2433,6 +2441,9 @@ public sealed partial class GameSessionScreen : IScreen
         btnX += MechanicsButtonWidth + MechanicsButtonGap;
         _lastShipButtonRect = new SKRect(btnX, btnY, btnX + MechanicsButtonWidth, btnY + MechanicsButtonHeight);
         DrawMechanicsButton(canvas, _lastShipButtonRect, "S", _isShipButtonHovered);
+        btnX += MechanicsButtonWidth + MechanicsButtonGap;
+        _lastJournalButtonRect = new SKRect(btnX, btnY, btnX + MechanicsButtonWidth, btnY + MechanicsButtonHeight);
+        DrawMechanicsButton(canvas, _lastJournalButtonRect, "J", _isJournalButtonHovered);
         btnX += MechanicsButtonWidth + MechanicsButtonGap;
         _lastTempCharacterImageButtonRect = new SKRect(btnX, btnY, btnX + PortraitButtonWidth, btnY + MechanicsButtonHeight);
         TabletopStyle.Button(canvas, _lastTempCharacterImageButtonRect, _isTempCharacterImageButtonHovered ? ButtonState.Hovered : ButtonState.Normal);

@@ -6,7 +6,11 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0032Us0001Tk0002Tests
 {
-    internal const string ContentRoot = "D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client";
+    // EP-0034-US-0006: read this checkout's content instead of the fixed sibling path D:/DeepSpaceSaga/DSS,
+    // which holds another branch's in-progress content during parallel epics.
+    internal static readonly string ContentRoot = CheckoutContentRoot();
+    private static string CheckoutContentRoot([System.Runtime.CompilerServices.CallerFilePath] string source = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(source)!, "..", "..", "..", "src", "DeepSpaceSaga.Client")).Replace('\\', '/');
     internal static SimulationEngine Tutorial() => EngineContentLoader.CreateEngineFromScenarioFile(
         ContentRoot + "/Settings.json", ContentRoot + "/Scenarios/Tutorial/scenario.json");
 

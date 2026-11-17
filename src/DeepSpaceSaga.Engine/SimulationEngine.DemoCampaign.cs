@@ -45,6 +45,11 @@ public sealed partial class SimulationEngine
                 reason = DemoCampaignReasons.CarrierDestroyed;
             else
                 PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason, ref commit);
+            PrepareStationJobsCommand(command, ref candidate, ref handled, ref reason); // EP-0034 US-0006, explicit dispatch
+            var boarding = PreparePassengerBoarding(command, ref candidate, handled, ref reason); // EP-0034 US-0002
+            var cancellation = PrepareTransportCancellation(command, ref candidate, ref handled, ref reason); // EP-0034 US-0003
+            PrepareCargoSealing(command, ref candidate, handled, reason); // EP-0034 US-0004: sealed cargo record
+            PrepareCargoCancellationReturn(cancellation, ref candidate); // EP-0034 US-0004: docked cancellation returns cargo
 
             reason ??= handled ? null : DemoCampaignReasons.Unsupported;
             bool applied = handled && reason is null;
@@ -64,15 +69,22 @@ public sealed partial class SimulationEngine
             };
             if (applied && command is not (RepairQuoteRequest or DecoyQuoteRequest))
                 candidate = candidate with { CommittedCommandHashes = candidate.CommittedCommandHashes.Add(command.CommandId, hash) };
-            ValidateDemoCampaignSections(candidate);
+            ValidateDemoCampaignSections(candidate, Math.Max(_clock.GameTimeMs, candidate.LastTickGameTimeMs));
             if (applied) commit?.Invoke();
             _demoCampaign = candidate;
+            if (applied && boarding is not null) BoardPassengers(boarding); // EP-0034 US-0002: same commit
+            if (applied && cancellation is not null) ApplyTransportCancellation(cancellation); // EP-0034 US-0003: same commit
             return response;
         }
     }
 
     private void TickDemoCampaign(long gameTimeMs)
     {
+        PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
+        DeliverPassengerContracts(gameTimeMs); // EP-0034 US-0002: idempotent, a Completed contract never pays again
+        DeliverCargoContracts(gameTimeMs); // EP-0034 US-0004: idempotent, a Completed contract never pays again
+        ResolveTransportFailures(gameTimeMs); // EP-0034 US-0003: expiry/loss/disembarkation, each obligation closes once
+        ReturnFailedContractCargo(gameTimeMs); // EP-0034 US-0004: failed cargo is taken back once at a human station
         if (gameTimeMs <= _demoCampaign.LastTickGameTimeMs) return;
         var candidate = _demoCampaign;
         TickDemoCampaignSections(gameTimeMs, ref candidate);
@@ -82,7 +94,7 @@ public sealed partial class SimulationEngine
 
     private DemoCampaignSnapshot BuildDemoCampaignProjection() => new(
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
-        _demoCampaign.Transport, _demoCampaign.Encounters, _demoCampaign.Rewards,
+        BuildDemoTransportProjection(), _demoCampaign.Encounters, _demoCampaign.Rewards,
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection());
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
@@ -91,5 +103,5 @@ public sealed partial class SimulationEngine
     partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
         ref bool handled, ref string? reason, ref Action? commit);
     partial void TickDemoCampaignSections(long gameTimeMs, ref DemoCampaignData candidate);
-    partial void ValidateDemoCampaignSections(DemoCampaignData candidate);
+    partial void ValidateDemoCampaignSections(DemoCampaignData candidate, long gameTimeMs);
 }

@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0034-US-0002-passenger-contract]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Просрочка и отмена перевозки
@@ -91,3 +91,30 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story validation (2026-11-17)
+
+Implementation: 4/4 тикета реализованы и опубликованы в `feature/ep-0034-demo-transport-contracts` (origin). Автоматические story-тесты: собственные PASS; соседние регрессии без новых падений относительно baseline US-0002. Нативное окно, ручной плейтест и продуктовая приёмка: **NOT RUN / OPEN** (осмотрен только headless-рендер экрана Contracts — это не нативная проверка).
+
+| Ticket | Commit |
+|---|---|
+| EP-0034-US-0003-TK-0001-contracts | `79c4ba94` |
+| EP-0034-US-0003-TK-0002-engine | `8b05db86` |
+| EP-0034-US-0003-TK-0004-localized-feedback | `fef0ae26` |
+| EP-0034-US-0003-TK-0003-client | `d972d175` |
+
+Результат: каждое активное транспортное обязательство закрывается ровно один раз — Completed (доставка US-0002), Cancelled (`CancelTransportCommand`), Expired (календарное время позже срока, фиксируется `deadline + 1`; прибытие ровно в срок доставляет) или Lost (носитель уничтожен, без штрафа). Штраф отмены/просрочки — content-permille (250 = 25%) от обещанной выплаты с округлением вверх; доступные Tokens списываются, остаток — долг по контрактам, гасится из следующих выплат контрактов и не блокирует полёты, торговлю и новые заказы. Пассажиры проваленного контракта остаются на борту (каюты, пайки) до следующей подтверждённой стыковки у любой станции и сходят там без оплаты (A-03 эпика: никого не удаляют в космосе); при отмене в доке — сразу. Штраф проводится в voyage ledger (`penalty:{contractId}`). Экран Contracts показывает правило календаря, штраф отмены и просрочки до действия, двухшаговую отмену, pending, отказ, подтверждённый результат, исходы, высадку, потерю и долг (RU/EN).
+
+Вклад в AC: AC-01 — срок в календарном времени; эквивалентность пошагового и одномоментного продвижения времени, повторные снапшоты при остановленных часах не меняют исход (engine). AC-02 — граница deadline/deadline+1; дубликат команды возвращает квитанцию, повторная отмена — `contract_not_active`, повторные снапшоты/Save/Load не списывают штраф повторно; штраф и долг видны до действия и после (engine + client). AC-03 — для отмены в космосе, отмены в доке, просрочки в космосе, просрочки у станции назначения и потери носителя проверены место пассажиров, освобождение кают и возможность продолжать (приём нового заказа при долге) (engine). AC-04 — RU/EN тексты исходов/отказов, реальная сессия и кнопка, отсутствие повторной отправки при повторном открытии, Save/Load ожидающих высадки и высадившихся, атомарный отказ Load на повреждённых данных/рассинхроне пассажиров. Native/product evidence AC-01…AC-04 — OPEN.
+
+Команды (корень `D:/DeepSpaceSaga/Dss-Main`, каждый процесс ≤ 300000 ms, артефакты `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0003-20261117/story/`):
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests -c Release --filter "Demo.|ArchitectureTests|Ep0029"` → 35 passed (`contracts.log`), включая `DemoEp0034Us0003Tk0001Tests` 3/3.
+- `dotnet test tests/DeepSpaceSaga.Engine.Tests -c Release --filter "<US-0001 regression-filter.txt>|DeepSpaceSaga.Engine.Tests.Demo.|.Carrier.|VoyageLedger"` → 371 passed / 8 failed (`engine-reg.log`); 8 — ровно baseline (`engine-failed.txt` совпадает с `us0002-20261117/story/engine-failed.txt`). `DemoEp0034Us0003Tk0002Tests` 3/3 и обновлённые `DemoEp0034Us0002Tk0002Tests`/`DemoEp0034Us0006Tk0003Tests` проходят.
+- Соседи `EconomyTimeContinuityTests` и `ClusterVoyageIntegrationTests` (раздельно) → 7 + 7 failed (`engine-econ.log`, `engine-cluster.log`); `head-econ-cluster-failed.txt` идентичен baseline `us0002-20261117/story/base-econ-cluster-failed.txt`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests -c Release --filter "<client-filter.txt>"` (фильтр US-0002) → 313 passed / 32 failed (`client-reg.log`); 32 — ровно набор US-0002 (`client-failed.txt`). Новые `DemoEp0034Us0003Tk0003Tests` 5/5 и `Tk0004Tests` 3/3 проходят.
+- Сборки Contracts.Tests, Engine.Tests, Client.Tests (Release, TreatWarningsAsErrors) — без ошибок.
+
+Изменения прежних ожиданий: тесты US-0002/US-0006, фиксировавшие «просроченный контракт навсегда Active/overdue» и revision без изменения после срока, обновлены под поведение US-0003 (US-0002 A-05 явно откладывал провал на эту историю). Save format: bump нет (`transportFailures` — новый необязательный раздел campaign data schema 1; A-P2 не сработал).
+
+Допущения (подробно в тикетах): TK-0001 A-01…A-04; TK-0002 A-01…A-03, A-05…A-09 и ограничение порядка пайков/просрочки при редких снапшотах; TK-0004 A-01/A-02; TK-0003 A-01/A-02. Только self-review; независимое review не заявляется.

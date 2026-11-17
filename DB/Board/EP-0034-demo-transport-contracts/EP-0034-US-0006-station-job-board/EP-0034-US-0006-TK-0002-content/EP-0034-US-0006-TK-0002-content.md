@@ -5,11 +5,11 @@ ticket: EP-0034-US-0006-TK-0002-content
 title: Контент: Доска заказов станции
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0006-TK-0001-contracts]
-files_touched: 2
+files_touched: 4
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
 revision: 1
@@ -104,3 +104,29 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Allowlist extension (recorded before the change, 2026-11-17)
+
+The EP-0032 content loader already declared a jobs schema (`DemoJobsDefinition`: `perCargoUnit`, `perCalendarDay`, `double urgencyMultiplier`, role names only) and rejects unknown JSON members. It cannot express AC-02 (route distance, known risk) nor the integer-factor determinism rule, and a `jobs.json` matching the card cannot be loaded without changing it. Scope added:
+
+- `src/DeepSpaceSaga.Engine/Content/DemoCampaignDefinitions.cs` — jobs schema v1 records and validation, cargo item references validated against the catalog (additive to the jobs part only; other sections untouched).
+- `tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0032ContentReviewTests.cs` — the inline `jobs.json` literal of `OptionalContentAndWhitespaceDoNotInvalidateClusterIdentity` follows the new schema (the test still checks that optional content does not change the cluster fingerprint).
+
+## Execution result (2026-11-17)
+
+Status: implemented; **validation pending at story end**. No story PASS is claimed here.
+
+Changed files:
+
+- `src/DeepSpaceSaga.Client/Data/Demo/jobs.json` — new, schema 1: `limits` (6 offers, publication 1 calendar day, expiry 2 days, `passengerMax` 4, cargo 2–12 t), `rates` (base 150, 60/passenger, 45/tonne, 3/km, urgency ×1.5 as 1500‰), `deadlines` (ordinary ×2 ETA, urgent ×1.25, cargo ×2.5, minimum 1 hour), `risk` (`risk.safe/normal/elevated` → bands safe/normal/elevated, 1000/1150/1350‰), `cargoItemTypeIds` (steel, electronics, water), `roleFilters` per cluster role (passenger/urgent/cargo weights), `firstOffer` (ordinary passenger, 3 people, at the start station).
+- `src/DeepSpaceSaga.Engine/Content/DemoCampaignDefinitions.cs` — records `DemoJobLimits`, `DemoJobRates`, `DemoJobDeadlines`, `DemoJobRisk`, `DemoJobRoleFilter`, `DemoJobFirstOffer`, `DemoJobsDefinition`; validation (positive limits, expiry ≥ publication, permille ≥ 1000, urgent ≤ ordinary deadline, known risk bands, unique ids/roles, roles from the frozen cluster, start role has a board, first offer carries ≤ `passengerMax` passengers); cargo items must exist in the catalog with mass and cargo storage.
+- `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0006Tk0002Tests.cs` — `Content_LoadsAndReferencesResolve`, `DemoLimits_AreSatisfied`, `LegacyScenario_DoesNotReceiveDemoGrant`.
+- `tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0032ContentReviewTests.cs` — literal only (see extension).
+
+Checks: `dotnet build tests/DeepSpaceSaga.Engine.Tests -c Release`, `dotnet build tests/DeepSpaceSaga.Client.Tests -c Release` — 0 warnings/0 errors. Quick focused run `DemoEp0034Us0006Tk0002Tests` 3/3 (`D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0006-20261117/tk0002`); evidence of record is the story run.
+
+Assumptions:
+
+- A-01 (technical): numbers above are baseline for the EP-0037 balance pass, not agreed balance. Distance is the straight route length in km; urgency and risk are permille factors; payout rounds up to whole Tokens (engine, TK-0003).
+- A-02 (technical): the cluster fingerprint still hashes only `cluster.json`, so editing `jobs.json` never makes saves incompatible; saved offers keep their frozen terms.
+- A-03 (technical): cargo offers name ordinary catalog goods; sealed/reserved cargo handling belongs to EP-0034-US-0004.

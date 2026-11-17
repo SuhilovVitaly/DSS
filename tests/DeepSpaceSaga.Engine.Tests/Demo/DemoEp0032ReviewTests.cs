@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0032ReviewTests
 {
-    private const string Root = DemoEp0032Us0001Tk0002Tests.ContentRoot;
+    private static readonly string Root = DemoEp0032Us0001Tk0002Tests.ContentRoot;
     private static string Temp()
     {
         var path = "D:/DeepSpaceSaga/artifacts/validation/ep-0032-review/fixtures/" + Guid.NewGuid().ToString("N");

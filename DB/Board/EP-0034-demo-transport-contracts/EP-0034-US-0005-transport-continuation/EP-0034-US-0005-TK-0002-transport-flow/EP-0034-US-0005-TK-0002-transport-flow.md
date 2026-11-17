@@ -5,11 +5,11 @@ ticket: EP-0034-US-0005-TK-0002-transport-flow
 title: Рейс через пользовательские экраны
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0005-TK-0001-transport-roundtrip]
-files_touched: 4
+files_touched: 3
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
 revision: 2
@@ -111,3 +111,33 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 ## Revision log
 
 - 2026-11-17 — ревизия 2 по ревью декомпозиции: `src/DeepSpaceSaga.Client/Program.cs` заменён в allowlist на `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs`. `Program.cs` только создаёт `SkiaWindow` и главное меню; открытие экранов, передача transport-делегатов и обработка `ScreenEvent` находятся в `SkiaWindow.Open*Async`. Число файлов и шаги по существу не изменились.
+
+## Execution result (2026-11-17)
+
+Статус: implemented; **validation pending at story end** (каденция владельца). PASS истории здесь не заявляется.
+
+Изменённые файлы (`files_touched` 4 → 3, расширение allowlist — A-01):
+
+- `src/DeepSpaceSaga.Client/Data/Locale/English.json`, `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` — значения `Finance.PassengerPayout`/`Finance.PassengerPenalty`: «Contract payouts»/«Contract penalties», «Выплаты по контрактам»/«Штрафы по контрактам». Выявленная ошибка представления: колонка voyage ledger содержит выплаты и штрафы всех транспортных контрактов (пассажиры и груз, US-0004 A-04), а отчёт рейса называл её «пассажирской». Ключи не менялись (ключи — контракт локализации, `LocalizationTests`).
+- `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0005Tk0002Tests.cs` — новый: `ContractJournal_SurvivesScreenChanges`, `Settlement_ShowsOnePayout`, `LoadedVoyage_RestoresVisibleDeadline` (каждый RU и EN).
+- `ContractsScreen.cs`, `FinanceScreen.cs`, `SkiaWindow.cs` — **без изменений**: проверено, что wiring (`OpenContractsAsync`, `OpenFinanceAsync`, Load/Continue через `CreateSessionFromSave`) уже передаёт подтверждённое состояние; ошибок wiring не найдено.
+
+Что проверяют тесты (без mock транспорта: каждая сессия открыта из файла слота через `LocalGameSessionConnection.CreateFromSaveFile` — тот же путь, что `Program.LocalGameSessionFactory.CreateSessionFromSave`; сохранение — `GameSessionHandle.SaveAsync` в тот же слот; экраны собраны как в `SkiaWindow`; полёт — команды движка между слотами):
+
+- `ContractJournal_SurvivesScreenChanges` — срочный и обычный заказы приняты кнопками экрана (2 команды, подтверждённая посадка из snapshot); уход на Finance и повторное открытие Contracts показывают тот же журнал, каюты и условия без повторной отправки; после Save в слот и Load — то же отображение, 0 команд, принятые предложения не возвращаются на доску.
+- `Settlement_ShowsOnePayout` — слот сохранён с открытым диалогом стыковки; игрок завершает диалог через сессию, выплата приходит тиковым переходом (новая ревизия). Подтверждённая на устаревшем виде отмена получает `stale_revision`: показан локализованный текст (без кода), ничего не списано и не отменено, экран свободен; с актуальным snapshot игрок сразу принимает заказ станции. Результат доставки, строка журнала и строка отчёта рейса («Выплаты по контрактам») показывают одну выплату; повторные открытия экранов и новые snapshot не меняют баланс (toolbar = engine); после Save/Load — тот же баланс, результат, журнал и строка финансов.
+- `LoadedVoyage_RestoresVisibleDeadline` — игра, загруженная в полёте: доски нет (`InFlight`), журнал и строки пассажиров совпадают с engine (сроки `Time(deadline)`, состояния), у обоих заказов есть условия отмены, баланс engine. После срока срочного заказа загруженная игра показывает исход «просрочен», штраф и что пассажиры остаются до стыковки; отменить можно только обычный заказ.
+
+Проверки (артефакты `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0005-tk0002/`):
+
+- red — `--filter FullyQualifiedName~DemoEp0034Us0005Tk0002Tests` → 4 passed / 2 failed: `Settlement_ShowsOnePayout` RU/EN, подпись «Пассажирские выплаты»/«Passenger payout» вместо контрактной (`client-red.log`, `client-red.trx`).
+- green — тот же фильтр → 6/6 passed (`client-green.log`, `client-green.trx`).
+- быстрая регрессия `FullyQualifiedName~DemoEp0034|~Localization|~Finance` (Client) → 112 passed / 3 failed; 3 — `LocalizationCoverageTests` из известного baseline (входят в `us0004-20261117/story/client-failed.txt`) (`client-ep0034.log`, `client-ep0034.trx`).
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj -c Release` → 0 warnings / 0 errors (`build-client.log`); `dotnet format ... --verify-no-changes --include` теста → exit 0 (`format.log`); `git diff --check` чист.
+
+Допущения:
+
+- A-01 (allowlist): добавлены два файла локализации (значения двух строк в каждом, ключи и форматы не менялись; общий файл с EP-0033 — правка точечная). Экранные файлы allowlist не изменялись.
+- A-02 (technical): опечатанный груз в клиентском пути этого тикета — принятие заказа станции после выплаты; доставка/возврат груза на экранах проверены в US-0004 TK-0003, сквозной рейс с грузом и Save/Load — в TK-0001 (engine). Свой товар — стартовый груз трюма (строка трюма на экране).
+- A-03 (stale_revision, риск US-0003): переходы в тике (теперь и выплата пассажирам, TK-0001 A-01) меняют ревизию; команда с прежней ревизией получает `stale_revision`. Клиент не застревает: ответ снимает ожидание, текст `Demo.Jobs.Reason.stale_revision` / `Demo.TransportFailures.Reason.stale_revision` объясняет, что делать, каждый клик — новая идентичность команды, повтор с актуальным snapshot проходит. Автоповтор не добавлялся (решение принимает игрок, повтор не должен скрыто списывать штраф).
+- Native checklist записан в карточке истории; **NOT RUN** (нет нативной сессии с проверкой layout на меньшем мониторе).

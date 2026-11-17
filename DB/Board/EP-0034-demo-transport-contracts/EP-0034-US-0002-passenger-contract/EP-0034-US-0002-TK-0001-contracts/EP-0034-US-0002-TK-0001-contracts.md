@@ -5,11 +5,11 @@ ticket: EP-0034-US-0002-TK-0001-contracts
 title: Контракт: Пассажирский заказ от посадки до оплаты
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0034-US-0001-TK-0004-client, EP-0034-US-0006-TK-0004-client]
-files_touched: 3
+files_touched: 2
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
 revision: 1
@@ -106,3 +106,21 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution result (2026-11-17)
+
+Status: implemented; **validation pending at story end** (owner cadence: per-ticket build, story-scoped tests at the end of US-0002). No story PASS is claimed here.
+
+Changed files (within the allowlist; `DemoCampaign.cs` needs no change — `DemoTransportSnapshot` is `partial` since US-0001, so `files_touched` is 2):
+
+- `src/DeepSpaceSaga.Contracts/PassengerContractsContracts.cs` — new: `PassengerDeliveryStates` (`aboard`, `overdue`, `delivered`), `PassengerContract(ContractId, OfferId, Type, OriginStationId, DestinationStationId, Count, AcceptedAtGameTimeMs, DeadlineGameTimeMs, Payout, Status, PostingId, PassengerIds, DeliveryState, DeliveredAtGameTimeMs?, PaidCredits?)`, `PassengerContractsSnapshot(Contracts, ObservedAtGameTimeMs, PassengersAboard)` with `Active`, partial `DemoTransportSnapshot.PassengerContracts`, `PassengerContractReasons` (`PostingPrefix = "passenger:"`, `PostingIdFor(contractId)`, `DeliveryState(section, contractId)` → `unavailable` for a missing section/contract/state).
+- `tests/DeepSpaceSaga.Contracts.Tests/Demo/DemoEp0034Us0002Tk0001Tests.cs` — `Payload_RoundTrips`, `LegacyPayload_UsesSafeDefaults`, `ReasonCodes_AreStable`.
+
+Checks: `dotnet build tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj -c Release` — 0 warnings/0 errors. A quick focused run (`--filter FullyQualifiedName~DemoEp0034Us0002Tk0001Tests`, console only) gave 3/3; the story run at the end is the evidence of record.
+
+Assumptions:
+
+- A-01 (technical): the planned `AcceptPassengerCommand(offerId)` is **not** added as a second command. Acceptance stays the single board command `AcceptJobOfferCommand(offerId)` from US-0006 (its A-01 already foresees that owning stories extend what acceptance does); for a passenger offer the same command boards the passengers. Two commands for one offer would need two identity/receipt paths and could diverge.
+- A-02 (technical): `PassengerContract` is the passenger view of a journal obligation (same `ContractId`), extended by the boarded `PassengerIds`, the durable `PostingId` and the delivery receipt (`DeliveredAtGameTimeMs`, `PaidCredits`); `Status` reuses `StationJobStatuses`. The engine derives `DeliveryState`; the client never computes it.
+- A-03 (technical): `overdue` only reports a passed deadline without payout; failure/cancellation outcomes and penalties belong to US-0003 and extend the same codes.
+- API for EP-0033-US-0005 (crew upkeep): people aboard = `PassengerCapacitySnapshot.PassengerCabins` (all passengers) and `PassengerContractsSnapshot.PassengersAboard` (contract passengers); boarded passengers are ordinary `ship.Passengers` entries and already eat rations in `ConsumeScheduledRations`.

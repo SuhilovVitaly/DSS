@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "limits": {
+    "offers": 6,
+    "publicationGameTimeMs": 86400000,
+    "expiryGameTimeMs": 172800000,
+    "passengerMax": 4,
+    "cargoTonnesMin": 2,
+    "cargoTonnesMax": 12
+  },
+  "rates": {
+    "base": 150,
+    "perPassenger": 60,
+    "perCargoTonne": 45,
+    "perDistanceKm": 3,
+    "urgencyPermille": 1500
+  },
+  "deadlines": {
+    "ordinaryPermille": 1300,
+    "urgentPermille": 1100,
+    "cargoPermille": 1300,
+    "minimumGameTimeMs": 3600000,
+    "maneuverGameTimeMs": 32400000,
+    "cruisePermille": 3200
+  },
+  "penalties": {
+    "cancelPermille": 250,
+    "expiryPermille": 250
+  },
+  "risk": [
+    { "riskProfileId": "risk.safe", "band": "safe", "permille": 1000 },
+    { "riskProfileId": "risk.normal", "band": "normal", "permille": 1150 },
+    { "riskProfileId": "risk.elevated", "band": "elevated", "permille": 1350 }
+  ],
+  "cargoItemTypeIds": [
+    "item.steel",
+    "item.electronics",
+    "item.water"
+  ],
+  "roleFilters": [
+    { "role": "service", "passengerWeight": 4, "urgentPassengerWeight": 2, "cargoWeight": 2 },
+    { "role": "mining", "passengerWeight": 2, "urgentPassengerWeight": 1, "cargoWeight": 4 },
+    { "role": "industrial", "passengerWeight": 2, "urgentPassengerWeight": 1, "cargoWeight": 5 },
+    { "role": "agricultural", "passengerWeight": 3, "urgentPassengerWeight": 1, "cargoWeight": 3 },
+    { "role": "far_trade", "passengerWeight": 2, "urgentPassengerWeight": 2, "cargoWeight": 3 }
+  ],
+  "firstOffer": {
+    "type": "passenger",
+    "count": 3
+  }
+}

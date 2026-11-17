@@ -192,6 +192,10 @@ US-0005 привела текущие описания к Save21 и settlement E
 
 Campaign continuity, permanent pilot loss, Save22, five-station start and autosave/Continue implemented. [Execution and remaining manual acceptance](../EP-0032-demo-campaign-continuity/ExecutionStatus.md). This does not complete services, transport jobs, encounters, progression or the full demo release.
 
+## Delivery update — EP-0034
+
+2026-11-17: ready carrier with four free passenger cabins, station job board (ordinary/urgent passengers, cargo), passenger and cargo delivery with a single payout, cancellation/expiry/carrier loss with penalty and contract debt, map journal and Save22 continuation implemented — 7 stories, 27 tickets. [Execution, ticket → SHA and open gates](../EP-0034-demo-transport-contracts/ExecutionStatus.md); [current contract](../../Documentation/04-Engineering/DemoTransportContracts.md). Superseded statements: the EP-0034 row of the 2026-11-16 coverage check («`ContractsScreen` — заглушка») and the «Контракты: штрафы, пограничное время, высадка при отмене» item of «Gaps и решения перед тикетами» describe the pre-execution state; the contract gaps are closed by technical A-assumptions of the tickets (25% penalty, arrival at the deadline delivers, passengers leave at the next confirmed docking), not by human decisions. The bounty payout place remains with EP-0036. Native, playtest and product acceptance remain OPEN; this does not complete services, encounters, progression or the demo release.
+
 ## Текущая поставка сервисов — 2026-11-17
 EP-0033 реализует ремонт, снабжение, ограниченную замену/оснащение, наём и содержание компании: 6 историй, 26 тикетов, включая документацию. [Статус и доказательства](../EP-0033-demo-company-services/ExecutionStatus.md). Интеграция реального пассажирского контракта EP-0034-US-0002 и продуктовая/балансовая приёмка остаются открытыми. Исторические NOT STARTED выше относятся к этапу планирования. Полный демо-цикл этим не закрывается.
 

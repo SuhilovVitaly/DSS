@@ -9,8 +9,8 @@ public sealed partial class SimulationEngine
     private RepairQuote? _activeRepairQuote;
     private int _repairCarrierRevision;
 
-    partial void ValidateDemoCampaignSections(DemoCampaignData candidate) =>
-        DemoCampaignData.Validate(candidate, _clock.GameTimeMs);
+    partial void ValidateDemoCampaignSections(DemoCampaignData candidate, long gameTimeMs) =>
+        DemoCampaignData.Validate(candidate, gameTimeMs);
 
     partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
         ref bool handled, ref string? reason, ref Action? commit)

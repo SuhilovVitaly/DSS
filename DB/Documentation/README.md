@@ -18,6 +18,7 @@
 - [Грузовой отсек](02-FirstRelease/Mechanics/CargoHold.md).
 - [Команды корабля](02-FirstRelease/Mechanics/CommandPanels.md).
 - [Экипаж и жилые модули](02-FirstRelease/Mechanics/CrewAndHabitation.md).
+- [Перевозки пассажиров и груза](02-FirstRelease/Mechanics/DemoTransportContracts.md).
 - [Стыковка](02-FirstRelease/Mechanics/Docking.md).
 - [Energy Cells и электричество](02-FirstRelease/Mechanics/ElectricityAndEnergyCells.md).
 - [Топливо двигателя](02-FirstRelease/Mechanics/Fuel.md).
@@ -33,7 +34,7 @@
 
 ### 02-FirstRelease/Screens
 
-- [Пассажирские контракты](02-FirstRelease/Screens/Contracts.md).
+- [Контракты: доска заказов и журнал перевозок](02-FirstRelease/Screens/Contracts.md).
 - [Диалог](02-FirstRelease/Screens/Dialog.md).
 - [Финансы](02-FirstRelease/Screens/Finance.md).
 - [Меню игровой сессии](02-FirstRelease/Screens/GameMenu.md).
@@ -66,6 +67,7 @@
 - [Базы ИИ, поля и точки интереса](04-Engineering/AiMapEnvironment.md).
 - [Approach: маршрут сближения](04-Engineering/ApproachRoutes.md).
 - [Дебаг-консоль Ctrl+Alt+P и её команды](04-Engineering/DebugConsole.md).
+- [Демо-перевозки: доска заказов, пассажиры и груз](04-Engineering/DemoTransportContracts.md).
 - [Отладка двигателей](04-Engineering/DebugTuning.md) и [панель F12](04-Engineering/DebugTuningPanel.md).
 - [Ручное управление кораблём](04-Engineering/ManualManeuver.md).
 - [Каталог товаров и совместимость](04-Engineering/ItemCatalogSchema.md).

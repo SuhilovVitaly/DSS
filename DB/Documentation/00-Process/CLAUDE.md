@@ -50,6 +50,7 @@ worktree Codex, сохраняя нужную работу перед архив
 
 Текущие технические контракты: [тактический бой](../04-Engineering/TacticalBattle.md),
 [сохранения](../04-Engineering/SaveFormat.md), [экономика и мир](../04-Engineering/TradingAndSolarSystem.md),
-[отладочные параметры](../04-Engineering/DebugTuning.md).
+[отладочные параметры](../04-Engineering/DebugTuning.md), [демо-кампания](../04-Engineering/DemoCampaign.md),
+[демо-перевозки](../04-Engineering/DemoTransportContracts.md).
 
 Источники: [DeepSpaceSaga.sln](../../../DeepSpaceSaga.sln), [global.json](../../../global.json), [Directory.Build.props](../../../Directory.Build.props), [Program.cs](../../../src/DeepSpaceSaga.Client/Program.cs), [DeepSpaceSaga.Client.csproj](../../../src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj).

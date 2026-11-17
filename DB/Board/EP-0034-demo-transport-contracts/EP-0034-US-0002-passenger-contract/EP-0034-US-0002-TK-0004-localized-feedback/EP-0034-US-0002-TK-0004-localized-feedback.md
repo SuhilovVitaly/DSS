@@ -5,7 +5,7 @@ ticket: EP-0034-US-0002-TK-0004-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0002-TK-0002-engine]
@@ -94,3 +94,19 @@ No API change. Существующие словари Russian/English; язык
 ## Self-containment check
 
 История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+
+## Execution result (2026-11-17)
+
+Status: implemented; **validation pending at story end** (owner cadence). No story PASS is claimed here.
+
+Changed files (exactly the 3 allowed):
+
+- `src/DeepSpaceSaga.Client/Data/Locale/English.json`, `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` — block `Demo.PassengerContracts.*` added after `Demo.Jobs.Reason.battle_active` (additive, no other keys touched): `Title`, `Empty`, `Unavailable`, `Aboard` ({0} contract passengers aboard; cabins and rations — AC-02), `Line` ({0} count, {1} origin, {2} destination, {3} payout, {4} deadline, {5} state), `Boarded` ({0} count, {1} destination, {2} deadline — confirmed result of the accept), `Delivered` ({0} time, {1} paid Tokens, voyage finances — AC-03), `State.aboard`, `State.overdue`, `State.delivered`, `State.unavailable`.
+- `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0002Tk0004Tests.cs` — `StoryKeysExistInBothLocales` (exact key set in both dictionaries, Cyrillic RU, every passenger acceptance refusal already has a `Demo.Jobs.Reason.*` text), `FormatArgumentsMatch` (exact placeholders per key, formatting succeeds), `NoRawReasonCodeLeaks`.
+
+Checks: `dotnet build tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -c Release` — 0 warnings/0 errors; quick run `DemoEp0034Us0002Tk0004Tests|DemoEp0034Us0006Tk0005Tests` — 6/6 (`D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0002-20261117/tk0004/test.log`).
+
+Assumptions:
+
+- A-01: acceptance refusals are not duplicated: acceptance is the single board command (TK-0001 A-01), so its stable codes keep the `Demo.Jobs.Reason.*` texts of US-0006 (including `no_free_cabins`, `insufficient_food_rations`, `cabins_overcommitted`). A separate `Demo.PassengerContracts.*` prefix keeps the US-0006 exact-key test of `Demo.Jobs.*` intact.
+- A-02: `overdue` text only states that no payment follows on arrival; failure/penalty wording belongs to US-0003.

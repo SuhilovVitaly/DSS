@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0034-US-0002-passenger-contract, EP-0034-US-0006-station-job-board]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Доставка контрактного груза
@@ -93,3 +93,31 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story validation (2026-11-17)
+
+Implementation: 4/4 тикета реализованы и опубликованы в `feature/ep-0034-demo-transport-contracts` (origin). Автоматические story-тесты: собственные PASS; соседние регрессии без новых падений относительно baseline US-0003. Нативное окно, ручной плейтест и продуктовая приёмка: **NOT RUN / OPEN** (headless-рендер экрана Contracts не является нативной проверкой).
+
+| Ticket | Commit |
+|---|---|
+| EP-0034-US-0004-TK-0001-contracts | `130cf088` |
+| EP-0034-US-0004-TK-0002-engine | `0e3d4b9b` |
+| EP-0034-US-0004-TK-0004-localized-feedback | `84595dde` |
+| EP-0034-US-0004-TK-0003-client | `1bdf2bb2` |
+
+Результат: грузовой заказ принимается той же командой доски (`AcceptJobOfferCommand`) и в том же commit опечатывает фактическую массу груза в трюме. Опечатанный груз — запись кампании, а не стек модуля: обычная торговля не может его продать, а его место недоступно для покупок и новых заказов (quote, исполнение, legacy Buy и блокер приёма учитывают резерв). Подтверждённая стыковка у станции назначения не позже календарного срока закрывает контракт `Completed`, освобождает трюм и платит один раз (сначала гасится долг по контрактам US-0003); выплата проводится в voyage ledger (`cargo:{contractId}`). Отмена/просрочка — общий механизм US-0003 (штраф 25%, долг, `penalty:{contractId}`); груз проваленного контракта остаётся в трюме (`return_pending`) до подтверждённой стыковки с человеческой станцией и сдаётся без оплаты (`returned`; при отмене у станции — сразу); при потере носителя — `lost` без штрафа. Срок груза откалиброван реальным командным полётом: `cargoPermille` 2500 → 12000. Экран Contracts показывает разбиение трюма (опечатано / свои товары / свободно для торговли) до приёма, грузовые контракты с товаром, маршрутом, оплатой, сроком и состоянием, подтверждённое опечатывание, доставку и возврат (RU/EN).
+
+Вклад в AC: AC-01 — резерв `MassKg` при приёме, стеки модуля не меняются, разбиение трюма в snapshot и на экране; нехватка места → `insufficient_cargo_space` без частичной мутации (engine + client). AC-02 — quote продажи опечатанного товара неисполним, покупка ограничена местом после резерва; доставка у станции назначения освобождает трюм и платит один раз (сравнение с полётом-двойником, повторные снапшоты, дубликат команды, Save/Load) (engine). AC-03 — отмена у станции и в космосе, просрочка в космосе и у станции назначения (граница deadline/deadline+1), потеря носителя: штраф один раз, груз не дублируется и не продаётся, возврат один раз; долг другого контракта гасится из выплаты за груз (engine + client). AC-04 — RU/EN тексты состояний/результатов, отказ `insufficient_cargo_space`/`stale_revision` без повторной отправки, реальная сессия и кнопка, повторное открытие без повторной команды, Save/Load резерва/доставки/возврата, старое сохранение US-0006 без секции, атомарный отказ Load на повреждённых данных. Native/product evidence AC-01…AC-04 — OPEN.
+
+Команды (корень `D:/DeepSpaceSaga/Dss-Main`, каждый процесс ≤ 300000 ms, артефакты `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0004-20261117/story/`):
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests -c Release --filter "FullyQualifiedName~Demo.|FullyQualifiedName~ArchitectureTests|FullyQualifiedName~Ep0029"` → 38 passed (`contracts.log`), включая `DemoEp0034Us0004Tk0001Tests` 3/3.
+- `dotnet test tests/DeepSpaceSaga.Engine.Tests -c Release --filter "<engine-filter.txt>"` (фильтр US-0003: регрессии US-0001 + `Engine.Tests.Demo.` + `.Carrier.` + `VoyageLedger`) → 374 passed / 8 failed (`engine-reg.log`); 8 — ровно baseline (`engine-failed.txt` совпадает с `us0003-20261117/story/engine-failed.txt`). `DemoEp0034Us0004Tk0002Tests` 3/3 и тесты US-0001/0006/0002/0003 проходят.
+- Торговля/трюм/рынок: `--filter "<engine-trade-filter.txt>"` (`CargoCostAccounting`, `MarketKnowledge`, `MarketRevision`, `MarketSaveLoadContinuity`, `QuotedTradeExecution`, `TradeCommand`, `TradeQuoteCalculator`, `TradeQuoteIssuance`, `TradeSnapshotProjection`, `StationMarket*`) → 316 passed / 0 failed (`engine-trade.log`).
+- Соседи `EconomyTimeContinuityTests` и `ClusterVoyageIntegrationTests` (раздельно) → 7 + 7 failed (`engine-econ.log`, `engine-cluster.log`); `head-econ-cluster-failed.txt` идентичен baseline `us0003-20261117/story/head-econ-cluster-failed.txt`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests -c Release --filter "<client-filter.txt>"` (фильтр US-0003 + `Trade`) → 506 passed / 32 failed (`client-reg.log`); 32 — ровно набор US-0003 (30 + 2 `NoAmmo`, `client-failed.txt`). Новые `DemoEp0034Us0004Tk0003Tests` 5/5 и `Tk0004Tests` 3/3, клиентские тесты торговли проходят.
+- Сборки Contracts.Tests, Engine.Tests, Client.Tests (Release, TreatWarningsAsErrors) — без ошибок.
+
+Изменения прежних ожиданий: нет — существующие тесты не правились. Save format: bump нет (`cargoContracts` — новый необязательный раздел campaign data schema 1; A-P2 не сработал).
+
+Допущения (подробно в тикетах): TK-0001 A-01…A-03; TK-0002 A-01…A-06 и ограничение выдачи груза диалогом/повреждения трюма; TK-0004 A-01 (и уточнение `Demo.TransportFailures.CancelConfirm`); TK-0003 A-01. Только self-review; независимое review не заявляется.

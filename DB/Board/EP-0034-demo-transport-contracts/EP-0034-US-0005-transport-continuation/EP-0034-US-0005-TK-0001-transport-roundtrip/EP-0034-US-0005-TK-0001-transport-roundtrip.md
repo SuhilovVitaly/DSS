@@ -5,11 +5,11 @@ ticket: EP-0034-US-0005-TK-0001-transport-roundtrip
 title: Сохранённый смешанный рейс
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0034-US-0003-TK-0003-client, EP-0034-US-0004-TK-0003-client, EP-0032-US-0003-TK-0004-terminal-save-policy]
-files_touched: 4
+files_touched: 2
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
 revision: 1
@@ -107,3 +107,36 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution result (2026-11-17)
+
+Статус: implemented; **validation pending at story end** (каденция владельца: на тикет — сборка и целевые тесты, story-тесты в конце US-0005). PASS истории здесь не заявляется.
+
+Изменённые файлы (`files_touched` 4 → 2: `SimulationEngine.CargoContracts.cs` и `DemoCampaignData.cs` изменений не потребовали — сериализация и валидация всех секций уже переживают Save/Load, что доказано тестами ниже):
+
+- `src/DeepSpaceSaga.Engine/SimulationEngine.PassengerContracts.cs` — `DeliverPassengerContracts` теперь увеличивает `Revision`/`CommitSequence` кампании, как доставка груза (US-0004) и переходы отказов (US-0003). Выявленный дефект: выплата только за пассажиров не была коммитом кампании, поэтому автосохранение (наблюдает `Revision`) не срабатывало после выплаты, и слот продолжения мог хранить состояние стыковки до выплаты (A-01).
+- `tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0034Us0005Tk0001Tests.cs` — новый: `MixedVoyage_RoundTripsEveryBoundary`, `ArrivalReplay_DoesNotPayAgain`, `ReservedCargo_IsNotTradable`.
+
+Что проверяют тесты (production-путь без mock: New Game через `CreateEngineFromScenarioFile`, каждый Save/Load — реальный JSON-файл через `ScenarioLoader.Serialize` → `EngineContentLoader.CreateEngineFromSaveFile`; полёты — реальные команды Undock/Accelerate/Approach/Synchronization/Dock и диалог стыковки; торговля — quoted trade):
+
+- `MixedVoyage_RoundTripsEveryBoundary` — у SPC-0002 приняты срочные и обычные пассажиры (все 4 свободные каюты), куплен свой товар. Сверка «до/после загрузки» (деньги, ревизия и commit sequence кампании, вся транспортная проекция: доска, журнал, каюты, пассажирские и грузовые контракты, отказы и долг; люди на борту, стеки трюма, voyage ledger) на checkpoints: до приёма, после приёма у станции, в полёте, после выплаты (у SPC-0005 с новыми грузовыми обязательствами), после отмены в полёте (все виды обязательств одновременно: обычные пассажиры, опечатанный груз, отменённый груз в `return_pending` с долгом, свой товар, завершённый срочный контракт), по окончании рейса. Дважды (каждое плечо) продолжение после загрузки в полёте заканчивается ровно в том же состоянии, что и непрерывный рейс (эквивалентность разбиения). Срочные пассажиры доставлены до срока у SPC-0005 (одна выплата, posting в ledger прибытия, commit кампании); свой товар продан там (gross sales). Обычные пассажиры и опечатанный груз доставлены у SPC-0008 до срока; выплаты сначала гасят долг, отменённый груз сдан без оплаты; итог: долг 0, людей на борту 0, резерв 0; журнал содержит каждый исход один раз; сумма выплат в ledger = сумме трёх контрактов, штраф проведён один раз; свой товар того же типа, что и опечатанный, продаётся ровно в своём количестве (3, а не 4).
+- `ArrivalReplay_DoesNotPayAgain` — сохранение при открытом диалоге стыковки (до подтверждения ничего не выплачено); загруженное продолжение и непрерывное подтверждение дают одинаковое состояние; повторные снапшоты/чтение доски, дубликат команды (тот же receipt), новая команда (`offer_already_accepted`), повторная загрузка пристыкованной игры (повтор тика прибытия) и реальное повторное прибытие на ту же станцию (рейс туда и обратно) не дают второй выплаты и второго posting.
+- `ReservedCargo_IsNotTradable` — опечатанный груз и свой товар того же типа: продаётся только своё (до и после Load), разбиение трюма сходится; повреждённый трюм ниже резерва загружается, резерв сохранён, места для торговли нет, груз доставляется и оплачивается один раз; повреждённое сохранение (подменённый posting груза, обязательства без записи контракта) отклоняется и `CreateEngineFromSaveFile`, и `LoadScenario` работающей игры — состояние работающей игры не меняется.
+
+Проверки (артефакты `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0005-tk0001/`):
+
+- red — до исправления `--filter FullyQualifiedName~DemoEp0034Us0005Tk0001Tests` → 2 passed / 1 failed: `MixedVoyage_RoundTripsEveryBoundary` «passenger payout must be a campaign commit» (`engine-red.log`, `engine-red.trx`).
+- green — тот же фильтр → 3/3 passed (`engine-green.log`, `engine-green.trx`).
+- быстрая регрессия `FullyQualifiedName~DemoEp0034|FullyQualifiedName~DemoEp0032` (Engine) → 45/45 passed (`engine-ep0034.log`, `engine-ep0034.trx`).
+- `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj -c Release` → 0 warnings / 0 errors (`build-engine.log`); `dotnet format ... --verify-no-changes --include` двух файлов → exit 0 (`format.log`); `git diff --check` чист.
+
+Допущения:
+
+- A-01 (technical): доставка пассажиров — коммит кампании (`Revision`/`CommitSequence` + 1) для автосохранения, как остальные транспортные переходы. Следствие: команда доски/отмены, отправленная с ревизией до выплаты, получает `stale_revision`; поведение клиента при этом проверяет TK-0002.
+- A-02 (technical, план рейса): маршрут выбран из детерминированной первой публикации: SPC-0002 (пассажиры) → SPC-0005 (грузы) → SPC-0008. Наблюдение для баланса (не исправлялось — тикет не меняет баланс): трёхимпульсный полёт SPC-0005 → SPC-0002 занял ≈ 9 ч календаря при сроке обычного заказа 2,5 ч (обратное направление укладывается ≈ 1,2 ч, US-0002 A-04) — срок от ETA максимальной скорости не учитывает геометрию разворота; передано в плейтест EP-0041.
+- A-03 (save format): bump нет; новых секций нет; A-P2 не задействован.
+
+Открытые проблемы US-0004 (решение в рамках US-0005):
+
+- Выдача груза диалогом (`DialogueEffectTransaction`, `AddCargoItem`) без учёта резерва — **оставлена ограничением**: ни один демо-контент не использует `AddCargoItem` (поиск по `src/DeepSpaceSaga.Client/Data` и `Scenarios` без `bin` пуст), поэтому мирный рейс продолжения затронуть её не может.
+- Повреждение трюма ниже резерва — **проверено, не исправлялось**: такое состояние загружается, резерв и доставка сохраняются, единственная выплата не нарушается, торговля не получает места (`ReservedCargo_IsNotTradable`). Правило уничтожения опечатанного груза при повреждении остаётся вне scope (бой — EP-0035/EP-0036).

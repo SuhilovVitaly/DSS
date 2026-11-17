@@ -5,14 +5,14 @@ ticket: EP-0034-US-0007-TK-0001-current-contracts
 title: Актуальные механики и технические контракты
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0034-US-0001-TK-0004-client, EP-0034-US-0002-TK-0003-client, EP-0034-US-0003-TK-0003-client, EP-0034-US-0004-TK-0003-client, EP-0034-US-0005-TK-0002-transport-flow, EP-0034-US-0006-TK-0004-client]
-files_touched: 3
+files_touched: 21
 serves: [AC-01, AC-02, AC-04]
 created: 2026-11-16T20:32:46.441Z
-revision: 1
+revision: 2
 ---
 
 # Актуальные механики и технические контракты
@@ -39,7 +39,9 @@ revision: 1
 | `DB/Documentation/04-Engineering/DemoTransportContracts.md` | Новый файл этого тикета; на момент grounding отсутствует. | Только актуальные описания/ссылки по шагам ниже. |
 | `DB/Documentation/01-Requirements/EngineRequirements.md` | `DB/Documentation/01-Requirements/EngineRequirements.md:1` — # Требования к движку и игровым контрактам | Только актуальные описания/ссылки по шагам ниже. |
 
-Разрешены только эти 3 implementation/documentation files. Board evidence/status этого тикета обновляются отдельно как каноническая история исполнения; не дают разрешения править произвольный production. Read-only архитектурные источники: `DB/Documentation/00-Process/CLAUDE.md`, `DB/Documentation/01-Requirements/EngineRequirements.md` и [общая карта](../../../EP-0041-demo-validation-and-release/TicketPlan.md).
+**Расширение scope 2026-11-17 (исполнение, EpicExecutionPrompt §1/§6):** инвентаризация по итоговому diff `83782f77..e65bd5df` нашла 18 других документов `DB/Documentation`, которые описывали Contracts как оболочку, не знали демо-manifest, резерва трюма, проводок контрактов, новых разделов сохранения и кнопки J/Ctrl+J. Каноническое правило «один контракт в одном месте, зависимые сводки обновляются» (DocumentationSystem.md) требует их правки; allowlist расширен до 21 документа (2 новых + 19 изменённых, список в «Результат исполнения»). Production-код, тесты и данные не меняются.
+
+Исходный план: разрешены только эти 3 implementation/documentation files. Board evidence/status этого тикета обновляются отдельно как каноническая история исполнения; не дают разрешения править произвольный production. Read-only архитектурные источники: `DB/Documentation/00-Process/CLAUDE.md`, `DB/Documentation/01-Requirements/EngineRequirements.md` и [общая карта](../../../EP-0041-demo-validation-and-release/TicketPlan.md).
 
 ## Public API after the change
 
@@ -87,3 +89,43 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Результат исполнения (2026-11-17)
+
+Implementation: выполнено; только Markdown в `DB/Documentation` и эта карточка. Сверка с исходниками на `e65bd5df`: контракты (`StationJobsContracts.cs`, `PassengerCapacityContracts.cs`, `PassengerContractsContracts.cs`, `TransportFailureContracts.cs`, `CargoContractsContracts.cs`), Engine (`SimulationEngine.StationJobs/PassengerCapacity/PassengerContracts/CargoContracts/TransportFailure.cs`, порядок шага и dispatch в `SimulationEngine.DemoCampaign.cs`, Load-проверки в `SimulationEngine.cs`, `TradeExecution.cs`, `RecordVoyageAmount`), save-разделы `DemoCampaignData.cs`, content `jobs.json`/`demo-starter-carrier.json`/`Scenarios/Demo/scenario.json`, Client (`ContractsScreen.cs`, `ShipScreen.cs`, `GameSessionScreen.cs` J/Ctrl+J, `SkiaWindow.OpenContractsAsync`, locale `Demo.*`/`Finance.Passenger*`), story validation US-0001…US-0006 и TK-0006.
+
+### Инвентаризация влияния (AC-01)
+
+| Документ | Что изменилось в результате эпика | Обновление | Проверка |
+|---|---|---|---|
+| `02-FirstRelease/Mechanics/DemoTransportContracts.md` | Новый игровой цикл перевозок | Создан: каюты, доска, принятие, доставка, отмена/просрочка/долг, журнал, сохранение | ссылки, факты по исходникам |
+| `04-Engineering/DemoTransportContracts.md` | Новые DTO, команды, коды, формулы, порядок шага, ledger, save-разделы | Создан технический контракт и список ограничений | ссылки, сигнатуры |
+| `01-Requirements/EngineRequirements.md` | Пассажирские контракты больше не UI-shell | Раздел «Перевозки демо-кампании», исправлена граница требований | ссылки |
+| `01-Requirements/FirstReleaseRequirements.md` | Contracts реализован в демо | Таблица Hire/Contracts разделена, статус EP-0034 | ссылки |
+| `02-FirstRelease/Mechanics/CrewAndHabitation.md` | Каюты демо-носителя, реальные пассажиры | Заменён placeholder-абзац текущим правилом | ссылки |
+| `02-FirstRelease/Mechanics/CargoHold.md` | Опечатанный груз резервирует трюм | Добавлен резерв и ограничения | ссылки |
+| `02-FirstRelease/Mechanics/Money.md` | Выплаты, штрафы, долг по контрактам | Добавлен абзац | ссылки |
+| `02-FirstRelease/Mechanics/Trading.md` | Buy ограничен резервом | Добавлена ссылка-сводка | ссылки |
+| `02-FirstRelease/Screens/Contracts.md` | Заглушка заменена доской и журналом | Переписан экран | ссылки, тексты по presentation |
+| `02-FirstRelease/Screens/Ship.md` | Разбиение кают под экипажем | Добавлен абзац, снят статус Contracts-оболочки | ссылки |
+| `02-FirstRelease/Screens/ScreenCatalog.md` | Назначение Contracts | Строка таблицы и сводка | ссылки |
+| `02-FirstRelease/Screens/Station.md` | Contracts — рабочий экран | Исправлено утверждение | ссылки |
+| `02-FirstRelease/Screens/GameSession.md` | Кнопка J и Ctrl+J | Добавлен абзац панели механик | исходник `GameSessionScreen.cs` |
+| `02-FirstRelease/Screens/Finance.md` | Подписи «Выплаты/Штрафы по контрактам» | Добавлен абзац | locale |
+| `02-FirstRelease/Screens/Trade.md` | Доступный cargo после резерва | Уточнено | ссылки |
+| `03-Design/TabletopClient.md` | «Contracts показывают оболочки» устарело | Исправлено | — |
+| `04-Engineering/DemoCampaign.md` | Демо-manifest, секция Transport | Обновлены старт и абзац секций | ссылки |
+| `04-Engineering/SaveFormat.md` | 4 новых необязательных раздела, версия Save22 прежняя | Добавлен абзац | `DemoCampaignData.cs` |
+| `04-Engineering/TradingAndSolarSystem.md` | `PlayerFreeHoldKg`, postings `passenger:`/`cargo:`/`penalty:` | Добавлен абзац | `TradeExecution.cs`, `VoyageLedger.cs` |
+| `00-Process/CLAUDE.md` | Перечень текущих контрактов | Добавлены DemoCampaign и DemoTransportContracts; архитектурный абзац актуален | ссылки |
+| `README.md` (Documentation) | Новые документы, название Contracts | Навигация | ссылки |
+
+Проверено без изменений: остальные 43 документа `DB/Documentation` (в т.ч. `TetrarchClass.md` — класс и модули задаются content, демо-manifest описан в DemoCampaign; `Docking.md`; `Graphify*.md` — решение в TK-0002) и 13 Markdown вне `DB` (`AGENTS.md`, `CLAUDE.md`, `.claude/commands/where.md`, `src/.../Skins/README.md`, W4 character-generator `SKILL.md`/`assembly-contract.md`, `tests/.../Fixtures/Saves/README.md` — датированная запись Save18/19, `tools/*/README.md`, `EP0013.md`, два `stories/*.md` EP-0029) — перевозок не описывают. Комментарии в коде, ссылающиеся на `Screens/Contracts.md`, остаются верными. Board-документы — TK-0002.
+
+### Проверки
+
+- Относительные ссылки всех изменённых/новых `.md` (скрипт `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0007-20261117T161504/check_links.py`): 21 файл, 252 ссылки, 0 битых.
+- В `DB/Documentation` только `.md` (0 файлов иных форматов); `git diff --check` чисто; trailing whitespace в новых файлах нет.
+- Build/test не запускались: документационный тикет; полная solution suite — отдельный прогон оркестратора.
+
+Assumptions: A-01 (technical) — описания вне EP-0034 (Hire-оболочка) оставлены как в этой ветке; параллельный EP-0033 в `origin/main` переписал те же строки (`Ship.md`, `ScreenCatalog.md`, `Station.md`, `CrewAndHabitation.md`, `FirstReleaseRequirements.md`, `DemoCampaign.md`) — при слиянии оставить формулировки обоих эпиков (merge watch в ExecutionStatus). A-02 (technical) — численные значения content не копируются, кроме четырёх кают (решение DemoPlan) и имён ключей jobs.json. Native/product gates: NOT RUN / OPEN. Только self-review; независимое review не заявляется.

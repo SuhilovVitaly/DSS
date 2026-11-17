@@ -3,7 +3,7 @@
     "scenarioId": "demo",
     "name": "Demo Campaign",
     "description": "One five-station district. Tutorial and campaign use the same Tetrarch and crew.",
-    "starterCarrierManifest": "Data/Ships/starter-carrier.json",
+    "starterCarrierManifest": "Data/Ships/demo-starter-carrier.json",
     "hidden": false
   },
   "gameState": {

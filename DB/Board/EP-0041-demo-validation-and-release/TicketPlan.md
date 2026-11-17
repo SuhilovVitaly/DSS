@@ -140,6 +140,7 @@ Content definitions: cluster(stationIds,roles,seed,startStationId), services(rep
    - [EP-0034-US-0006-TK-0003-engine](../EP-0034-demo-transport-contracts/EP-0034-US-0006-station-job-board/EP-0034-US-0006-TK-0003-engine/EP-0034-US-0006-TK-0003-engine.md) — `D:/DeepSpaceSaga/DSS/DB/Board/EP-0034-demo-transport-contracts/EP-0034-US-0006-station-job-board/EP-0034-US-0006-TK-0003-engine/EP-0034-US-0006-TK-0003-engine.md`
    - [EP-0034-US-0006-TK-0005-localized-feedback](../EP-0034-demo-transport-contracts/EP-0034-US-0006-station-job-board/EP-0034-US-0006-TK-0005-localized-feedback/EP-0034-US-0006-TK-0005-localized-feedback.md) — `D:/DeepSpaceSaga/DSS/DB/Board/EP-0034-demo-transport-contracts/EP-0034-US-0006-station-job-board/EP-0034-US-0006-TK-0005-localized-feedback/EP-0034-US-0006-TK-0005-localized-feedback.md`
    - [EP-0034-US-0006-TK-0004-client](../EP-0034-demo-transport-contracts/EP-0034-US-0006-station-job-board/EP-0034-US-0006-TK-0004-client/EP-0034-US-0006-TK-0004-client.md) — `D:/DeepSpaceSaga/DSS/DB/Board/EP-0034-demo-transport-contracts/EP-0034-US-0006-station-job-board/EP-0034-US-0006-TK-0004-client/EP-0034-US-0006-TK-0004-client.md`
+- [EP-0034-US-0006-TK-0006-feasible-deadlines](../EP-0034-demo-transport-contracts/EP-0034-US-0006-station-job-board/EP-0034-US-0006-TK-0006-feasible-deadlines/EP-0034-US-0006-TK-0006-feasible-deadlines.md) — добавлен при исполнении 2026-11-17 (исправление AC-02, найдено в US-0005); история теперь 6 тикетов.
 
 14. [EP-0034-US-0002-passenger-contract](../EP-0034-demo-transport-contracts/EP-0034-US-0002-passenger-contract/EP-0034-US-0002-passenger-contract.md) — 4 тикетов, prerequisites: EP-0034-US-0001-passenger-ready-start, EP-0034-US-0006-station-job-board.
    - [EP-0034-US-0002-TK-0001-contracts](../EP-0034-demo-transport-contracts/EP-0034-US-0002-passenger-contract/EP-0034-US-0002-TK-0001-contracts/EP-0034-US-0002-TK-0001-contracts.md) — `D:/DeepSpaceSaga/DSS/DB/Board/EP-0034-demo-transport-contracts/EP-0034-US-0002-passenger-contract/EP-0034-US-0002-TK-0001-contracts/EP-0034-US-0002-TK-0001-contracts.md`
@@ -404,6 +405,14 @@ Content definitions: cluster(stationIds,roles,seed,startStationId), services(rep
 - Имена тестов шаблонные (`HappyPath_MatchesStory` и т. п.); исполнителю переименовывать их по конкретному сценарию шага.
 
 Build/runtime не запускались: изменения только в Board.
+## Исполнение EP-0034 — 2026-11-17
+
+EP-0034 исполнен в ветке `feature/ep-0034-demo-transport-contracts` (origin): 7/7 историй, **27 тикетов** — исходные 26 плюс исправляющий EP-0034-US-0006-TK-0006-feasible-deadlines (сроки по реальному полёту, добавлен строкой в пункт 13 выше). Фактический порядок: US-0001 → US-0006 → US-0002 → US-0003 → US-0004 → US-0005 → US-0006-TK-0006 → US-0007; он совпадает с dependency order пунктов 12–20, кроме добавленного TK-0006. Исходные итоги «58 историй / 200 тикетов» выше — история планирования и не пересчитываются здесь.
+
+Тикет → коммиты, проверки, ограничения и merge watch с EP-0033: [ExecutionStatus EP-0034](../EP-0034-demo-transport-contracts/ExecutionStatus.md). Текущие контракты: [механика перевозок](../../Documentation/02-FirstRelease/Mechanics/DemoTransportContracts.md), [технический контракт](../../Documentation/04-Engineering/DemoTransportContracts.md).
+
+Для зависящих историй: пассажирский API (принятие `AcceptJobOfferCommand`, `ship.Passengers`, `DemoTransportSnapshot.PassengerContracts`, posting `passenger:{contractId}`) готов для EP-0033-US-0005; доска заказов и тип `bounty` (принятие не реализовано, `unsupported`) — для EP-0036-US-0001; калибровка ставок/сроков/штрафов `jobs.json` — EP-0037-US-0004 и плейтест EP-0041. Native window, плейтест и продуктовая приёмка EP-0034 — NOT RUN / OPEN.
+
 ## Уточнение EP-0035 — 2026-11-17
 
 Добавлены 2 истории / 7 тикетов, EP-0035 теперь 8 историй / 28 тикетов. Исторические числа исходной декомпозиции выше сохранены. Сенсоры +20% и normal default-true fog + explicit debug-false override разрешены; патруль и абсолютные настройки остаются G-35-01/02.
