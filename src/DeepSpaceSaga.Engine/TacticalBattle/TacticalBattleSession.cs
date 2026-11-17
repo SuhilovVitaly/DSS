@@ -8,6 +8,7 @@ namespace DeepSpaceSaga.Engine.TacticalBattle;
 internal sealed class TacticalBattleSession
 {
     private readonly List<TacticalBattleLogEvent> _log = [];
+    private readonly HashSet<string> _loggedSelfDestructs = new(StringComparer.Ordinal);
     private ulong _eventSequence;
     private ImmutableArray<TacticalMovementPath> _paths = [];
     private ImmutableArray<TacticalShotSnapshot> _shots = [];
@@ -97,6 +98,7 @@ internal sealed class TacticalBattleSession
             m.Path.Select(TacticalBattleSnapshotBuilder.Pose).ToImmutableArray())).ToImmutableArray();
         foreach (var path in _paths)
             Add(TacticalBattleLogKind.Moved, TacticalBattlePhase.Move, actor: path.DroneId);
+        AddSelfDestructs(TacticalBattlePhase.Move);
         if (Battle.Result is not null) AddOutcome(TacticalBattlePhase.Move);
         else if (!Battle.ActiveDrones(PlayerSide).Any(d => !TacticalBattleSalvo.Candidates(Battle, d).IsEmpty)
             && !Battle.ActiveDrones(Battle.EnemySide(PlayerSide)).Any(d =>
@@ -167,6 +169,7 @@ internal sealed class TacticalBattleSession
         if (wasActive) Battle.Statistics.FirstLoss ??= drone.Side;
         Add(TacticalBattleLogKind.Destroyed, phase, target: drone.Id, unit: Describe(drone));
         if (Battle.CheckVictory() is not null) AddOutcome(phase);
+        AddSelfDestructs(phase);
         Revision++;
         return Accepted(request.CommandId, events);
     }
@@ -217,6 +220,7 @@ internal sealed class TacticalBattleSession
                     unit: new(unit.Kind, unit.Hull, unit.MaxHull, engine?.Name, engine?.Factor), fireStepIndex: step.Index);
             }
             var outcome = TacticalBattleSnapshotBuilder.Outcome(step.Outcome);
+            AddSelfDestructs(TacticalBattlePhase.Fire, step.Index, step.UnitsAfter);
             if (outcome is not null)
                 _log.Add(new TacticalBattleLogEvent(++_eventSequence, turn, TacticalBattlePhase.Fire,
                     TacticalBattleLogKind.Outcome, Outcome: outcome)
@@ -254,8 +258,21 @@ internal sealed class TacticalBattleSession
     }
     private static TacticalLogUnit Describe(TacticalUnit unit) =>
         new(unit is TacticalCarrier ? TacticalUnitKind.Carrier : TacticalUnitKind.Drone, unit.Hull, unit.MaxHull);
-    private void AddOutcome(TacticalBattlePhase phase) => _log.Add(new(++_eventSequence, Battle.Turn, phase,
-        TacticalBattleLogKind.Outcome, Outcome: TacticalBattleSnapshotBuilder.Outcome(Battle.Result)));
+    private void AddOutcome(TacticalBattlePhase phase)
+    {
+        AddSelfDestructs(phase);
+        _log.Add(new(++_eventSequence, Battle.Turn, phase,
+            TacticalBattleLogKind.Outcome, Outcome: TacticalBattleSnapshotBuilder.Outcome(Battle.Result)));
+    }
+    private void AddSelfDestructs(TacticalBattlePhase phase, int? step = null, ImmutableArray<TacticalUnitSnapshot> units = default)
+    {
+        foreach (var carrier in Battle.Carriers.Where(c => Battle.SelfDestructedCarrierIds.Contains(c.Id)).OrderBy(c => c.Id, StringComparer.Ordinal))
+        {
+            if (!units.IsDefault && !units.Any(u => u.Id == carrier.Id && u.Hull <= 0)) continue;
+            if (_loggedSelfDestructs.Add(carrier.Id))
+                Add(TacticalBattleLogKind.SelfDestructed, phase, target: carrier.Id, unit: Describe(carrier), fireStepIndex: step);
+        }
+    }
     private void Add(TacticalBattleLogKind kind, TacticalBattlePhase phase, string? actor = null, string? target = null,
         string? role = null, int? amount = null, int? engine = null, bool noAttackers = false,
         TacticalLogShot? shot = null, TacticalLogDamage? damage = null, TacticalLogUnit? unit = null,
