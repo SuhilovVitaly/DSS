@@ -5,7 +5,7 @@ ticket: EP-0033-US-0004-TK-0002-content
 title: Контент: Наём замены и назначение пилота
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0033-US-0004-TK-0001-contracts]
@@ -104,3 +104,9 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Allowlist adjustment before implementation
+Extend Engine/Content/DemoCampaignDefinitions.cs recruitment schema with optional DailyWage default 20 and nonnegative validation; existing schema-v1 payloads remain readable. Services content owns the explicit wage.
+
+## Execution
+Three existing portrait assets, skills 40–65, hiring fee 300, fixed wage 20/day, refresh every 86400000 calendar ms at both service stations. Provisional balance; no generated artwork. Tests at story boundary.

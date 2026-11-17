@@ -11,7 +11,18 @@
     "jam": 50,
     "decoyCharge": 25
   },
-  "recruitment": null,
+  "recruitment": {
+    "portraits": [
+      "Images/Persons/W4/Portraits/CHR-20260915-102445-3C5C5D.png",
+      "Images/Persons/W4/Portraits/CHR-20260915-102448-E2757F.png",
+      "Images/Persons/W4/Portraits/CHR-20260915-104315-4DF131.png"
+    ],
+    "skillMin": 40,
+    "skillMax": 65,
+    "price": 300,
+    "refreshGameTimeMs": 86400000,
+    "dailyWage": 20
+  },
   "droneOffers": [
     {
       "id": "replacement.light",
