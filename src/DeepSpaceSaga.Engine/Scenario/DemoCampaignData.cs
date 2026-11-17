@@ -28,6 +28,7 @@ public sealed partial record DemoCampaignData(
     public string? BountyCatalogFingerprint { get; init; }
     public ImmutableArray<BountyOrderData> BountyOrders { get; init; } = [];
     public ImmutableArray<BountyPaymentData> BountyPayments { get; init; } = [];
+    public BattleLootData? LootSession { get; init; }
 
     [JsonPropertyName("pilotMemorial")]
     public ImmutableArray<PilotMemorialEntry> PilotMemorial { get; init; } = [];
@@ -74,6 +75,7 @@ public sealed partial record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        BattleLootData.Validate(data.LootSession);
         if (data.BountyOrders.IsDefault || data.BountyOrders.Any(b => b is null ||
             string.IsNullOrWhiteSpace(b.Id) || string.IsNullOrWhiteSpace(b.IssuerStationId) ||
             string.IsNullOrWhiteSpace(b.TargetGroupId) || b.RewardTokens <= 0 ||

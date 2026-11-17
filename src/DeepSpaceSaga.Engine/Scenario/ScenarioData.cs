@@ -620,7 +620,7 @@ public sealed record CargoStackData(
 internal static class CargoAcquisitionSources
 {
     internal const string LegacyUnknown = "legacy-unknown";
-    internal static bool IsKnown(string source) => source is "bootstrap" or "purchased" or "produced" or "mined" or "dialogue-grant";
+    internal static bool IsKnown(string source) => source is "bootstrap" or "purchased" or "produced" or "mined" or "dialogue-grant" or "salvaged";
 }
 
 /// <summary>One tradeable item's stock on a station (see StationInventoryItemRuntime).</summary>
