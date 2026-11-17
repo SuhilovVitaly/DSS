@@ -10,7 +10,7 @@ public sealed class DemoEp0035Us0001Tk0001Tests
         var group = new PirateGroupSnapshot("group-1", 10, 20, 3, -4, 1000, true, PirateGroupStatuses.Observed, 7);
         var campaign = new DemoCampaignSnapshot(2, 3, Encounters: new() { Groups = [group] });
         var restored = JsonSerializer.Deserialize<DemoCampaignSnapshot>(JsonSerializer.Serialize(campaign));
-        Assert.Equal(group, Assert.Single(restored!.Encounters!.Groups));
+        Assert.Equal(JsonSerializer.Serialize(group), JsonSerializer.Serialize(Assert.Single(restored!.Encounters!.Groups)));
     }
 
     [Fact]

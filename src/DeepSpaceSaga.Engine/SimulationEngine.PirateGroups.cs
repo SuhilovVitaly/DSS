@@ -98,7 +98,12 @@ public sealed partial class SimulationEngine
                 if (member is null || string.IsNullOrWhiteSpace(member.CarrierId) || !ids.Add(member.CarrierId) ||
                     member.SignatureTypeId is not (PirateSignatureTypes.Lair or PirateSignatureTypes.Tancred) ||
                     group.Members.Length == 2 && member.SignatureTypeId != PirateSignatureTypes.Lair || member.Sensor is not { } sensor ||
-                    !ids.Add(sensor.ModuleId) || sensor.ModuleTypeId != definition.Profiles.Single(p => p.SignatureTypeId == member.SignatureTypeId).SensorModuleTypeId ||
+                    string.IsNullOrWhiteSpace(sensor.ModuleId) || !ids.Add(sensor.ModuleId) ||
+                    sensor.PowerState is not ("On" or "Off") || sensor.OperationalState is not ("Ready" or "Disabled") ||
+                    sensor.OccupiedCells is not { Count: 1 } || sensor.OccupiedCells[0] is not { X: 0, Y: 0 } ||
+                    sensor.ActiveCycle is not null || sensor.OperatorCrewId is not null || sensor.Cargo is not { Count: 0 } ||
+                    sensor.FuelAmountKg is not null || sensor.FuelCostBasisCredits is not null || sensor.LastTurnGameTimeMs is not null ||
+                    sensor.ModuleTypeId != definition.Profiles.Single(p => p.SignatureTypeId == member.SignatureTypeId).SensorModuleTypeId ||
                     sensor.StructurePoints < 0 || sensor.StructurePoints > _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(sensor.ModuleTypeId)).StructurePointsMax)
                     throw new ScenarioException("Invalid saved pirate carrier or sensor.");
             }
@@ -135,8 +140,12 @@ public sealed partial class SimulationEngine
     private static double Distance(double x, double y, double x2, double y2) => Math.Sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
     internal static double SegmentDistance(PiratePoint a, PiratePoint b, PiratePoint point)
     {
-        double dx = b.X - a.X, dy = b.Y - a.Y, squared = dx * dx + dy * dy;
-        double t = squared == 0 ? 0 : Math.Clamp(((point.X - a.X) * dx + (point.Y - a.Y) * dy) / squared, 0, 1);
-        return Distance(a.X + dx * t, a.Y + dy * t, point.X, point.Y);
+        double scale = new[] { a.X, a.Y, b.X, b.Y, point.X, point.Y }.Max(Math.Abs);
+        if (!double.IsFinite(scale)) throw new ScenarioException("Non-finite pirate geometry.");
+        if (scale == 0) return 0;
+        double ax = a.X / scale, ay = a.Y / scale, px = point.X / scale, py = point.Y / scale;
+        double dx = b.X / scale - ax, dy = b.Y / scale - ay, squared = dx * dx + dy * dy;
+        double t = squared == 0 ? 0 : Math.Clamp(((px - ax) * dx + (py - ay) * dy) / squared, 0, 1);
+        return Distance(ax + dx * t, ay + dy * t, px, py) * scale;
     }
 }

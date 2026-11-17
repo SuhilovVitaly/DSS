@@ -5,6 +5,13 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 public sealed class DemoEp0035Us0001Tk0003Tests
 {
     [Fact]
+    public void ExtremeFiniteCorridor_DoesNotBypassSafeCircle()
+    {
+        Assert.Equal(0, SimulationEngine.SegmentDistance(new(-1e308, 0), new(1e308, 0), new(0, 0)));
+        Assert.Equal(1e308, SimulationEngine.SegmentDistance(new(-1e308, 1e308), new(1e308, 1e308), new(0, 0)));
+    }
+
+    [Fact]
     public void NewGame_CreatesFourStableGroupsOutsideStationAndPatrolExclusions()
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
@@ -44,6 +51,23 @@ public sealed class DemoEp0035Us0001Tk0003Tests
         engine.LoadScenario(save with { GameState = save.GameState with { DemoCampaign = campaign with { PirateWorld = null } } }, true);
         Assert.Null(engine.CaptureSaveState().GameState.DemoCampaign!.PirateWorld);
         Assert.Null(engine.CaptureSnapshot().DemoCampaign!.Encounters);
+    }
+
+    [Fact]
+    public void MalformedNestedSensor_RejectsLoadWithoutChangingWorld()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        var save = engine.CaptureSaveState();
+        var campaign = save.GameState.DemoCampaign!;
+        var world = campaign.PirateWorld!;
+        var group = world.Groups[0];
+        var member = group.Members[0];
+        var malformed = member with { Sensor = member.Sensor with { PowerState = "invalid" } };
+        var corrupt = world with { Groups = world.Groups.SetItem(0, group with { Members = group.Members.SetItem(0, malformed) }) };
+        string before = ScenarioLoader.Serialize(save);
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with
+        { GameState = save.GameState with { DemoCampaign = campaign with { PirateWorld = corrupt } } }, true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
     }
 
     [Fact]
