@@ -35,10 +35,16 @@ public sealed partial class SimulationEngine
 
     private static void ValidateSensorDialogueSave(DemoCampaignData campaign, ScenarioFile scenario)
     {
-        if (scenario.GameState.DialogueState?.ActiveDialogue is { DialogueDefinitionId: SensorReportDialogueId } active &&
-            (campaign.PendingSensorReport is not { } batch ||
-            !active.Parameters.TryGetValue("sensorBatchId", out var id) || id != batch.BatchId))
+        if (scenario.GameState.DialogueState?.ActiveDialogue is not { DialogueDefinitionId: SensorReportDialogueId } active) return;
+        if (campaign.PendingSensorReport is not { } batch || active.Parameters is null ||
+            !active.Parameters.TryGetValue("sensorBatchId", out var id) || id != batch.BatchId || active.StationObjectId is not null ||
+            active.ParticipantId != (batch.Reports[0].OperatorCrewId ?? "sensor-script"))
             throw new ScenarioException("Saved sensor dialogue does not match its pending batch.");
+        var crew = scenario.GameState.SpaceObjects.Single(s => s.ObjectId == scenario.GameState.PlayerShipObjectId).Crew?
+            .SingleOrDefault(c => c.CrewId == active.ParticipantId);
+        if (active.ParticipantId != "sensor-script" && crew is null || active.SpeakerDisplayName != (crew?.DisplayName ?? "sensor-script") ||
+            active.SpeakerPortraitImage != crew?.PortraitAssetId)
+            throw new ScenarioException("Saved sensor dialogue speaker does not match the crew.");
     }
 
     private DemoCampaignData AddSensorReport(DemoCampaignData campaign, string groupId, ObjectMotionSnapshot player, long time)

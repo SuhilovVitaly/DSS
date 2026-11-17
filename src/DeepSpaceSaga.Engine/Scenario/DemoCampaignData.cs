@@ -73,6 +73,7 @@ public sealed record DemoCampaignData(
             data.SensorReports.Select(r => r.GroupId).Distinct(StringComparer.Ordinal).Count() != data.SensorReports.Length)
             throw new ScenarioException("Invalid frozen sensor reports.");
         if (data.PendingSensorReport is { } batch && (string.IsNullOrWhiteSpace(batch.BatchId) || batch.Reports.IsDefaultOrEmpty ||
+            batch.Reports.Any(r => r is null) ||
             batch.Reports.Select(r => r.ReportId).Distinct(StringComparer.Ordinal).Count() != batch.Reports.Length ||
             batch.Reports.Any(r => r is null || !data.SensorReports.Any(saved => System.Text.Json.JsonSerializer.Serialize(saved) == System.Text.Json.JsonSerializer.Serialize(r)))))
             throw new ScenarioException("Invalid pending sensor report batch.");

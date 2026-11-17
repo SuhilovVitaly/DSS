@@ -6,6 +6,23 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 public sealed class DemoEp0035Us0010Tk0003Tests
 {
     [Fact]
+    public void CorruptPendingBatchOrSpeakerRejectsLoadAtomically()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        engine.LoadScenario(DemoEp0035Us0010Tk0002Tests.ContactScenario(engine), true);
+        var save = engine.CaptureSaveState();
+        string before = ScenarioLoader.Serialize(save);
+        var campaign = save.GameState.DemoCampaign!;
+        var invalidBatch = save with { GameState = save.GameState with { DemoCampaign = campaign with
+        { PendingSensorReport = campaign.PendingSensorReport! with { Reports = [null!] } } } };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalidBatch, true));
+        var dialogue = save.GameState.DialogueState!;
+        var invalidSpeaker = save with { GameState = save.GameState with { DialogueState = dialogue with
+        { ActiveDialogue = dialogue.ActiveDialogue! with { ParticipantId = "sensor-script" } } } };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalidSpeaker, true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+    [Fact]
     public void ReportReusesCrewPortraitAndDialogue_AcknowledgementStaysPausedAcrossLoad()
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();

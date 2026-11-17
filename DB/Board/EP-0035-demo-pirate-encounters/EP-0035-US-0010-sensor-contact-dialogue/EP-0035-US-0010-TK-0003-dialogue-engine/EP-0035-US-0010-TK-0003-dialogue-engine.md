@@ -157,3 +157,5 @@ Build PASS us10-tk3-build.log in D:/DeepSpaceSaga/artifacts/validation/ep-0035/2
 
 ### Story boundary fixture correction 2026-11-17
 InitialEngine9new tests PASS;12existing station dialogue tests failed solely in ContentPath discovery because build output is correctly outside repository. Scope adds DialogueTests.cs source-anchored content lookup; all semantic assertions preserved. Added queued report behind active station dialogue integration. Client14/Contracts2PASS; Engine rerun follows corrective publication.
+
+Independent review: null pending report is now rejected with ScenarioException before dereference; saved sensor dialogue must match batch participant and actual crew name/portrait (script requires no portrait). Added atomic rejected-load regressions. Build evidence us10-review-build.log; corrected story tests follow publication.
