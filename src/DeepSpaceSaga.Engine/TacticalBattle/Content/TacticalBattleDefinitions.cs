@@ -50,10 +50,14 @@ internal sealed record BattleGoal(string PlayerSide, double WinMaxOneLoss, doubl
 internal sealed record BattleScenario(string Name, string Description, ImmutableArray<BattleSide> Sides,
     BattleGoal? Goal = null);
 internal sealed record BattleSide(string Id, string Tactic, BattleCarrierStart Carrier,
-    ImmutableArray<BattleDroneStart> Drones);
+    ImmutableArray<BattleDroneStart> Drones, ImmutableArray<BattleCarrierStart> Carriers = default)
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public ImmutableArray<BattleCarrierStart> CarrierGroup => Carriers.IsDefaultOrEmpty ? [Carrier] : Carriers;
+}
 internal sealed record BattleCarrierStart(string Id, string Layout, double X, double Y, double Course);
 internal sealed record BattleDroneStart(string Id, string Pilot, string Layout, double X, double Y,
-    double Course, double Speed);
+    double Course, double Speed, string? OriginCarrierId = null);
 
 internal sealed record BattleAi(OrderedBattleCatalog<BattleTactic> Tactics,
     OrderedBattleCatalog<BattleRole> Roles, PursuitSettings Pursuit, StrikerSettings Striker,

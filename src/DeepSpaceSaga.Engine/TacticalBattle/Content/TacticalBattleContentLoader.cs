@@ -60,7 +60,7 @@ internal static class TacticalBattleContentLoader
             DirectoryCatalog<BattleWeapon>("Modules/Weapons"), DirectoryCatalog<BattleEngine>("Modules/Engines"),
             DirectoryCatalog<BattleShield>("Modules/Shields"), DirectoryCatalog<BattleDecoy>("Modules/Decoys"), DirectoryCatalog<BattleArmor>("Modules/Armor"), pilots,
             Named<BattleLayout>(FileRoot("layouts.json"), "layouts.json", "$"),
-            Named<BattleScenario>(FileRoot("scenarios.json"), "scenarios.json", "$"));
+            new(Named<BattleScenario>(FileRoot("scenarios.json"), "scenarios.json", "$").Entries.Select(e => (e.Id, NormalizeScenario(e.Value)))));
         Validate(catalog, aiRoot, name => FileRoot(name));
         return catalog;
 
@@ -158,6 +158,7 @@ internal static class TacticalBattleContentLoader
             string key = JsonNamingPolicy.CamelCase.ConvertName(parameter.Name!);
             if (!element.TryGetProperty(key, out var value))
             {
+                if (type == typeof(BattleSide) && key == "carrier" && element.TryGetProperty("carriers", out _)) continue;
                 Require(parameter.HasDefaultValue, file, field + "." + key, "Required field is missing.");
                 continue;
             }
@@ -329,8 +330,11 @@ internal static class TacticalBattleContentLoader
             foreach (var side in scenario.Sides)
             {
                 Require(ai.Tactics.Contains(side.Tactic), "scenarios.json", field + ".sides.tactic", "Unknown tactic.");
-                Require(c.Layouts.Contains(side.Carrier.Layout) && c.Layouts[side.Carrier.Layout].Class == TacticalBattleConstants.CarrierFrame, "scenarios.json", field + ".carrier.layout", "Carrier layout required.");
-                AddId(side.Carrier.Id);
+                foreach (var carrier in side.CarrierGroup)
+                {
+                    Require(c.Layouts.Contains(carrier.Layout) && c.Layouts[carrier.Layout].Class == TacticalBattleConstants.CarrierFrame, "scenarios.json", field + ".carrier.layout", "Carrier layout required.");
+                    AddId(carrier.Id);
+                }
                 Require(side.Drones.Length >= 1, "scenarios.json", field + ".drones", "Each side requires at least one drone.");
                 foreach (var drone in side.Drones)
                 {
@@ -358,6 +362,31 @@ internal static class TacticalBattleContentLoader
     {
         Require(element.ValueKind == JsonValueKind.Object && element.TryGetProperty(key, out _), file, field + "." + key, "Required field is missing.");
         return element.GetProperty(key);
+    }
+
+    internal static BattleScenario NormalizeScenario(BattleScenario scenario)
+    {
+        if (scenario.Sides.IsDefaultOrEmpty) throw Error("scenarios.json", "sides", "Missing sides.");
+        var identities = new HashSet<string>(StringComparer.Ordinal);
+        var sides = scenario.Sides.Select(side =>
+        {
+            var carriers = side.Carriers.IsDefault ? side.Carrier is null ? [] : ImmutableArray.Create(side.Carrier) : side.Carriers;
+            Require(carriers.Length is >= 1 and <= 2, "scenarios.json", "carriers", "One or two carriers required.");
+            Require(side.Carrier is null || side.Carrier == carriers[0], "scenarios.json", "carrier", "Conflicting legacy carrier and collection.");
+            foreach (var carrier in carriers)
+                Require(carrier is not null && !string.IsNullOrWhiteSpace(carrier.Id) && identities.Add(carrier.Id) &&
+                    double.IsFinite(carrier.X) && double.IsFinite(carrier.Y) && double.IsFinite(carrier.Course), "scenarios.json", "carriers", "Invalid or duplicate carrier.");
+            Require(!side.Drones.IsDefault, "scenarios.json", "drones", "Missing drones.");
+            var drones = side.Drones.Select(drone =>
+            {
+                Require(drone is not null && !string.IsNullOrWhiteSpace(drone.Id) && identities.Add(drone.Id), "scenarios.json", "drones", "Invalid or duplicate drone.");
+                string? origin = drone!.OriginCarrierId ?? (carriers.Length == 1 ? carriers[0].Id : null);
+                Require(carriers.Any(c => c.Id == origin), "scenarios.json", "drones.originCarrierId", "Drone needs a carrier on its own side.");
+                return drone with { OriginCarrierId = origin };
+            }).ToImmutableArray();
+            return side with { Carrier = carriers[0], Carriers = carriers, Drones = drones };
+        }).ToImmutableArray();
+        return scenario with { Sides = sides };
     }
     private static bool Unit(double value) => value is >= 0 and <= 1;
     private static TacticalBattleContentException Error(string file, string field, string message) => new(new(file, field, message));

@@ -4,7 +4,7 @@ story: EP-0035-US-0013-squad-battle-assembly
 ticket: EP-0035-US-0013-TK-0002-schema-engine
 title: Схема нескольких носителей стороны
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0013-TK-0001-contracts]
@@ -64,3 +64,6 @@ D-35-26 tests NOT RUN: FirstCarrierDeath_LeavesDronesActive; LastCarrierDeath_Di
 EP35 campaign outcome/UI считает existing Timeout/SeriesTurnCap поражением игрока, как Draw по D-35-48. Сохранить actual hull/ammo/disabled/destroyed/pilot state; не фабриковать уничтожение носителя/дронов или смерть пилотов. Применить штатные defeat consequences exactlyonce, без victory rewards, затем durable finished checkpoint до map/end по D-35-47. Сам label defeat не вводит новый gameover при живом carrier.
 G-35-20T CLOSED. Продуктовый грумминг EP35 завершён; технические A/allowlist/schema drift проверяет owning implementation, это не новые user blockers. Implementation NOT STARTED, tests/build/native/product acceptance NOT RUN/OPEN.
 Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotState; Timeout_NoVictoryRewards; TimeoutSettlement_ExactlyOnce; TimeoutFinishedCheckpoint_DurableBeforeRelease; TimeoutReplayReceipt_NoReapply.
+
+## Execution 2026-11-17
+Carrier collection supports1–2 members; loader normalizes old carrier form and fills singleton origin IDs, rejects ambiguous/missing/cross-side/duplicate identities. Runtime drone carries explicit origin. Spatial anchor is midpoint of equally weighted side centroids, not first2carrier rows. Build PASS us13-tk2-build.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests deferred to US13 boundary.

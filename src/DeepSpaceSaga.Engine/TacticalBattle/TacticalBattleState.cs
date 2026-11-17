@@ -40,6 +40,7 @@ internal sealed class TacticalDrone(string id, string side, TacticalPose pose, i
     : TacticalUnit(id, side, pose, hull, armor, maneuver)
 {
     public string PilotId { get; } = pilotId;
+    public string? OriginCarrierId { get; init; }
     /// <summary>
     /// Persistent pilot identity for an owned drone (EP-0029 US-0005): display name, gender, portrait
     /// and role from the same crew record as <see cref="PilotId"/> (a CrewId). Null for scenario /
@@ -97,7 +98,15 @@ internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, stri
     public int Turn { get; set; }
     public int RoleChanges { get; set; }
     public List<TacticalAiEvent> AiEvents { get; } = [];
-    public (double X, double Y) Midpoint => ((Carriers[0].Pose.X + Carriers[1].Pose.X) / 2.0, (Carriers[0].Pose.Y + Carriers[1].Pose.Y) / 2.0);
+    // Equal weighting of side centroids, so a squad does not pull the combat center toward its side.
+    public (double X, double Y) Midpoint
+    {
+        get
+        {
+            var centers = Carriers.GroupBy(c => c.Side).Select(g => (X: g.Average(c => c.Pose.X), Y: g.Average(c => c.Pose.Y))).ToArray();
+            return (centers.Average(c => c.X), centers.Average(c => c.Y));
+        }
+    }
     public IEnumerable<TacticalDrone> ActiveDrones(string side) => Drones.Where(d => d.Side == side && d.IsActive);
     public TacticalCarrier Carrier(string side) => Carriers.First(c => c.Side == side);
     public string EnemySide(string side) => side == TacticalBattleConstants.SideOrder[0] ? TacticalBattleConstants.SideOrder[1] : TacticalBattleConstants.SideOrder[0];
