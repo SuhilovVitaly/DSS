@@ -33,6 +33,7 @@ public sealed partial record DemoEncountersSnapshot;
 public sealed partial record DemoRewardsSnapshot
 {
     public TargetBountySnapshot? Bounties { get; init; }
+    public BountyPaymentSnapshot? BountyPayment { get; init; }
 }
 public sealed record DemoProgressionSnapshot;
 public sealed record DemoStorySnapshot;

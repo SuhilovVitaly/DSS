@@ -5,7 +5,7 @@ ticket: EP-0036-US-0002-TK-0001-contracts
 title: Контракт однократного получения bounty по BountyId
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0036-US-0001-TK-0003-client]
@@ -114,3 +114,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.
 ## Self-containment check
 
 Описаны authority, identity, отсутствие acceptance prerequisite, frozen definitions, schema, dependencies, allowlist, шаги и named tests. Открытого продуктового вопроса по этому результату нет; численный content baseline — A-B05 для плейтеста, не обещание доказанного баланса.
+
+## Execution — 2026-11-17
+
+Claim contains only command identity/revision and BountyId. Optional payment projection separates due and paid amounts with immutable posting/battle provenance. DueAndPaid assertions are included in Projection_RoundTripsPostingAndBattleIdentity rather than a duplicate DTO-only test. Contracts build and scoped formatting/diff PASS; tests NOT RUN until US2 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us2-tk1-build.log.
