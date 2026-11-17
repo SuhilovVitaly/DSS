@@ -169,6 +169,7 @@ public class EconomyTimeContinuityTests
                     {
                         // This fixture replaces the ship with a synthetic cargo-only economy object.
                         ShipClassId = null,
+                        CarrierState = null,
                         Modules = o.ObjectType == "PlayerShip"
                         ? [new("cargo", "module.test-cargo", [new(4, 2)], 100, "On", "Ready", null,
                         rations > 0 ? [new("item.food-rations", rations, 0, ["produced"])] : [])] : [],

@@ -54,3 +54,5 @@ Independent review found fractional motion remainder loss on repeated paused sna
 Repeated run: fractional regressions and EP-0035 tests pass; 77 fixture errors remain because CallerFilePath resolves at the caller. Economy fixture now owns its correctly anchored root. Revalidation pending.
 
 Scope also includes shared RationScheduleTests fixture used by EconomyTimeContinuity: its transitive binary-relative content path caused the remaining 74 errors. Direct scenario fixtures now pass. No production expectation changed.
+
+Next run: 178 passed / 7 failed. Synthetic cargo-only economy fixture removed ShipClassId but retained starter CarrierState; clear both consistently, keeping all independent economy assertions. Evidence us17-accepted-tests.log.
