@@ -19,6 +19,7 @@ internal static class OwnedBattleAssembly
         string scenarioId, long seed, string playerSide = "A",
         ImmutableHashSet<string>? deployableDroneIds = null)
     {
+        encounter = TacticalBattleContentLoader.NormalizeScenario(encounter);
         var random = new Mulberry32(seed);
         var drones = ImmutableArray.CreateBuilder<TacticalDrone>();
         var carriers = ImmutableArray.CreateBuilder<TacticalCarrier>();
@@ -51,13 +52,17 @@ internal static class OwnedBattleAssembly
                         ? !owned.Disabled
                         : deployableDroneIds.Contains(owned.DroneId));
                     if (!deployable) continue;
-                    drones.Add(BuildOwnedDrone(catalog, owned, side.Drones[i], playerSide, crewById));
+                    drones.Add(BuildOwnedDrone(catalog, owned, side.Drones[i], playerSide, crewById, shipId));
                 }
             }
             else
             {
-                carriers.Add(new(carrierStart.Id, side.Id, new(carrierStart.X, carrierStart.Y, carrierStart.Course),
-                    carrierFrame.Hull, catalog.Armor[carrierLayout.Armor].Armor, carrierFrame.Maneuver!.Value));
+                foreach (var start in side.CarrierGroup)
+                {
+                    var layout = catalog.Layouts[start.Layout];
+                    carriers.Add(new(start.Id, side.Id, new(start.X, start.Y, start.Course),
+                        carrierFrame.Hull, catalog.Armor[layout.Armor].Armor, carrierFrame.Maneuver!.Value));
+                }
                 foreach (var start in side.Drones)
                     drones.Add(BuildScenarioDrone(catalog, start, side.Id, random));
             }
@@ -109,7 +114,7 @@ internal static class OwnedBattleAssembly
     }
 
     private static TacticalDrone BuildOwnedDrone(TacticalBattleCatalog catalog, OwnedDroneData owned,
-        BattleDroneStart start, string side, IReadOnlyDictionary<string, CrewMemberRuntime> crewById)
+        BattleDroneStart start, string side, IReadOnlyDictionary<string, CrewMemberRuntime> crewById, string shipId)
     {
         if (!crewById.TryGetValue(owned.CrewId, out var member))
             throw new ScenarioException($"Drone '{owned.DroneId}' pilot '{owned.CrewId}' is not a crew member.");
@@ -141,6 +146,7 @@ internal static class OwnedBattleAssembly
             owned.CrewId, layout, frame, weapon, armor, shield, shieldCount, engines, speed, decoy)
         {
             PilotName = member.DisplayName,
+            OriginCarrierId = shipId,
             PilotGender = ParseCrewGender(member.Gender),
             PilotPortraitAssetId = member.PortraitAssetId,
             PilotRole = ParseCrewRole(member.Role),
@@ -197,6 +203,7 @@ internal static class OwnedBattleAssembly
             AmmoCurrent = frame.AmmoCapacity,
             AmmoCapacity = frame.AmmoCapacity,
             AmmoUnitMassKg = 1.0,
+            OriginCarrierId = start.OriginCarrierId,
         };
 
         int Skill(PilotSkill skill) => skill.IsRange ? random.RandInt(skill.Minimum, skill.Maximum) : skill.Minimum;

@@ -4,7 +4,7 @@ story: EP-0035-US-0013-squad-battle-assembly
 ticket: EP-0035-US-0013-TK-0003-assembly-engine
 title: Сборка всех участников эскадры
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0013-TK-0002-schema-engine]
@@ -65,3 +65,7 @@ D-35-26 tests NOT RUN: FirstCarrierDeath_LeavesDronesActive; LastCarrierDeath_Di
 EP35 campaign outcome/UI считает existing Timeout/SeriesTurnCap поражением игрока, как Draw по D-35-48. Сохранить actual hull/ammo/disabled/destroyed/pilot state; не фабриковать уничтожение носителя/дронов или смерть пилотов. Применить штатные defeat consequences exactlyonce, без victory rewards, затем durable finished checkpoint до map/end по D-35-47. Сам label defeat не вводит новый gameover при живом carrier.
 G-35-20T CLOSED. Продуктовый грумминг EP35 завершён; технические A/allowlist/schema drift проверяет owning implementation, это не новые user blockers. Implementation NOT STARTED, tests/build/native/product acceptance NOT RUN/OPEN.
 Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotState; Timeout_NoVictoryRewards; TimeoutSettlement_ExactlyOnce; TimeoutFinishedCheckpoint_DurableBeforeRelease; TimeoutReplayReceipt_NoReapply.
+
+## Execution scope 2026-11-17
+Both diagnostic and owned assemblies iterate carrier collections, preserve explicit drone origin and snapshot it (scope expands to TacticalBattleSnapshotBuilder). World scenario builder consumes only persisted composition and stable IDs; actual begin calls it in US3TK2. Technical placement: enemy carriers x850 at y150/450 for squad, drones bounded separated rows x700/760; singleton center250. Player keeps existing deployment. No reroll of equipment, no duplicated loadout. Added actual generated/saved squad through OwnedBattleAssembly test, checking12enemy drones/3carriers/ownedammo and seeded repeatability.
+Build PASS us13-tk3-build.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests deferred to US13 boundary.
