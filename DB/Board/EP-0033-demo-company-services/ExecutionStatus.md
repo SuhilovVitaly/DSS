@@ -23,3 +23,5 @@ Final graph and documentation checks: D:/DeepSpaceSaga/artifacts/validation/ep-0
 ## Final verification
 
 131 focused final regression tests PASS (19 Engine / 12 Contracts / 100 Client); real screen service flow rerun PASS. Native smoke verified safe monitor placement, New Game, Continue, Ship/Shipyard, repair refusal while undocked and Finance; full native station flow and product gates remain OPEN. Documentation checks and Graphify PASS with the parser/coverage limitations in FinalValidation. Temporary task outputs are removed; retained evidence remains under the canonical artifact root.
+
+All 26 ticket rows have published commit IDs. Final owning ticket: EP-0033-US-0006-TK-0002, commit 25d175e68e0170681cb9cf83f91644e55f6f48d0, verified on origin. A receipt-only follow-up records this SHA; final HEAD is verified externally after its push. Full epic acceptance remains OPEN for the boundaries above.

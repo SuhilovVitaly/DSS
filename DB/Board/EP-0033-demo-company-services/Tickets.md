@@ -1,6 +1,6 @@
 # Ticket publication map
 
-Branch `feature/ep-0033-demo-company-services`, origin `https://github.com/SuhilovVitaly/DSS`. Latest ticket-specific implementation/fix commit is shown; earlier commits remain in history. Each was pushed immediately. Final receipt is appended after publication.
+Branch `feature/ep-0033-demo-company-services`, origin `https://github.com/SuhilovVitaly/DSS`. Representative latest ticket-specific implementation/fix commit before the final receipt is shown; earlier commits remain in history. Each was pushed immediately. Final receipt is appended after publication.
 
 | Ticket | Latest commit SHA | Push |
 |---|---|---|
@@ -29,6 +29,8 @@ Branch `feature/ep-0033-demo-company-services`, origin `https://github.com/Suhil
 | EP-0033-US-0005-TK-0003 | `b44fa8f74dc0d15ef57839e1a0f843b5c6c0fa7a` | origin verified |
 | EP-0033-US-0005-TK-0004 | `1bf89e11a658b7d2420dd981dd193682b445733a` | origin verified |
 | EP-0033-US-0006-TK-0001 | `f6bcb604a668304cfcbb8c57a816a99c8c56af89` | origin verified |
-| EP-0033-US-0006-TK-0002 | Publication commit pending | Pending final receipt |
+| EP-0033-US-0006-TK-0002 | `25d175e68e0170681cb9cf83f91644e55f6f48d0` | origin verified |
 
 Scoped formatting-only commit: `a24afe3e`. Prep/branch-policy commit: `2498e44c`. No history rewrite or force push.
+
+Final documentation ticket publication verified with git ls-remote: 25d175e68e0170681cb9cf83f91644e55f6f48d0. The following receipt-only commit updates this map; its own HEAD is verified against origin outside this document to avoid a self-referencing SHA.
