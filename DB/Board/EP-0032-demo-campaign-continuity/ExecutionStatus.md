@@ -53,3 +53,7 @@ Disposable build directories, test results and graph AST cache were removed afte
 Late Continue adoption-error correction: `024e7609`, Client126 PASS in final/client.log; it does not alter persistence or canonical contracts. Final documentation SHA is resolved after commit by exact ticket ID and checked against origin; see Tickets.md. Generated files remain outside Documentation; source code and current contracts are the primary evidence.
 
 Late fixture regression correction: `d8b44073` preserves direct Save20→21 tests, updates current writer assertions to22, removes impossible campaign metadata from historical test projections, and resolves source paths from compile-time file location. Failed attempts are retained as before.log/after.log; after2.log is the passing 105-test result. No production behavior changed.
+
+## Subsequent production review corrections
+
+[ReviewCorrections](ReviewCorrections.md) supersedes the terminal-autosave policy, quicksave naming, global content fingerprint and immediate-load-autosave statements in the original execution above. Focused regression: Engine27/Client133 PASS; manual checks remain with the owner.

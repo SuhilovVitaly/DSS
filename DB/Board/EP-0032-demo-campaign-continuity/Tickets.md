@@ -32,3 +32,7 @@
 | [EP-0032-US-0007-TK-0003](EP-0032-US-0007-consistent-campaign-actions/EP-0032-US-0007-TK-0003-campaign-loader/EP-0032-US-0007-TK-0003-campaign-loader.md) | `7bef52aa8680ba0a484e3b07b32ee90067feee61` | verified origin branch |
 | [EP-0032-US-0007-TK-0004](EP-0032-US-0007-consistent-campaign-actions/EP-0032-US-0007-TK-0004-campaign-load/EP-0032-US-0007-TK-0004-campaign-load.md) | `0325a35dadc637ef748dcac49020c7ca1ce6db55` | verified origin branch |
 | [EP-0032-US-0007-TK-0005](EP-0032-US-0007-consistent-campaign-actions/EP-0032-US-0007-TK-0005-campaign-client/EP-0032-US-0007-TK-0005-campaign-client.md) | `303ce4392672b6fc801b08f8e610dca8b4d69d84` | verified origin branch |
+
+## Subsequent review corrections
+
+[ReviewCorrections](ReviewCorrections.md) lists the additional per-ticket commits and focused validation after the original delivery.

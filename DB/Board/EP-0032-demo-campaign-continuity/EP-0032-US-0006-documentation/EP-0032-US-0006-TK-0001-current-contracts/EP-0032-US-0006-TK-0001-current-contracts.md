@@ -95,3 +95,5 @@ Impact inventory expands scope to Documentation README, process architecture, Fi
 ## Execution — 2026-11-17
 
 Current contracts synchronized; inventory in ../../DocumentationImpact.md. Changed Markdown file links checked; Documentation Markdown-only; diff check passed. Solution Release build succeeded with 0 warnings/errors (D:/DeepSpaceSaga/artifacts/validation/ep-0032/20261117-final/build.log). No manual acceptance claimed; user explicitly deferred manual checks.
+
+Review correction documentation: synchronize DemoCampaign, SaveFormat and MainMenu with living continuation, independent F5/F9, load baseline, bounded replay, stable cluster fingerprint and profile isolation. Record focused evidence in ReviewCorrections.md and link from ExecutionStatus/Tickets. No new manual acceptance.
