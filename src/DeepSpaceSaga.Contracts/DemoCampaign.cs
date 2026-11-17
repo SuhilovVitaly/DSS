@@ -25,7 +25,7 @@ public sealed record DemoCompanySnapshot(CampaignRoundtripSnapshot? Roundtrip = 
     CampaignOutcomeSnapshot? Outcome = null, StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null,
     ReplacementSnapshot? Replacement = null, RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null);
 public sealed partial record DemoTransportSnapshot;
-public sealed record DemoEncountersSnapshot;
+public sealed partial record DemoEncountersSnapshot;
 public sealed record DemoRewardsSnapshot;
 public sealed record DemoProgressionSnapshot;
 public sealed record DemoStorySnapshot;
