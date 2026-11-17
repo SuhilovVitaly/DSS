@@ -106,3 +106,7 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution — 2026-11-17
+Implemented typed repair requests, quote breakdown, result and durable finance projection. Existing DemoCompanySnapshot receives an optional section; old payloads retain null. Tests authored; execution deferred to the story boundary by owner instruction. Self-review and git diff --check completed. Native/product acceptance OPEN.
+

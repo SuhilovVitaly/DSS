@@ -18,7 +18,7 @@ public sealed record DemoCampaignSnapshot(
     DemoStartSnapshot? Start = null);
 
 public sealed record DemoCompanySnapshot(CampaignRoundtripSnapshot? Roundtrip = null, PilotLossSnapshot? PilotLoss = null,
-    CampaignOutcomeSnapshot? Outcome = null);
+    CampaignOutcomeSnapshot? Outcome = null, StationRepairSnapshot? StationRepair = null);
 public sealed record DemoTransportSnapshot;
 public sealed record DemoEncountersSnapshot;
 public sealed record DemoRewardsSnapshot;
