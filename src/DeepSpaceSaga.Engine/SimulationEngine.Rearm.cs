@@ -63,7 +63,7 @@ public sealed partial class SimulationEngine
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == shipId);
         if (ship is null || ship.IsDestroyed)
             return RejectRearm(request.CommandId, RearmReasonCarrierNotReady, revision);
-        if (_tacticalBattleSession is not null)
+        if (_tacticalBattleSession is not null || HasCapturedEncounter || _encounterStoragePending)
             return RejectRearm(request.CommandId, RearmReasonBattleActive, revision);
         if (request.ExpectedRevision != revision)
             return RejectRearm(request.CommandId, RearmReasonStaleRevision, revision);

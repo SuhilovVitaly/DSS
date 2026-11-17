@@ -29,7 +29,24 @@ public sealed class Ep0035Us16Tk2Tests
             Assert.Equal(original, await File.ReadAllTextAsync(path));
             Assert.Empty(Directory.GetFiles(directory, "*.tmp"));
             connection.SaveStageForTests = null;
-            Assert.True((await connection.ExecuteDemoCampaignAsync(begin)).Applied);
+            var writing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            connection.WriteSaveTempForTests = async (temp, json, ct) =>
+            {
+                writing.SetResult();
+                await release.Task.WaitAsync(ct);
+                await File.WriteAllTextAsync(temp, json, ct);
+            };
+            var starting = connection.ExecuteDemoCampaignAsync(begin).AsTask();
+            await writing.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var carrier = engine.CaptureSnapshot().CarrierOperations!;
+            var rearm = await connection.RearmDroneAsync(new("rearm-during-pending", carrier.ShipId,
+                carrier.OwnedDrones[0].Id, 1, carrier.Revision));
+            Assert.False(rearm.Accepted);
+            Assert.Equal(carrier.OwnedDrones[0].AmmoCurrent, engine.CaptureSnapshot().CarrierOperations!.OwnedDrones[0].AmmoCurrent);
+            release.SetResult();
+            Assert.True((await starting).Applied);
+            connection.WriteSaveTempForTests = null;
             string pending = await File.ReadAllTextAsync(path);
             Assert.Equal(WorldEncounterPhases.PendingBattle, ScenarioLoader.LoadFromJson(pending, true, true).GameState.DemoCampaign!.WorldEncounter!.Phase);
             await Assert.ThrowsAsync<InvalidOperationException>(() => connection.SaveAsync(SaveSlotNaming.ContinuationSlotId).AsTask());
@@ -40,6 +57,9 @@ public sealed class Ep0035Us16Tk2Tests
             await Assert.ThrowsAsync<IOException>(() => connection.ExitTacticalBattleAsync(new("finish", session.Id)).AsTask());
             Assert.Equal(pending, await File.ReadAllTextAsync(path));
             Assert.Equal("encounter_checkpoint_pending", engine.TrySetSpeed(SimulationSpeed.Speed1));
+            carrier = engine.CaptureSnapshot().CarrierOperations!;
+            Assert.False((await connection.RearmDroneAsync(new("rearm-during-finished", carrier.ShipId,
+                carrier.OwnedDrones[0].Id, 1, carrier.Revision))).Accepted);
             long committed = engine.CaptureSnapshot().DemoCampaign!.CommitSequence;
             connection.SaveStageForTests = null;
             Assert.True((await connection.ExitTacticalBattleAsync(new("retry", session.Id))).Accepted);
