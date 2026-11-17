@@ -6,6 +6,7 @@
   "lairWeight": 45,
   "tancredWeight": 45,
   "squadWeight": 10,
+  "squadMembers": [ "lair", "lair" ],
   "profiles": [
     { "signatureTypeId": "lair", "droneCount": 6, "speedFactor": 1.1, "carrierLayoutId": "carrier.standard", "sensorModuleTypeId": "module.sensor.pirate-start" },
     { "signatureTypeId": "tancred", "droneCount": 10, "speedFactor": 0.8, "carrierLayoutId": "carrier.standard", "sensorModuleTypeId": "module.sensor.pirate-start" }

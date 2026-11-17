@@ -40,7 +40,7 @@ public sealed partial class SimulationEngine
             string type = squad || types.Next(2) == 0 ? PirateSignatureTypes.Lair : PirateSignatureTypes.Tancred;
             var profile = definition.Profiles.Single(p => p.SignatureTypeId == type);
             var module = _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(profile.SensorModuleTypeId));
-            var members = Enumerable.Range(1, squad ? 2 : 1).Select(i => new PirateCarrierData($"{id}:carrier:{i}", type,
+            var members = Enumerable.Range(1, squad ? definition.SquadMembers.Length : 1).Select(i => new PirateCarrierData($"{id}:carrier:{i}", type,
                 new($"{id}:sensor:{i}", module.TypeId, [new(0, 0)], module.StructurePointsMax, "On", "Ready", null, []),
                 new($"{id}:engine:{i}", engine.TypeId, [new(0, 0)], engine.StructurePointsMax, "On", "Ready", null, []))).ToImmutableArray();
             var random = PirateRandom(seed, "placement:" + id);

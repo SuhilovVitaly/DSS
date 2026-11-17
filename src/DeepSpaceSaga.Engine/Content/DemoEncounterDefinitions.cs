@@ -9,7 +9,7 @@ public sealed record DemoPirateProfile(string SignatureTypeId, int DroneCount, d
 public sealed record DemoPursuit(double CaptureRadius, double StartSafeRadius, double SpawnStationRadius, double PatrolRadius);
 public sealed record DemoEncountersDefinition(int SchemaVersion, int GroupCount, DemoRegion Region, DemoPursuit Pursuit,
     ImmutableArray<DemoPirateProfile> Profiles, ImmutableArray<string> DroneLayouts,
-    int LairWeight = 45, int TancredWeight = 45, int SquadWeight = 10)
+    int LairWeight = 45, int TancredWeight = 45, int SquadWeight = 10, ImmutableArray<string> SquadMembers = default)
 {
     internal void Validate()
     {
@@ -22,7 +22,8 @@ public sealed record DemoEncountersDefinition(int SchemaVersion, int GroupCount,
             string.IsNullOrWhiteSpace(p.CarrierLayoutId) || string.IsNullOrWhiteSpace(p.SensorModuleTypeId)) ||
             Profiles.Count(p => p.SignatureTypeId == PirateSignatureTypes.Lair && p.DroneCount == 6 && p.SpeedFactor == 1.1) != 1 ||
             Profiles.Count(p => p.SignatureTypeId == PirateSignatureTypes.Tancred && p.DroneCount == 10 && p.SpeedFactor == 0.8) != 1 ||
-            DroneLayouts.IsDefault || !DroneLayouts.SequenceEqual(new[] { "light.sword.shield", "light.spear", "heavy.sword.shield", "heavy.spear.shield" }))
+            DroneLayouts.IsDefault || !DroneLayouts.SequenceEqual(new[] { "light.sword.shield", "light.spear", "heavy.sword.shield", "heavy.spear.shield" }) ||
+            SquadMembers.IsDefault || !SquadMembers.SequenceEqual(new[] { "lair", "lair" }))
             throw new ScenarioException("Invalid pirate profiles or independent class/weapon pool.");
     }
 

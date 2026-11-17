@@ -9,7 +9,7 @@ public sealed class DemoEp0035Us0011Tk0002Tests
     internal static DemoEncountersDefinition Definition() => new(2, 4, new(0, 0, 50000), new(200, 8000, 4000, 3000),
         [new("lair", 6, 1.1, "carrier.standard", "module.sensor.pirate-start"),
          new("tancred", 10, 0.8, "carrier.standard", "module.sensor.pirate-start")],
-        ["light.sword.shield", "light.spear", "heavy.sword.shield", "heavy.spear.shield"]);
+        ["light.sword.shield", "light.spear", "heavy.sword.shield", "heavy.spear.shield"], SquadMembers: ["lair", "lair"]);
 
     [Fact]
     public void SignatureCounts_AreSixAndTen()
