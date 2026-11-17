@@ -5,7 +5,7 @@ ticket: EP-0036-US-0007-TK-0001-loot-schema
 title: Схема каталога лута и фиксированный выход
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0003-TK-0001-contracts]
@@ -90,3 +90,11 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution schema decision — 2026-11-17
+
+Loot gets a separate fingerprint, preserving cluster identity. ModuleItems is nullable only during the staged US3→US6 content rollout: absent means module salvage unavailable; a present section must completely cover demo layouts with exact masses. US6 supplies the full section before lifecycle activation. Final content tests require it, so missing mappings cannot silently become partial salvage. Consumable charge mapping is introduced with US6, before runtime activation.
+
+## Execution — 2026-11-17
+
+Typed loot schema and optional loader integrated, including explicit quantities, existing tactical IDs, item storage/price/mass and complete present module mappings. Independent section fingerprint. Initial nullable diagnostics corrected; Engine build/scoped formatting/diff PASS. Tests NOT RUN until US7 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk1-build-repeat.log.

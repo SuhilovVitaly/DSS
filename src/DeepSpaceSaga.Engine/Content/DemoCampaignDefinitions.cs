@@ -54,6 +54,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
         (saved == "DD3D6B26BC6E7EE55064EAE4735CED0335328C42F4886C442B9E91FF5A6899B3" || saved == "4D897CEA83F2EBF04BD11DC0AA5FEB9CF0049BDE58A5965ACB332DBA5F29FA8B");
 
     public string? LegacyClusterFingerprint { get; init; }
+    public DemoLootDefinitions? Loot { get; init; }
 
     // Optional reward catalogs have their own identity. Existing Save22 cluster hashes remain valid.
     public string? BountyFingerprint => Jobs is { Bounties.IsDefaultOrEmpty: false } jobs
@@ -95,7 +96,10 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
             var definitions = new DemoCampaignDefinitions(cluster,
                 cluster is null ? null : Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(cluster, Options))),
                 services, jobs, encounters, progression)
-            { LegacyClusterFingerprint = fingerprint.Length == 0 ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint.ToString()))) };
+            {
+                LegacyClusterFingerprint = fingerprint.Length == 0 ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint.ToString()))),
+                Loot = Read<DemoLootDefinitions>("loot")
+            };
             definitions.Validate();
             if (services?.Recruitment is { } recruitment && recruitment.Portraits.Any(p => !File.Exists(Path.Combine(contentRoot, p))))
                 throw new ScenarioException("Demo recruitment portrait does not exist.");
@@ -126,6 +130,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                     registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(itemTypeId)) is not { UnitMassKg: > 0, StorageKind: ItemStorageKind.Cargo })
                     throw new ScenarioException("Unknown demo job cargo: " + itemTypeId);
         Encounters?.ValidateReferences(registry);
+        Loot?.ValidateReferences(registry, Encounters);
     }
 
     private void Validate()
