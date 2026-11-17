@@ -98,6 +98,8 @@ public sealed partial class ShipScreen : IScreen
             if (sy >= 300 && sy <= 332) { RequestRepair(_model.ShipId); return ScreenEvent.None; }
             if (sy >= 340 && sy <= 372 && _selectedRow >= 0) { RequestRepair(_drones[_selectedRow].Id); return ScreenEvent.None; }
             if (sy >= 530 && sy <= 562) { ConfirmRepair(); return ScreenEvent.None; }
+            if (sy >= 650 && sy <= 682 && _selectedRow >= 0) { RequestDecoys(_drones[_selectedRow].Id); return ScreenEvent.None; }
+            if (sy >= 690 && sy <= 722) { ConfirmDecoys(); return ScreenEvent.None; }
         }
 
         var (control, row) = ShipLayout.RearmHitTest(x, y, _screenWidth, _screenHeight, _drones.Length);
@@ -181,6 +183,7 @@ public sealed partial class ShipScreen : IScreen
 
     private void StartRearm()
     {
+        if (PendingService is { IsCompleted: false }) return;
         if (_rearm is null)
         {
             _status = "rearm is not available for this ship";
@@ -370,6 +373,7 @@ public sealed partial class ShipScreen : IScreen
     private void DrawServices(SKCanvas canvas, float pl, float pt)
     {
         if (_service is null) return;
+        DrawSupply(canvas, pl, pt);
         bool ready = PendingService is not { IsCompleted: false };
         DrawLocalButton(canvas, pl, pt, (730, 300, 1340, 332), Localization.Get("Demo.Repair.QuoteCarrier"), ready);
         DrawLocalButton(canvas, pl, pt, (730, 340, 1340, 372), Localization.Get("Demo.Repair.QuoteDrone"), ready && _selectedRow >= 0);
