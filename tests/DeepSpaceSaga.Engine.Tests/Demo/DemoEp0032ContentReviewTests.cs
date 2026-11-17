@@ -27,7 +27,7 @@ public sealed class DemoEp0032ContentReviewTests
             File.WriteAllText(directory + "/Data/Demo/cluster.json", cluster);
             var before = DemoCampaignDefinitions.Load(directory);
             File.WriteAllText(directory + "/Data/Demo/cluster.json", JsonNode.Parse(cluster)!.ToJsonString());
-            File.WriteAllText(directory + "/Data/Demo/jobs.json", """{"schemaVersion":1,"limits":{"offers":1,"publicationGameTimeMs":1000,"expiryGameTimeMs":2000,"passengerMax":1},"rates":{"base":1,"perPassenger":1,"perCargoUnit":1,"perCalendarDay":1,"urgencyMultiplier":1},"roleFilters":[]}""");
+            File.WriteAllText(directory + "/Data/Demo/jobs.json", """{"schemaVersion":1,"limits":{"offers":1,"publicationGameTimeMs":1000,"expiryGameTimeMs":2000,"passengerMax":1,"cargoTonnesMin":1,"cargoTonnesMax":1},"rates":{"base":1,"perPassenger":1,"perCargoTonne":1,"perDistanceKm":1,"urgencyPermille":1000},"deadlines":{"ordinaryPermille":1000,"urgentPermille":1000,"cargoPermille":1000,"minimumGameTimeMs":1},"risk":[{"riskProfileId":"risk.safe","band":"safe","permille":1000}],"cargoItemTypeIds":[],"roleFilters":[{"role":"service","passengerWeight":1,"urgentPassengerWeight":0,"cargoWeight":0}],"firstOffer":{"type":"passenger","count":1}}""");
             var after = DemoCampaignDefinitions.Load(directory);
             Assert.Equal(before.Fingerprint, after.Fingerprint);
             using var engine = EngineContentLoader.CreateEngineFromSettingsFile(Root + "/Settings.json");
