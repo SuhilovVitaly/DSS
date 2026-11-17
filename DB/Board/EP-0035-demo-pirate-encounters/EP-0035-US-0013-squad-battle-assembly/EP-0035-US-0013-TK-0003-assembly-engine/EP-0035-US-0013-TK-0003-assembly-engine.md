@@ -71,3 +71,5 @@ Both diagnostic and owned assemblies iterate carrier collections, preserve expli
 Build PASS us13-tk3-build.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests deferred to US13 boundary.
 
 US13 initial boundary:164EnginePASS,1reference-fixture lookup failure from external build location;Client1/Contracts1PASS. Expanded test scope to ReferenceFixtureTests source-anchored repository lookup, preserving all trace assertions. Build evidence us13-fixture-build.log; corrected story rerun after push.
+
+Reference recovery: historical V4 JSON fixtures were deleted by aaa4f7dd(clean), while active regression tests still require them. Restored exact JSON from aaa4f7dd parent into tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/Fixtures/V4 (not obsolete VData planning). No oracle regeneration or assertion weakening. Scope covers four required regression inputs and source-anchored fixture root. Final full-suite documentation must update obsolete reference links.

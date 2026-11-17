@@ -12,7 +12,7 @@ public sealed class ReferenceFixtureTests
         get
         {
             for (var dir = new DirectoryInfo(Path.GetDirectoryName(SourceFile())!); dir is not null; dir = dir.Parent)
-                if (File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) return Path.Combine(dir.FullName, "VData/Planning/V4.0/Reference");
+                if (File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) return Path.Combine(dir.FullName, "tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/Fixtures/V4");
             throw new DirectoryNotFoundException("DSS repository not found.");
         }
     }
