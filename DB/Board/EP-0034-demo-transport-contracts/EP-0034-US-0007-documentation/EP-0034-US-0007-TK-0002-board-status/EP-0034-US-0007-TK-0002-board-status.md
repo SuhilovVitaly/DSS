@@ -5,14 +5,14 @@ ticket: EP-0034-US-0007-TK-0002-board-status
 title: Board, реестр и состояние демо
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0034-US-0007-TK-0001-current-contracts]
-files_touched: 3
+files_touched: 7
 serves: [AC-01, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
-revision: 1
+revision: 2
 ---
 
 # Board, реестр и состояние демо
@@ -39,7 +39,9 @@ revision: 1
 | `DB/Board/README.md` | `DB/Board/README.md:1` — # Board: реестр эпиков | Только актуальные описания/ссылки по шагам ниже. |
 | `DB/Board/EP-0031-board-and-demo-scope/DemoPlan.md` | `DB/Board/EP-0031-board-and-demo-scope/DemoPlan.md:1` — # Сокращённый план первой демо — ревизия 2 | Только актуальные описания/ссылки по шагам ниже. |
 
-Разрешены только эти 3 implementation/documentation files. Board evidence/status этого тикета обновляются отдельно как каноническая история исполнения; не дают разрешения править произвольный production. Read-only архитектурные источники: `DB/Documentation/00-Process/CLAUDE.md`, `DB/Documentation/01-Requirements/EngineRequirements.md` и [общая карта](../../../EP-0041-demo-validation-and-release/TicketPlan.md).
+**Расширение scope 2026-11-17 (исполнение, EpicExecutionPrompt §6 п.5):** синхронизация Board требует также `DB/Board/EP-0034-demo-transport-contracts/ExecutionStatus.md` (ticket → SHA, итоговые проверки, ограничения, merge watch), `DB/Board/EP-0041-demo-validation-and-release/TicketPlan.md` (раздел EP-0034, добавленный TK-0006), карточку истории US-0007 и карточку этого тикета; итого 7 Markdown-файлов Board, production-код и `tools/graphify/rebuild.py` не меняются.
+
+Исходный план: разрешены только эти 3 implementation/documentation files. Board evidence/status этого тикета обновляются отдельно как каноническая история исполнения; не дают разрешения править произвольный production. Read-only архитектурные источники: `DB/Documentation/00-Process/CLAUDE.md`, `DB/Documentation/01-Requirements/EngineRequirements.md` и [общая карта](../../../EP-0041-demo-validation-and-release/TicketPlan.md).
 
 ## Public API after the change
 
@@ -87,3 +89,26 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Результат исполнения (2026-11-17)
+
+Implementation: выполнено; только Markdown Board. Изменено:
+
+| Документ | Изменение |
+|---|---|
+| `DB/Board/EP-0034-demo-transport-contracts/Documentation.md` | `implementation_status: implemented`; раздел «Итог исполнения (2026-11-17)» с 7/27, ссылками на контракты; прежние «NOT STARTED» и grounding «заглушка» помечены как заменённая история |
+| `DB/Board/EP-0034-demo-transport-contracts/ExecutionStatus.md` | SHA TK-0006 `1396e7c3`, коррекция `e65bd5df` для US-0006-TK-0003, строки US-0007; итоговый статус, baseline-падения, ограничения, merge watch с EP-0033 (22 общих файла + 3 Board-файла), Graphify |
+| `DB/Board/README.md` | Строка EP-0034: 38 коммитов с ID эпика (включая этот), «Реализован; приёмка OPEN», 7 историй / 27 тикетов, evidence |
+| `DB/Board/EP-0041-demo-validation-and-release/TicketPlan.md` | TK-0006 добавлен в пункт 13; раздел «Исполнение EP-0034 — 2026-11-17» (фактический порядок, API для зависящих историй); итоги планирования не переписаны |
+| `DB/Board/EP-0031-board-and-demo-scope/DemoPlan.md` | «Delivery update — EP-0034» с пометкой о замене строк до исполнения («ContractsScreen — заглушка», gap «Контракты: штрафы…») |
+| Карточки US-0007 и TK-0001/TK-0002 | Статусы `implemented`, scope, evidence |
+
+Проверки (скрипты и вывод в `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0007-20261117T161504/`):
+
+- BoardIdsMatch / DependencyGraphIsAcyclic (`check_board.py`): 7 историй, 27 тикетов, ID папок = frontmatter, все `depends_on` внутри эпика существуют, циклов нет; все 27 тикетов `implemented`.
+- LinksResolve (`check_links.py`): все относительные ссылки 60 изменённых/новых `.md` (Board + Documentation, diff от `83782f77`) резолвятся: 801 ссылка, 0 битых; 28 якорей заголовков, 0 битых (`tk0002-links.log`).
+- EvidencePathsAreCanonical: evidence только в Board и `D:/DeepSpaceSaga/artifacts/validation/EP-0034/...`; в `DB/Documentation` нет отчётов/JSON; `git diff --check` чисто.
+- Graphify: offline rebuild `tools/graphify/rebuild.py` (штатный процесс `GraphifyRebuild.md`) после финальных изменений Documentation на рабочем дереве поверх `58f13691`, с новым host-semantic фрагментом EP-0034 (`graph-semantics/graph-semantic-ep0034.json`: 11 узлов, 13 INFERRED-рёбер, 11 input hashes проверены). Результат `graph/`: 28 556 узлов, 76 974 рёбер, 929 сообществ, 1060 code / 904 Markdown файлов; missing sources 0, dangling edges 0; parser warning — `ModulePanelLocalizationTests.cs` извлечён частично. Ограничения: корпус extractor не включает папку Board EP-0034 (изменение `rebuild.py` — код, вне этой документационной истории), Documentation и `src` включены; граф — навигация, не доказательство runtime-поведения. AST-кэш удалён.
+- Build/test не запускались (документационный тикет); полный прогон solution — запись оркестратора.
+
+Native window, плейтест и продуктовая приёмка: NOT RUN / OPEN. Только self-review; независимое review не заявляется. SHA этого коммита проверяется `git log` после создания и здесь не записан.

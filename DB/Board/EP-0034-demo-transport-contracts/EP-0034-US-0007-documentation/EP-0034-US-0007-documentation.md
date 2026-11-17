@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0034-US-0001-passenger-ready-start, EP-0034-US-0002-passenger-contract, EP-0034-US-0003-contract-failure, EP-0034-US-0004-cargo-contract, EP-0034-US-0005-transport-continuation, EP-0034-US-0006-station-job-board]
 created: 2026-11-16T20:02:53Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Документация проекта по итогам эпика
@@ -98,3 +98,11 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story validation (2026-11-17)
+
+Implementation: 2/2 тикета; TK-0001 опубликован (`58f13691`), SHA TK-0002 — в `git log` (не записывается заранее). [ExecutionStatus](../ExecutionStatus.md#us-0007-documentation-and-final-epic-status-2026-11-17).
+
+Вклад в AC: AC-01 — инвентаризация 62 документов Documentation + 13 Markdown вне `DB` и Board-документов ([TK-0001](EP-0034-US-0007-TK-0001-current-contracts/EP-0034-US-0007-TK-0001-current-contracts.md#инвентаризация-влияния-ac-01), [TK-0002](EP-0034-US-0007-TK-0002-board-status/EP-0034-US-0007-TK-0002-board-status.md#результат-исполнения-2026-11-17)). AC-02 — 2 новых и 19 обновлённых канонических документов; датированные отчёты не переписаны, добавлены пометки о замене. AC-03 — Board эпика, реестр, TicketPlan и DemoPlan синхронизированы; ссылки, ID, 7 историй / 27 тикетов и ацикличность проверены скриптами; Graphify перестроен офлайн с ограничением корпуса. AC-04 — описания результата, причин отказа, учёта и сохранения сверены с исходниками и story validation функциональных историй; сами пользовательские пути проверены automated-тестами историй US-0001…US-0006, нативная/продуктовая приёмка — NOT RUN / OPEN.
+
+Только self-review; независимое review не заявляется.
