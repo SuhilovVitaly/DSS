@@ -69,3 +69,5 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 ## Execution scope 2026-11-17
 Both diagnostic and owned assemblies iterate carrier collections, preserve explicit drone origin and snapshot it (scope expands to TacticalBattleSnapshotBuilder). World scenario builder consumes only persisted composition and stable IDs; actual begin calls it in US3TK2. Technical placement: enemy carriers x850 at y150/450 for squad, drones bounded separated rows x700/760; singleton center250. Player keeps existing deployment. No reroll of equipment, no duplicated loadout. Added actual generated/saved squad through OwnedBattleAssembly test, checking12enemy drones/3carriers/ownedammo and seeded repeatability.
 Build PASS us13-tk3-build.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests deferred to US13 boundary.
+
+US13 initial boundary:164EnginePASS,1reference-fixture lookup failure from external build location;Client1/Contracts1PASS. Expanded test scope to ReferenceFixtureTests source-anchored repository lookup, preserving all trace assertions. Build evidence us13-fixture-build.log; corrected story rerun after push.

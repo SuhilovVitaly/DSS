@@ -11,11 +11,12 @@ public sealed class ReferenceFixtureTests
     {
         get
         {
-            for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+            for (var dir = new DirectoryInfo(Path.GetDirectoryName(SourceFile())!); dir is not null; dir = dir.Parent)
                 if (File.Exists(Path.Combine(dir.FullName, "DeepSpaceSaga.sln"))) return Path.Combine(dir.FullName, "VData/Planning/V4.0/Reference");
             throw new DirectoryNotFoundException("DSS repository not found.");
         }
     }
+    private static string SourceFile([System.Runtime.CompilerServices.CallerFilePath] string source = "") => source;
     internal static JsonDocument Open(string name) => JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, name + ".json")));
     internal static double ReadDoubleHex(string text)
     {
