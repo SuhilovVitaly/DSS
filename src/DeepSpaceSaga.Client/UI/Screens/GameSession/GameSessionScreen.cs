@@ -2191,7 +2191,7 @@ public sealed partial class GameSessionScreen : IScreen
         _lastAutoTransitionCheckedSnapshotSequence = snapshot.SnapshotSequence;
 
         if (snapshot.ActiveDialogue is not null) return ScreenEvent.OpenDialogue;
-        if (snapshot.DemoCampaign?.WorldEncounter is { CanContinue: true }) return ScreenEvent.OpenTacticalBattle;
+        if (snapshot.DemoCampaign?.WorldEncounter is { CanContinue: true } or { Phase: WorldEncounterPhases.PendingBattle }) return ScreenEvent.OpenTacticalBattle;
         bool docked = snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDocked && !o.IsDestroyed);
         bool justDocked = docked && !_wasDocked;
         _wasDocked = docked;

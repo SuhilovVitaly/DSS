@@ -1000,6 +1000,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             }
             if (EnsureShipDestroyedScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or ScreenEvent.Exit or
                 ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.NewGame or ScreenEvent.ContinueCheckpoint)) return;
+            if (_session?.DemoCampaign?.WorldEncounter is { Phase: not WorldEncounterPhases.Finished } && evt is
+                (ScreenEvent.MainMenu or ScreenEvent.NewGame or ScreenEvent.OpenLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.ContinueCheckpoint)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
                 (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
                 ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle) &&
@@ -1019,6 +1021,11 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                         var captured = battleSession.DemoCampaign?.WorldEncounter;
                         var flow = new TacticalBattleFlow(battleSession)
                         { CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } ? captured : null };
+                        if (captured is { Phase: WorldEncounterPhases.PendingBattle } && await flow.StartEncounterAsync())
+                        {
+                            await PushModalAsync(CreateTacticalBattleView(flow), () => ReferenceEquals(_session, battleSession));
+                            break;
+                        }
                         var setup = CreateTacticalSetupView(flow);
                         await PushModalAsync(setup, () => ReferenceEquals(_session, battleSession));
                         if (ReferenceEquals(_screens.Current, setup))
@@ -2144,6 +2151,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
     {
         if (_screens.Current is LoadScreen loading) loading.ClearError();
         GameSessionHandle? newSession = null;
+        TacticalBattleFlow? recoveredEncounter = null;
         var previousSession = _session;
         GameSessionScreen newScreen;
         try
@@ -2166,6 +2174,15 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")),
                 tacticalBattleInputs: _tacticalInputs, maneuverInputs: _maneuverInputs);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
+            if (await newSession.GetTacticalBattleStateAsync() is { } recovered)
+            {
+                using var recoveryTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                while (newSession.DemoCampaign is null) await Task.Delay(10, recoveryTimeout.Token);
+                if (newSession.DemoCampaign.WorldEncounter is not { Phase: WorldEncounterPhases.PendingBattle } encounter)
+                    throw new IOException("Recovered battle has no pending encounter.");
+                recoveredEncounter = new(newSession) { CampaignEncounter = encounter };
+                if (!recoveredEncounter.AdoptRecoveredEncounter(recovered)) throw new IOException("Recovered battle identity mismatch.");
+            }
         }
         catch (Exception ex)
         {
@@ -2188,6 +2205,11 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
         _screens.ReplaceAll(newScreen);
+        if (recoveredEncounter is not null)
+        {
+            _modalDepth = 1;
+            _screens.Push(CreateTacticalBattleView(recoveredEncounter));
+        }
         if (oldSession is not null)
         {
             _lastSessionDisposal = oldSession.DisposeAsync().AsTask();

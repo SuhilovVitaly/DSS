@@ -34,11 +34,18 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public bool IsTutorial { get; init; }
     public WorldEncounterSnapshot? CampaignEncounter { get; init; }
     public bool IsCampaign => CampaignEncounter is not null;
+    internal bool AdoptRecoveredEncounter(TacticalBattleSnapshot state)
+    {
+        if (CampaignEncounter?.Binding.BattleId != state.BattleId) return false;
+        Volatile.Write(ref _observed, new(state, state));
+        return true;
+    }
     public async Task<bool> StartEncounterAsync()
     {
         if (CampaignEncounter is null || Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;
         try
         {
+            if (await Session.GetTacticalBattleStateAsync() is { } recovered && AdoptRecoveredEncounter(recovered)) return true;
             var current = Session.DemoCampaign;
             var response = await Session.ExecuteDemoCampaignAsync(new BeginEncounterBattleCommand(
                 NewIdentity("encounter"), current?.Revision ?? 0, CampaignEncounter.Binding.EncounterId));
