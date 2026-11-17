@@ -44,7 +44,7 @@ public sealed partial class SimulationEngine
     private TargetBountySnapshot BuildTargetBountyProjection() => new(_demoCampaign.BountyOrders
         .Select(b => ProjectBounty(_demoCampaign, b)).ToImmutableArray());
 
-    private static BountyOrder ProjectBounty(DemoCampaignData campaign, BountyOrderData order)
+    private BountyOrder ProjectBounty(DemoCampaignData campaign, BountyOrderData order)
     {
         var victory = campaign.EncounterResults.SingleOrDefault(r => r.PlayerWon &&
             r.Binding.GroupId == order.TargetGroupId && r.Binding.BattleId == "battle:" + order.TargetGroupId);
@@ -55,10 +55,11 @@ public sealed partial class SimulationEngine
         return new(order.Id, order.IssuerStationId, order.TargetGroupId, order.RewardTokens,
             order.Tracking, eligibility, victory?.Binding.BattleId,
             SearchRegion: "demo_pirate_region",
-            Reason: eligibility == BountyEligibility.Unavailable ? TargetBountyReasons.Unavailable : null);
+            Reason: eligibility == BountyEligibility.Unavailable ? TargetBountyReasons.Unavailable : null,
+            SearchArea: order.Tracking && eligibility == BountyEligibility.TargetAvailable ? BountyArea(order.TargetGroupId) : null);
     }
 
-    private static void PrepareTargetBounty(DemoCampaignCommand command, ref DemoCampaignData candidate, ref string? reason)
+    private void PrepareTargetBounty(DemoCampaignCommand command, ref DemoCampaignData candidate, ref string? reason)
     {
         string id = command is AcceptBountyCommand accept ? accept.BountyId : ((CancelBountyCommand)command).BountyId;
         int index = -1;

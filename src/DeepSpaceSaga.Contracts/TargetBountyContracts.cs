@@ -11,7 +11,8 @@ public sealed record CancelBountyCommand(string CommandId, long ExpectedRevision
 /// <summary>Frozen order terms and engine-derived eligibility. Tracking never grants payment.</summary>
 public sealed record BountyOrder(string BountyId, string IssuerStationId, string TargetGroupId,
     long RewardTokens, bool Tracking, string Eligibility, string? VictoryBattleId = null,
-    string? SearchRegion = null, string? Reason = null);
+    string? SearchRegion = null, string? Reason = null, BountySearchArea? SearchArea = null);
+public sealed record BountySearchArea(double X, double Y, double Radius);
 
 public sealed record TargetBountySnapshot(ImmutableArray<BountyOrder> Orders);
 

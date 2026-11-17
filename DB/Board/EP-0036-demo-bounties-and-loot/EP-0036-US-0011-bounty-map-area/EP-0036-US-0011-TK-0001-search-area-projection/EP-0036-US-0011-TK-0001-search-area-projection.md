@@ -87,3 +87,6 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite-создатели новых файлов указаны в depends_on. Draft означает ожидаемую сверку плана, не отсутствующую игровую реализацию.
+
+## Execution
+Optional search area uses content Region center and Region.Radius + PatrolRadius*sqrt(2), only for tracked target_available bounties. No current/observed group coordinates are read. Old DTO defaults null. Engine/test build PASS after fixture field correction (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us11-tk1-build-repeat.log); tests deferred to US11 boundary.
