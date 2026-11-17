@@ -10,6 +10,35 @@ public sealed partial class SimulationEngine
 {
     private bool HasCapturedEncounter => _demoCampaign.WorldEncounter is { Phase: not WorldEncounterPhases.Finished };
 
+    /// <summary>Exact restart checkpoint, captured before the tactical session exists. Storage must commit it before Begin.</summary>
+    public ScenarioFile CapturePendingEncounterCheckpoint(BeginEncounterBattleCommand command)
+    {
+        lock (_worldStateLock)
+        {
+            var save = CaptureSaveState();
+            if (command.ExpectedRevision != _demoCampaign.Revision ||
+                _demoCampaign.WorldEncounter is not { Phase: WorldEncounterPhases.Captured } encounter ||
+                encounter.Binding.EncounterId != command.EncounterId || BuildWorldEncounterProjection()?.CanContinue != true)
+                throw new InvalidOperationException("Encounter is not ready for its checkpoint.");
+            return save with { GameState = save.GameState with { CurrentSpeed = SimulationSpeed.Speed0.ToString(),
+                DemoCampaign = _demoCampaign with { WorldEncounter = encounter with { Phase = WorldEncounterPhases.PendingBattle } } } };
+        }
+    }
+
+    private void RestorePendingEncounterBattle()
+    {
+        if (_demoCampaign.WorldEncounter is not { Phase: WorldEncounterPhases.PendingBattle } encounter) return;
+        var candidate = _demoCampaign with { WorldEncounter = encounter with { Phase = WorldEncounterPhases.Captured } };
+        string? reason = null;
+        Action? commit = null;
+        PrepareEncounterBattle(new("restore:" + encounter.Binding.BattleId, candidate.Revision, encounter.Binding.EncounterId),
+            ref candidate, ref reason, ref commit);
+        if (reason is not null || commit is null) throw new ScenarioException("Cannot restart pending encounter: " + reason);
+        commit();
+        _demoCampaign = candidate;
+        _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, _processedSimulationTimeMs, _clock.Capture().MotionQuarterRemainder);
+    }
+
     private static DemoCampaignData PrepareEncounterSettlement(DemoCampaignData campaign, TacticalBattleSession session)
     {
         if (campaign.WorldEncounter is not { Phase: WorldEncounterPhases.PendingBattle } encounter ||

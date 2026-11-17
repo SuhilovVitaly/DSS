@@ -248,6 +248,7 @@ public sealed partial class SimulationEngine : IDisposable
         {
             var previous = _registry;
             ThrowIfTacticalBattleActive();
+            if (HasCapturedEncounter) throw new InvalidOperationException("encounter_captured");
             try
             {
                 _registry = tuning.Registry;
@@ -514,6 +515,10 @@ public sealed partial class SimulationEngine : IDisposable
         DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
         restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
         ValidateSensorDialogueSave(restoredDemoCampaign, scenario with { GameState = gs });
+        if (restoredDemoCampaign.WorldEncounter is { Phase: WorldEncounterPhases.PendingBattle } &&
+            (restoredDemoCampaign.PendingSensorReport is not null || gs.DialogueState?.ActiveDialogue is not null ||
+             speed != SimulationSpeed.Speed0 || _registry.TacticalBattle.Catalog is null))
+            throw new ScenarioException("Pending encounter requires paused, acknowledged, available battle content.");
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
@@ -575,7 +580,7 @@ public sealed partial class SimulationEngine : IDisposable
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
-
+            RestorePendingEncounterBattle();
         }
     }
 
