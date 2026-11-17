@@ -933,5 +933,18 @@
   "Demo.Supply.Drone": "Magazine: {0}/{1}; decoys: {2}/{3}",
   "Demo.Supply.Price": "Decoy charges: {0}; total: {1} cr",
   "Demo.Supply.Confirmed": "Decoy charges replenished",
-  "Demo.Supply.Market": "Buy torpedoes through the station market"
+  "Demo.Supply.Market": "Buy torpedoes through the station market",
+  "Demo.Replacement.Tab": "Shipyard",
+  "Demo.Replacement.Services": "Repair / supply",
+  "Demo.Replacement.replacement.light": "Light drone",
+  "Demo.Replacement.replacement.heavy": "Heavy drone",
+  "Demo.Replacement.equipment.spear": "Spear I weapon",
+  "Demo.Replacement.equipment.armor": "Heavy armor",
+  "Demo.Replacement.Offer": "{0}: {1} cr; stock {2}",
+  "Demo.Replacement.Buy": "Buy into selected slot",
+  "Demo.Replacement.Equip": "Equip selected drone",
+  "Demo.Replacement.Slot": "Hangar {0}, slot {1} — next",
+  "Demo.Replacement.Empty": "No available hangar slot",
+  "Demo.Replacement.Confirmed": "Purchase completed; pilot and ammunition supplied separately",
+  "Demo.Replacement.Help": "Select a drone for equipment. Prices exclude pilot and ammunition."
 }

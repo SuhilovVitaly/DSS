@@ -933,5 +933,18 @@
   "Demo.Supply.Drone": "Магазин: {0}/{1}; ловушки: {2}/{3}",
   "Demo.Supply.Price": "Заряды ловушек: {0}; всего: {1} кр",
   "Demo.Supply.Confirmed": "Заряды ловушек пополнены",
-  "Demo.Supply.Market": "Покупка торпед — на рынке станции"
+  "Demo.Supply.Market": "Покупка торпед — на рынке станции",
+  "Demo.Replacement.Tab": "Верфь",
+  "Demo.Replacement.Services": "Ремонт / снабжение",
+  "Demo.Replacement.replacement.light": "Лёгкий дрон",
+  "Demo.Replacement.replacement.heavy": "Тяжёлый дрон",
+  "Demo.Replacement.equipment.spear": "Орудие Копьё I",
+  "Demo.Replacement.equipment.armor": "Тяжёлые плиты",
+  "Demo.Replacement.Offer": "{0}: {1} кр; остаток {2}",
+  "Demo.Replacement.Buy": "Купить в выбранное место",
+  "Demo.Replacement.Equip": "Оснастить выбранный дрон",
+  "Demo.Replacement.Slot": "Ангар {0}, место {1} — следующее",
+  "Demo.Replacement.Empty": "Нет свободного места в ангаре",
+  "Demo.Replacement.Confirmed": "Покупка завершена; пилот и боезапас приобретаются отдельно",
+  "Demo.Replacement.Help": "Для оснащения выберите дрон. Пилот и боезапас не включены."
 }
