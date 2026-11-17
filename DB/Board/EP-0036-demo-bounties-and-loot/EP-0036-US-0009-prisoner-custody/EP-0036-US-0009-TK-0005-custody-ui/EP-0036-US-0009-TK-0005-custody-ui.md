@@ -109,3 +109,4 @@ Owning build: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj
 
 ## Execution
 Loot pilot panel sends ArrestPilotCommand through shared pending/retry controller; capture display follows authoritative receipt only. Ship has a separate scrollable read-only prisoner tab with real free cabin count and upkeep explanation. Client/test build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk5-build.log); actual click/pending/receipt test authored, deferred to US9 boundary. Native NOT RUN.
+Final documentation review: shared PassengerCapacityPresentation summary now includes authoritative PrisonerCabins in RU/EN alongside crew/passenger/reserve/free. This owning summary/locale expansion corrects the visual cabin accounting; separate custody roster remains.

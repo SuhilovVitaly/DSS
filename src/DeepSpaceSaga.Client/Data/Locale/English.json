@@ -919,7 +919,7 @@
   "Demo.Rearm.battle_active": "Rearming is available after leaving battle.",
   "Demo.Rearm.unavailable": "No response received. Check the ship state before retrying.",
   "Demo.Passengers.Title": "Passenger cabins",
-  "Demo.Passengers.Summary": "Cabins {0}: crew {1}, passengers {2}, reserve {3}, free {4}",
+  "Demo.Passengers.Summary": "Cabins {0}: crew {1}, passengers {2}, prisoners {5}, reserve {3}, free {4}",
   "Demo.Passengers.Ready": "Free cabins: {0}. Passengers can board without buying housing.",
   "Demo.Passengers.Empty": "This ship has no passenger cabins.",
   "Demo.Passengers.Blocked": "Passengers cannot board right now.",

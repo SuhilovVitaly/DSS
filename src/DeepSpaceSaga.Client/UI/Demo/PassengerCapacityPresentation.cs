@@ -18,7 +18,7 @@ public static class PassengerCapacityPresentation
         if (capacity is null)
             return [title, Localization.Get(Prefix + "Empty")];
         string summary = string.Format(Localization.Get(Prefix + "Summary"), capacity.TotalCabins, capacity.CrewCabins,
-            capacity.PassengerCabins, capacity.ReservedCabins, capacity.FreeCabins);
+            capacity.PassengerCabins, capacity.ReservedCabins, capacity.FreeCabins, capacity.PrisonerCabins);
         string? blocker = PassengerCapacityReasons.BoardingBlocker(capacity);
         string status = blocker is null
             ? string.Format(Localization.Get(Prefix + "Ready"), capacity.FreeCabins)
