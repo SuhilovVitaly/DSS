@@ -93,3 +93,8 @@
 - [Непрерывная демо-кампания, пилоты и автосохранение](04-Engineering/DemoCampaign.md).
 
 - [Станционные услуги компании](04-Engineering/CompanyServices.md) — ремонт, снабжение, замена, наём, payroll и сохранение.
+
+## Боевые награды
+
+- [Игровой цикл bounty, добычи и пленных](02-FirstRelease/Mechanics/DemoBountiesAndLoot.md).
+- [Авторитет, Save22 и продолжение](04-Engineering/DemoRewards.md).

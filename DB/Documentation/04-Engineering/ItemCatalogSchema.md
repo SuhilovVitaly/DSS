@@ -29,3 +29,7 @@ fingerprint. Переименование displayName не меняет экон
 save migrations не расширяют этот список.
 
 Источники: [ItemCatalogValidation.cs](../../../src/DeepSpaceSaga.Engine/Content/ItemCatalogValidation.cs), [EngineContentLoader.cs](../../../src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs), [CatalogCompatibilityData.cs](../../../src/DeepSpaceSaga.Engine/Scenario/CatalogCompatibilityData.cs), [Settings.json](../../../src/DeepSpaceSaga.Client/Settings.json).
+
+## Трофейные товары
+
+Каталог содержит item.scrap, отдельные sale-only module SKU и cargo charges. loot.json сопоставляет реальные module catalog IDs товарам; один экземпляр становится одной целой cargo-единицей. Состояния попыток живут в BattleLootData, не в generic item durability. [Контракт](DemoRewards.md).

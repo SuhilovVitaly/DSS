@@ -54,3 +54,7 @@ worktree Codex, сохраняя нужную работу перед архив
 [демо-перевозки](../04-Engineering/DemoTransportContracts.md).
 
 Источники: [DeepSpaceSaga.sln](../../../DeepSpaceSaga.sln), [global.json](../../../global.json), [Directory.Build.props](../../../Directory.Build.props), [Program.cs](../../../src/DeepSpaceSaga.Client/Program.cs), [DeepSpaceSaga.Client.csproj](../../../src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj).
+
+## Послебоевая поверхность
+
+Open loot — завершённый frozen battlefield, а не активная tactical session. Engine хранит ledger, Client отображает immutable projection; LocalClient подтверждает мутацию после continuation write. [Награды](../04-Engineering/DemoRewards.md).

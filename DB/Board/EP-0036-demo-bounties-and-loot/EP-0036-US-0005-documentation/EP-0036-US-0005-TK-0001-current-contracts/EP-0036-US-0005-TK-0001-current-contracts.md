@@ -5,7 +5,7 @@ ticket: EP-0036-US-0005-TK-0001-current-contracts
 title: Актуальные механики и технические контракты
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0036-US-0001-TK-0003-client, EP-0036-US-0002-TK-0003-client, EP-0036-US-0004-TK-0002-reward-report, EP-0036-US-0004-TK-0003-restored-loot-route, EP-0036-US-0008-TK-0005-crew-ui, EP-0036-US-0009-TK-0005-custody-ui, EP-0036-US-0006-TK-0005-trade-names, EP-0036-US-0010-TK-0002-postbattle-presentation, EP-0036-US-0010-TK-0004-jettison-ui, EP-0036-US-0011-TK-0002-starmap-area, EP-0036-US-0012-TK-0002-console-commands, EP-0036-US-0009-TK-0006-prisoner-portrait]
@@ -89,3 +89,7 @@ No API change.
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
 
 Груминг 2026-11-17T19:24:04Z : документация включает current bounty postfact entitlement, sale-only modules, per-wreck scrap, postbattle frozen restore, engineer и common cabin/rations custody. Generic durability/установка и interactions prisoners вне демо; не описывать их как реализованные.
+Execution scope expansion: current contracts require replacing stale six-crew/two-reserve and combat-only reward descriptions across requirements, DemoCampaign/SaveFormat/TacticalBattle, CrewAndHabitation, transport/services, cargo/money/trade/catalog, relevant screens, debug and portrait guidance; Documentation README and root README navigation. DocumentationImpact.md records each owning document. This authorized final documentation story replaces the draft three-file allowlist.
+
+## Completion evidence
+31 current Markdown documents updated; exact inventory in DocumentationImpact.md. All relative links in changed current docs resolve (documentation-links.json). Independent review corrected offer capacity formula and passenger-only ration gate; discovered missing manual loot hotkeys and cabin prisoner summary were fixed in owning US4/US9 tickets. Native/product acceptance remains OPEN.

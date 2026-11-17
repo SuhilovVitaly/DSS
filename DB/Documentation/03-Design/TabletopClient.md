@@ -9,3 +9,7 @@
 Подготовка боя относится к оболочке. Активный бой использует отдельный [выбор скина](../04-Engineering/TacticalBattleSkins.md). Общие контролы в области активного скина читают его роли. Тема клиента и предпочтение скина относятся к представлению, а [сохранение мира](../04-Engineering/SaveFormat.md) описывает состояние Engine.
 
 Доступные точки входа перечисляет [каталог экранов](../02-FirstRelease/Screens/ScreenCatalog.md). Матрица проверки и её ограничения находятся в [Board EP-0026](../../Board/EP-0026-tabletop-client-ui/AcceptanceCoverage.md).
+
+## Послебоевые поверхности
+
+Contracts также показывает bounty и отчёт, Ship — пленников, а frozen tactical map — действия добычи, выброса и ареста. Эти поверхности читают подтверждённые Engine projections. [Правила](../02-FirstRelease/Mechanics/DemoBountiesAndLoot.md).

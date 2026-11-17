@@ -76,3 +76,7 @@ cluster rulesVersion согласуются; frozen descriptor обязател�
 [SolarSystemMapConcept](../02-FirstRelease/Mechanics/SolarSystemMapConcept.md).
 
 Источники: [SimulationEngine.TradeQuotes.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.TradeQuotes.cs), [SimulationEngine.MarketTime.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.MarketTime.cs), [SimulationEngine.MarketEvents.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.MarketEvents.cs), [SimulationEngine.CargoCost.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.CargoCost.cs), [solar-system.json](../../../src/DeepSpaceSaga.Client/Data/Maps/solar-system.json).
+
+## Рынок боевых трофеев
+
+Промышленные станции имеют конечный спрос/бюджет на лом и целые трофейные модули; начальный stock новых SKU нулевой. Нет автоматической установки и бесконечного скупщика. Additive legacy catalog compatibility ограничена известными предшествующими профилями. География кластера не меняется. [Награды](DemoRewards.md).
