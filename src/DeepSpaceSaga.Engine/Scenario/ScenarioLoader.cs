@@ -630,6 +630,7 @@ public static class ScenarioLoader
 
     private static void ValidateCrewAssignments(SpaceObjectData obj)
     {
+        SimulationEngine.ValidateEngineerCrew(obj);
         var crewIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var crew in obj.Crew ?? [])
         {

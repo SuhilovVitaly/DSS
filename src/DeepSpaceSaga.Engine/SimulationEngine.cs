@@ -398,7 +398,7 @@ public sealed partial class SimulationEngine : IDisposable
                 ? ResolveMarketEventsForLoad(obj, gs.GameTimeMs, gs.MarketEventCatalogFingerprint, isSave || scenario.SaveFormatVersion > 0)
                 : ImmutableArray<StationEventRuntime>.Empty;
             var crew = isShip
-                ? ResolveShipCrew(obj)
+                ? ResolveShipCrew(obj, resolvedMasterSeed)
                 : ImmutableArray<CrewMemberRuntime>.Empty;
             var stationCrew = isStation
                 ? ResolveStationCrew(obj, resolvedMasterSeed)
@@ -1366,7 +1366,8 @@ public sealed partial class SimulationEngine : IDisposable
     {
         return new ShipCrewMemberData(member.Id, member.DisplayName,
             member.AccuracySkill, member.ManeuverabilitySkill,
-            member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent);
+            member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent,
+            member.SalvageBonusPercentagePoints);
     }
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
@@ -1992,8 +1993,9 @@ public sealed partial class SimulationEngine : IDisposable
     /// list (the common case for every object except the player ship, and for every
     /// scenario/save predating this field).
     /// </summary>
-    private ImmutableArray<CrewMemberRuntime> ResolveShipCrew(SpaceObjectData obj)
+    private ImmutableArray<CrewMemberRuntime> ResolveShipCrew(SpaceObjectData obj, ulong resolvedMasterSeed)
     {
+        ValidateEngineerCrew(obj);
         if (obj.Crew is not { Count: > 0 })
             return ImmutableArray<CrewMemberRuntime>.Empty;
 
@@ -2012,7 +2014,8 @@ public sealed partial class SimulationEngine : IDisposable
 
             crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName,
                 member.AccuracySkill, member.ManeuverabilitySkill,
-                member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent));
+                member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent,
+                ResolveEngineerBonus(resolvedMasterSeed, obj.ObjectId, member)));
         }
 
         return crew.ToImmutable();
@@ -4125,7 +4128,7 @@ internal sealed record SpaceObjectRuntime(
 internal sealed record CrewMemberRuntime(string Id, string DisplayName,
     int AccuracySkill = 0, int ManeuverabilitySkill = 0,
     string? Gender = null, string? PortraitAssetId = null, string? Role = null, int Initiative = 0,
-    int SensorRangeBonusPercent = 0);
+    int SensorRangeBonusPercent = 0, int SalvageBonusPercentagePoints = 0);
 
 /// <summary>One named crew member displayed on a station (see <see cref="StationCrewMemberData"/>).</summary>
 internal sealed record StationCrewMemberRuntime(string Id, string Role, string DisplayName, string PortraitImage);

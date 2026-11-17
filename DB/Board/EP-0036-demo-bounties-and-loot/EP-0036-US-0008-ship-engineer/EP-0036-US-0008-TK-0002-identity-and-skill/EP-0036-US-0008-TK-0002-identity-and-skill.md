@@ -12,7 +12,7 @@ files_touched: 5
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 ---
 
 # Создание и сохранение личного навыка инженера
@@ -107,3 +107,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Execution — 2026-11-17
+
+Persisted nullable salvage skill, deterministic independent engineer-salvage/v1/ship/crew seed, direct Load and JSON validation, one-engineer limit, zero without live carrier. Saved explicit bonuses remain unchanged. Engine build/scoped formatting/diff PASS. Named tests prepared, NOT RUN until US8 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us8-tk2-build.log.
