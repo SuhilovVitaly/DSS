@@ -297,13 +297,14 @@ public sealed partial class ShipScreen : IScreen
         }
         else
         {
+            using var bodyPaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 16, IsAntialias = true, TextAlign = SKTextAlign.Left };
             canvas.DrawText($"{_model.Name} ({_model.ShipClassId}) — hull {_model.HullCurrent}/{_model.HullMax}",
-                cx, pt + ShipLayout.BodyStartY, MenuStyle.TextStatus);
+                cx, pt + 80, MenuStyle.TextStatus);
 
             // Wing panel (left half): one row per owned drone, destroyed/disabled never shown ready.
             var (wl, wt, _, _) = ShipLayout.WingPanelLocalRect();
             canvas.DrawText($"wing · torpedoes in hold {_torpedoStock}", pl + wl + ShipLayout.WingRowInset,
-                pt + wt + 20, MenuStyle.TextStatus);
+                pt + wt + 20, bodyPaint);
             for (int i = 0; i < _drones.Length; i++)
             {
                 var drone = _drones[i];
@@ -317,17 +318,17 @@ public sealed partial class ShipScreen : IScreen
                 string marker = i == _selectedRow ? "› " : "  ";
                 string state = ShipWingPanel.DroneStateLabel(drone.Destroyed, drone.Disabled, drone.Uncrewed);
                 canvas.DrawText($"{marker}{drone.Id} — ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
-                    rect.Left + 6, rect.Top + 19, MenuStyle.TextStatus);
+                    rect.Left + 6, rect.Top + 19, bodyPaint);
             }
             if (_selectedRow >= 0)
                 DrawRearmControls(canvas, pl, pt);
 
             // Crew panel (right half): one line per crew member.
             var (cl, ct, _, _) = ShipLayout.CrewPanelLocalRect();
-            float crewY = pt + ct;
+            float crewY = pt + ct + 20;
             foreach (var member in _model.Crew)
             {
-                canvas.DrawText($"{member.DisplayName} ({member.Role})", pl + cl, crewY, MenuStyle.TextStatus);
+                canvas.DrawText($"{member.DisplayName} ({member.Role})", pl + cl, crewY, bodyPaint);
                 crewY += ShipLayout.BodyLineHeight;
             }
         }
@@ -409,6 +410,7 @@ public sealed partial class ShipScreen : IScreen
 
     private void DrawRearmControls(SKCanvas canvas, float panelLeft, float panelTop)
     {
+        using var bodyPaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 15, IsAntialias = true, TextAlign = SKTextAlign.Left };
         var drone = _drones[_selectedRow];
         int max = MaxQuantity(_selectedRow);
         int quantity = ShipWingPanel.ClampQuantity(_quantity, max);
@@ -426,9 +428,9 @@ public sealed partial class ShipScreen : IScreen
         var preview = max > 0
             ? ShipWingPanel.PreviewText(drone.AmmoCurrent, drone.AmmoCapacity, _torpedoStock, quantity)
             : Explanation(_selectedRow);
-        canvas.DrawText($"quantity {quantity} · {preview}", x, panelTop + controls.Top + 52, MenuStyle.TextStatus);
+        canvas.DrawText($"quantity {quantity} · {preview}", x, panelTop + controls.Top + 52, bodyPaint);
         if (_status.Length > 0)
-            canvas.DrawText(_status, x, panelTop + controls.Top + 72, MenuStyle.TextStatus);
+            canvas.DrawText(_status, x, panelTop + controls.Top + 72, bodyPaint);
     }
 
     private static void DrawLocalButton(SKCanvas canvas, float panelLeft, float panelTop,
