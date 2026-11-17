@@ -18,6 +18,7 @@ public sealed class DemoEp0034Us0002Tk0004Tests
         PassengerDeliveryStates.Aboard,
         PassengerDeliveryStates.Overdue,
         PassengerDeliveryStates.Delivered,
+        PassengerDeliveryStates.Failed, // EP-0034-US-0003
         DemoCampaignReasons.Unavailable,
     ];
 

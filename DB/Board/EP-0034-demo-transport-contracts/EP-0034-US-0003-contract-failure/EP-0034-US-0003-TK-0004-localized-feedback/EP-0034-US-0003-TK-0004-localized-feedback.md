@@ -5,11 +5,11 @@ ticket: EP-0034-US-0003-TK-0004-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0003-TK-0002-engine]
-files_touched: 3
+files_touched: 4
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
 revision: 1
@@ -94,3 +94,20 @@ No API change. Существующие словари Russian/English; язык
 ## Self-containment check
 
 История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+
+## Execution result (2026-11-17)
+
+Статус: implemented; **validation pending at story end**. PASS истории здесь не заявляется.
+
+Изменённые файлы:
+
+- `src/DeepSpaceSaga.Client/Data/Locale/English.json`, `Russian.json` — блок `Demo.TransportFailures.*` сразу после `Demo.PassengerContracts.State.unavailable` (аддитивно): `Title`, `Empty`, `Unavailable`, `Calendar` (правило календарных сроков, AC-01), `Terms` {0} штраф отмены, {1} срок, {2} штраф просрочки, `Cancel`, `CancelConfirm` {0}, `CancelNo`, `Pending`, `Cancelled` {0} штраф/{1} оплачено/{2} долг, `Line` (6 параметров), `DisembarkPending` {0}, `Disembarked` {0}/{1} станция/{2} время, `Lost` {0}, `Debt` {0}; `Outcome.cancelled|expired|carrier_lost`; `Reason.*` для каждого кода отказа команды/вердикта условий (`contract_not_found`, `contract_not_active`, `not_cancellable`, `stale_revision`, `unavailable`, `unsupported`, `invalid_identity`, `identity_conflict`, `carrier_destroyed`, `battle_active`). Плюс `Demo.PassengerContracts.State.failed`.
+- `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0003Tk0004Tests.cs` — `StoryKeysExistInBothLocales`, `FormatArgumentsMatch`, `NoRawReasonCodeLeaks`.
+- Расширение allowlist: `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0002Tk0004Tests.cs` — точный список ключей `Demo.PassengerContracts.*` дополнен состоянием `failed` (новый delivery state из TK-0001).
+
+Проверки: `dotnet test tests/DeepSpaceSaga.Client.Tests --filter "DemoEp0034|Locali"` — 71 passed / 5 failed (TRX `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0003-tk0004/client.trx`); все 5 (`LocalizationCoverageTests` ×3, `SessionHandleBattleTests…Localized` ×2) входят в зафиксированный baseline US-0002 (`D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0002-20261117/story/client-reg.log`). Новые тесты 3/3.
+
+Допущения:
+
+- A-01: отдельный префикс `Demo.TransportFailures.*`, чтобы не ломать точные списки ключей `Demo.Jobs.*` (US-0006) и не смешивать отказы приёма с отказами отмены.
+- A-02: подтверждение отмены — повторное нажатие той же кнопки (текст `CancelConfirm`), без модального окна: модальное окно по Modal Pause Rule останавливало бы симуляцию.
