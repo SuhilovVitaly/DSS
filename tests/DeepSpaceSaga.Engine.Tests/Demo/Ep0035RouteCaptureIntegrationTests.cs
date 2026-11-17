@@ -45,7 +45,7 @@ public sealed class Ep0035RouteCaptureIntegrationTests
         var ready = engine.CaptureSaveState();
         ready = ready with { GameState = ready.GameState with { VoyageState = baseline.GameState.VoyageState,
             SpaceObjects = ready.GameState.SpaceObjects.Select(s => s.ObjectId == ship.ObjectId ? ship : s).ToArray() } };
-        foreach (bool detour in new[] { false, true })
+        foreach (bool detour in new[] { true, false })
         {
             engine.LoadScenario(ready, true);
             var snapshot = engine.CaptureSnapshot();
@@ -69,6 +69,11 @@ public sealed class Ep0035RouteCaptureIntegrationTests
                 var route = saved.GameState.VoyageState!.ThreatRoute!;
                 Assert.False(route.Suspended);
                 if (route.NextWaypoint == option.Waypoints.Length) { completed = true; break; }
+                if (step % 7 == 0)
+                {
+                    var paused = engine.CaptureSnapshotForTests(motion * 300, SimulationSpeed.Speed0, motion);
+                    Assert.Equal(snapshot.Objects.Single(o => o.ObjectId == ship.ObjectId), paused.Objects.Single(o => o.ObjectId == ship.ObjectId));
+                }
                 if (step == 5) engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true, true), true);
             }
             Assert.Equal(!detour, captured);
