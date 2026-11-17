@@ -2602,6 +2602,7 @@ public sealed partial class SimulationEngine : IDisposable
                 NextPortFeeDueGameTimeMs = null,
                 Modules = obj.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
             };
+            AdvanceThreatRoute(gameTimeMs);
             RecordCommandResult(command, CommandResultStatus.Executed, gameTimeMs);
             return CommandStartOutcome.Started;
         }

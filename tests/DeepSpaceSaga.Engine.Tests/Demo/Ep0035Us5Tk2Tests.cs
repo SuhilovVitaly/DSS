@@ -50,8 +50,16 @@ public sealed class Ep0035Us5Tk2Tests
     {
         using var engine = Docked();
         var state = engine.CaptureSnapshot().DemoCampaign!;
+        var board = state.Transport!.StationJobs!;
+        var offer = board.Offers.First(o => o.OriginStationId == "SPC-0002" && StationJobTypes.CarriesPassengers(o.Type) &&
+            StationJobReasons.AcceptBlocker(board, o.Id) is null);
+        Assert.True(engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("passengers", state.Revision, offer.Id)).Applied);
+        state = engine.CaptureSnapshot().DemoCampaign!;
+        var contract = Assert.Single(state.Transport!.PassengerContracts!.Active);
+        Assert.True(state.Transport.CargoContracts!.PlayerCargoMassKg > 0);
         var routes = state.ThreatRoutes!;
-        var option = routes.Options.First(o => o.IsDetour == detour && o.UnavailableReason is null);
+        var option = routes.Options.First(o => o.IsDetour == detour && o.DestinationStationId == offer.DestinationStationId && o.UnavailableReason is null);
+        Assert.Equal(contract.DeadlineGameTimeMs - option.EtaGameTimeMs, option.DeadlineDeltaGameTimeMs);
         long credits = engine.PlayerCredits;
         var before = engine.CaptureSaveState().GameState.SpaceObjects.Single(s => s.ObjectId == "SPC-0001").Modules;
         var command = new SelectDemoRouteCommand("select", state.Revision, option.RouteId, routes.Revision);
