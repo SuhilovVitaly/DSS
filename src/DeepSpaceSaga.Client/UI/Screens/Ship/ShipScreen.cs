@@ -40,6 +40,9 @@ public sealed partial class ShipScreen : IScreen
     private int _screenHeight;
     private bool _isCloseHovered;
     private bool _showCrew = true;
+    private bool _showPrisoners;
+    private int _prisonerScroll;
+    internal IReadOnlyList<PrisonerSnapshot> Prisoners => _campaign?.Invoke()?.Company?.Prisoners?.Prisoners.ToArray() ?? [];
 
     /// <summary>Legacy open path: no carrier surface yet — renders the explicit unsupported state.</summary>
     public ShipScreen() : this(ShipViewModel.From(null)) { }
@@ -103,6 +106,7 @@ public sealed partial class ShipScreen : IScreen
         float sx = x - ShipLayout.PanelLeft(_screenWidth), sy = y - ShipLayout.PanelTop(_screenHeight);
         if (sx >= 730 && sx <= 1340 && sy >= 90 && sy <= 122)
         {
+            _showPrisoners = sx >= 880 && sx <= 1020;
             _showCrew = sx < 1030;
             return ScreenEvent.None;
         }
@@ -148,6 +152,11 @@ public sealed partial class ShipScreen : IScreen
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (_showPrisoners && float.IsFinite(delta) && x >= ShipLayout.PanelLeft(_screenWidth) + 730 && y < ShipLayout.PanelTop(_screenHeight) + 430)
+        {
+            _prisonerScroll = Math.Clamp(_prisonerScroll - Math.Sign(delta), 0, Math.Max(0, Prisoners.Count - 6));
+            return ScreenEvent.None;
+        }
         if (float.IsFinite(delta) && delta != 0 && y >= ShipLayout.PanelTop(_screenHeight) + 500)
             _memorialScroll = Math.Clamp(_memorialScroll - Math.Sign(delta), 0, Math.Max(0, Memorial.Length - VisibleMemorialRows));
         return ScreenEvent.None;
@@ -334,10 +343,24 @@ public sealed partial class ShipScreen : IScreen
             if (_selectedRow >= 0)
                 DrawRearmControls(canvas, pl, pt);
 
-            DrawLocalButton(canvas, pl, pt, (730, 90, 1020, 122), Localization.Get("Ship.Crew"), true);
+            DrawLocalButton(canvas, pl, pt, (730, 90, 870, 122), Localization.Get("Ship.Crew"), true);
+            DrawLocalButton(canvas, pl, pt, (880, 90, 1020, 122), Localization.Get("Prisoners.Title"), true);
             DrawLocalButton(canvas, pl, pt, (1030, 90, 1340, 122), Localization.Get("Demo.Replacement.Services"), true);
             // Crew, sensor and passenger information share one tab, separate from service controls.
-            if (_showCrew)
+            if (_showPrisoners)
+            {
+                var prisoners = Prisoners;
+                var capacity = _campaign?.Invoke()?.Transport?.PassengerCapacity;
+                canvas.DrawText(string.Format(Localization.Get("Prisoners.CabinCount"), prisoners.Count, capacity?.FreeCabins ?? 0), pl + 730, pt + 155, bodyPaint);
+                float y = pt + 185;
+                foreach (string line in WrapToWidth(Localization.Get("Prisoners.Upkeep"), 600, bodyPaint))
+                { canvas.DrawText(line, pl + 730, y, bodyPaint); y += 22; }
+                if (prisoners.Count == 0) canvas.DrawText(Localization.Get("Prisoners.Empty"), pl + 730, y + 25, bodyPaint);
+                _prisonerScroll = Math.Clamp(_prisonerScroll, 0, Math.Max(0, prisoners.Count - 6));
+                foreach (var prisoner in prisoners.Skip(_prisonerScroll).Take(6))
+                { canvas.DrawText(prisoner.DisplayName + " · " + Localization.Get("Prisoners.Captured"), pl + 730, y += 26, bodyPaint); }
+            }
+            else if (_showCrew)
             {
             var (cl, ct, cr, _) = ShipLayout.CrewPanelLocalRect();
             float crewY = pt + ct + 60;

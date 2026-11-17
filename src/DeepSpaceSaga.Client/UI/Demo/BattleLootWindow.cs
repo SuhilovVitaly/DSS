@@ -17,6 +17,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation)
     public SKRect ConfirmBounds { get; private set; }
     public SKRect CancelBounds { get; private set; }
     public SKRect CloseBounds { get; private set; }
+    internal SKRect ArrestBounds { get; private set; }
     public bool ConfirmDiscard { get; private set; }
     public Task<bool>? LastActionTask { get; private set; }
     public BattleLootPresentation Presentation => presentation;
@@ -34,6 +35,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation)
     public void Draw(SKCanvas canvas, float width, float height, bool flowPending, string? flowError = null)
     {
         _actions.Clear();
+        ArrestBounds = default;
         LeaveBounds = new(16, height - 54, 250, height - 14);
         Button(canvas, LeaveBounds, L("leave"), !presentation.Pending && !flowPending);
         float panelWidth = Math.Min(500, width - 40);
@@ -52,6 +54,16 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation)
             var clip = new SKRect(Bounds.Left + 12, Bounds.Top + 70, Bounds.Right - 12, Bounds.Bottom - 50);
             canvas.Save(); canvas.ClipRect(clip);
             float top = clip.Top - _scroll, y = top;
+            if (source.Pilot is { } pilot)
+            {
+                Text(canvas, pilot.DisplayName, clip.Left + 4, y + 18, 16);
+                ArrestBounds = new(clip.Left + 4, y + 30, clip.Left + 210, y + 64);
+                AddButton(canvas, ArrestBounds, Localization.Get(pilot.Captured ? "Prisoners.Captured" : presentation.Pending ? "Prisoners.Pending" : "Prisoners.Arrest"),
+                    pilot.Alive && !pilot.Captured && pilot.CaptureReason is null && !presentation.Pending && !flowPending,
+                    () => presentation.SubmitAsync((id, revision, battle, drone) => new ArrestPilotCommand(id, revision, battle, drone)), clip);
+                if (!pilot.Captured && pilot.CaptureReason is { } reason) Wrapped(canvas, L(reason), clip.Left + 4, y + 86, clip.Width - 8, 12);
+                y += 112;
+            }
             foreach (var row in _consumables.Rows())
             {
                 Text(canvas, row.Label + " · " + string.Format(L("quantity"), row.Quantity), clip.Left + 4, y + 18, 14);
@@ -79,7 +91,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation)
                 if (row.Reason is { } reason) Wrapped(canvas, reason, clip.Left + 4, y + 119, clip.Width - 8, 12);
                 y += 145;
             }
-            if (_consumables.Rows().IsEmpty && source.Modules.IsEmpty)
+            if (_consumables.Rows().IsEmpty && source.Modules.IsEmpty && source.Pilot is null)
             { Text(canvas, L("empty"), clip.Left + 4, y + 20, 14); y += 45; }
             _contentHeight = y - top;
             canvas.Restore();

@@ -106,3 +106,6 @@ Owning build: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Execution
+Loot pilot panel sends ArrestPilotCommand through shared pending/retry controller; capture display follows authoritative receipt only. Ship has a separate scrollable read-only prisoner tab with real free cabin count and upkeep explanation. Client/test build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk5-build.log); actual click/pending/receipt test authored, deferred to US9 boundary. Native NOT RUN.
