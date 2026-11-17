@@ -9,6 +9,9 @@ public sealed partial class TacticalBattleScreen
 {
     private BattleLootWindow? _lootWindow;
     internal BattleLootWindow? LootWindow => _lootWindow;
+    internal bool CanUseLootSave => Flow.State?.Phase == TacticalBattlePhase.Over &&
+        Flow.Session.DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == Flow.State.BattleId &&
+        !Flow.Pending && _lootWindow?.Presentation.Pending != true && _lootWindow?.ConfirmDiscard != true;
     private bool ObserveLoot()
     {
         var campaign = Flow.Session.DemoCampaign;

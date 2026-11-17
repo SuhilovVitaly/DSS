@@ -205,6 +205,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         if (ObserveLoot())
         {
+            if (CanUseLootSave && !repeat && modifiers == KeyModifiers.None && key is Key.F5 or Key.F9)
+                return key == Key.F5 ? ScreenEvent.QuickSave : ScreenEvent.QuickLoad;
             if (BlockWorldKey(key, modifiers) || repeat || Flow.Pending) return ScreenEvent.None;
             if (key == Key.Escape)
             {

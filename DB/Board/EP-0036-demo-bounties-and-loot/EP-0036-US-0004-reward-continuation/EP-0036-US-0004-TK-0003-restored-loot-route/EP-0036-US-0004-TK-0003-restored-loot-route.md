@@ -68,3 +68,4 @@ Committed sortie/entitlement/attempt не применяются дважды. F
 
 ## Execution
 LoadSlotCoreAsync uses RecoverBattleFlowAsync directly. Headless test invokes this production router over a real serialized/loaded engine and LocalClient, adopting combat or frozen loot without command replay; verifies actual TacticalBattleScreen and confirmed close then world route. Save/quick-save callbacks already allow loot; LocalClient checkpoint tests cover disk durability. Tests scheduled at completed US4 boundary. Native NOT RUN.
+Final documentation review exposed UI hotkey gap: allow F5/F9 only for matching frozen Open loot, no pending action/discard confirmation; actual SkiaWindow event gate honors this narrow exception. Active combat remains blocked. Tests include direct screen events and prior keyboard gate regression.

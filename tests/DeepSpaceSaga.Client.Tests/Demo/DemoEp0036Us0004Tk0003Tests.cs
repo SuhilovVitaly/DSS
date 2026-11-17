@@ -33,7 +33,13 @@ public sealed class DemoEp0036Us0004Tk0003Tests
         {
             var screen = new TacticalBattleScreen(flow, 1);
             Assert.Equal(TacticalBattlePhase.Over, screen.CaptureFrame(1280, 720)!.Battle.Phase);
+            Assert.True(screen.CanUseLootSave);
+            Assert.Equal(DeepSpaceSaga.Client.UI.Screens.ScreenEvent.QuickSave,
+                screen.OnKeyDown(Silk.NET.Input.Key.F5, DeepSpaceSaga.Client.UI.Screens.KeyModifiers.None, false));
+            Assert.Equal(DeepSpaceSaga.Client.UI.Screens.ScreenEvent.QuickLoad,
+                screen.OnKeyDown(Silk.NET.Input.Key.F9, DeepSpaceSaga.Client.UI.Screens.KeyModifiers.None, false));
             screen.OnKeyDown(Silk.NET.Input.Key.Escape, DeepSpaceSaga.Client.UI.Screens.KeyModifiers.None, false);
+            Assert.False(screen.CanUseLootSave);
             Assert.NotNull(screen.LootWindow);
             Assert.False(screen.LootWindow.RequestExit());
             flow.ConfirmLootDiscard = true;

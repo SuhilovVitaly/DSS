@@ -1005,7 +1005,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
                 (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
                 ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle) &&
-                !(evt == ScreenEvent.MainMenu && activeBattle.Flow.IsTutorial))
+                !(evt == ScreenEvent.MainMenu && activeBattle.Flow.IsTutorial) &&
+                !(activeBattle is TacticalBattleScreen { CanUseLootSave: true } && evt is ScreenEvent.QuickSave or ScreenEvent.QuickLoad))
             {
                 activeBattle.NotifyWorldActionBlocked();
                 return;
