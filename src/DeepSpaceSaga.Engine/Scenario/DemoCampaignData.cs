@@ -44,6 +44,7 @@ public sealed record DemoCampaignData(
     public ImmutableArray<SensorContactReport> SensorReports { get; init; } = [];
     public SensorContactReportBatch? PendingSensorReport { get; init; }
     public WorldEncounterData? WorldEncounter { get; init; }
+    public ImmutableArray<WorldEncounterResultData> EncounterResults { get; init; } = [];
 
     /// <summary>EP-0034 US-0006: published offers and the obligations journal; null until the first publication.</summary>
     [JsonPropertyName("stationJobs")]
