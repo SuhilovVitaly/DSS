@@ -30,6 +30,7 @@
 - [Тактическая карта и маневрирование](02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md).
 - [Корабль Tetrarch](02-FirstRelease/Mechanics/TetrarchClass.md).
 - [Торговля](02-FirstRelease/Mechanics/Trading.md).
+- [Пиратские встречи, наблюдения, перехват и выбор пути](02-FirstRelease/Mechanics/DemoEncounters.md).
 
 ### 02-FirstRelease/Screens
 

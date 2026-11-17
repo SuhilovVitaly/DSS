@@ -26,7 +26,31 @@ Save20 после проверки world-only преобразуется в Save
 
 Save21 преобразуется в Save22 в [ScenarioLoader](../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs): добавляется пустая campaign-секция без выдачи имущества и ретроактивной гибели пилотов. Save22 хранит `DemoCampaignData`: schema1, revision/commit sequence, receipts, отпечаток демо-каталогов, мемориал и следующий crew sequence. Пилот мемориала не может одновременно быть живым или назначенным на дрон. Несовместимые ссылки/счётчики/отпечатки отвергаются до замены сессии.
 
-Автосохранение демо после принятого commit/docking использует campaign-continuation, отдельный от quicksave F5/F9 и атомарную temp+replace запись; ручные слоты не затрагиваются. «Сохранено» появляется после завершения записи, F6 повторяет неудачную запись без повторения игрового действия. Continue выбирает самый свежий полностью валидный нетерминальный слот, пропуская повреждённые и терминальные. Перед собственным вылетом сохраняется живой continuation; гибель носителя не перезаписывает его. Терминальное состояние доступно в ручных слотах. Load сам по себе не пишет autosave. Подробный контракт — [DemoCampaign](DemoCampaign.md).
+Автосохранение демо после принятого commit/docking использует campaign-continuation, отдельный от quicksave F5/F9 и атомарную temp+replace запись; ручные слоты не затрагиваются. «Сохранено» появляется после завершения записи, F6 повторяет неудачную запись без повторения игрового действия. Continue выбирает самый свежий полностью валидный нетерминальный слот, пропуская повреждённые и терминальные. Перед обычным собственным вылетом сохраняется живой continuation; гибель носителя не перезаписывает его. Captured encounter имеет обязательную замену pending на finished, включая терминальный исход. Load сам по себе не пишет autosave. Подробный контракт — [DemoCampaign](DemoCampaign.md).
+
+## Пиратский мир и durable encounter
+
+Optional `PirateWorldData` version2 сохраняет четыре группы, frozen Vmax, рабочие
+модули носителей, патрульный индекс, фазу, private last observed player/time,
+motion plan и отдельно наблюдение игрока с позицией/скоростью/временем/телеметрией.
+Composition материализуется один раз; reports, approximate count, consumed flag
+и pending batch не перебрасываются при Load. Финитность, идентичности, временные
+границы и safe corridor валидируются до замены мира. Отсутствующий раздел старого
+слота не вызывает spawn. Process-only fog/chance overrides в save не входят.
+
+`WorldEncounterData` связывает группу, encounter/battle IDs, seed и captured,
+pending_battle или finished фазу. Перед стартом боя отдельный pending checkpoint
+записывается атомарно из полного prebattle мира. Он не содержит ходов тактической
+сессии: Load собирает тот же бой с начала. Обычный active-battle save запрещён.
+`EncounterResults` хранит actual outcome/units и retired участвовавшей группы,
+атомарно с собственным settlement. При ошибке finished write gameplay заблокирован,
+повтор только пишет готовый результат; crash оставляет старый pending либо новый
+finished. Непрерывная запись каждого боевого хода не обещается.
+
+В `VoyageStateData.ThreatRoute` сохраняются выбранные условия/точки, исходная
+позиция, следующий waypoint и приостановка ручным управлением. Топливо остаётся
+в существующем fuel reservation ledger; повтор выбора/загрузки не резервирует
+его второй раз. [Механика](../02-FirstRelease/Mechanics/DemoEncounters.md).
 
 ## Услуги компании
 

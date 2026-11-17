@@ -19,3 +19,8 @@ Approach планирует путь при постоянной скорост�
 самой команды. Завершение Approach не является автоматическим Dock/grant.
 
 Источники: [DeepSpaceSaga.Motion](../../../src/DeepSpaceSaga.Motion), [ApproachRoute.cs](../../../src/DeepSpaceSaga.Contracts/ApproachRoute.cs).
+
+[Выбор пути демо](../02-FirstRelease/Mechanics/DemoEncounters.md#выбор-пути-на-станции)
+использует существующий VoyageState и engine.orbit для последовательности точек.
+Это не изменение Approach/Dubins и не автоматический Dock. Ручное управление
+приостанавливает выбранный путь, не засчитывая непосещённые точки.

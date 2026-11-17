@@ -7,7 +7,7 @@
 agricultural, far_trade. Геометрия использует существующий TradingMap generator;
 это не запуск полного SolarSystem generator. Seed, station IDs и роли проверяются
 по [cluster.json](../../../src/DeepSpaceSaga.Client/Data/Demo/cluster.json).
-Стартовое имущество берётся из общего starter-carrier manifest только на New Game.
+Стартовое имущество берётся из [demo-starter-carrier manifest](../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json) только на New Game.
 Обучение использует собственные дроны, пилотов и боезапас этого носителя.
 
 ## Последствия вылета
@@ -31,9 +31,11 @@ Engine применяет единственный `CommitSortieOutcome`: кор
 immutable command identity, expected revision, response и snapshot. Engine
 сохраняет окно из 1024 последних payload hash и ответов: повтор идентичной команды в окне возвращает прежний
 ответ, другая нагрузка с тем же ID отвергается. Для применённых команд, кроме запросов котировок, сохраняется долговечный hash: вне окна тот же payload получает `already_applied`, изменённый — `identity_conflict`. Исходный ответ вне окна не гарантируется; повторных side effects нет. Неподдерживаемые команды не
-выполняют gameplay. Company/Start проецируют подтверждённый мир; секции transport,
-encounters, rewards, progression, story являются поверхностью расширения,
-а не доказательством готовности соответствующих механик.
+выполняют gameplay. Company/Start проецируют подтверждённый мир. Transport содержит
+станционные предложения, пассажирские и грузовые обязательства, доставку и отказы.
+Encounters содержит [пиратские встречи](../02-FirstRelease/Mechanics/DemoEncounters.md),
+наблюдения, доклады и связь с боем; ThreatRoutes — варианты рейса. Rewards,
+progression и story остаются поверхностями расширения.
 
 GameSessionHandle отправляет команды через асинхронный connection, объединяет
 ожидание одного command ID, отбрасывает старые snapshot sequences и отменяет
@@ -48,7 +50,7 @@ settlement. Каталоги Demo проходят строгую проверк
 запрашивает асинхронную запись в существующий campaign-continuation (отдельно от F5/F9 quicksave). Запросы
 объединяются LocalClient; запись сериализуется общим save gate и заменяет файл
 только после успешной записи temp. Внутри активного боя сохранение запрещено;
-перед собственным вылетом записывается живой checkpoint; после выхода живой мир обновляет его с повтором без нового settlement. Терминальный мир не перезаписывает continuation, но может быть сохранён вручную.
+перед собственным вылетом записывается checkpoint; после выхода мир обновляет его с повтором без нового settlement. Для обычного вылета терминальный мир не перезаписывает continuation. Для captured встречи pending checkpoint обязательно заменяется finished результатом, включая гибель игрока, до закрытия боя: старый pending не должен воскресить уже завершённую встречу.
 Ручные слоты автоматически не перезаписываются.
 
 UI показывает Saving/Saved/Failed вне боя; Saved исчезает через пять секунд. F6 во время боя не запрашивает запись. Saved означает завершённую запись, F6 повторяет
@@ -62,6 +64,12 @@ Continue проверяет слоты по времени записи полн
 совместимый мир с живым носителем. Повреждённые и терминальные слоты пропускаются, отсутствие валидного явно сообщается.
 Терминальная кнопка checkpoint использует campaign-continuation, ручной Load позволяет выбрать
 другой слот. Новый demo-профиль не скрывает Load старых совместимых миров.
+
+Pending encounter восстанавливается с теми же IDs, seed и prebattle состоянием
+с начала боя, без доступной для управления карты между загрузкой и боем.
+Во время captured/pending встречи переходы к другому миру запрещены. После
+settlement группа retired, остальные группы не меняются. Повтор записи finished
+не повторяет потери. [Полный контракт встречи](../02-FirstRelease/Mechanics/DemoEncounters.md).
 
 Владельцы: [Engine campaign](../../../src/DeepSpaceSaga.Engine/SimulationEngine.DemoCampaign.cs),
 [pilot loss](../../../src/DeepSpaceSaga.Engine/SimulationEngine.PilotLoss.cs),
