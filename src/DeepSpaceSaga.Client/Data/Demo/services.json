@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "stationIds": ["SPC-0002", "SPC-0006"],
+  "repairRates": { "hull": 10, "armor": 5, "engine": 100, "jam": 50, "decoyCharge": 25 },
+  "recruitment": null,
+  "droneOffers": [],
+  "upgradeOffers": []
+}

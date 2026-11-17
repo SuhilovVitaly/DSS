@@ -109,4 +109,3 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 
 ## Execution — 2026-11-17
 Implemented typed repair requests, quote breakdown, result and durable finance projection. Existing DemoCompanySnapshot receives an optional section; old payloads retain null. Tests authored; execution deferred to the story boundary by owner instruction. Self-review and git diff --check completed. Native/product acceptance OPEN.
-
