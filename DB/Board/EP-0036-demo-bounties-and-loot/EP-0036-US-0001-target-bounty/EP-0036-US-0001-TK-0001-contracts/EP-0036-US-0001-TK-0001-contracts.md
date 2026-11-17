@@ -5,7 +5,7 @@ ticket: EP-0036-US-0001-TK-0001-contracts
 title: Контракт отслеживания и ретроактивного bounty
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0034-US-0006-TK-0004-client, EP-0035-US-0003-TK-0003-client]
@@ -116,3 +116,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.
 ## Self-containment check
 
 Описаны authority, identity, отсутствие acceptance prerequisite, frozen definitions, schema, dependencies, allowlist, шаги и named tests. Открытого продуктового вопроса по этому результату нет; численный content baseline — A-B05 для плейтеста, не обещание доказанного баланса.
+
+## Execution — 2026-11-17
+
+Implemented typed tracking commands, immutable orders and optional rewards projection in the three planned files. Contracts Release build PASS (0 warnings/errors); scoped whitespace formatting and diff check PASS. Initial sandbox restore failed NU1900; retry with network access succeeded. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us1-tk1-build-retry.log. Named tests added; NOT RUN until US1 completion. Native NOT RUN — owner launches game. No payment/runtime eligibility is claimed by this contracts ticket.

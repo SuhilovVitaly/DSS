@@ -30,7 +30,10 @@ public sealed record DemoCompanySnapshot(CampaignRoundtripSnapshot? Roundtrip = 
     ReplacementSnapshot? Replacement = null, RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null);
 public sealed partial record DemoTransportSnapshot;
 public sealed partial record DemoEncountersSnapshot;
-public sealed record DemoRewardsSnapshot;
+public sealed partial record DemoRewardsSnapshot
+{
+    public TargetBountySnapshot? Bounties { get; init; }
+}
 public sealed record DemoProgressionSnapshot;
 public sealed record DemoStorySnapshot;
 
