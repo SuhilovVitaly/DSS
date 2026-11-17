@@ -35,7 +35,7 @@ public sealed partial class SimulationEngine
             {
                 if (quantity <= 0) return;
                 var mapping = definitions.ConsumableItems.Single(m => m.Category == category && m.CatalogId == catalogId);
-                bool destroyed = LootRoll(seed, draws++) < 5000;
+                bool destroyed = LootDestroyed(LootRoll(seed, draws++));
                 consumables.Add(new(mapping.ItemTypeId, quantity, destroyed ? 0 : quantity, destroyed));
             }
             Add("ammo", "torpedo.t1", drone.AmmoCurrent);
@@ -126,7 +126,7 @@ public sealed partial class SimulationEngine
             if (source.Scrap is not { } scrap) { reason = BattleLootReasons.InvalidTarget; return; }
             if (scrap.State != LootAttemptStates.NotAttempted) { reason = BattleLootReasons.AlreadyAttempted; return; }
             if (!TryPrepareLootCargo(scrap.ItemTypeId, scrap.Quantity, out var grant)) { reason = BattleLootReasons.CargoFull; return; }
-            bool success = LootRoll(loot.Seed, loot.DrawCount) < scrap.ChanceBasisPoints;
+            bool success = LootAttemptSucceeded(LootRoll(loot.Seed, loot.DrawCount), scrap.ChanceBasisPoints);
             loot = loot with { DrawCount = checked(loot.DrawCount + 1) };
             source = source with { Scrap = scrap with { State = success ? LootAttemptStates.Collected : LootAttemptStates.Failed } };
             commit = success ? grant : null;

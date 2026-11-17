@@ -90,3 +90,9 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite-создатели новых файлов указаны в depends_on. Draft означает ожидаемую сверку плана, не отсутствующую игровую реализацию.
+
+## Scope correction
+DemoDebugSettings actually lives in Contracts/DebugTuning.cs. Add read-only DemoCampaignSnapshot.DebugSettings and process mutation helper in SimulationEngine.DemoDebug.cs so console reads the authoritative process settings without save persistence. SetLootDebugRequest is an explicit narrow exception to combat/loot/captured gates; normal gameplay commands remain blocked. Persist neither debug request values nor debug projection in campaign save data.
+
+## Execution
+Process overrides for engineer0/10..15/auto, destructionauto/keep/destroy and attemptauto/success/fail. Applied through explicit engine dispatch, allowed during combat/loot; RNG draw progression still advances and only future decisions change. No debug values in save data; read-only process settings in live snapshot. Engine/test build PASS after test namespace correction (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us12-tk1-build-repeat.log); tests deferred until both US12 tickets complete.

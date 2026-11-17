@@ -32,6 +32,7 @@ public sealed partial class SimulationEngine
     {
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         if (ship is null || ship.IsDestroyed) return 0;
+        if (DemoDebugSettings.EngineerBonusPp is { } bonus) return bonus / 100.0;
         return (ship.Crew.SingleOrDefault(c => IsEngineer(c.Role))?.SalvageBonusPercentagePoints ?? 0) / 100.0;
     }
 }

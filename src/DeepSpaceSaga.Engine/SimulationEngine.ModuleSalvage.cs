@@ -18,7 +18,7 @@ public sealed partial class SimulationEngine
         void Add(string category, string catalogId, int slot)
         {
             var map = definitions.Single(m => m.Category == category && m.CatalogId == catalogId);
-            bool destroyed = LootRoll(seed, cursor++) < 5000;
+            bool destroyed = LootDestroyed(LootRoll(seed, cursor++));
             modules.Add(new(battleId + "/" + drone.Id + "/" + category + "/" + slot, category, catalogId, map.ItemTypeId,
                 destroyed, ModuleSalvageChance(baseChance, category)));
         }
@@ -40,7 +40,7 @@ public sealed partial class SimulationEngine
         if (module is null) { reason = BattleLootReasons.InvalidTarget; return; }
         if (module.State != LootAttemptStates.NotAttempted) { reason = BattleLootReasons.AlreadyAttempted; return; }
         if (!TryPrepareLootCargo(module.ItemTypeId, 1, out var grant)) { reason = BattleLootReasons.CargoFull; return; }
-        bool success = LootRoll(loot.Seed, loot.DrawCount) < module.ChanceBasisPoints;
+        bool success = LootAttemptSucceeded(LootRoll(loot.Seed, loot.DrawCount), module.ChanceBasisPoints);
         loot = loot with { DrawCount = checked(loot.DrawCount + 1) };
         source = source with { Modules = source.Modules.Replace(module, module with { State = success ? LootAttemptStates.Collected : LootAttemptStates.Failed }) };
         commit = success ? grant : null;

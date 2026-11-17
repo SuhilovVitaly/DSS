@@ -4,6 +4,16 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    internal static void SetLootDebug(SetLootDebugRequest request)
+    {
+        lock (DemoDebugSettingsGate)
+            Volatile.Write(ref _processDemoDebugSettings, _processDemoDebugSettings with
+            { EngineerBonusPp = request.EngineerBonusPp, DestructionRolls = request.DestructionRolls, LootAttempts = request.Attempts });
+    }
+    private static bool LootDestroyed(int roll) => DemoDebugSettings.DestructionRolls switch
+    { "keep" => false, "destroy" => true, _ => roll < 5000 };
+    private static bool LootAttemptSucceeded(int roll, int chance) => DemoDebugSettings.LootAttempts switch
+    { "success" => true, "fail" => false, _ => roll < chance };
     public static DemoDebugSettings ConfigureFogOfWar(bool? enabled = null)
     {
         lock (DemoDebugSettingsGate)
