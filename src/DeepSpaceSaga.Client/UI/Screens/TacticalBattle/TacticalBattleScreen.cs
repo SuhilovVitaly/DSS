@@ -409,6 +409,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         var p = DesignPoint(x, y);
         if (ObserveLoot())
         {
+            if (!_lootWindow!.ConfirmDiscard && _logTab.OnMouseWheel(p.X, p.Y, delta)) return ScreenEvent.None;
             if (!_lootWindow!.Scroll(p, delta) && !_lootWindow.ConfirmDiscard) _camera.Zoom(p.X, p.Y, delta);
             return ScreenEvent.None;
         }

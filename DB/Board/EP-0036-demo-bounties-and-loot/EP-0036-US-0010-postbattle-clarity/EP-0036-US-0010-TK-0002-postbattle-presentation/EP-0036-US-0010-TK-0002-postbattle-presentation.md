@@ -90,3 +90,9 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite-создатели новых файлов указаны в depends_on. Draft означает ожидаемую сверку плана, не отсутствующую игровую реализацию.
+
+## Scope correction
+Loot marker renderer is BattleMapRenderer.cs and hint/finish owner is BattleLootWindow.cs. Also retain the existing journal in LootOpen overlay and route its click/wheel via TacticalBattleScreen.Loot.cs/Screen.cs so the new self-destruct explanation remains inspectable after victory.
+
+## Execution
+Distinct RU/EN self-destruct journal text, frozen wreck-kind labels, victory inspection hint (no approach needed), Finish collection through existing confirmation flow. Loot overlay retains existing scrollable battle journal. Client/test build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us10-tk2-build.log); tests deferred to US10 boundary.

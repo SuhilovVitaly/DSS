@@ -39,6 +39,7 @@ public static class BattleLogFormatter
                 F("Log.Disabled", target, BattleFormat.Number(unit.Hull), BattleFormat.Number(unit.MaxHull)),
             TacticalBattleLogKind.Disabled => F("Log.DisabledLegacy", target),
             TacticalBattleLogKind.Destroyed => F(entry.Unit?.Kind == TacticalUnitKind.Carrier ? "Log.CarrierDestroyed" : "Log.Destroyed", target),
+            TacticalBattleLogKind.SelfDestructed => F("Log.CarrierSelfDestructed", target),
             TacticalBattleLogKind.WeaponJammed => F("Log.Jammed", target),
             TacticalBattleLogKind.EngineDamaged => F("Log.EngineDamaged", target,
                 entry.Unit?.EngineName ?? BattleFormat.Number((entry.EngineIndex ?? 0) + 1),

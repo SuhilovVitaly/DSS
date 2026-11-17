@@ -16,13 +16,16 @@ internal static partial class TacticalBattleMapRenderer
     internal static void DrawLootSources(SKCanvas canvas, TacticalBattleView view, LootSessionSnapshot loot, string? selected)
     {
         using var ring = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
+        using var label = new SKPaint { IsAntialias = true, Color = SKColors.Goldenrod, TextSize = 12 };
         foreach (var source in loot.Objects)
         {
             var point = view.Project(new(source.X, source.Y, source.Direction));
             ring.Color = source.ObjectId == selected ? SKColors.Cyan : SKColors.Goldenrod;
             canvas.DrawCircle(point, Math.Max(12, 25 * view.UnitScale), ring);
+            canvas.DrawText(LootSourceLabel(source.Kind), point.X + 14, point.Y - 14, label);
         }
     }
+    internal static string LootSourceLabel(string kind) => Localization.Get("loot.source." + kind);
     private const float DroneSilhouetteScale = .42f;
     private static readonly SKColor DisabledDrone = new(146, 151, 154);
     private static readonly SKPath LightDrone = DronePath("M0 -11 4 -5 4 8 -4 8 -4 -5Z M-6 -2H-9V8H-6Z M6 -2H9V8H6Z");

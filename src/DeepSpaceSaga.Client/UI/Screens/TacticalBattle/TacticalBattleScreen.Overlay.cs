@@ -24,6 +24,7 @@ public sealed partial class TacticalBattleScreen
         {
             yield return _lootWindow!.Bounds;
             yield return _lootWindow.LeaveBounds;
+            yield return _logTab.Bounds;
             yield break;
         }
         yield return _panel;
@@ -47,6 +48,7 @@ public sealed partial class TacticalBattleScreen
         {
             TacticalBattleMapRenderer.DrawLootSources(c, f.View, _lootWindow!.Presentation.State!, _lootWindow.Presentation.Selected?.ObjectId);
             _lootWindow.Draw(c, _viewport.Wd, 720, Flow.Pending, Flow.Error);
+            if (!_lootWindow.ConfirmDiscard) _logTab.Draw(c, f, new(16, 195, Math.Min(370, _viewport.Wd - 540), 645));
             return;
         }
         _minimapProjection = TacticalBattleMinimap.Draw(c, f, _minimap);

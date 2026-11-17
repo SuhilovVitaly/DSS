@@ -1176,12 +1176,12 @@
   "Demo.Encounter.Unavailable": "Соединение или сохранение недоступно. Повторите попытку, чтобы продолжить.",
   "loot.title": "Добыча после боя",
   "loot.number_culture": "ru-RU",
-  "loot.select_source": "Выберите дрон или врек на карте.",
+  "loot.select_source": "Победа. Нажмите на выведенный из строя дрон или врек, чтобы осмотреть добычу; подлетать не нужно.",
   "loot.empty": "Здесь больше нечего забирать.",
   "loot.collect": "Забрать",
   "loot.scrap": "Собрать лом",
   "loot.salvage": "Демонтировать",
-  "loot.leave": "Покинуть поле боя",
+  "loot.leave": "Завершить сбор",
   "loot.cancel": "Продолжить сбор",
   "loot.confirm_leave": "Оставить добычу",
   "loot.close_panel": "Закрыть",
@@ -1256,5 +1256,6 @@
   "Prisoners.Empty": "Пленных на борту нет.",
   "Prisoners.Pending": "Арест выполняется…",
   "Prisoners.Title": "Пленные",
-  "Prisoners.Upkeep": "Одна каюта и обычные пайки на пленного; без жалованья."
+  "Prisoners.Upkeep": "Одна каюта и обычные пайки на пленного; без жалованья.",
+  "TacticalBattle.Log.CarrierSelfDestructed": "Носитель {0} самоуничтожился — крыло потеряно."
 }

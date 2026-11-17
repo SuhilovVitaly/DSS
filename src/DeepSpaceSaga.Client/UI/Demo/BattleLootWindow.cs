@@ -43,7 +43,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDis
         Button(canvas, LeaveBounds, L("leave"), !presentation.Pending && !flowPending);
         float panelWidth = Math.Min(500, width - 40);
         Bounds = new(width - panelWidth - 18, 34, width - 18, height - 70);
-        if (presentation.Selected is null) Bounds = new(16, 34, Math.Min(width - 18, 516), 145);
+        if (presentation.Selected is null) Bounds = new(16, 34, Math.Min(width - 18, 516), 185);
         using var background = new SKPaint { Color = new(12, 23, 29, 245) };
         canvas.DrawRoundRect(Bounds, 8, 8, background);
         Text(canvas, L("title"), Bounds.Left + 16, Bounds.Top + 27, 19);

@@ -28,6 +28,7 @@ public sealed partial class TacticalBattleScreen
     private ScreenEvent LootClick(SKPoint point, MouseButton button)
     {
         if (_lootWindow is null) return ScreenEvent.None;
+        if (!_lootWindow.ConfirmDiscard && _logTab.OnMouseDown(point.X, point.Y, button)) return ScreenEvent.None;
         if (button == MouseButton.Right)
         {
             if (!_lootWindow.ConfirmDiscard && !_lootWindow.Bounds.Contains(point)) _camera.BeginPan(point.X, point.Y);

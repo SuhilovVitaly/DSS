@@ -1176,12 +1176,12 @@
   "Demo.Encounter.Unavailable": "The connection or saved checkpoint is unavailable. Retry to continue.",
   "loot.title": "Battle loot",
   "loot.number_culture": "en-US",
-  "loot.select_source": "Select a drone or wreck on the map.",
+  "loot.select_source": "Victory. Select a disabled drone or wreck to inspect loot; you do not need to approach it.",
   "loot.empty": "Nothing remains to collect.",
   "loot.collect": "Collect",
   "loot.scrap": "Recover scrap",
   "loot.salvage": "Dismantle",
-  "loot.leave": "Leave battlefield",
+  "loot.leave": "Finish collection",
   "loot.cancel": "Keep collecting",
   "loot.confirm_leave": "Leave remaining loot",
   "loot.close_panel": "Close",
@@ -1256,5 +1256,6 @@
   "Prisoners.Empty": "No prisoners aboard.",
   "Prisoners.Pending": "Arrest pending…",
   "Prisoners.Title": "Prisoners",
-  "Prisoners.Upkeep": "One cabin and standard rations per prisoner; no wages."
+  "Prisoners.Upkeep": "One cabin and standard rations per prisoner; no wages.",
+  "TacticalBattle.Log.CarrierSelfDestructed": "{0} self-destructed — its wing was lost."
 }
