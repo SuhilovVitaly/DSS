@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "groupCount": 4,
+  "region": { "x": 11000, "y": 11000, "radius": 50000 },
+  "pursuit": { "captureRadius": 200, "startSafeRadius": 8000, "spawnStationRadius": 4000, "patrolRadius": 3000 },
+  "lairWeight": 45,
+  "tancredWeight": 45,
+  "squadWeight": 10,
+  "profiles": [
+    { "signatureTypeId": "lair", "droneCount": 6, "speedFactor": 1.1, "carrierLayoutId": "carrier.standard", "sensorModuleTypeId": "module.sensor.pirate-start" },
+    { "signatureTypeId": "tancred", "droneCount": 10, "speedFactor": 0.8, "carrierLayoutId": "carrier.standard", "sensorModuleTypeId": "module.sensor.pirate-start" }
+  ],
+  "droneLayouts": [ "light.sword.shield", "light.spear", "heavy.sword.shield", "heavy.spear.shield" ]
+}
