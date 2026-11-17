@@ -99,6 +99,25 @@ public sealed partial class SimulationEngine
             if (!group.Retired && !SafePirateManeuver(group,
                 new(group.GroupId, group.X, group.Y, group.SpeedKmS, group.Direction), new(start.X, start.Y), world.AccelerationKmS2, 0, 0))
                 throw new ScenarioException("Saved pirate momentum cannot brake outside START.");
+            if (group.MotionPlan is { } plan)
+            {
+                var origin = plan.Origin;
+                if (origin is null || plan.StartMs < 0 || plan.StartMs > world.LastMotionTimeMs || plan.EndMs - plan.StartMs != PirateControlStepMs ||
+                    plan.EndMs < world.LastMotionTimeMs || origin.ObjectId != group.GroupId ||
+                    !double.IsFinite(origin.X) || !double.IsFinite(origin.Y) || !double.IsFinite(origin.Direction) ||
+                    !double.IsFinite(origin.SpeedKmS) || origin.SpeedKmS < 0 || origin.SpeedKmS > world.CapturedPlayerMaxSpeedKmS * 1.1 ||
+                    origin.MaxSpeedKmS is not { } maximum || !double.IsFinite(maximum) || maximum < 0 || maximum > world.CapturedPlayerMaxSpeedKmS * 1.1 ||
+                    origin.SpeedHoldAccelerationKmS2 is not { } acceleration || !double.IsFinite(acceleration) || Math.Abs(acceleration) > world.AccelerationKmS2 ||
+                    origin.TurnHoldRateDegPerSec is not { } turn || !double.IsFinite(turn) || Math.Abs(turn) > world.TurnRateDegreesPerSecond ||
+                    origin.Orbit is not null || origin.EngineManeuver is not null || origin.ApproachRoute is not null || origin.ActiveEngineCommandType is not null)
+                    throw new ScenarioException("Invalid saved pirate maneuver.");
+                var current = DeepSpaceSaga.Motion.HoldMotion.Sample(origin, world.LastMotionTimeMs - plan.StartMs);
+                var end = DeepSpaceSaga.Motion.HoldMotion.Sample(origin, PirateControlStepMs);
+                var initialGroup = group with { X = origin.X, Y = origin.Y, Direction = origin.Direction, SpeedKmS = origin.SpeedKmS };
+                if (current.X != group.X || current.Y != group.Y || current.SpeedKmS != group.SpeedKmS || current.Direction != group.Direction ||
+                    !SafePirateManeuver(initialGroup, end, new(start.X, start.Y), world.AccelerationKmS2, PirateControlStepMs / 1000.0, turn))
+                    throw new ScenarioException("Saved pirate maneuver disagrees with position or START corridor.");
+            }
             for (int i = 0; i < group.PatrolPoints.Length; i++)
             {
                 var point = group.PatrolPoints[i];

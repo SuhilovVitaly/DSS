@@ -7,6 +7,33 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 public sealed class DemoEp0035Us0002Tk0002Tests
 {
     [Fact]
+    public void CurvedTangentUsesActualPathInsteadOfChord()
+    {
+        // The chord crosses the capture circle; the upper semicircle remains 201 units away.
+        PiratePoint Arc(double t) => new(201 * Math.Cos(Math.PI * t), 201 * Math.Sin(Math.PI * t));
+        Assert.NotNull(SimulationEngine.RelativeCircleEntry(201, 0, -201, 0, 200));
+        Assert.Null(SimulationEngine.TrajectoryCircleEntry(Arc, 1, 201 * Math.PI, 200));
+        PiratePoint InsideArc(double t) => new(201 * Math.Cos(Math.PI * t), 199 * Math.Sin(Math.PI * t));
+        Assert.InRange(SimulationEngine.TrajectoryCircleEntry(InsideArc, 1, 201 * Math.PI, 200)!.Value, .2, .5);
+    }
+
+    [Fact]
+    public void ReturnRoutesAroundStartAndReachesSavedWaypoint()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        var world = engine.CaptureSaveState().GameState.DemoCampaign!.PirateWorld! with { AccelerationKmS2 = 1, TurnRateDegreesPerSecond = 30 };
+        var group = world.Groups[0] with { X = 8100, Y = 0, Direction = 270, SpeedKmS = 0, Phase = "return",
+            PatrolPoints = [new(-10000, 0), new(-10000, 1000), new(-11000, 1000), new(-11000, 0)], NextPatrolPoint = 0 };
+        for (int i = 0; i < 40000 && group.Phase == "return"; i++)
+        {
+            var next = SimulationEngine.StepPirateGroup(group, world, new(0, 0), new(0, 0), 10, 2000, .25);
+            Assert.True(SimulationEngine.SegmentDistance(new(group.X, group.Y), new(next.X, next.Y), new(0, 0)) > 8000);
+            group = next;
+        }
+        Assert.Equal("patrol", group.Phase);
+        Assert.Equal(1, group.NextPatrolPoint);
+    }
+    [Fact]
     public void ContactLossKeepsObservedPoint_AndSafeZoneCancelsPursuit()
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
