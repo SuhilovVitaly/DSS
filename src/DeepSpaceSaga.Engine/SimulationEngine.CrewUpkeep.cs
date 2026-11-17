@@ -59,7 +59,7 @@ public sealed partial class SimulationEngine
 
     private void PrepareCrewDebt(PayCrewDebtCommand command, ref DemoCampaignData candidate, ref string? reason, ref Action? commit)
     {
-        var ledger = candidate.Company?.Upkeep;
+        var ledger = BuildUpkeepProjection(candidate);
         if (candidate.CatalogFingerprint is null || ledger is null || command.Amount <= 0 || command.Amount > ledger.Outstanding)
         { reason = CompanyServiceReasons.Unavailable; return; }
         if (command.Amount > PlayerCredits) { reason = CompanyServiceReasons.InsufficientFunds; return; }

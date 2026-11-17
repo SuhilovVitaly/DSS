@@ -47,6 +47,10 @@ public sealed class DemoEp0033Us0005Tk0002Tests
         Assert.Equal(ledger.Outstanding - 20, engine.CaptureSnapshot().DemoCampaign!.Company!.Upkeep!.Outstanding);
         Assert.False(engine.ExecuteDemoCampaign(new PayCrewDebtCommand("too-much", revision + 1, long.MaxValue)).Applied);
         Assert.Equal(80, engine.PlayerCredits);
+        for (int i = 0; i < 1030; i++) engine.ExecuteDemoCampaign(new PayCrewDebtCommand("rejected-" + i, revision + 1, long.MaxValue));
+        Assert.Equal(DemoCampaignReasons.AlreadyApplied, engine.ExecuteDemoCampaign(command).Reason);
+        Assert.Equal(DemoCampaignReasons.IdentityConflict, engine.ExecuteDemoCampaign(command with { ExpectedRevision = revision + 1 }).Reason);
+        Assert.Equal(80, engine.PlayerCredits);
     }
     [Fact]
     public void AbsentCrewStopsAccruingAndOnlyActualPeopleNeedFood()
@@ -58,8 +62,7 @@ public sealed class DemoEp0033Us0005Tk0002Tests
         Assert.Equal(count, before.DemoCampaign!.Company!.Upkeep!.PeopleFed);
         var save = engine.CaptureSaveState();
         engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId == save.GameState.PlayerShipObjectId
-            ? s with { IsDocked = false, DockedStationObjectId = null, FirstPortFeeGameTimeMs = null, NextPortFeeDueGameTimeMs = null,
-                Passengers = [new ShipPassengerData("passenger", "Passenger")] } : s).ToArray() } }, isSave: true);
+            ? s with { Passengers = [new ShipPassengerData("passenger", "Passenger")] } : s).ToArray() } }, isSave: true);
         Assert.Equal(count + 1, engine.CaptureSnapshot().DemoCampaign!.Company!.Upkeep!.PeopleFed);
         var after = engine.CaptureSaveStateForTests(Day, SimulationSpeed.Speed0, simulationTimeMs: 0);
         Assert.Equal(count * 20, after.GameState.DemoCampaign!.Company!.Upkeep!.Accrued);

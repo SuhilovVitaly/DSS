@@ -30,6 +30,7 @@ public sealed record DemoCampaignData(
     public ImmutableDictionary<string, int> ServiceOfferUsage { get; init; } = ImmutableDictionary<string, int>.Empty;
     public ImmutableHashSet<string> HiredOfferIds { get; init; } = ImmutableHashSet<string>.Empty;
     public ImmutableArray<DemoCrewEmploymentData> Employment { get; init; } = [];
+    public ImmutableDictionary<string, string> CommittedCommandHashes { get; init; } = ImmutableDictionary<string, string>.Empty;
 
     [JsonPropertyName("receipts")]
     public ImmutableArray<DemoCampaignReceiptData> Receipts { get; init; } = [];
@@ -37,6 +38,9 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        if (data.CommittedCommandHashes is null || data.CommittedCommandHashes.Any(p => string.IsNullOrWhiteSpace(p.Key) ||
+            p.Value is not { Length: 64 } || !p.Value.All(Uri.IsHexDigit)))
+            throw new ScenarioException("Invalid committed campaign identities.");
         if (data.Company?.Upkeep is { } upkeep && (upkeep.Accrued < 0 || upkeep.Paid < 0 || upkeep.Paid > upkeep.Accrued ||
             upkeep.Outstanding != upkeep.Accrued - upkeep.Paid || upkeep.LastProcessedDay < 0 ||
             upkeep.LastProcessedDay > gameTimeMs / 86400000 || upkeep.PeopleFed < 0 || upkeep.FoodRemaining < 0 || upkeep.MissingRations < 0))

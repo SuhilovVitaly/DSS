@@ -37,4 +37,5 @@ public static class DemoCampaignReasons
     public const string CarrierDestroyed = "carrier_destroyed";
     public const string BattleActive = "battle_active";
     public const string Unavailable = "unavailable";
+    public const string AlreadyApplied = "already_applied";
 }

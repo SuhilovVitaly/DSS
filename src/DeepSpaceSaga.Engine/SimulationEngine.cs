@@ -505,7 +505,7 @@ public sealed partial class SimulationEngine : IDisposable
         _demoDefinitions.ValidateWorld(scenario with { GameState = gs });
         if (scenario.Metadata.ScenarioId == "demo" || restoredDemoCampaign.CatalogFingerprint is not null)
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
-        ValidateDemoCampaignSections(restoredDemoCampaign);
+        DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;

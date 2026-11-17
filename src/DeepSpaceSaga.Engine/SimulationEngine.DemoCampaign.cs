@@ -32,6 +32,8 @@ public sealed partial class SimulationEngine
             if (previous is not null)
                 return previous.PayloadHash == hash ? previous.Response
                     : new(command.CommandId, false, DemoCampaignReasons.IdentityConflict, _demoCampaign.Revision);
+            if (_demoCampaign.CommittedCommandHashes.TryGetValue(command.CommandId, out string? committedHash))
+                return new(command.CommandId, false, committedHash == hash ? DemoCampaignReasons.AlreadyApplied : DemoCampaignReasons.IdentityConflict, _demoCampaign.Revision);
 
             string? reason = null;
             var candidate = _demoCampaign;
@@ -60,6 +62,8 @@ public sealed partial class SimulationEngine
                 CommitSequence = sequence,
                 Receipts = (_demoCampaign.Receipts.Length >= 1024 ? _demoCampaign.Receipts.RemoveRange(0, _demoCampaign.Receipts.Length - 1023) : _demoCampaign.Receipts).Add(new(hash, sequence, response))
             };
+            if (applied && command is not (RepairQuoteRequest or DecoyQuoteRequest))
+                candidate = candidate with { CommittedCommandHashes = candidate.CommittedCommandHashes.Add(command.CommandId, hash) };
             ValidateDemoCampaignSections(candidate);
             if (applied) commit?.Invoke();
             _demoCampaign = candidate;
