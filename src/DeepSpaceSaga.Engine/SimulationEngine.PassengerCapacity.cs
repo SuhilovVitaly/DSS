@@ -18,7 +18,9 @@ public sealed partial class SimulationEngine
         if (_demoCampaign.CatalogFingerprint is null)
             return persisted;
         var capacity = BuildPassengerCapacityProjection();
-        return capacity is null ? persisted : (persisted ?? new DemoTransportSnapshot()) with { PassengerCapacity = capacity };
+        var jobs = BuildStationJobsProjection(); // EP-0034 US-0006
+        return capacity is null && jobs is null ? persisted
+            : (persisted ?? new DemoTransportSnapshot()) with { PassengerCapacity = capacity, StationJobs = jobs };
     }
 
     private PassengerCapacitySnapshot? BuildPassengerCapacityProjection()

@@ -42,6 +42,7 @@ public sealed partial class SimulationEngine
                 reason = DemoCampaignReasons.CarrierDestroyed;
             else
                 PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason);
+            PrepareStationJobsCommand(command, ref candidate, ref handled, ref reason); // EP-0034 US-0006, explicit dispatch
 
             reason ??= handled ? null : DemoCampaignReasons.Unsupported;
             bool applied = handled && reason is null;
@@ -62,6 +63,7 @@ public sealed partial class SimulationEngine
 
     private void TickDemoCampaign(long gameTimeMs)
     {
+        PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
         if (gameTimeMs <= _demoCampaign.LastTickGameTimeMs) return;
         var candidate = _demoCampaign;
         TickDemoCampaignSections(gameTimeMs, ref candidate);
