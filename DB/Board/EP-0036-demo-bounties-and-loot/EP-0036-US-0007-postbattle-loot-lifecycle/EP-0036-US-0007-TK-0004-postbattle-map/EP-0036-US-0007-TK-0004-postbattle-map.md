@@ -5,7 +5,7 @@ ticket: EP-0036-US-0007-TK-0004-postbattle-map
 title: Клики по тактическим остаткам и выход с предупреждением
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: complete
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0007-TK-0003-postbattle-lifecycle, EP-0036-US-0003-TK-0004-client, EP-0036-US-0006-TK-0004-client]

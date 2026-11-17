@@ -5,7 +5,7 @@ ticket: EP-0036-US-0007-TK-0002-carrier-selfdestruct
 title: Самоуничтожение носителя при потере собственного крыла
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: complete
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: []

@@ -74,3 +74,10 @@ Verified five ticket files; all five published through b8cefc63. Run FullyQualif
 ## US6 completed implementation boundary
 
 All five tickets published through b8cefc63. Contracts4/4, Engine11/11, Client20/20 (US6+affected US3) PASS. Independent read-only review found no actionable defects in checked salvage/mapping/capacity/market/presentation scope. Map integration remains US7; native acceptance NOT RUN. Evidence under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/: us6-contracts.log, us6-engine.log, us6-client.log and correspondingly named -results/ directories.
+
+## US7 boundary validation plan
+
+Verified all five tickets published through eda4e8df. Engine filter FullyQualifiedName~DemoEp0036Us0007 covers schema, self-destruct ownership, victory/exit/load/pause and real checkpoint failure/roundtrip/autosave. Client filter FullyQualifiedName~DemoEp0036Us0007|FullyQualifiedName~DemoEp0036Us0003Tk0004 covers real screen input/recovery and changed identity-preserving presentation. Then affected bounty tests US1/US2 will verify explicit close-before-world-action lifecycle expectations. Headless only, no game launch. Independent lifecycle/storage/UI review follows.
+
+### US7 completed
+All five tickets published. Boundary checks: Engine 13/13 (us7-engine-review.log), Client 14/14 (us7-client-review.log), bounty Engine regression 20/20 (us7-bounty-engine.log), under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/. Independent engine/storage and client reviews found stale victory checkpoint and stale-map recovery defects; both fixed in f6efdaff and reviewers confirmed closure. Native NOT RUN by user instruction. All exact ticket criteria remain subject to final epic regression and owner product acceptance.

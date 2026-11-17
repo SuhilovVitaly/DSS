@@ -5,7 +5,7 @@ ticket: EP-0036-US-0007-TK-0003-postbattle-lifecycle
 title: Подтверждённая фаза лута до закрытия боя
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: complete
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0003-TK-0003-engine, EP-0036-US-0006-TK-0003-engine, EP-0036-US-0007-TK-0002-carrier-selfdestruct]

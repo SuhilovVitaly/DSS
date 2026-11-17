@@ -5,7 +5,7 @@ ticket: EP-0036-US-0007-TK-0005-postbattle-continuation
 title: Checkpoint пообъектного лута и восстановление UI
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: complete
 layer: local-client
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0007-TK-0003-postbattle-lifecycle]
