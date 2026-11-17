@@ -15,8 +15,11 @@ public sealed partial class SimulationEngine
         if (campaign.PirateWorld is { } saved)
         {
             ValidatePirateWorld(saved, objects, state);
+            ValidatePirateCompositions(campaign);
             return campaign;
         }
+        if (!campaign.PirateCompositions.IsEmpty)
+            throw new ScenarioException("Pirate compositions require their saved world groups.");
         if (isSave || campaign.CatalogFingerprint is null || _demoDefinitions.Encounters is not { } definition)
             return campaign;
         var player = objects.Single(o => o.InitialMotion.ObjectId == state.PlayerShipObjectId);

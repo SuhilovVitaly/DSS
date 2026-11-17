@@ -73,6 +73,7 @@ public sealed partial class SimulationEngine
 
     private void TickDemoCampaign(long gameTimeMs)
     {
+        ObservePirateGroups(gameTimeMs);
         PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
         DeliverPassengerContracts(gameTimeMs); // EP-0034 US-0002: idempotent, a Completed contract never pays again
         DeliverCargoContracts(gameTimeMs); // EP-0034 US-0004: idempotent, a Completed contract never pays again
