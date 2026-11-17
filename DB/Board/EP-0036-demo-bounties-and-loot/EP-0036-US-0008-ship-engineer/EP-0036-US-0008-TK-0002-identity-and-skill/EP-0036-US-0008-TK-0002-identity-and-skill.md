@@ -111,3 +111,5 @@ Owning build: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj
 ## Execution — 2026-11-17
 
 Persisted nullable salvage skill, deterministic independent engineer-salvage/v1/ship/crew seed, direct Load and JSON validation, one-engineer limit, zero without live carrier. Saved explicit bonuses remain unchanged. Engine build/scoped formatting/diff PASS. Named tests prepared, NOT RUN until US8 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us8-tk2-build.log.
+
+Independent review correction: engineer role detection now uses the existing shared ParseCrewRole, so numeric/whitespace aliases cannot bypass skill range or one-engineer validation while appearing as Engineer in UI. Added RoleAliases_UseSameValidationAndGetter regression. Repeat affected Engine checks after publication.

@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private static bool IsEngineer(string? role) => string.Equals(role, "Engineer", StringComparison.OrdinalIgnoreCase);
+    private static bool IsEngineer(string? role) => ParseCrewRole(role) == DeepSpaceSaga.Contracts.CrewRole.Engineer;
 
     internal static void ValidateEngineerCrew(SpaceObjectData ship)
     {

@@ -78,4 +78,17 @@ public sealed class DemoEp0036Us0008Tk0002Tests
             new[] { Engineer(12), Engineer(13, "second") }, new[] { Engineer(12) with { Role = "Pilot" } } })
             Assert.Throws<ScenarioException>(() => engine.LoadScenario(WithEngineer(save, entries), true));
     }
+
+    [Theory]
+    [InlineData("3")]
+    [InlineData(" Engineer ")]
+    public void RoleAliases_UseSameValidationAndGetter(string role)
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        var save = engine.CaptureSaveState();
+        engine.LoadScenario(WithEngineer(save, Engineer(12) with { Role = role }), true);
+        Assert.Equal(0.12, engine.GetAssignedEngineerBonusFraction());
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(WithEngineer(save,
+            Engineer(12) with { Role = role }, Engineer(13, "second")), true));
+    }
 }
