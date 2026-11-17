@@ -5,7 +5,7 @@ ticket: EP-0036-US-0004-TK-0001-reward-roundtrip
 title: Интеграция сохранения наград и послебоевой добычи
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0007-TK-0005-postbattle-continuation, EP-0036-US-0009-TK-0003-capacity-and-rations, EP-0036-US-0002-TK-0002-engine]
@@ -65,3 +65,8 @@ Committed sortie/entitlement/attempt не применяются дважды. F
 
 ## Self-containment check
 Входы принадлежат указанным prerequisite tickets, owning files/API/negative cases перечислены. При необходимости изменить иной слой сначала исправить Board allowlist.
+
+
+## Execution
+Implemented real command integration through accepted bounty, confirmed victory, partial collection/module/arrest, JSON roundtrip, remainder and issuer payment with duplicate rejection. Malformed phase/negative quantity/duplicate source rejected atomically. Existing US9 provenance and US2 defeat tests remain in story regression. Tests scheduled at complete US4 boundary; native NOT RUN.
+
