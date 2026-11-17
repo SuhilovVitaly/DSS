@@ -8,7 +8,7 @@ public sealed class DemoEp0032Us0004Tk0003Tests
     [Fact]
     public void DemoMaterializesOnceAndLoadRetainsFiveStationsAndStarter()
     {
-        const string root = DemoEp0032Us0001Tk0002Tests.ContentRoot;
+        string root = DemoEp0032Us0001Tk0002Tests.ContentRoot;
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(root + "/Settings.json", root + "/Scenarios/Demo/scenario.json");
         var before = engine.CaptureSnapshot();
         Assert.Equal(5, before.Objects.Count(o => o.ObjectType == Contracts.SpaceObjectType.Station));

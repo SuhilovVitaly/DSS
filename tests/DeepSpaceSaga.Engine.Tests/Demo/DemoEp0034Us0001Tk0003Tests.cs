@@ -109,7 +109,10 @@ public sealed class DemoEp0034Us0001Tk0003Tests
             // Repeated projection is pure: no revision, receipt or world change.
             var first = engine.CaptureSnapshot().DemoCampaign!;
             var second = engine.CaptureSnapshot().DemoCampaign!;
-            Assert.Equal(first.Transport, second.Transport);
+            // Compared by content: the transport now also carries the job board (EP-0034-US-0006), whose
+            // immutable arrays have reference equality inside records.
+            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(first.Transport), System.Text.Json.JsonSerializer.Serialize(second.Transport));
+            Assert.Equal(first.Transport!.PassengerCapacity, second.Transport!.PassengerCapacity);
             Assert.Equal((first.Revision, first.CommitSequence), (second.Revision, second.CommitSequence));
             Assert.Equal(saved, ScenarioLoader.Serialize(engine.CaptureSaveState()));
 
