@@ -96,3 +96,5 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 ## Execution scope and evidence
 
 Draft allowlist expanded to all canonical EP36 status cards, Tickets/AcceptanceCoverage/DocumentationImpact/ExecutionStatus and tools/graphify/rebuild.py plus graph guides. Board: 12 stories, 48 tickets, zero missing links/dependencies or ticket cycles (board-validation.json). Graph rebuild includes EP36, excludes evolving publication ledgers to avoid circular hashes. Final thematic test plan is recorded in ExecutionStatus before execution; native/game NOT RUN. Shared DemoPlan owner edits remain unstaged; only execution paragraph was committed with manual-save regression correction.
+
+Final evidence: all 48 ticket SHAs published, final thematic checks and independent review complete (FinalValidation.md). Graph has 33869 nodes/86013 edges, 2396 verified input hashes; one known parser warning disclosed. Native/product remains NOT RUN/OPEN. Cleanup and final remote HEAD verification are recorded by the final receipt.

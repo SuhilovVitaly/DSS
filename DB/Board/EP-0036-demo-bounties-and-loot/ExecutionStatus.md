@@ -105,3 +105,18 @@ Scoped dotnet format whitespace ran for changed C# only (format.log/format.err);
 ## Final thematic validation plan
 
 No full suite. After documentation: Client filter DemoEp0036Us0004|DemoEp0036Us0007|DemoEp0036Us0009|DemoEp0036Us0010|DemoEp0034Us0001|KeysDuringBattleTests checks changed shared loot wrapping/locale/cabin summary and F5/F9 exception without enabling active-battle world keys. These are headless tests (no game window). Contracts filter DemoEp0036Us0003 checks additive loot projection serialization. Engine final US4 3/3 and relevant neighbors above remain valid: no semantic Engine change since pass; no redundant rerun. All processes bounded at 300000ms, outputs in this run root. Final docs/Board/graph static checks and independent final review follow.
+
+
+## Final thematic result
+
+Final Client: 44/50 initially; six predecessor capacity/locale expectations updated for the new contract, repeat final-capacity-fixed passed 11/11 (five overlaps), covering all 50 original cases successfully. Final Contracts 3/3. Actual headless window F5 writes Open loot and keeps map active; active battle keyboard guards pass. Final scoped format verify succeeds. Both final independent reviewers report no open actionable findings. See FinalValidation.md for exact evidence and remaining owner acceptance. All 48 ticket first implementation SHAs and corrections are mapped in Tickets.md.
+
+## Graph and final static checks
+
+Offline Graphify final build: 33,869 nodes, 86,013 edges, 1,136 communities; 1,275 code and 1,121 Markdown files. All 2,396 input hashes and 6 selected semantic input hashes verified; zero missing sources/out-of-range locations/dangling edges/self-loops. Post-export drift check is empty. One existing parser limitation: ModulePanelLocalizationTests.cs line25 may be partially extracted (not a compiler error). Semantics are selective, token use unmeasured; no image interpretation or external API. HTML aggregates communities instead of rendering 33k individual nodes.
+
+Retained graph evidence: graph/verification.json, graph/input-evidence.json, graph/semantic-coverage.json, graph/ast-warnings.json, graph/GRAPH_REPORT.md, graph/graph.json and graph/graph.html; source hashes include the preserved owner working-tree docs. The graph is navigation, not runtime/native proof. Final static evidence final-static-checks.json verifies current Markdown links and publication ancestry.
+
+## Cleanup and publication verification
+
+Task-owned build outputs, Graphify cache, helper scripts, temporary capacity fixtures, metrics and raster/screenshot outputs were removed. Retained only the referenced log/TRX and graph evidence under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/. Root inspection found no task-created temporary directory in workspace/repository; existing unrelated directories were preserved. No task worktree or running game exists. Final receipt is committed and pushed to the same verified upstream; exact remote HEAD is checked after its commit and reported to the owner.
