@@ -21,7 +21,7 @@ public sealed class Ep0035RouteCaptureIntegrationTests
         var destination = engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == offer.DestinationStationId);
         double dx = destination.X - ship.PositionX, dy = destination.Y - ship.PositionY;
         double length = Math.Sqrt(dx * dx + dy * dy);
-        Assert.True(length > 15000);
+        Assert.True(length > 15000, $"Route length {length}; destination {offer.DestinationStationId}");
         double x = ship.PositionX + dx / length * 12000, y = ship.PositionY + dy / length * 12000;
         var campaign = baseline.GameState.DemoCampaign!;
         var world = campaign.PirateWorld!;
