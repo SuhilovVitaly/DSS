@@ -48,6 +48,7 @@ public sealed class DemoEp0033Us0003Tk0003Tests
         Assert.Contains("destroyed", wing.Single(d => d.Id == slot.Id).ReadinessReasons);
         var drone = wing.Single(d => d.Id == id);
         Assert.Equal("", drone.CrewId);
+        Assert.Contains("no_pilot", drone.ReadinessReasons);
         Assert.Equal(0, drone.AmmoCurrent);
         Assert.Equal(0, drone.DecoyCharges);
         Assert.Equal(3500, engine.PlayerCredits);

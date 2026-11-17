@@ -117,6 +117,7 @@ public partial class SimulationEngine
     private static ImmutableArray<string> BuildReadinessReasons(OwnedDroneData drone) =>
         drone.Destroyed ? ImmutableArray.Create(OwnedWingReadiness.Destroyed)
         : drone.Disabled ? ImmutableArray.Create(OwnedWingReadiness.Disabled)
+        : string.IsNullOrEmpty(drone.CrewId) ? ImmutableArray.Create("no_pilot")
         : ImmutableArray<string>.Empty;
 }
 
@@ -154,6 +155,10 @@ internal static class OwnedWingValidator
 
         foreach (var drone in drones)
         {
+            if (drone.ReplacesDroneId is { } originalId && !drones.Any(original => original.DroneId == originalId &&
+                original.Destroyed && original.ReplacesDroneId is null && original.DroneId != drone.DroneId &&
+                original.HangarModuleId == drone.HangarModuleId && original.SlotIndex == drone.SlotIndex))
+                throw new ScenarioException("Invalid replacement ancestry.");
             if (string.IsNullOrWhiteSpace(drone.DroneId))
                 throw new ScenarioException("Owned drone has empty droneId.");
             if (!droneIds.Add(drone.DroneId))
