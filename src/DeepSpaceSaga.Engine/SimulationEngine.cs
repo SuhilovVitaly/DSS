@@ -1722,9 +1722,7 @@ public sealed partial class SimulationEngine : IDisposable
                 var savedItemIds = obj.Inventory.Select(entry => entry.ItemTypeId).ToHashSet(StringComparer.Ordinal);
                 foreach (string expectedItemId in profile.InitialInventory.Select(stock => stock.ItemTypeId).Append("item.fuel"))
                     if (!savedItemIds.Contains(expectedItemId) &&
-                        !(LootCatalogCompatibility.IsPrevious(profile, obj.MarketProfileFingerprint) &&
-                          LootCatalogCompatibility.AddedSkus.Contains(expectedItemId) &&
-                          profile.InitialInventory.Any(s => s.ItemTypeId == expectedItemId && s.Quantity == 0)))
+                        !LootCatalogCompatibility.CanAddMissingStock(profile, obj.MarketProfileFingerprint, expectedItemId))
                         throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', inventory is missing '{expectedItemId}'. Save was not modified.");
             }
 

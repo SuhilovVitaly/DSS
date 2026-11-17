@@ -90,3 +90,12 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution scope correction
+
+Extend allowlist to Scenario/LootCatalogCompatibility.cs and CarrierCatalogCompatibility.cs plus the existing US3 migration test: preserve the exact intermediate scrap-only catalog/profile as a second structural predecessor when adding trophy SKUs. Keep all pre-existing fields and drift checks.
+The same compatibility correction also touches SimulationEngine.cs to distinguish missing scrap (required by the intermediate profile) from newly added trophy stock.
+
+## Execution — 2026-11-17
+
+Added all six installed module type mappings, separate 1kg decoy charges and finite industrial demand (target50 each, zero initial stock, existing budget). Trophy mass equals tactical definitions; estimated value is mass*10 baseline. Structural compatibility now recognizes both pre-loot and scrap-only predecessors and does not waive scrap stock in the latter. Client build, JSON parse, scoped formatting/diff PASS. Tests NOT RUN until US6 boundary. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us6-tk2-build.log.

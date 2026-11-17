@@ -5,20 +5,22 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0036Us0003Tk0002MigrationTests
 {
-    [Fact]
-    public void PreLootSave_PreservesEconomicsAndAddsZeroStock()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PreLootSave_PreservesEconomicsAndAddsZeroStock(bool keepScrap)
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         var registry = EngineContentLoader.LoadFromSettingsFile(DemoEp0033Us0001Tk0003Tests.Root() + "/Settings.json").Registry;
         var save = engine.CaptureSaveState();
         var old = save.GameState with
         {
-            CatalogCompatibility = CarrierCatalogCompatibility.AcceptedPredecessors(registry).ElementAt(1),
+            CatalogCompatibility = CarrierCatalogCompatibility.AcceptedPredecessors(registry).ElementAt(keepScrap ? 1 : 2),
             SpaceObjects = save.GameState.SpaceObjects.Select(o => o.MarketProfileId is { } id ? o with
             {
                 MarketProfileFingerprint = LootCatalogCompatibility.Previous(registry.StationMarketProfiles.GetDefinition(
-                    registry.StationMarketProfiles.GetIndex(id))).Fingerprint,
-                Inventory = o.Inventory!.Where(i => !LootCatalogCompatibility.AddedSkus.Contains(i.ItemTypeId)).ToArray()
+                    registry.StationMarketProfiles.GetIndex(id)), keepScrap).Fingerprint,
+                Inventory = o.Inventory!.Where(i => !LootCatalogCompatibility.Removed(i.ItemTypeId, keepScrap)).ToArray()
             } : o).ToArray()
         };
         old = old with
@@ -35,7 +37,7 @@ public sealed class DemoEp0036Us0003Tk0002MigrationTests
             Assert.Equal(station.MarketBudgetCredits, restored.MarketBudgetCredits);
             Assert.Equal(station.MarketRevision, restored.MarketRevision);
             Assert.Equal(station.Inventory!.OrderBy(i => i.ItemTypeId), restored.Inventory!
-                .Where(i => !LootCatalogCompatibility.AddedSkus.Contains(i.ItemTypeId)).OrderBy(i => i.ItemTypeId));
+                .Where(i => !LootCatalogCompatibility.Removed(i.ItemTypeId, keepScrap)).OrderBy(i => i.ItemTypeId));
             Assert.All(restored.Inventory!.Where(i => LootCatalogCompatibility.AddedSkus.Contains(i.ItemTypeId)), i => Assert.Equal(0, i.Quantity));
         }
         engine.LoadScenario(current, true);

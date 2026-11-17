@@ -93,6 +93,83 @@
       "storageKind": "Cargo",
       "buyQuantityStep": 1,
       "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.trophy.weapon.gun.sword.t1",
+      "displayName": "Intact Sword I",
+      "unitMassKg": 70,
+      "basePriceCredits": 700,
+      "tradeCategory": "Good",
+      "tradeUnit": "Piece",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.trophy.weapon.gun.spear.t1",
+      "displayName": "Intact Spear I",
+      "unitMassKg": 65,
+      "basePriceCredits": 650,
+      "tradeCategory": "Good",
+      "tradeUnit": "Piece",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.trophy.armor.plate.medium",
+      "displayName": "Intact Medium Armor",
+      "unitMassKg": 120,
+      "basePriceCredits": 1200,
+      "tradeCategory": "Good",
+      "tradeUnit": "Piece",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.trophy.engine.drive.standard",
+      "displayName": "Intact Standard Drive",
+      "unitMassKg": 100,
+      "basePriceCredits": 1000,
+      "tradeCategory": "Good",
+      "tradeUnit": "Piece",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.trophy.shield.shield.t1",
+      "displayName": "Intact Shield I",
+      "unitMassKg": 10,
+      "basePriceCredits": 100,
+      "tradeCategory": "Good",
+      "tradeUnit": "Piece",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.trophy.decoy.decoy.t1",
+      "displayName": "Intact Decoy Launcher I",
+      "unitMassKg": 10,
+      "basePriceCredits": 100,
+      "tradeCategory": "Good",
+      "tradeUnit": "Piece",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
+    },
+    {
+      "typeId": "item.decoy-charge.t1",
+      "displayName": "Decoy Charge I",
+      "unitMassKg": 1,
+      "basePriceCredits": 10,
+      "tradeCategory": "Good",
+      "tradeUnit": "Piece",
+      "storageKind": "Cargo",
+      "buyQuantityStep": 1,
+      "sellQuantityStep": 1
     }
   ],
   "schemaVersion": 2,

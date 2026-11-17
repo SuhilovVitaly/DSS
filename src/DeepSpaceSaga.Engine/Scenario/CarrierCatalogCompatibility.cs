@@ -31,6 +31,10 @@ internal static class CarrierCatalogCompatibility
     internal static IEnumerable<CatalogCompatibilityData> AcceptedPredecessors(GameDataRegistry registry)
     {
         yield return Previous(registry);
+        var scrapOnly = Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition)
+            .Where(i => !LootCatalogCompatibility.Removed(i.TypeId, true));
+        yield return new(registry.CatalogVersion, EconomyTimeData.CurrentRulesVersion,
+            GameDataRegistry.EconomicCatalogFingerprint(scrapOnly));
         foreach (bool beforeCarrier in new[] { false, true })
         {
             var items = Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition)
