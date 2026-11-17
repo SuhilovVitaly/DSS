@@ -77,7 +77,9 @@ public sealed partial class SimulationEngine
             drone = new(id, buy.HangarModuleId, buy.SlotIndex, "", offer.CatalogId, layout.Weapon, layout.Armor,
                 layout.Shield, layout.Shield is null ? 0 : layout.ShieldCount ?? 1, frame.ShieldSlots,
                 layout.Module, layout.Module is null ? 0 : catalog.Decoys[layout.Module].Charges, 0,
-                hull, hull, armor, armor, 0, frame.AmmoCapacity, EngineIds: layout.Engines.ToArray());
+                hull, hull, armor, armor, 0, frame.AmmoCapacity, EngineIds: layout.Engines.ToArray(),
+                ReplacesDroneId: wing.FirstOrDefault(d => d.Destroyed && d.HangarModuleId == buy.HangarModuleId && d.SlotIndex == buy.SlotIndex) is { } lost
+                    ? lost.ReplacesDroneId ?? lost.DroneId : null);
             wing = wing.Add(drone);
         }
         else
