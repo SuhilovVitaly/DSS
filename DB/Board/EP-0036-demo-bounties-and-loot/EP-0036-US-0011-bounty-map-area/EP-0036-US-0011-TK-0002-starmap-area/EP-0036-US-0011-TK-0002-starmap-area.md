@@ -89,3 +89,6 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite-создатели новых файлов указаны в depends_on. Draft означает ожидаемую сверку плана, не отсутствующую игровую реализацию.
+
+## Execution
+Star map renders a translucent blue static search circle before pirate markers, with target/reward text and viewport clipping. Only authoritative tracked/available areas are used; no input commands or hidden position fallback. Client/test build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us11-tk2-build.log). Both US11 tickets implemented; boundary checks next.
