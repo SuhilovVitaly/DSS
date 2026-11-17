@@ -1,0 +1,22 @@
+{
+  "moduleImplementations": [
+    {
+      "typeId": "module.sensor.player-start",
+      "displayName": "Carrier Sensor",
+      "type": "module.sensor",
+      "massKg": 100,
+      "structurePointsMax": 150,
+      "powerConsumptionW": 0,
+      "sensorRadiusWorldUnits": 2400
+    },
+    {
+      "typeId": "module.sensor.pirate-start",
+      "displayName": "Pirate Sensor",
+      "type": "module.sensor",
+      "massKg": 100,
+      "structurePointsMax": 150,
+      "powerConsumptionW": 0,
+      "sensorRadiusWorldUnits": 2000
+    }
+  ]
+}

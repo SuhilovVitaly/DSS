@@ -1,6 +1,12 @@
 {
   "moduleTypes": [
     {
+      "typeId": "module.sensor",
+      "displayName": "Passive Sensor",
+      "slotSize": 1,
+      "commandTypeIds": []
+    },
+    {
       "typeId": "module.bridge.navigation.computer",
       "displayName": "Bridge Navigation Computer",
       "slotSize": 1,
