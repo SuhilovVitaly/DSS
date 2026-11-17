@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0034-US-0001-passenger-ready-start, EP-0034-US-0006-station-job-board]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Пассажирский заказ от посадки до оплаты
@@ -93,3 +93,30 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story validation (2026-11-17)
+
+Implementation: 4/4 tickets implemented and published on `feature/ep-0034-demo-transport-contracts` (origin). Automated story-scoped tests: own tests PASS; neighbouring regressions show no new failure versus the US-0006 base `1f3b1eb1`. Native window, manual playtest and product acceptance: **NOT RUN / OPEN** (a headless raster render of the Contracts screen was inspected, which is not a native check).
+
+| Ticket | Commit(s) |
+|---|---|
+| EP-0034-US-0002-TK-0001-contracts | `7533bdd1` |
+| EP-0034-US-0002-TK-0002-engine | `d40e99f1` |
+| EP-0034-US-0002-TK-0004-localized-feedback | `82eade83` |
+| EP-0034-US-0002-TK-0003-client | `29f221bf` |
+
+Result: accepting a passenger offer of the station board (the single `AcceptJobOfferCommand`) boards that many real passengers (`{contractId}:pax-{n}` in `ship.Passengers`) in the same commit — they take cabins (capacity and carrier reservation) and eat rations; nothing is charged. A confirmed docking at the destination (docking dialogue finished) no later than the calendar deadline disembarks exactly those passengers, credits the payout once, closes the obligation `Completed` and posts the payout to the arrival voyage ledger (`passenger:{contractId}`). Other stations, repeated snapshots, saves/loads and duplicate commands pay nothing; late arrival is `overdue` without payment (failure handling — US-0003). The Contracts screen shows the terms before acceptance, the confirmed boarding, people aboard, every contract with its delivery state and the confirmed delivery with its payout, in RU/EN.
+
+AC contribution: AC-01 — route, people, deadline and payout on the offer card; no free cabins / no rations / damaged quarters block acceptance by the engine verdict without commands or charges (engine + client tests). AC-02 — the journal and the passenger section show the active contract; passengers eat rations (9 instead of 6 per meal in the engine test) and hold cabins. AC-03 — real command-driven flight with the docking dialogue to the destination: exactly the contract passengers leave, one payout, `PassengerPayoutCredits = payout` on the arrival ledger, credits = twin flight without the contract + payout. AC-04 — RU/EN texts for states and refusals, no resubmission on reopen, Save/Load keeps people and contracts, delivery confirmed on Load is paid once and never again after another Save/Load, corrupted contract/passenger data and a persisted projection reject Load atomically. Native/product evidence for AC-01…AC-04 remains OPEN.
+
+Commands (repository root `D:/DeepSpaceSaga/Dss-Main`, each process ≤ 300000 ms, artifacts in `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0002-20261117/story/`):
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests -c Release --filter "Demo.|ArchitectureTests|Ep0029"` → 32 passed (`contracts.log`), incl. `DemoEp0034Us0002Tk0001Tests` 3/3.
+- `dotnet test tests/DeepSpaceSaga.Engine.Tests -c Release --filter "<US-0001 regression-filter.txt>|DeepSpaceSaga.Engine.Tests.Demo.|.Carrier.|VoyageLedger"` → 368 passed / 8 failed (`engine-reg.log`); the 8 are exactly the US-0006 baseline set (`engine-failed.txt` = `us0006-20261117/story/engine-failed.txt`). All `DemoEp0034*`/`DemoEp0032*` pass, incl. `DemoEp0034Us0002Tk0002Tests` 3/3 and the updated `DemoEp0034Us0006Tk0003Tests`.
+- Extra neighbours `EconomyTimeContinuityTests|ClusterVoyageIntegrationTests` (rations, voyages): 14 failures on this head (`engine-econ.log`, `engine-cluster.log`) — the identical 14 fail at base `1f3b1eb1` in a temporary sparse worktree (`base-econ-cluster.log`, `base-econ-cluster-failed.txt` = `head-econ-cluster-failed.txt`; causes: `Carrier state is attached to a ship without a carrier hull profile`, `insufficient_voyage_fuel`), i.e. pre-existing, not from this story. A first combined attempt timed out at 300 s and was split; its output was discarded.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests -c Release --filter "<client-filter.txt>"` (US-0001 client filter + `DemoEp0034|ContractsScreenTests|MechanicsPanelTests|StationScreenTests|ManualManeuverInputTests|GameSessionDockAutoOpenTests|Locali|.Carrier.`) → 305 passed / 32 failed (`client-reg.log`); the 32 are exactly the US-0006 set (30 baseline + 2 `SessionHandleBattleTests…Localized` on the missing `TacticalBattle.Refusal.NoAmmo`, absent in main `83782f77` too). Own `DemoEp0034Us0002Tk0003Tests` 5/5 and `Tk0004Tests` 3/3 pass.
+- Builds: Contracts.Tests, Engine.Tests, Client.Tests (Release) — 0 warnings, 0 errors.
+
+Defects found during the story: US-0006 deadlines (×2 / ×1.25 of the max-speed ETA, minimum 1 h) were infeasible for any real flight (shortest route ≈ 1.2 h with a modest pilot) — fixed in `d40e99f1` by content multipliers 12000‰ / 8000‰ (TK-0002 A-04); cargo deadline (2500‰) has the same problem and is left to US-0004.
+
+Assumptions (details in tickets): TK-0001 A-01…A-03 (single accept command, passenger view of the obligation, `overdue` without failure semantics); TK-0002 A-01, A-04…A-08 (deadline basis and multipliers, confirmed-docking delivery in the tick, ledger posting only on the arrival voyage, no save-format bump, legacy obligations, names = ids); TK-0004 A-01/A-02; TK-0003 A-01…A-03. Self-review only; no independent review is claimed.
