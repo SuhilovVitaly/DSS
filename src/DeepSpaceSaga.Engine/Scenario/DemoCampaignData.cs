@@ -36,6 +36,9 @@ public sealed record DemoCampaignData(
             data.LastTickGameTimeMs < 0 || data.LastTickGameTimeMs > gameTimeMs || data.Receipts.IsDefault ||
             data.NextCrewSequence < 1 || data.PilotMemorial.IsDefault)
             throw new ScenarioException("Invalid demo campaign version or counters.");
+        // EP-0034 US-0001: passenger capacity is derived from the world on projection, never trusted from a file.
+        if (data.Transport?.PassengerCapacity is not null)
+            throw new ScenarioException("Invalid demo campaign transport: passenger capacity is derived, not persisted.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;
         long previousRevision = 0;

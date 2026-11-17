@@ -63,5 +63,23 @@ public sealed record StarterCarrierManifest(
             throw new ScenarioException($"{path}: starterCarrierManifest requires a non-empty crew array.");
         if (CarrierState is null)
             throw new ScenarioException($"{path}: starterCarrierManifest requires carrierState.");
+
+        // EP-0034 US-0001: a derived manifest (e.g. the demo starter with extra quarters) is rejected at the
+        // file boundary when a module repeats an id, leaves the hull or overlaps another module.
+        var hull = HullLayout.Cells is { } cells ? cells.Where(c => c is not null).Select(c => (c.X, c.Y)).ToHashSet() : [];
+        var moduleIds = new HashSet<string>(StringComparer.Ordinal);
+        var occupied = new HashSet<(int X, int Y)>();
+        foreach (var module in Modules)
+        {
+            if (module is null || string.IsNullOrWhiteSpace(module.ModuleId) || !moduleIds.Add(module.ModuleId))
+                throw new ScenarioException($"{path}: starterCarrierManifest module ids must be present and unique.");
+            foreach (var cell in module.OccupiedCells ?? [])
+            {
+                if (cell is null || !hull.Contains((cell.X, cell.Y)))
+                    throw new ScenarioException($"{path}: module '{module.ModuleId}' occupies a cell outside the hull.");
+                if (!occupied.Add((cell.X, cell.Y)))
+                    throw new ScenarioException($"{path}: module '{module.ModuleId}' overlaps another module at ({cell.X},{cell.Y}).");
+            }
+        }
     }
 }
