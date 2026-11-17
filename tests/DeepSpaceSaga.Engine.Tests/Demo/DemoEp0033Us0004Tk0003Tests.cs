@@ -6,11 +6,21 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0033Us0004Tk0003Tests
 {
+    internal static void MakeRoom(SimulationEngine engine)
+    {
+        DemoEp0033Us0001Tk0003Tests.Damage(engine, 5000);
+        var save = engine.CaptureSaveState();
+        var ship = save.GameState.SpaceObjects.Single(s => s.ObjectId == save.GameState.PlayerShipObjectId);
+        string departed = ship.Crew![0].CrewId;
+        var changed = ship with { Crew = ship.Crew!.Where(c => c.CrewId != departed).ToArray(),
+            CarrierState = ship.CarrierState! with { OwnedDrones = ship.CarrierState!.OwnedDrones!.Select(d => d.CrewId == departed ? d with { CrewId = "" } : d).ToArray() } };
+        engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s => s.ObjectId == ship.ObjectId ? changed : s).ToArray() } }, isSave: true);
+    }
     [Fact]
     public void StableOffersAndPaidHireSurviveLoadWithoutDuplicateCrew()
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
-        DemoEp0033Us0001Tk0003Tests.Damage(engine, 5000);
+        MakeRoom(engine);
         var before = engine.CaptureSnapshot().DemoCampaign!.Company!.Recruitment!;
         Assert.Equal(3, before.Offers.Length);
         Assert.Equal(JsonSerializer.Serialize(before), JsonSerializer.Serialize(engine.CaptureSnapshot().DemoCampaign!.Company!.Recruitment));
@@ -32,7 +42,7 @@ public sealed class DemoEp0033Us0004Tk0003Tests
     public void AssignmentIsExclusiveAndPersistsRealCrewIdentity()
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
-        DemoEp0033Us0001Tk0003Tests.Damage(engine, 5000);
+        MakeRoom(engine);
         var snapshot = engine.CaptureSnapshot();
         var offer = snapshot.DemoCampaign!.Company!.Recruitment!.Offers[0];
         Assert.True(engine.ExecuteDemoCampaign(new HirePilotCommand("hire", 0, offer.Id)).Applied);
@@ -47,9 +57,9 @@ public sealed class DemoEp0033Us0004Tk0003Tests
     public void PassengerOccupancyAndReservePreventHiring()
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
-        DemoEp0033Us0001Tk0003Tests.Damage(engine, 5000);
+        MakeRoom(engine);
         var snapshot = engine.CaptureSnapshot();
-        int free = snapshot.CarrierOperations!.CabinReservation.FreeCabins;
+        int free = snapshot.CarrierOperations!.CabinReservation!.FreeCabins;
         var save = engine.CaptureSaveState();
         engine.LoadScenario(save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s =>
             s.ObjectId == save.GameState.PlayerShipObjectId ? s with { Passengers = Enumerable.Range(0, free).Select(i => new ShipPassengerData("p" + i, "Passenger")).ToArray() } : s).ToArray() } }, isSave: true);
@@ -59,3 +69,5 @@ public sealed class DemoEp0033Us0004Tk0003Tests
         Assert.Equal(5000, engine.PlayerCredits);
     }
 }
+
+
