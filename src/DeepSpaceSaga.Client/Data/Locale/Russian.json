@@ -950,7 +950,7 @@
   "Demo.Recruitment.Title": "Наём пилотов",
   "Demo.Recruitment.Hire": "Нанять за {0} кр",
   "Demo.Recruitment.Skills": "Точность {0}; манёвр {1}; инициатива {2}",
-  "Demo.Recruitment.Terms": "Жалованье {0}/день; срок предложения {1} мс",
+  "Demo.Recruitment.Terms": "Жалованье {0}/день; предложение ещё {1} ч",
   "Demo.Recruitment.Cabins": "Свободные каюты: {0} (без резерва)",
   "Demo.Recruitment.Assign": "Назначить выбранного пилота",
   "Demo.Recruitment.Pilot": "Пилот: {0} — следующий",

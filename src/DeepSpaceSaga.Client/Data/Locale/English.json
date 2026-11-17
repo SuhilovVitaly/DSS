@@ -950,7 +950,7 @@
   "Demo.Recruitment.Title": "Pilot recruitment",
   "Demo.Recruitment.Hire": "Hire for {0} cr",
   "Demo.Recruitment.Skills": "Accuracy {0}; maneuver {1}; initiative {2}",
-  "Demo.Recruitment.Terms": "Wage {0}/day; offer expires {1} ms",
+  "Demo.Recruitment.Terms": "Wage {0}/day; offer valid for {1} h",
   "Demo.Recruitment.Cabins": "Free cabins: {0} (reserve excluded)",
   "Demo.Recruitment.Assign": "Assign selected pilot",
   "Demo.Recruitment.Pilot": "Pilot: {0} — next",

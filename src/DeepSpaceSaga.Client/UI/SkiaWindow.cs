@@ -1671,7 +1671,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         if (_screens.Current is HireScreen)
             return;
 
-        await PushModalAsync(new HireScreen(_session?.Buffer));
+        var session = _session;
+        await PushModalAsync(new HireScreen(session?.Buffer,
+            service: session is null ? null : (command, token) => session.ExecuteDemoCampaignAsync(command, token),
+            campaign: session is null ? null : () => session.DemoCampaign));
     }
 
     /// <summary>
