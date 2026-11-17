@@ -13,7 +13,9 @@ public sealed record PirateGroupSnapshot(
     long ObservedMotionTimeMs,
     bool IsDetected,
     string Status,
-    int? ApproximateDroneCount = null);
+    int? ApproximateDroneCount = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PirateSignatureObservation>))]
+    ImmutableArray<PirateSignatureObservation> Signatures = default);
 
 public sealed partial record DemoEncountersSnapshot
 {

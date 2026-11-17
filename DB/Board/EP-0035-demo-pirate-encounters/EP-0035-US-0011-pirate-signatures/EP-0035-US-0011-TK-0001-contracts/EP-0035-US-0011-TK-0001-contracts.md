@@ -5,7 +5,7 @@ ticket: EP-0035-US-0011-TK-0001-contracts
 title: Контракт наблюдаемой сигнатуры пиратского носителя
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0035-US-0001-TK-0001-contracts]
@@ -109,3 +109,7 @@ Stable ticket EP-0035-US-0011-TK-0003-medium-content сохраняет исто
 G-35-07 equipment pool/weights CLOSED D-35-39; G-35-08 CLOSED D-35-38. Schema/content валидируют exact IDs и ссылки, runtime использует seeded draws class+equipment per slot, сохраняет per-carrier origin. Hidden loadout не попадает в сенсорный доклад; actual materialization timing/persistence прежние D/A.
 Tests NOT RUN: ExactFourAllowedLayoutIds; ClassThenWeapon_IndependentDeterministicDraws; EachSlotUsesItsOwnDraws; LightOneShield_HeavyTwoShields; ExistingEquipmentReferencesValid; AllSameLayoutAllowed; Totals6_10_12Unchanged; PublicReport_NoLayoutDisclosure. Проверять deterministic RNG mapping, не случайные observed frequency.
 Debug override lifetime CLOSED D-35-40.
+
+
+## Execution 2026-11-17
+Implemented lair/tancred type IDs and observation-only signature list. Hidden exact drone inventories remain absent. Dependency resolves to published US1-TK1, not the whole US1 story (see ExecutionStatus semantic-cycle decision). Release Contracts.Tests build PASS, zero warnings/errors; scoped format/diff PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us11-tk1-build.log. Tests NOT RUN until US11 boundary.
