@@ -113,6 +113,7 @@ public sealed partial class SimulationEngine
             _demoCampaign = AddSensorReport(EnsurePirateComposition(_demoCampaign, discovered.Id), discovered.Id, pose, motionTimeMs);
         if (discoveries.Any(d => d.Time <= motionTimeMs))
             _demoCampaign = _demoCampaign with { Revision = checked(_demoCampaign.Revision + 1), CommitSequence = checked(_demoCampaign.CommitSequence + 1) };
+        RememberPirateObservations(motionTimeMs);
         return (motionTimeMs, stopped);
     }
 
