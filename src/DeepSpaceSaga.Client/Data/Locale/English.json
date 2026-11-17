@@ -1,4 +1,7 @@
 {
+  "Demo.Pirate.Lair": "Lair",
+  "Demo.Pirate.Tancred": "Tancred",
+  "Demo.Pirate.ApproximateDrones": "about {0} drones",
   "Ship.Sensor.Operator": "Sensor operator",
   "Ship.Sensor.Script": "Sensor script",
   "Ship.Sensor.Unassigned": "No operator assigned",

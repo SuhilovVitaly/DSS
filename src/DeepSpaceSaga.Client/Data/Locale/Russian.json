@@ -1,4 +1,7 @@
 {
+  "Demo.Pirate.Lair": "Логово",
+  "Demo.Pirate.Tancred": "Танкред",
+  "Demo.Pirate.ApproximateDrones": "около {0} дронов",
   "Ship.Sensor.Operator": "Оператор сенсора",
   "Ship.Sensor.Script": "Скрипт сенсора",
   "Ship.Sensor.Unassigned": "Оператор не назначен",
