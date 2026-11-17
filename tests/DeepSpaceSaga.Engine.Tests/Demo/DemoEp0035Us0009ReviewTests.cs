@@ -32,7 +32,7 @@ public sealed class DemoEp0035Us0009ReviewTests
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), source.CatalogVersion, source.LegacyCatalogFingerprint,
             All(source.StationMarketProfiles), All(source.ShipClasses), All(source.StationMarketEvents), tacticalBattle: source.TacticalBattle);
-        using var original = DemoEp0033Us0001Tk0003Tests.Demo();
+        using var original = DemoEp0032Us0001Tk0002Tests.Tutorial();
         using var engine = new SimulationEngine(registry);
         engine.LoadScenario(DemoEp0035Us0009Tk0002Tests.Assign(original.CaptureSaveState(), null), true);
         var before = ScenarioLoader.Serialize(engine.CaptureSaveState());
