@@ -11,9 +11,7 @@ public sealed class Ep0035RouteCaptureIntegrationTests
     [InlineData(29UL)]
     public void PassengerVoyageDirectCapturesWhileObservedDetourPasses(ulong seed)
     {
-        using var engine = Ep0035Us5Tk2Tests.Docked();
-        var initial = engine.CaptureSaveState();
-        engine.LoadScenario(initial with { GameState = initial.GameState with { MasterSeed = seed } }, true);
+        using var engine = Ep0035Us5Tk2Tests.Docked(seed);
         var state = engine.CaptureSnapshot().DemoCampaign!;
         var offer = state.Transport!.StationJobs!.Offers.First(o => o.OriginStationId == "SPC-0002" &&
             StationJobTypes.CarriesPassengers(o.Type) && StationJobReasons.AcceptBlocker(state.Transport.StationJobs, o.Id) is null);
