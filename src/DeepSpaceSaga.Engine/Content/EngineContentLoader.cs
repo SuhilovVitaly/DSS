@@ -459,6 +459,13 @@ public static class EngineContentLoader
             }
 
             ValidateEngineParameters(dto, category);
+            if (category.TypeId == "module.sensor")
+            {
+                if (dto.SensorRadiusWorldUnits is not { } radius || !double.IsFinite(radius) || radius <= 0)
+                    throw new ContentException($"Module '{dto.TypeId}': sensorRadiusWorldUnits must be finite and positive.");
+            }
+            else if (dto.SensorRadiusWorldUnits is not null)
+                throw new ContentException($"Module '{dto.TypeId}': sensorRadiusWorldUnits requires module.sensor.");
             if (dto.FuelEfficiencyKmPerKg is { } efficiency && (efficiency <= 0 || category.TypeId != "module.engine"))
                 throw new ContentException($"Module '{dto.TypeId}': fuelEfficiencyKmPerKg must be positive and owned by module.engine.");
 
@@ -510,7 +517,8 @@ public static class EngineContentLoader
                 dto.FuelEfficiencyKmPerKg,
                 dto.DroneCapacity,
                 dto.FootprintWidth,
-                dto.FootprintHeight);
+                dto.FootprintHeight,
+                dto.SensorRadiusWorldUnits);
             return definition;
         });
     }
@@ -939,7 +947,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null,
         [property: JsonPropertyName("droneCapacity")] int? DroneCapacity = null,
         [property: JsonPropertyName("footprintWidth")] int? FootprintWidth = null,
-        [property: JsonPropertyName("footprintHeight")] int? FootprintHeight = null);
+        [property: JsonPropertyName("footprintHeight")] int? FootprintHeight = null,
+        [property: JsonPropertyName("sensorRadiusWorldUnits")] double? SensorRadiusWorldUnits = null);
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,
         [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,
