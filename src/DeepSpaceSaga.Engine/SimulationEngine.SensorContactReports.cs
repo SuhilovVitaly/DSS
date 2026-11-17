@@ -6,6 +6,41 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    private const string SensorReportDialogueId = "dialogue.sensor-pirate-contact";
+
+    private void OpenPendingSensorReport(long time)
+    {
+        if (_demoCampaign.PendingSensorReport is not { } batch || _tacticalBattleSession is not null) return;
+        if (_dialogue.Active is not null)
+        {
+            _dialogue.ResumeSpeed = SimulationSpeed.Speed0;
+            return;
+        }
+        string participant = batch.Reports[0].OperatorCrewId ?? "sensor-script";
+        string? error = StartDialogue(SensorReportDialogueId, null, participant, batch.BatchId, time);
+        if (error is not null) throw new ScenarioException("Cannot open sensor report: " + error);
+        _dialogue.Active = _dialogue.Active! with
+        {
+            Parameters = ImmutableDictionary<string, string>.Empty.Add("sensorBatchId", batch.BatchId)
+        };
+        _dialogue.ResumeSpeed = SimulationSpeed.Speed0;
+    }
+
+    private void AcknowledgeSensorReport()
+    {
+        if (_demoCampaign.PendingSensorReport is null) return;
+        _demoCampaign = _demoCampaign with { PendingSensorReport = null,
+            Revision = checked(_demoCampaign.Revision + 1), CommitSequence = checked(_demoCampaign.CommitSequence + 1) };
+    }
+
+    private static void ValidateSensorDialogueSave(DemoCampaignData campaign, ScenarioFile scenario)
+    {
+        if (scenario.GameState.DialogueState?.ActiveDialogue is { DialogueDefinitionId: SensorReportDialogueId } active &&
+            (campaign.PendingSensorReport is not { } batch ||
+            !active.Parameters.TryGetValue("sensorBatchId", out var id) || id != batch.BatchId))
+            throw new ScenarioException("Saved sensor dialogue does not match its pending batch.");
+    }
+
     private DemoCampaignData AddSensorReport(DemoCampaignData campaign, string groupId, ObjectMotionSnapshot player, long time)
     {
         var world = campaign.PirateWorld!;

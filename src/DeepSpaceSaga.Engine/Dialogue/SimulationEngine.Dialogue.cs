@@ -75,13 +75,14 @@ public sealed partial class SimulationEngine
         var node = definition.Node(definition.EntryNodeId);
         var station = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == stationId);
         var crew = station?.StationCrew.FirstOrDefault(c => c.Id == participantId);
+        var shipCrew = stationId is null ? _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId)?.Crew.FirstOrDefault(c => c.Id == participantId) : null;
         string instance = $"dialogue-{++_dialogue.NextInstanceId}";
         var parameters = ImmutableDictionary<string, string>.Empty;
         if (station?.PortFeeCreditsPerDay is { } fee)
             parameters = parameters.Add("portFeeCreditsPerDay", fee.ToString(CultureInfo.InvariantCulture));
         _dialogue.Active = new(instance, definitionId, stationId, participantId, node.NodeId, 0,
-            definition.CanAbort, [], node.TextKey, node.SpeakerRole, crew?.DisplayName ?? participantId,
-            crew?.PortraitImage, parameters);
+            definition.CanAbort, [], node.TextKey, node.SpeakerRole, crew?.DisplayName ?? shipCrew?.DisplayName ?? participantId,
+            crew?.PortraitImage ?? shipCrew?.PortraitAssetId, parameters);
         _dialogue.ResumeSpeed = _clock.Speed;
         // Freeze exactly at the command's authoritative time, including on save-before-snapshot.
         StopAllTurnHolds();
@@ -224,7 +225,9 @@ public sealed partial class SimulationEngine
         var active = _dialogue.Active!;
         _dialogue.Emit(active.InstanceId, code, time, commandId, textKey, active.Parameters);
         _dialogue.Active = null;
-        var speed = _dialogue.ResumeSpeed ?? SimulationSpeed.Speed0;
+        bool sensorReport = active.DialogueDefinitionId == SensorReportDialogueId;
+        if (sensorReport) AcknowledgeSensorReport();
+        var speed = sensorReport || _demoCampaign.PendingSensorReport is not null ? SimulationSpeed.Speed0 : _dialogue.ResumeSpeed ?? SimulationSpeed.Speed0;
         _dialogue.ResumeSpeed = null;
         _clock.Reset(_processedWorldTimeMs, speed, time, _clock.Capture().MotionQuarterRemainder);
     }

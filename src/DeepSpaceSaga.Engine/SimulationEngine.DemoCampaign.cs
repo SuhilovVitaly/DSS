@@ -74,6 +74,7 @@ public sealed partial class SimulationEngine
     private void TickDemoCampaign(long gameTimeMs)
     {
         ObservePirateGroups(gameTimeMs);
+        OpenPendingSensorReport(_processedSimulationTimeMs);
         PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
         DeliverPassengerContracts(gameTimeMs); // EP-0034 US-0002: idempotent, a Completed contract never pays again
         DeliverCargoContracts(gameTimeMs); // EP-0034 US-0004: idempotent, a Completed contract never pays again
@@ -102,6 +103,19 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case DismissSensorContactReportRequest dismiss:
+                if (candidate.PendingSensorReport?.BatchId != dismiss.BatchId) reason = "sensor_batch_mismatch";
+                else if (_dialogue.Active is { DialogueDefinitionId: not SensorReportDialogueId }) reason = "dialogue_active";
+                else
+                {
+                    candidate = candidate with { PendingSensorReport = null };
+                    commit = () =>
+                    {
+                        if (_dialogue.Active is not null) EndDialogue(_processedSimulationTimeMs, dismiss.CommandId, "dialogue_completed");
+                        else _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, _processedSimulationTimeMs, _clock.Capture().MotionQuarterRemainder);
+                    };
+                }
+                break;
             case SetFogOfWarRequest fog:
                 commit = () => ConfigureFogOfWar(fog.Enabled);
                 break;

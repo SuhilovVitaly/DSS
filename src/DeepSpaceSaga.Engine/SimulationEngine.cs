@@ -172,6 +172,7 @@ public sealed partial class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             if (_tacticalBattleSession is not null && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
+            if (_demoCampaign.PendingSensorReport is not null && speed != SimulationSpeed.Speed0) return "sensor_report_pending";
             if (IsStoppedByStationSecurity) return StationSecurityStoppedReason;
             if (!Enum.IsDefined(speed)) throw new ArgumentOutOfRangeException(nameof(speed));
             if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return null; }
@@ -511,6 +512,7 @@ public sealed partial class SimulationEngine : IDisposable
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
         DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
         restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
+        ValidateSensorDialogueSave(restoredDemoCampaign, scenario with { GameState = gs });
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
