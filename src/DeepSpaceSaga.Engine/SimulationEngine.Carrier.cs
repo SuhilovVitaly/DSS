@@ -129,7 +129,7 @@ public partial class SimulationEngine
             }
         }
 
-        int occupied = ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length;
+        int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
         int reserved = ReservedPrisonerCabins;
         return new CabinReservationSnapshot(
             TotalCabins: operationalCabins,

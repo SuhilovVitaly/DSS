@@ -28,6 +28,8 @@ public sealed record DemoCampaignData(
 
     public long NextDroneSequence { get; init; } = 1;
     public ImmutableDictionary<string, int> ServiceOfferUsage { get; init; } = ImmutableDictionary<string, int>.Empty;
+    public ImmutableHashSet<string> HiredOfferIds { get; init; } = ImmutableHashSet<string>.Empty;
+    public ImmutableArray<DemoCrewEmploymentData> Employment { get; init; } = [];
 
     [JsonPropertyName("receipts")]
     public ImmutableArray<DemoCampaignReceiptData> Receipts { get; init; } = [];
@@ -38,7 +40,7 @@ public sealed record DemoCampaignData(
         if (data.Company?.StationRepair is { } repair)
         {
             if (repair.Postings.IsDefault || repair.Postings.Any(p => p is null || string.IsNullOrWhiteSpace(p.Id) ||
-                string.IsNullOrWhiteSpace(p.TargetId) || p.Kind is not ("repair" or "decoy" or "drone" or "equipment") || p.Amount < 0 || p.GameTimeMs < 0 || p.GameTimeMs > gameTimeMs) ||
+                string.IsNullOrWhiteSpace(p.TargetId) || p.Kind is not ("repair" or "decoy" or "drone" or "equipment" or "hire") || p.Amount < 0 || p.GameTimeMs < 0 || p.GameTimeMs > gameTimeMs) ||
                 repair.Postings.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != repair.Postings.Length)
                 throw new ScenarioException("Invalid company repair postings.");
             if (repair.LastResult is { } result && (result.Paid < 0 ||
@@ -54,6 +56,10 @@ public sealed record DemoCampaignData(
             data.NextCrewSequence < 1 || data.NextDroneSequence < 1 || data.ServiceOfferUsage is null ||
             data.ServiceOfferUsage.Any(p => string.IsNullOrWhiteSpace(p.Key) || p.Value < 0) || data.PilotMemorial.IsDefault)
             throw new ScenarioException("Invalid demo campaign version or counters.");
+        if (data.HiredOfferIds is null || data.Employment.IsDefault || data.Employment.Any(e => e is null ||
+            string.IsNullOrWhiteSpace(e.CrewId) || e.DailyWage < 0 || e.HiredAt < 0 || e.HiredAt > gameTimeMs) ||
+            data.Employment.Select(e => e.CrewId).Distinct().Count() != data.Employment.Length)
+            throw new ScenarioException("Invalid crew employment terms.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;
         long previousRevision = 0;
@@ -72,6 +78,8 @@ public sealed record DemoCampaignData(
         return data;
     }
 }
+
+public sealed record DemoCrewEmploymentData(string CrewId, long DailyWage, long HiredAt);
 
 public sealed record DemoCampaignReceiptData(
     [property: JsonPropertyName("payloadHash")] string PayloadHash,

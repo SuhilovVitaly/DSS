@@ -51,7 +51,8 @@ public sealed partial class SimulationEngine
             var response = new DemoCampaignResponse(command.CommandId, applied, reason, revision,
                 applied ? candidate.Company?.StationRepair : null,
                 applied ? candidate.Company?.Supply : null,
-                applied ? candidate.Company?.Replacement : null);
+                applied ? candidate.Company?.Replacement : null,
+                applied ? candidate.Company?.Recruitment : null);
             candidate = (applied ? candidate : _demoCampaign) with
             {
                 Revision = revision,
