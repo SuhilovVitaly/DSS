@@ -59,6 +59,37 @@ public sealed class DemoEp0036Us0004Tk0001Tests
     }
 
     [Fact]
+    public void OpenPreviousLootWithPendingNextBattleRejectedAtomically()
+    {
+        using var engine = DemoEp0036Us0007Tk0003Tests.Won();
+        var state = engine.CaptureSnapshot().DemoCampaign!;
+        Assert.True(engine.ExecuteDemoCampaign(new FinishBattleLootCommand("close", state.Revision, state.Rewards!.Loot!.BattleId, true)).Applied);
+        var saved = engine.CaptureSaveState();
+        var campaign = saved.GameState.DemoCampaign!;
+        var world = campaign.PirateWorld!;
+        var group = world.Groups.First(g => !g.Retired);
+        engine.LoadScenario(saved with { GameState = saved.GameState with {
+            SpaceObjects = saved.GameState.SpaceObjects.Select(s => s.ObjectId != saved.GameState.PlayerShipObjectId ? s : s with
+            { PositionX = group.X, PositionY = group.Y + 1500, SpeedMps = 0, Orbit = null, IsDocked = false, DockedStationObjectId = null }).ToArray(),
+            DemoCampaign = campaign with { WorldEncounter = null, PirateWorld = world with {
+                Groups = world.Groups.Replace(group, group with { Phase = "captured", CapturedMotionTimeMs = world.LastMotionTimeMs, MotionPlan = null }) } }
+        } }, true);
+        state = engine.CaptureSnapshot().DemoCampaign!;
+        if (state.PendingSensorReport is { } report)
+            Assert.True(engine.ExecuteDemoCampaign(new DismissSensorContactReportRequest("ack-next", state.Revision, report.BatchId)).Applied);
+        state = engine.CaptureSnapshot().DemoCampaign!;
+        var checkpoint = engine.CapturePendingEncounterCheckpoint(new("next", state.Revision, state.WorldEncounter!.Binding.EncounterId));
+        var before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var corrupt = checkpoint with { GameState = checkpoint.GameState with { DemoCampaign = checkpoint.GameState.DemoCampaign! with {
+            LootSession = checkpoint.GameState.DemoCampaign!.LootSession! with { Phase = LootPhases.Open } } } };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(corrupt, true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+        // The unchanged closed ledger remains compatible with a legitimate next-battle checkpoint.
+        engine.LoadScenario(checkpoint, true);
+        Assert.True(engine.IsTacticalBattleActive);
+    }
+
+    [Fact]
     public void MalformedLedgerRejectedWithoutReplacingWorld()
     {
         using var engine = DemoEp0036Us0007Tk0003Tests.Won();

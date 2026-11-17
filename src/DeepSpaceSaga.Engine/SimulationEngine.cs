@@ -519,6 +519,8 @@ public sealed partial class SimulationEngine : IDisposable
         restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
         restoredDemoCampaign = PrepareBountiesForLoad(restoredDemoCampaign);
         ValidateBattleLootForLoad(restoredDemoCampaign);
+        if (restoredDemoCampaign.LootSession?.Phase == LootPhases.Open && gs.DialogueState?.ActiveDialogue is not null)
+            throw new ScenarioException("Open loot cannot overlap an active dialogue.");
         ValidateSensorDialogueSave(restoredDemoCampaign, scenario with { GameState = gs });
         if (restoredDemoCampaign.WorldEncounter is { Phase: WorldEncounterPhases.PendingBattle } &&
             (restoredDemoCampaign.PendingSensorReport is not null || gs.DialogueState?.ActiveDialogue is not null ||

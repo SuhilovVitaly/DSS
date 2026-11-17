@@ -70,3 +70,4 @@ Committed sortie/entitlement/attempt не применяются дважды. F
 ## Execution
 Implemented real command integration through accepted bounty, confirmed victory, partial collection/module/arrest, JSON roundtrip, remainder and issuer payment with duplicate rejection. Malformed phase/negative quantity/duplicate source rejected atomically. Existing US9 provenance and US2 defeat tests remain in story regression. Tests scheduled at complete US4 boundary; native NOT RUN.
 
+Review correction: pre-publication Load gate now requires Open loot to match the finished current encounter, with no pending sensor report/active dialogue. Owning SimulationEngine.cs validation is added to allowlist. Regression covers closed A + valid checkpoint B, rejects reopened A atomically.

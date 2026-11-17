@@ -41,6 +41,9 @@ public sealed partial class SimulationEngine
     {
         if (campaign.LootSession is not { } loot) return;
         BattleLootData.Validate(loot);
+        if (loot.Phase == LootPhases.Open && (campaign.WorldEncounter is not { Phase: WorldEncounterPhases.Finished } encounter ||
+            encounter.Binding.BattleId != loot.BattleId || campaign.PendingSensorReport is not null))
+            throw new ScenarioException("Open loot requires its finished encounter and no pending sensor report.");
         var victory = campaign.EncounterResults.SingleOrDefault(r => r.Binding.BattleId == loot.BattleId && r.PlayerWon);
         if (victory is null || loot.CatalogFingerprint != _demoDefinitions.Loot?.Fingerprint ||
             loot.Map.Phase != TacticalBattlePhase.Over || System.Text.Json.JsonSerializer.Serialize(loot.Map.Outcome) != System.Text.Json.JsonSerializer.Serialize(victory.Outcome) ||
