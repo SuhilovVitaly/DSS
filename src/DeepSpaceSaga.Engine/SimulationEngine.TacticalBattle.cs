@@ -54,7 +54,7 @@ public sealed partial class SimulationEngine
         return ExecuteTactical(request.CommandId, request, () =>
         {
             if (_tacticalBattleSession is not null) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.AlreadyActive);
-            if (HasCapturedEncounter) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongPhase);
+            if (HasCapturedEncounter || _encounterStoragePending) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongPhase);
             if (_registry.TacticalBattle.Catalog is not { } catalog)
             {
                 var error = _registry.TacticalBattle.Error;

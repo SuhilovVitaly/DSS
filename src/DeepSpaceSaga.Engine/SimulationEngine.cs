@@ -172,6 +172,7 @@ public sealed partial class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             if (_tacticalBattleSession is not null && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
+            if (_encounterStoragePending && speed != SimulationSpeed.Speed0) return "encounter_checkpoint_pending";
             if (HasCapturedEncounter && speed != SimulationSpeed.Speed0) return "encounter_captured";
             if (_demoCampaign.PendingSensorReport is not null && speed != SimulationSpeed.Speed0) return "sensor_report_pending";
             if (IsStoppedByStationSecurity) return StationSecurityStoppedReason;
@@ -248,7 +249,7 @@ public sealed partial class SimulationEngine : IDisposable
         {
             var previous = _registry;
             ThrowIfTacticalBattleActive();
-            if (HasCapturedEncounter) throw new InvalidOperationException("encounter_captured");
+            if (HasCapturedEncounter || _encounterStoragePending) throw new InvalidOperationException("encounter_captured");
             try
             {
                 _registry = tuning.Registry;
@@ -2316,7 +2317,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
-            if (_tacticalBattleSession is not null || HasCapturedEncounter)
+            if (_tacticalBattleSession is not null || HasCapturedEncounter || _encounterStoragePending)
             {
                 RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, TacticalBattleActiveReason);
                 continue;

@@ -176,9 +176,14 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
                 return accepted;
             }
 
+            bool campaignBattle = _engine.CaptureSnapshot().DemoCampaign?.WorldEncounter is { Phase: WorldEncounterPhases.PendingBattle };
+            if (campaignBattle) _engine.SetEncounterStoragePending(true);
             var response = _engine.ExitTacticalBattle(request);
             if (!response.Accepted || response.Settlement is null)
+            {
+                if (campaignBattle) _engine.SetEncounterStoragePending(false);
                 return response;
+            }
 
             // Cache before the write: a failed or cancelled checkpoint must stay retryable and
             // must never reach the engine (and its loss/settlement) a second time.
@@ -204,6 +209,7 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
         if (string.IsNullOrWhiteSpace(_saveDirectory))
         {
             _checkpointedBattles.Add(battleId);
+            _engine.SetEncounterStoragePending(false);
             return;
         }
 
@@ -211,6 +217,8 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
         {
             await SaveAsync(SaveSlotNaming.ContinuationSlotId, cancellationToken).ConfigureAwait(false);
             _checkpointedBattles.Add(battleId);
+            _pendingEncounterCheckpoint = null;
+            _engine.SetEncounterStoragePending(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)
         {
@@ -228,6 +236,23 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
+        if (command is BeginEncounterBattleCommand begin && !_engine.IsTacticalBattleActive)
+        {
+            await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                DemoCampaignResponse? response = null;
+                await WriteSaveAsync(SaveSlotNaming.ContinuationSlotId, null, cancellationToken,
+                    capture: () => _engine.CapturePendingEncounterCheckpoint(begin),
+                    afterWrite: saved =>
+                    {
+                        _pendingEncounterCheckpoint = saved;
+                        response = _engine.ExecuteDemoCampaign(begin);
+                    }).ConfigureAwait(false);
+                return response!;
+            }
+            finally { _checkpointGate.Release(); }
+        }
         return await Task.Run(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -321,7 +346,9 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) =>
         WriteSaveAsync(slotId, null, cancellationToken);
 
-    private async ValueTask WriteSaveAsync(string slotId, long? minimumSequence, CancellationToken cancellationToken)
+    private ScenarioFile? _pendingEncounterCheckpoint;
+    private async ValueTask WriteSaveAsync(string slotId, long? minimumSequence, CancellationToken cancellationToken,
+        Func<ScenarioFile>? capture = null, Action<ScenarioFile>? afterWrite = null)
     {
         if (string.IsNullOrWhiteSpace(_saveDirectory))
             throw new InvalidOperationException(
@@ -338,10 +365,13 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
             if (slotId == SaveSlotNaming.ContinuationSlotId)
             {
                 var snapshot = _engine.CaptureSnapshot();
-                if (snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDestroyed)) return;
+                if (snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDestroyed) &&
+                    snapshot.DemoCampaign?.WorldEncounter?.Phase != WorldEncounterPhases.Finished) return;
             }
             SaveStageForTests?.Invoke("before_capture");
-            var saveState = _engine.CaptureSaveState();
+            var saveState = capture is not null ? capture() : _engine.CaptureSaveState();
+            if (capture is null && saveState.GameState.DemoCampaign?.WorldEncounter is { Phase: WorldEncounterPhases.Captured } &&
+                _pendingEncounterCheckpoint is { } pending) saveState = pending;
             if (minimumSequence is { } required && (saveState.GameState.DemoCampaign?.CommitSequence ?? 0) < required)
                 throw new InvalidOperationException("Requested campaign commit has not been captured.");
             string json = ScenarioLoader.Serialize(saveState);
@@ -355,6 +385,7 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
             cancellationToken.ThrowIfCancellationRequested();
             SaveStageForTests?.Invoke("before_replace");
             File.Move(tempPath, targetPath, overwrite: true);
+            afterWrite?.Invoke(saveState);
         }
         finally
         {

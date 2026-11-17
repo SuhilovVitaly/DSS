@@ -41,6 +41,7 @@ public sealed partial class SimulationEngine
             Action? commit = null;
             if (command.ExpectedRevision != _demoCampaign.Revision) reason = DemoCampaignReasons.StaleRevision;
             else if (_tacticalBattleSession is not null) reason = DemoCampaignReasons.BattleActive;
+            else if (_encounterStoragePending) reason = "encounter_checkpoint_pending";
             else if (HasCapturedEncounter && command is not (BeginEncounterBattleCommand or DismissSensorContactReportRequest or SetFogOfWarRequest))
                 reason = "encounter_captured";
             else if (_objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
