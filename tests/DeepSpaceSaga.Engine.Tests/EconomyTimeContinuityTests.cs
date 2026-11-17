@@ -519,8 +519,7 @@ public class EconomyTimeContinuityTests
 
     private static GameDataRegistry RealRegistry()
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
+        string root = Demo.DemoEp0033Us0001Tk0003Tests.Root();
         return EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
     }
 
@@ -1358,7 +1357,7 @@ public class EconomyTimeContinuityTests
     [InlineData("Undocked")]
     public void Shipping_explicit_cargo_is_preserved_bounded_and_validated_after_save_load(string scenarioName)
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+        string root = Demo.DemoEp0033Us0001Tk0003Tests.Root();
         string scenarioPath = Path.Combine(root, "Scenarios", scenarioName, "scenario.json");
         var authored = ScenarioLoader.LoadFromFile(scenarioPath).GameState.SpaceObjects.Single(obj => obj.ObjectId == "SPC-0002");
         using var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"), scenarioPath);

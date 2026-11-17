@@ -18,7 +18,10 @@ public sealed partial class SimulationEngine
             PublishCapturedEncounter();
         }
         if (!PirateWorldMustRemainPaused) return false;
-        _piratePauseClock = new(_processedWorldTimeMs, SimulationSpeed.Speed0, _processedSimulationTimeMs);
+        var current = _clock.Capture();
+        // No new movement is committed here; retain the saved fractional phase.
+        _piratePauseClock = new(_processedWorldTimeMs, SimulationSpeed.Speed0, _processedSimulationTimeMs,
+            current.MotionTimeMs == _processedSimulationTimeMs ? current.MotionQuarterRemainder : 0);
         return FinishPirateWorldStep();
     }
 
@@ -51,7 +54,7 @@ public sealed partial class SimulationEngine
         _processedSimulationTimeMs = _appliedMotionTimeMs = stopped.MotionTimeMs;
         SynchronizeOrbitalBindings(_objects, stopped.MotionTimeMs);
         UpdateVoyageForMotion(stopped.MotionTimeMs);
-        _clock.Reset(stopped.GameTimeMs, SimulationSpeed.Speed0, stopped.MotionTimeMs);
+        _clock.Reset(stopped.GameTimeMs, SimulationSpeed.Speed0, stopped.MotionTimeMs, stopped.MotionQuarterRemainder);
         PublishCapturedEncounter();
         return true;
     }

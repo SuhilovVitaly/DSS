@@ -24,7 +24,8 @@ public sealed class Ep0035Us0017Tk0001Tests
         var after = engine.CaptureSnapshot();
         Assert.Equal(before.PlayerCredits, after.PlayerCredits);
         Assert.Equal(before.DemoCampaign.Revision, after.DemoCampaign!.Revision);
-        Assert.Equal(before.CarrierOperations!.OwnedDrones, after.CarrierOperations!.OwnedDrones);
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(before.CarrierOperations!.OwnedDrones),
+            System.Text.Json.JsonSerializer.Serialize(after.CarrierOperations!.OwnedDrones));
     }
 
     [Fact]
@@ -37,14 +38,16 @@ public sealed class Ep0035Us0017Tk0001Tests
         var accepted = engine.ExecuteDemoCampaign(command);
         Assert.True(accepted.Applied);
         Assert.Equal(4925, engine.PlayerCredits);
-        Assert.Equal(accepted, engine.ExecuteDemoCampaign(command));
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(accepted),
+            System.Text.Json.JsonSerializer.Serialize(engine.ExecuteDemoCampaign(command)));
         var save = engine.CaptureSaveStateForTests(86400000, SimulationSpeed.Speed0, simulationTimeMs: 0);
         var ledger = save.GameState.DemoCampaign!.Company!.Upkeep!;
         Assert.Equal(engine.CaptureSnapshot().CarrierOperations!.Crew.Length * 20, ledger.Accrued);
         Assert.Equal(ledger.Accrued, ledger.Paid);
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), isSave: true);
         long credits = engine.PlayerCredits;
-        Assert.Equal(accepted, engine.ExecuteDemoCampaign(command));
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(accepted),
+            System.Text.Json.JsonSerializer.Serialize(engine.ExecuteDemoCampaign(command)));
         var repeated = engine.CaptureSaveStateForTests(86400000, SimulationSpeed.Speed0, simulationTimeMs: 0);
         Assert.Equal(credits, repeated.GameState.PlayerTokens);
         Assert.Equal(ledger.Accrued, repeated.GameState.DemoCampaign!.Company!.Upkeep!.Accrued);

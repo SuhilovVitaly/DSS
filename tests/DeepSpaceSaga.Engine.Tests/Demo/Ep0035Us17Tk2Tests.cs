@@ -6,14 +6,37 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class Ep0035Us17Tk2Tests
 {
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void RepeatedPausedReportSnapshotPreservesFractionalMotion(int remainder)
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        engine.LoadScenario(DemoEp0035Us0010Tk0002Tests.ContactScenario(engine), true);
+        Assert.NotNull(engine.CaptureSnapshot().DemoCampaign!.PendingSensorReport);
+        var save = engine.CaptureSaveState();
+        engine.LoadScenario(save with { GameState = save.GameState with { MotionQuarterRemainder = remainder } }, true);
+        engine.CaptureSnapshot();
+        Assert.Equal(remainder, engine.CaptureSaveState().GameState.MotionQuarterRemainder);
+        engine.CaptureSnapshot();
+        Assert.Equal(remainder, engine.CaptureSaveState().GameState.MotionQuarterRemainder);
+    }
+
     [Fact]
     public void FastStepStopsAtSweptFirstDiscoveryAndSaveCannotAdvancePastPause()
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         var save = DemoEp0035Us0010Tk0002Tests.ContactScenario(engine);
         var group = save.GameState.DemoCampaign!.PirateWorld!.Groups[0];
-        save = save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s =>
-            s.ObjectId == save.GameState.PlayerShipObjectId ? s with { PositionY = group.Y + 2800, SpeedMps = 100000, DirectionDegrees = 0 } : s).ToArray() } };
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(s =>
+            s.ObjectId == save.GameState.PlayerShipObjectId ? s with { PositionY = group.Y + 2800, SpeedMps = 100000, DirectionDegrees = 0 } : s).ToArray()
+            }
+        };
         engine.LoadScenario(save, true);
         var snapshot = engine.CaptureSnapshotForTests(1200000, SimulationSpeed.Speed1, 4000);
         Assert.NotNull(snapshot.DemoCampaign!.PendingSensorReport);
@@ -33,8 +56,14 @@ public sealed class Ep0035Us17Tk2Tests
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         var save = DemoEp0035Us0010Tk0002Tests.ContactScenario(engine);
         var group = save.GameState.DemoCampaign!.PirateWorld!.Groups[0];
-        save = save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s =>
-            s.ObjectId == save.GameState.PlayerShipObjectId ? s with { PositionY = group.Y + 150 } : s).ToArray() } };
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(s =>
+            s.ObjectId == save.GameState.PlayerShipObjectId ? s with { PositionY = group.Y + 150 } : s).ToArray()
+            }
+        };
         engine.LoadScenario(save, true);
         var snapshot = engine.CaptureSnapshotForTests(300000, SimulationSpeed.Speed1, 1000);
         Assert.Equal(group.GroupId, snapshot.DemoCampaign!.WorldEncounter!.Binding.GroupId);
