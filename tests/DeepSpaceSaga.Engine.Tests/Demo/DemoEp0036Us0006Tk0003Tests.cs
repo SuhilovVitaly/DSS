@@ -54,7 +54,7 @@ public sealed class DemoEp0036Us0006Tk0003Tests
         long draws = campaign.LootSession.DrawCount;
         engine.PrepareBattleLootCommand(command with { CommandId = "again" }, ref campaign, ref reason, ref commit);
         Assert.Equal(BattleLootReasons.AlreadyAttempted, reason);
-        Assert.Equal(draws, campaign.LootSession.DrawCount);
+        Assert.Equal(draws, campaign.LootSession!.DrawCount);
         BattleLootData.Validate(campaign.LootSession);
     }
 
