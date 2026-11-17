@@ -56,3 +56,9 @@ Independent review of 0c06524b..642e72ba found no confirmed production defect an
 Remaining: US0001–0005, US0008–0016, US0017-TK0002, then US0006 documentation; dependency restructuring for early group/profile/member schema is required before US0001. EP34 prerequisite integration is still pending; it is not a blocker to all independent remaining work. Full suite, final Graphify rebuild, final review and owner acceptance are NOT RUN. No merge into main performed.
 
 Build intermediates and disposable TRX are removed after checks. Retained evidence: named build/format/test logs in the run directory. Source and Board changes are preserved in the published branch.
+
+## Resume 2026-11-17: US0009
+All five operator tickets published: TK0001 d8da891e, TK0002 e391f6e1, TK0005 bc749bd0, TK0003 5d25f6da, TK0004 3f8af7d3. Independent review identified overflow-before-publication and lost-pilot assignment cleanup; fixed in 2c8e48c4, fixture correction 80998b13. Final Engine story/regression filter passed32, Contracts4, Client1. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us9-reviewed-final.log, us9-Contracts-tests.log, us9-Client-tests.log. Native NOT RUN. Previous TK4 diff check reported extra EOF blank line; corrected in2c8e48c4 (the original PASS wording was premature).
+
+EP34 dependency review: pinned34825dce has passenger contracts, real boarding/delivery and US5 validation. Integrate this published prerequisite into the EP35 branch, preserving EP33 central dispatch/action commits and projecting both transport and sensors. Carry sensor/Irina assignment into the separate demo-starter-carrier manifest introduced there. Do not merge into main.
+
