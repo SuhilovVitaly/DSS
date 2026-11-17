@@ -14,7 +14,7 @@ public sealed class Ep0035RouteCaptureIntegrationTests
         using var engine = Ep0035Us5Tk2Tests.Docked();
         var state = engine.CaptureSnapshot().DemoCampaign!;
         var offer = state.Transport!.StationJobs!.Offers.First(o => o.OriginStationId == "SPC-0002" &&
-            StationJobTypes.CarriesPassengers(o.Type) && StationJobReasons.AcceptBlocker(state.Transport.StationJobs, o.Id) is null);
+            o.DestinationStationId != "SPC-0005" && StationJobTypes.CarriesPassengers(o.Type) && StationJobReasons.AcceptBlocker(state.Transport.StationJobs, o.Id) is null);
         Assert.True(engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax", state.Revision, offer.Id)).Applied);
         var baseline = engine.CaptureSaveState();
         var ship = baseline.GameState.SpaceObjects.Single(s => s.ObjectId == "SPC-0001");

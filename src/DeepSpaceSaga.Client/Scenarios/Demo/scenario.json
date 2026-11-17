@@ -126,8 +126,8 @@
       "startStationObjectId": "SPC-0002",
       "referenceSpeedMps": 700,
       "shortMaxGameTimeMs": 21600000,
-      "mediumMaxGameTimeMs": 64800000,
-      "maxTravelGameTimeMs": 129600000,
+      "mediumMaxGameTimeMs": 1296000000,
+      "maxTravelGameTimeMs": 2592000000,
       "minStationDistanceKm": 5,
       "clearanceKm": 2,
       "stations": [
@@ -216,17 +216,17 @@
             {
               "stationObjectId": "SPC-0006",
               "x": 0,
-              "y": 800
+              "y": 16000
             },
             {
               "stationObjectId": "SPC-0007",
-              "x": -800,
+              "x": -16000,
               "y": 0
             },
             {
               "stationObjectId": "SPC-0008",
               "x": 0,
-              "y": 1800
+              "y": 36000
             }
           ]
         },
@@ -283,17 +283,17 @@
             {
               "stationObjectId": "SPC-0006",
               "x": 0,
-              "y": 1000
+              "y": 20000
             },
             {
               "stationObjectId": "SPC-0007",
-              "x": -1000,
+              "x": -20000,
               "y": 0
             },
             {
               "stationObjectId": "SPC-0008",
               "x": 0,
-              "y": 1500
+              "y": 30000
             }
           ]
         },
@@ -350,17 +350,17 @@
             {
               "stationObjectId": "SPC-0006",
               "x": 0,
-              "y": 1200
+              "y": 24000
             },
             {
               "stationObjectId": "SPC-0007",
-              "x": -1200,
+              "x": -24000,
               "y": 0
             },
             {
               "stationObjectId": "SPC-0008",
               "x": 0,
-              "y": 2200
+              "y": 44000
             }
           ]
         }
