@@ -42,7 +42,7 @@ public sealed partial class SimulationEngine
             var pilot = new LootPilotSnapshot(drone.PilotId, drone.PilotName ?? drone.PilotId, drone.PilotPortraitAssetId,
                 true, null, Gender: drone.PilotGender ?? CrewGender.Female);
             sources.Add(new(drone.Id, "DisabledDrone", layoutId, drone.Pose.X, drone.Pose.Y, drone.Pose.Course,
-                pilot, consumables.ToImmutable(), null, []));
+                pilot, consumables.ToImmutable(), null, InitializeLootModules(session.Id, drone, seed, ref draws, chance)));
         }
         foreach (var carrier in session.Battle.Carriers.Where(c => c.Side != session.PlayerSide && !c.IsActive).OrderBy(c => c.Id, StringComparer.Ordinal))
         {
@@ -99,7 +99,13 @@ public sealed partial class SimulationEngine
         if (command is not ILootCampaignCommand lootCommand || candidate.LootSession is not { } loot || loot.BattleId != lootCommand.BattleId)
         { reason = BattleLootReasons.WrongBattle; return; }
         if (loot.Phase != LootPhases.Open) { reason = BattleLootReasons.LootClosed; return; }
-        string? objectId = command switch { CollectLootConsumablesCommand c => c.ObjectId, AttemptScrapCommand c => c.ObjectId, _ => null };
+        string? objectId = command switch
+        {
+            CollectLootConsumablesCommand c => c.ObjectId,
+            AttemptScrapCommand c => c.ObjectId,
+            AttemptModuleSalvageCommand c => c.ObjectId,
+            _ => null
+        };
         int index = -1;
         for (int i = 0; i < loot.Sources.Length; i++) if (loot.Sources[i].ObjectId == objectId) index = i;
         if (index < 0) { reason = BattleLootReasons.InvalidTarget; return; }
@@ -122,6 +128,11 @@ public sealed partial class SimulationEngine
             source = source with { Scrap = scrap with { State = success ? LootAttemptStates.Collected : LootAttemptStates.Failed } };
             commit = success ? grant : null;
         }
+        else if (command is AttemptModuleSalvageCommand salvage)
+        {
+            PrepareModuleSalvage(salvage, ref loot, ref source, ref reason, ref commit);
+            if (reason is not null) return;
+        }
         else { reason = DemoCampaignReasons.Unsupported; return; }
         candidate = candidate with { LootSession = loot with { Sources = loot.Sources.SetItem(index, source) } };
     }
@@ -137,7 +148,8 @@ public sealed partial class SimulationEngine
                     !TryPrepareLootCargo(c.ItemTypeId, 1, out _) ? BattleLootReasons.CargoFull : null;
                 return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason);
             }).ToImmutableArray(),
-            s.Scrap is { } scrap ? ProjectScrap(scrap, open) : null, [], s.Pilot, s.X, s.Y, s.Direction)).ToImmutableArray();
+            s.Scrap is { } scrap ? ProjectScrap(scrap, open) : null,
+            s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open)).ToImmutableArray(), s.Pilot, s.X, s.Y, s.Direction)).ToImmutableArray();
         return new(loot.BattleId, loot.Phase, objects, open && loot.Sources.Any(s =>
             s.Consumables.Any(c => c.Remaining > 0) || s.Scrap?.State == LootAttemptStates.NotAttempted ||
             s.Modules.Any(m => !m.Destroyed && m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }));
