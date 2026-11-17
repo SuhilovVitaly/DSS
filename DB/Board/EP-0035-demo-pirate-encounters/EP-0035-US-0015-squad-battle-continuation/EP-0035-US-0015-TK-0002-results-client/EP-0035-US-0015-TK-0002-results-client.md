@@ -97,3 +97,5 @@ Story regression correction: existing Ep0019Scenes temporary content copied only
 Follow-up fixture dependency: current Demo also resolves Data/Demo relative to settings root; copy shipped Demo JSON alongside manifests. Prior rerun remained18/26 due missing cluster.json, no gameplay assertion reached in8 failures.
 Demo content validation also requires actual recruitment portraits; isolated fixture copies precisely the declared portraits, retaining validation rather than disabling it. Previous rerun failed before scene creation on missing recruitment portrait.
 Last scene regression25/26: Own_evaded_drone_card_shows_evasion unconditionally pressed Enter after zero-projectile salvo, thereby dismissing already-visible results. Adjust only skip-flight input when InFlight; keep exact evasion chip/status/log assertions.
+
+Full-suite outcome text diagnostic: legacy scene expects five enemy losses after carrier destruction, while D35 disables all surviving drones. Retain existing exact reference assertions and add explicit missing-text diagnostic to determine actual differing value before correcting expected result.

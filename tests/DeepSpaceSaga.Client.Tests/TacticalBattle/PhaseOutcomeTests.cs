@@ -14,7 +14,7 @@ public sealed class PhaseOutcomeTests
         using (var locale = Localization.UseLocaleForTests("Russian"))
         {
             using var b = s.Render();
-            foreach (string text in new[] { "ПОБЕДА", "носитель Логово уничтожен", "21", "40", "20", "свои 1 · враг 5" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
+            foreach (string text in new[] { "ПОБЕДА", "носитель Логово уничтожен", "21", "40", "20", "свои 1 · враг 5" }) Assert.True(s.Screen.Layout.Texts.Any(t => t.Text == text), $"Missing: {text}; actual: {string.Join(" | ", s.Screen.Layout.Texts.Select(t => t.Text))}");
             var start = s.Screen.Layout.Rects["button:new"];
             var exit = s.Screen.Layout.Rects["button:primary"];
             Assert.Equal(ScreenEvent.NewTacticalBattle, s.Screen.OnMouseDown(start.MidX * 1.5f, start.MidY * 1.5f, MouseButton.Left));
