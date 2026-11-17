@@ -81,6 +81,7 @@
         "item.food-rations"
       ],
       "initialInventory": [
+        { "itemTypeId": "item.drone-torpedo.t1", "quantity": 24 },
         { "itemTypeId": "item.steel", "quantity": 132 },
         { "itemTypeId": "item.energy-cells", "quantity": 132 },
         { "itemTypeId": "item.electronics", "quantity": 132 },
@@ -104,12 +105,14 @@
           { "itemTypeId": "item.food-rations", "quantity": 3 }
         ],
         "hourlyOutputs": [
+          { "itemTypeId": "item.drone-torpedo.t1", "quantity": 2 },
           { "itemTypeId": "item.steel", "quantity": 16 },
           { "itemTypeId": "item.energy-cells", "quantity": 12 },
           { "itemTypeId": "item.electronics", "quantity": 4 }
         ],
         "hourlyConsumption": [],
         "stockTargets": [
+          { "itemTypeId": "item.drone-torpedo.t1", "targetStock": 24 },
           { "itemTypeId": "item.iron-ore", "targetStock": 132 },
           { "itemTypeId": "item.magnesium-ore", "targetStock": 132 },
           { "itemTypeId": "item.carbon-ore", "targetStock": 132 },
@@ -190,6 +193,7 @@
         "item.electronics"
       ],
       "initialInventory": [
+        { "itemTypeId": "item.drone-torpedo.t1", "quantity": 24 },
         { "itemTypeId": "item.water", "quantity": 96 },
         { "itemTypeId": "item.food-rations", "quantity": 96 },
         { "itemTypeId": "item.energy-cells", "quantity": 96 },
@@ -201,7 +205,7 @@
       "economy": {
         "productionSource": "Profile",
         "hourlyInputs": [],
-        "hourlyOutputs": [],
+        "hourlyOutputs": [{ "itemTypeId": "item.drone-torpedo.t1", "quantity": 2 }],
         "hourlyConsumption": [
           { "itemTypeId": "item.water", "quantity": 8 },
           { "itemTypeId": "item.food-rations", "quantity": 12 },
@@ -210,6 +214,7 @@
           { "itemTypeId": "item.electronics", "quantity": 2 }
         ],
         "stockTargets": [
+          { "itemTypeId": "item.drone-torpedo.t1", "targetStock": 24 },
           { "itemTypeId": "item.water", "targetStock": 96 },
           { "itemTypeId": "item.food-rations", "targetStock": 167 },
           { "itemTypeId": "item.energy-cells", "targetStock": 117 },
