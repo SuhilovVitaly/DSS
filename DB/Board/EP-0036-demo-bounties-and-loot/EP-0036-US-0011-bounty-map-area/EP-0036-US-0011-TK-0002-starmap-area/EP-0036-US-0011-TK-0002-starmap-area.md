@@ -5,7 +5,7 @@ ticket: EP-0036-US-0011-TK-0002-starmap-area
 title: Район цели bounty на звёздной карте
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: complete
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0011-TK-0001-search-area-projection, EP-0036-US-0001-TK-0003-client]

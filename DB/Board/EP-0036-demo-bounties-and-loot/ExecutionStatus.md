@@ -87,3 +87,6 @@ Six tickets published; actual provenance, cabin/ration, arrest and pose paths im
 
 ## US10 completed implementation boundary
 Four tickets implemented and published. Engine affected corpus41/42 initially (us10-engine.log), corrected historical enum assertion repeated2/2 PASS (us10-enum-repeat.log). Client22/22 PASS (us10-client.log); independent retry-intent finding fixed ec37b36d and affected retry/lifecycle11/11 PASS (us10-client-review.log). Independent engine review no findings, client reviewer confirmed closure. Evidence in D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/; native NOT RUN.
+
+## US11 completed implementation boundary
+Both tickets published. Engine22/22 and Client12/12 PASS including affected bounty regression (us11-engine.log, us11-client.log and matching TRX under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/). Independent Engine and Client reviews found no actionable defect. Static region never reads hidden live coordinates; native visual/readability acceptance NOT RUN.

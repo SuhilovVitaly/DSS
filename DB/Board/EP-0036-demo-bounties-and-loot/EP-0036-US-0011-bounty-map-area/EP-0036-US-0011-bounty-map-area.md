@@ -11,7 +11,7 @@ created: 2026-11-17T19:41:16Z
 priority: P1
 workstream: feature
 dependencies: [EP-0036-US-0001-target-bounty]
-implementation_status: not-started
+implementation_status: complete
 planning_status: decomposed
 source_request: "прочитай нарезанные тикеты эпика и реши что мы забыли и что нужно добавить"
 ---
