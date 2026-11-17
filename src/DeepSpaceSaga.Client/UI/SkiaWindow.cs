@@ -2178,17 +2178,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")),
                 tacticalBattleInputs: _tacticalInputs, maneuverInputs: _maneuverInputs);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
-            if (await newSession.GetTacticalBattleStateAsync() is { } recovered)
-            {
-                using var recoveryTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                while (newSession.DemoCampaign is null) await Task.Delay(10, recoveryTimeout.Token);
-                var encounter = newSession.DemoCampaign.WorldEncounter;
-                bool frozenLoot = newSession.DemoCampaign.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == recovered.BattleId;
-                if (encounter is null || encounter.Phase != WorldEncounterPhases.PendingBattle && !frozenLoot)
-                    throw new IOException("Recovered battle has no pending encounter or frozen loot.");
-                recoveredEncounter = new(newSession) { CampaignEncounter = encounter };
-                if (!recoveredEncounter.AdoptRecoveredEncounter(recovered)) throw new IOException("Recovered battle identity mismatch.");
-            }
+            recoveredEncounter = await RecoverBattleFlowAsync(newSession);
         }
         catch (Exception ex)
         {
@@ -2226,6 +2216,23 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         newSession.ActivateAutosave(saveInitialState: false);
 
         return true;
+    }
+
+    /// <summary>The actual Load/Continue routing seam; never starts or replays combat.</summary>
+    internal static async Task<TacticalBattleFlow?> RecoverBattleFlowAsync(GameSessionHandle session)
+    {
+        if (await session.GetTacticalBattleStateAsync() is not { } recovered) return null;
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        while (session.DemoCampaign is null) await Task.Delay(10, timeout.Token);
+        var campaign = session.DemoCampaign;
+        var encounter = campaign.WorldEncounter;
+        bool frozenLoot = campaign.Rewards?.Loot is { Phase: LootPhases.Open } loot &&
+            loot.BattleId == recovered.BattleId && recovered.Phase == TacticalBattlePhase.Over;
+        if (encounter is null || encounter.Phase != WorldEncounterPhases.PendingBattle && !frozenLoot)
+            throw new IOException("Recovered battle has no pending encounter or frozen loot.");
+        var flow = new TacticalBattleFlow(session) { CampaignEncounter = encounter };
+        if (!flow.AdoptRecoveredEncounter(recovered)) throw new IOException("Recovered battle identity mismatch.");
+        return flow;
     }
 
     private async Task ReturnToMainMenuAsync()

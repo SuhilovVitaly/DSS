@@ -5,7 +5,7 @@ ticket: EP-0036-US-0004-TK-0003-restored-loot-route
 title: Открытие сохранённой карты лута при продолжении кампании
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0007-TK-0004-postbattle-map, EP-0036-US-0007-TK-0005-postbattle-continuation]
@@ -65,3 +65,6 @@ Committed sortie/entitlement/attempt не применяются дважды. F
 
 ## Self-containment check
 Входы принадлежат указанным prerequisite tickets, owning files/API/negative cases перечислены. При необходимости изменить иной слой сначала исправить Board allowlist.
+
+## Execution
+LoadSlotCoreAsync uses RecoverBattleFlowAsync directly. Headless test invokes this production router over a real serialized/loaded engine and LocalClient, adopting combat or frozen loot without command replay; verifies actual TacticalBattleScreen and confirmed close then world route. Save/quick-save callbacks already allow loot; LocalClient checkpoint tests cover disk durability. Tests scheduled at completed US4 boundary. Native NOT RUN.
