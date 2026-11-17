@@ -68,6 +68,7 @@
       "typeId": "market.industrial",
       "displayName": "Industrial",
       "supplyItemTypeIds": [
+        "item.drone-torpedo.t1",
         "item.steel",
         "item.energy-cells",
         "item.electronics"
@@ -186,6 +187,7 @@
       "displayName": "Transit",
       "supplyItemTypeIds": [],
       "demandItemTypeIds": [
+        "item.drone-torpedo.t1",
         "item.water",
         "item.food-rations",
         "item.energy-cells",
@@ -205,12 +207,13 @@
       "economy": {
         "productionSource": "Profile",
         "hourlyInputs": [],
-        "hourlyOutputs": [{ "itemTypeId": "item.drone-torpedo.t1", "quantity": 2 }],
+        "hourlyOutputs": [],
         "hourlyConsumption": [
+          { "itemTypeId": "item.drone-torpedo.t1", "quantity": 1 },
+          { "itemTypeId": "item.steel", "quantity": 2 },
           { "itemTypeId": "item.water", "quantity": 8 },
           { "itemTypeId": "item.food-rations", "quantity": 12 },
           { "itemTypeId": "item.energy-cells", "quantity": 6 },
-          { "itemTypeId": "item.steel", "quantity": 2 },
           { "itemTypeId": "item.electronics", "quantity": 2 }
         ],
         "stockTargets": [

@@ -109,3 +109,5 @@ Prerequisites, allowlist, новые схемы/команды, concrete steps, 
 
 ## Execution
 Existing torpedo item unchanged. Transit and industrial markets: 24 initial units, two produced per calendar hour subject to existing economy rules, target 24. Decoy charge price remains 25. Baseline balance requires playtest. Validation pending story boundary.
+
+Story-boundary correction: initial market validation rejected missing supply/demand membership; transit validation correctly prohibits production. Final design: industrial produces two torpedoes per hour; transit demands/consumes one and receives deliveries via existing industrial-to-transit cargo flow. Both start with 24 units before size scaling. No transit production exception. Real engine fixtures now load successfully (engine5.log).

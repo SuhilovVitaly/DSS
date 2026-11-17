@@ -13,7 +13,10 @@ public sealed class DemoEp0033Us0002Tk0002Tests
         {
             var market = doc.RootElement.GetProperty("profiles").EnumerateArray().Single(x => x.GetProperty("typeId").GetString() == id);
             Assert.Equal(24, market.GetProperty("initialInventory").EnumerateArray().Single(IsTorpedo).GetProperty("quantity").GetInt32());
-            Assert.Equal(2, market.GetProperty("economy").GetProperty("hourlyOutputs").EnumerateArray().Single(IsTorpedo).GetProperty("quantity").GetInt32());
+            if (id == "market.industrial")
+                Assert.Equal(2, market.GetProperty("economy").GetProperty("hourlyOutputs").EnumerateArray().Single(IsTorpedo).GetProperty("quantity").GetInt32());
+            else
+                Assert.Contains(market.GetProperty("demandItemTypeIds").EnumerateArray(), x => x.GetString() == "item.drone-torpedo.t1");
         }
     }
     private static bool IsTorpedo(JsonElement x) => x.GetProperty("itemTypeId").GetString() == "item.drone-torpedo.t1";
