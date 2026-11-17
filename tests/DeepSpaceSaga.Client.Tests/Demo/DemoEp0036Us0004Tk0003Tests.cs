@@ -6,8 +6,31 @@ using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Client.Tests.Demo;
 
+[Collection("InterfaceLog")]
 public sealed class DemoEp0036Us0004Tk0003Tests
 {
+    [Fact]
+    public async Task ActualWindowF5WritesOpenLootWithoutClosingMap()
+    {
+        string directory = Directory.CreateDirectory("D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/manual-save-" + Guid.NewGuid().ToString("N")).FullName;
+        try
+        {
+            using var source = DemoEp0036Us0007Tk0004Tests.Won();
+            await using var fixture = await TacticalBattle.BattleNavigationTests.Fixture.Create(saveDirectory: directory, initialSpeed: SimulationSpeed.Speed0);
+            fixture.Engine.LoadScenario(source.CaptureSaveState(), true);
+            await DemoEp0036Us0007Tk0004Tests.WaitFor(() => fixture.Handle.DemoCampaign?.Rewards?.Loot?.Phase == LootPhases.Open);
+            await fixture.Route(DeepSpaceSaga.Client.UI.Screens.ScreenEvent.OpenTacticalBattle);
+            var screen = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+            await fixture.PressKey(Silk.NET.Input.Key.F5);
+            string json = File.ReadAllText(Path.Combine(directory, SaveSlotNaming.ToFileName(SaveSlots.Quicksave)));
+            var saved = ScenarioLoader.LoadFromJson(json, true, true);
+            Assert.Equal(LootPhases.Open, saved.GameState.DemoCampaign!.LootSession!.Phase);
+            Assert.Same(screen, fixture.Screens.Current);
+            Assert.False(fixture.Engine.IsTacticalBattleActive);
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

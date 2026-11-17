@@ -465,3 +465,7 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 ## EP-0035 implementation update — 2026-11-17
 
 17 stories /66 tickets implemented, including final project documentation. Current execution, publication and remaining validation gates: [EP-0035 execution](../EP-0035-demo-pirate-encounters/ExecutionStatus.md). Previous not-started counts/notes are planning history. Native/product acceptance awaits owner.
+
+## Исполнение боевых наград EP-0036
+
+Реализованы 12 историй / 48 тикетов: bounty, frozen loot, sale-only трофеи, инженер, пленные, выброс груза, область поиска и debug-команды. [Отчёт](../EP-0036-demo-bounties-and-loot/ExecutionStatus.md), [SHA](../EP-0036-demo-bounties-and-loot/Tickets.md). Native/product acceptance ожидает итогового осмотра владельцем; полный demo release не объявляется.
