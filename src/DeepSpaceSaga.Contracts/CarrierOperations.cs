@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Contracts;
 public enum CrewGender { Female = 0, Male = 1 }
 
 /// <summary>Numeric enum identities are append-only; never renumber existing values.</summary>
-public enum CrewRole { Captain = 0, Officer = 1, Pilot = 2 }
+public enum CrewRole { Captain = 0, Officer = 1, Pilot = 2, Engineer = 3 }
 
 /// <summary>
 /// Read-only projection of the player ship's carrier surface: hull, hangar slots,
@@ -70,7 +70,8 @@ public sealed record CrewMemberSnapshot(
     int Accuracy = 0,
     int Maneuver = 0,
     int Initiative = 0,
-    int SensorRangeBonusPercent = 0);
+    int SensorRangeBonusPercent = 0,
+    int SalvageBonusPercentagePoints = 0);
 
 /// <summary>
 /// One owned drone of the player's persistent wing, placed at a unique hangar slot.

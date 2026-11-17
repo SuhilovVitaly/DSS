@@ -12,7 +12,7 @@ files_touched: 2
 serves: [AC-02, AC-03, AC-04]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 ---
 
 # Роль инженера и навык в crew projection
@@ -100,3 +100,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Execution — 2026-11-17
+
+Engineer=3 appended without renumbering; trailing skill defaults to zero. Three named tests added, NOT RUN until US8 completion. Contracts build/scoped formatting/diff PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us8-tk1-build.log.
