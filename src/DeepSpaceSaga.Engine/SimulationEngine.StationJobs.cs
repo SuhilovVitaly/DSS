@@ -198,7 +198,7 @@ public sealed partial class SimulationEngine
         }
         if (offer.Type == StationJobTypes.Cargo)
         {
-            long committed = active.Where(o => o.Type == StationJobTypes.Cargo).Sum(o => o.MassKg);
+            long committed = ContractCargoReservedKg(_demoCampaign with { StationJobs = state }); // sealed cargo (US-0004)
             return CarrierFreeHoldKg(ship) - committed < offer.MassKg ? StationJobReasons.InsufficientCargoSpace : null;
         }
         return DemoCampaignReasons.Unsupported; // bounty acceptance is owned by EP-0036

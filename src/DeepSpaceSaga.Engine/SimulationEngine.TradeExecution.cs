@@ -159,7 +159,9 @@ public sealed partial class SimulationEngine
         }
 
         long addedMassKg = checked(executed * target.ItemType.UnitMassKg);
-        return checked(ComputeCargoMassKg(target.Module.Cargo) + addedMassKg) > (target.ModuleType.CargoCapacityKg ?? 0)
+        // EP-0034 US-0004: sealed contract cargo keeps its hold space; the player's goods may not use it.
+        return checked(ComputeCargoMassKg(target.Module.Cargo) + addedMassKg) > (target.ModuleType.CargoCapacityKg ?? 0) ||
+            addedMassKg > PlayerFreeHoldKg(target.Ship)
             ? CommandReasonCodes.CargoCapacityExceeded
             : null;
     }
@@ -300,8 +302,10 @@ public sealed partial class SimulationEngine
     private long SellPurse(SpaceObjectRuntime station) =>
         TryGetMarket(station, out _, out _) ? station.MarketBudgetCredits ?? 0 : station.Credits;
 
+    /// <summary>Free space of the addressed hold module, never more than the carrier hold left after sealed contract cargo.</summary>
     private long FreeCargoKg(in TradeTarget target) =>
-        Math.Max(0, checked((target.ModuleType.CargoCapacityKg ?? 0) - ComputeCargoMassKg(target.Module.Cargo)));
+        Math.Min(PlayerFreeHoldKg(target.Ship),
+            Math.Max(0, checked((target.ModuleType.CargoCapacityKg ?? 0) - ComputeCargoMassKg(target.Module.Cargo))));
 
     private static long CargoQuantityOf(InstalledModuleRuntime module, int itemTypeIndex)
     {

@@ -41,6 +41,10 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("transportFailures")]
     public ImmutableArray<TransportFailureData> TransportFailures { get; init; } = [];
 
+    /// <summary>EP-0034 US-0004: sealed cargo per cargo obligation — payout posting, delivery and return receipts.</summary>
+    [JsonPropertyName("cargoContracts")]
+    public ImmutableArray<CargoContractData> CargoContracts { get; init; } = [];
+
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
@@ -54,6 +58,7 @@ public sealed record DemoCampaignData(
         ValidateStationJobs(data, gameTimeMs);
         ValidatePassengerContracts(data, gameTimeMs);
         ValidateTransportFailures(data, gameTimeMs);
+        ValidateCargoContracts(data, gameTimeMs);
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;
         long previousRevision = 0;
@@ -179,7 +184,62 @@ public sealed record DemoCampaignData(
             o.Status is not (StationJobStatuses.Failed or StationJobStatuses.Cancelled) || contracts.Contains(o.ContractId));
         if (!valid) throw new ScenarioException("Invalid demo campaign transport failures.");
     }
+
+    /// <summary>
+    /// Atomic structural check of the cargo contracts (EP-0034 US-0004): every cargo obligation names a sealed item and
+    /// its mass; every record belongs to one cargo obligation and owns the canonical posting id; a delivery receipt
+    /// exists exactly for Completed obligations with the obligation's payout; a return receipt exists only for a
+    /// cancelled or expired (not lost) obligation, after its failure. Item ids are checked by the engine on Load.
+    /// </summary>
+    private static void ValidateCargoContracts(DemoCampaignData data, long gameTimeMs)
+    {
+        if (data.Transport?.CargoContracts is not null)
+            throw new ScenarioException("Invalid demo campaign transport: the cargo contracts projection is not persisted.");
+        if (data.CargoContracts.IsDefault)
+            throw new ScenarioException("Invalid demo campaign cargo contracts.");
+        var obligations = data.StationJobs?.Obligations ?? [];
+        var contracts = new HashSet<string>(StringComparer.Ordinal);
+        bool valid = (data.CargoContracts.IsEmpty || data.StationJobs is not null) &&
+            obligations.All(o => o is null || o.Type != StationJobTypes.Cargo ||
+                !string.IsNullOrWhiteSpace(o.ItemTypeId) && o.MassKg > 0 && o.Count > 0);
+        foreach (var record in data.CargoContracts)
+        {
+            if (!valid) break;
+            var o = record is null ? null : obligations.FirstOrDefault(x => x.ContractId == record.ContractId);
+            var failure = record is null ? null : data.TransportFailures.FirstOrDefault(f => f.ContractId == record.ContractId);
+            valid = record is not null && o is not null && contracts.Add(record.ContractId) && o.Type == StationJobTypes.Cargo &&
+                record.PostingId == CargoContractReasons.PostingIdFor(record.ContractId) &&
+                (record.DeliveredAtGameTimeMs is null) == (record.PaidCredits is null) &&
+                (record.DeliveredAtGameTimeMs is not { } delivered
+                    ? o.Status != StationJobStatuses.Completed
+                    : o.Status == StationJobStatuses.Completed && record.PaidCredits == o.Payout &&
+                      delivered == o.ClosedAtGameTimeMs && delivered >= o.AcceptedAtGameTimeMs &&
+                      delivered <= o.DeadlineGameTimeMs && delivered <= gameTimeMs) &&
+                (record.ReturnedAtGameTimeMs is null) == (record.ReturnStationId is null) &&
+                (record.ReturnedAtGameTimeMs is not { } returned ||
+                    o.Status is StationJobStatuses.Failed or StationJobStatuses.Cancelled && failure is not null &&
+                    failure.Reason != TransportFailureReasons.CarrierLost && !string.IsNullOrWhiteSpace(record.ReturnStationId) &&
+                    returned >= failure.FailedAtGameTimeMs && returned <= gameTimeMs);
+        }
+        // A completed cargo obligation always carries its delivery receipt, so a payout cannot be replayed.
+        valid = valid && obligations.All(o => o is null || o.Type != StationJobTypes.Cargo ||
+            o.Status != StationJobStatuses.Completed || contracts.Contains(o.ContractId));
+        if (!valid) throw new ScenarioException("Invalid demo campaign cargo contracts.");
+    }
 }
+
+/// <summary>
+/// Persisted cargo contract part (EP-0034 US-0004): the durable voyage posting and, once settled, either the delivery
+/// (arrival time and credited payout) or the return of failed cargo (time and station). Item, quantity, mass, route,
+/// deadline and payout stay in the journal obligation; the sealed cargo is never a module cargo stack.
+/// </summary>
+public sealed record CargoContractData(
+    [property: JsonPropertyName("contractId")] string ContractId,
+    [property: JsonPropertyName("postingId")] string PostingId,
+    [property: JsonPropertyName("deliveredAtGameTimeMs")] long? DeliveredAtGameTimeMs = null,
+    [property: JsonPropertyName("paidCredits")] long? PaidCredits = null,
+    [property: JsonPropertyName("returnedAtGameTimeMs")] long? ReturnedAtGameTimeMs = null,
+    [property: JsonPropertyName("returnStationId")] string? ReturnStationId = null);
 
 /// <summary>
 /// Persisted transport failure (EP-0034 US-0003). The penalty is split into what was paid at the failure, what later
