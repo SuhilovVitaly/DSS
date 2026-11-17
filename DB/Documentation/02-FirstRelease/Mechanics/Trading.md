@@ -9,5 +9,7 @@ Refuel, не как cargo. Sell может быть ограничен дост�
 Удалённое знание рынка — наблюдение с возрастом, не удалённая live quote.
 Себестоимость груза и проводки рейса попадают в Finance; неизвестная прибыль
 не показывается как доказанный ноль. Подробнее: [технический контракт](../../04-Engineering/TradingAndSolarSystem.md).
+Опечатанный груз контрактов демо не продаётся, а Buy ограничен трюмом за
+вычетом этого резерва ([перевозки](DemoTransportContracts.md)).
 
 Источники: [TradeQuoteCalculator.cs](../../../../src/DeepSpaceSaga.Engine/TradeQuoteCalculator.cs), [TradeModel.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Trade/TradeModel.cs).

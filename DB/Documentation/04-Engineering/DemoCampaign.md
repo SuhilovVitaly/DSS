@@ -7,7 +7,10 @@
 agricultural, far_trade. Геометрия использует существующий TradingMap generator;
 это не запуск полного SolarSystem generator. Seed, station IDs и роли проверяются
 по [cluster.json](../../../src/DeepSpaceSaga.Client/Data/Demo/cluster.json).
-Стартовое имущество берётся из общего starter-carrier manifest только на New Game.
+Стартовое имущество берётся только на New Game из демо-manifest
+[demo-starter-carrier.json](../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json):
+общий starter-carrier с дополнительным жилым модулем для четырёх пассажирских
+кают ([перевозки](DemoTransportContracts.md)); другие сценарии используют общий manifest.
 Обучение использует собственные дроны, пилотов и боезапас этого носителя.
 
 ## Последствия вылета
@@ -31,8 +34,9 @@ Engine применяет единственный `CommitSortieOutcome`: кор
 immutable command identity, expected revision, response и snapshot. Engine
 сохраняет окно из 1024 последних payload hash и ответов: повтор идентичной команды в окне возвращает прежний
 ответ, другая нагрузка с тем же ID отвергается. Старые применённые команды защищены expected revision и не применяются повторно; вне окна исходный ответ не гарантируется. Неподдерживаемые команды не
-выполняют gameplay. Company/Start проецируют подтверждённый мир; секции transport,
-encounters, rewards, progression, story являются поверхностью расширения,
+выполняют gameplay. Company/Start проецируют подтверждённый мир; Transport
+проецирует каюты, доску заказов и перевозки ([контракт](DemoTransportContracts.md));
+секции encounters, rewards, progression, story являются поверхностью расширения,
 а не доказательством готовности соответствующих механик.
 
 GameSessionHandle отправляет команды через асинхронный connection, объединяет
