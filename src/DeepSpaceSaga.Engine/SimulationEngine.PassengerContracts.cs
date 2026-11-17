@@ -105,9 +105,13 @@ public sealed partial class SimulationEngine
         // EP-0034 US-0003: contract debt is repaid from the payouts just credited, oldest failure first.
         var failures = RepayTransportDebt(_demoCampaign.TransportFailures, postings.Sum(p => p.Credits), out long repaid);
         credits = checked(credits - repaid);
+        // EP-0034 US-0005: a payout is a campaign commit like every other transport transition (cargo delivery,
+        // failures), so the autosave captures it instead of the pre-payout docking state.
         var candidate = _demoCampaign with
         {
-            StationJobs = jobs with { Obligations = obligations }, PassengerContracts = contracts, TransportFailures = failures
+            StationJobs = jobs with { Obligations = obligations }, PassengerContracts = contracts, TransportFailures = failures,
+            Revision = checked(_demoCampaign.Revision + 1),
+            CommitSequence = checked(_demoCampaign.CommitSequence + 1)
         };
         DemoCampaignData.Validate(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
         ValidateDemoCampaignSections(candidate);
