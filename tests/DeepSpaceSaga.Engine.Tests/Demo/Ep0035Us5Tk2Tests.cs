@@ -6,14 +6,9 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class Ep0035Us5Tk2Tests
 {
-    internal static SimulationEngine Docked(ulong? seed = null)
+    internal static SimulationEngine Docked()
     {
         var engine = DemoEp0033Us0001Tk0003Tests.Demo();
-        if (seed is { } value)
-        {
-            var authored = ScenarioLoader.LoadFromFile(DemoEp0033Us0001Tk0003Tests.Root() + "/Scenarios/Demo/scenario.json");
-            engine.LoadScenario(authored with { GameState = authored.GameState with { MasterSeed = value } });
-        }
         var save = engine.CaptureSaveState();
         var station = engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == "SPC-0002");
         save = save with

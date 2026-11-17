@@ -7,11 +7,11 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 public sealed class Ep0035RouteCaptureIntegrationTests
 {
     [Theory]
-    [InlineData(17UL)]
-    [InlineData(29UL)]
-    public void PassengerVoyageDirectCapturesWhileObservedDetourPasses(ulong seed)
+    [InlineData(2500)]
+    [InlineData(5000)]
+    public void PassengerVoyageDirectCapturesWhileObservedDetourPasses(int stepMs)
     {
-        using var engine = Ep0035Us5Tk2Tests.Docked(seed);
+        using var engine = Ep0035Us5Tk2Tests.Docked();
         var state = engine.CaptureSnapshot().DemoCampaign!;
         var offer = state.Transport!.StationJobs!.Offers.First(o => o.OriginStationId == "SPC-0002" &&
             StationJobTypes.CarriesPassengers(o.Type) && StationJobReasons.AcceptBlocker(state.Transport.StationJobs, o.Id) is null);
@@ -59,9 +59,9 @@ public sealed class Ep0035RouteCaptureIntegrationTests
             engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
             long motion = 0;
             bool captured = false, completed = false;
-            for (int step = 0; step < 4000; step++)
+            for (int step = 0; step < 8000; step++)
             {
-                motion += 5000;
+                motion += stepMs;
                 snapshot = engine.CaptureSnapshotForTests(motion * 300, SimulationSpeed.Speed1, motion);
                 captured = snapshot.DemoCampaign!.WorldEncounter is not null;
                 if (captured) break;
