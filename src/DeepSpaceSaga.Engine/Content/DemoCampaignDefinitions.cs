@@ -26,7 +26,9 @@ public sealed record DemoJobRoleFilter(string Role, int PassengerWeight, int Urg
 public sealed record DemoJobFirstOffer(string Type, int Count);
 public sealed record DemoJobsDefinition(int SchemaVersion, DemoJobLimits Limits, DemoJobRates Rates, DemoJobDeadlines Deadlines,
     ImmutableArray<DemoJobRisk> Risk, ImmutableArray<string> CargoItemTypeIds, ImmutableArray<DemoJobRoleFilter> RoleFilters,
-    DemoJobFirstOffer FirstOffer);
+    DemoJobFirstOffer FirstOffer, DemoJobPenalties? Penalties = null);
+// EP-0034 US-0003: cancellation/expiry penalty as permille of the promised payout (absent = 250, i.e. 25%).
+public sealed record DemoJobPenalties(int CancelPermille, int ExpiryPermille);
 public sealed record DemoRegion(double X, double Y, double Radius);
 public sealed record DemoPirateGroup(string Id, string LoadoutId, double X, double Y, double SightRadius, double PatrolSpeed);
 public sealed record DemoPursuit(double CaptureRadius, double EscapeRadius, long EscapeMotionTimeMs);
@@ -146,7 +148,8 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                 j.Limits.ExpiryGameTimeMs >= j.Limits.PublicationGameTimeMs && j.Limits.CargoTonnesMax >= j.Limits.CargoTonnesMin &&
                 j.Rates is { Base: >= 0, PerPassenger: >= 0, PerCargoTonne: >= 0, PerDistanceKm: >= 0, UrgencyPermille: >= 1000 } &&
                 j.Deadlines is { OrdinaryPermille: >= 1000, UrgentPermille: >= 1000, CargoPermille: >= 1000, MinimumGameTimeMs: > 0 } &&
-                j.Deadlines.UrgentPermille <= j.Deadlines.OrdinaryPermille, "jobs");
+                j.Deadlines.UrgentPermille <= j.Deadlines.OrdinaryPermille &&
+                j.Penalties is null or { CancelPermille: >= 0 and <= 1000, ExpiryPermille: >= 0 and <= 1000 }, "jobs");
             Require(!j.Risk.IsDefaultOrEmpty && j.Risk.All(r => r is not null && !string.IsNullOrWhiteSpace(r.RiskProfileId) &&
                     DeepSpaceSaga.Contracts.StationJobRiskBands.IsKnown(r.Band) && r.Permille >= 1000) &&
                 j.Risk.Select(r => r.RiskProfileId).Distinct(StringComparer.Ordinal).Count() == j.Risk.Length, "jobs risk");

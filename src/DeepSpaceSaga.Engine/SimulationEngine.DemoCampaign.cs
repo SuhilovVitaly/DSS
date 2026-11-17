@@ -44,6 +44,7 @@ public sealed partial class SimulationEngine
                 PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason);
             PrepareStationJobsCommand(command, ref candidate, ref handled, ref reason); // EP-0034 US-0006, explicit dispatch
             var boarding = PreparePassengerBoarding(command, ref candidate, handled, ref reason); // EP-0034 US-0002
+            var cancellation = PrepareTransportCancellation(command, ref candidate, ref handled, ref reason); // EP-0034 US-0003
 
             reason ??= handled ? null : DemoCampaignReasons.Unsupported;
             bool applied = handled && reason is null;
@@ -59,6 +60,7 @@ public sealed partial class SimulationEngine
             ValidateDemoCampaignSections(candidate);
             _demoCampaign = candidate;
             if (applied && boarding is not null) BoardPassengers(boarding); // EP-0034 US-0002: same commit
+            if (applied && cancellation is not null) ApplyTransportCancellation(cancellation); // EP-0034 US-0003: same commit
             return response;
         }
     }
@@ -67,6 +69,7 @@ public sealed partial class SimulationEngine
     {
         PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
         DeliverPassengerContracts(gameTimeMs); // EP-0034 US-0002: idempotent, a Completed contract never pays again
+        ResolveTransportFailures(gameTimeMs); // EP-0034 US-0003: expiry/loss/disembarkation, each obligation closes once
         if (gameTimeMs <= _demoCampaign.LastTickGameTimeMs) return;
         var candidate = _demoCampaign;
         TickDemoCampaignSections(gameTimeMs, ref candidate);

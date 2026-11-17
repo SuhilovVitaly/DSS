@@ -244,38 +244,46 @@ public sealed class DemoEp0034Us0002Tk0002Tests
                 Assert.Equal(creditsAtHour, there.PlayerCredits);
             }
 
+            // The duplicate command returns its receipt and boards nobody twice; a second accept is refused.
+            Assert.Equal(accepted, engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-1", 0, FirstOffer)));
+            Assert.Equal(StationJobReasons.OfferAlreadyAccepted,
+                engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-2", accepted.Revision, FirstOffer)).Reason);
+            Assert.Equal(3, PassengersAboard(engine, hour).Length);
+
+            // Not enough cabins: a larger passenger offer is refused before anything is boarded or charged.
+            var snapshot = engine.CaptureSnapshotForTests(hour, SimulationSpeed.Speed0, hour / Ratio);
+            var tooBig = Board(snapshot).Offers.FirstOrDefault(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type) && o.Count > 1);
+            if (tooBig is not null)
+            {
+                var refused = engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-big", accepted.Revision, tooBig.Id));
+                Assert.Equal((false, PassengerCapacityReasons.NoFreeCabins), (refused.Applied, refused.Reason));
+                Assert.Equal(3, PassengersAboard(engine, hour).Length);
+                Assert.Equal(snapshot.PlayerCredits, engine.CaptureSnapshotForTests(hour, SimulationSpeed.Speed0, hour / Ratio).PlayerCredits);
+            }
+
             long meal = 13 * GameCalendar.HourMs; // one 12-hour meal boundary, before the first daily port fee
             long withPassengers = RationsAboard(start) - RationsAboard(engine.CaptureSnapshotForTests(meal, SimulationSpeed.Speed0, meal / Ratio));
             var twinStart = twin.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
             long crewOnly = RationsAboard(twinStart) - RationsAboard(twin.CaptureSnapshotForTests(meal, SimulationSpeed.Speed0, meal / Ratio));
             Assert.Equal((6L, 9L), (crewOnly, withPassengers));
 
-            // The duplicate command returns its receipt and boards nobody twice; a second accept is refused.
-            Assert.Equal(accepted, engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-1", 0, FirstOffer)));
-            Assert.Equal(StationJobReasons.OfferAlreadyAccepted,
-                engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-2", accepted.Revision, FirstOffer)).Reason);
-            Assert.Equal(3, PassengersAboard(engine, meal).Length);
-
-            // Not enough cabins: a larger passenger offer is refused before anything is boarded or charged.
-            var snapshot = engine.CaptureSnapshotForTests(meal, SimulationSpeed.Speed0, meal / Ratio);
-            var tooBig = Board(snapshot).Offers.FirstOrDefault(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type) && o.Count > 1);
-            if (tooBig is not null)
-            {
-                var refused = engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-big", accepted.Revision, tooBig.Id));
-                Assert.Equal((false, PassengerCapacityReasons.NoFreeCabins), (refused.Applied, refused.Reason));
-                Assert.Equal(3, PassengersAboard(engine, meal).Length);
-                Assert.Equal(snapshot.PlayerCredits, engine.CaptureSnapshotForTests(meal, SimulationSpeed.Speed0, meal / Ratio).PlayerCredits);
-            }
-
-            // Arriving at the destination after the deadline pays nothing and disembarks nobody.
+            // Arriving at the destination after the deadline pays nothing. Since US-0003 the contract has expired
+            // (Failed, penalty in TransportFailures) and its passengers leave at this confirmed docking without payout.
             long late = Assert.Single(Contracts(snapshot).Contracts).DeadlineGameTimeMs + 1;
             long at = Math.Max(late, meal);
-            using (var overdue = Reload(engine, directory, at, save => PlayerShip(save)["dockedStationObjectId"] = offer.DestinationStationId))
+            // The carrier spends the time in space (a docked carrier would let them leave at the start station).
+            using var fresh = NewDocked();
+            Assert.True(fresh.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-late", 0, FirstOffer)).Applied);
+            using var inSpace = Reload(fresh, directory, 0, save => { PlayerShip(save)["isDocked"] = false; PlayerShip(save).AsObject().Remove("dockedStationObjectId"); save["gameState"]!.AsObject().Remove("voyageState"); });
+            using (var overdue = Reload(inSpace, directory, at, save =>
+                   { PlayerShip(save)["isDocked"] = true; PlayerShip(save)["dockedStationObjectId"] = offer.DestinationStationId; }))
             {
                 var lateSnapshot = overdue.CaptureSnapshotForTests(at, SimulationSpeed.Speed0, at / Ratio);
                 var c = Assert.Single(Contracts(lateSnapshot).Contracts);
-                Assert.Equal((StationJobStatuses.Active, PassengerDeliveryStates.Overdue, (long?)null), (c.Status, c.DeliveryState, c.PaidCredits));
-                Assert.Equal(3, PassengersAboard(overdue, at).Length);
+                Assert.Equal((StationJobStatuses.Failed, PassengerDeliveryStates.Failed, (long?)null), (c.Status, c.DeliveryState, c.PaidCredits));
+                Assert.Equal(TransportFailureReasons.Expired, Assert.Single(lateSnapshot.DemoCampaign!.Transport!.TransportFailures!.Failures).Reason);
+                Assert.Equal(offer.DestinationStationId, lateSnapshot.DemoCampaign.Transport.TransportFailures.Failures[0].DisembarkStationId);
+                Assert.Empty(PassengersAboard(overdue, at));
             }
         }
         finally { Directory.Delete(directory, true); }

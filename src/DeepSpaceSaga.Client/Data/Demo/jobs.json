@@ -21,6 +21,10 @@
     "cargoPermille": 2500,
     "minimumGameTimeMs": 3600000
   },
+  "penalties": {
+    "cancelPermille": 250,
+    "expiryPermille": 250
+  },
   "risk": [
     { "riskProfileId": "risk.safe", "band": "safe", "permille": 1000 },
     { "riskProfileId": "risk.normal", "band": "normal", "permille": 1150 },

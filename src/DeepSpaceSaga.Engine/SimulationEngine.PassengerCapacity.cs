@@ -24,7 +24,8 @@ public sealed partial class SimulationEngine
             {
                 PassengerCapacity = capacity,
                 StationJobs = jobs,
-                PassengerContracts = BuildPassengerContractsProjection() // EP-0034 US-0002
+                PassengerContracts = BuildPassengerContractsProjection(), // EP-0034 US-0002
+                TransportFailures = BuildTransportFailuresProjection() // EP-0034 US-0003
             };
     }
 

@@ -102,7 +102,13 @@ public sealed partial class SimulationEngine
         }
         if (postings.Count == 0) return;
 
-        var candidate = _demoCampaign with { StationJobs = jobs with { Obligations = obligations }, PassengerContracts = contracts };
+        // EP-0034 US-0003: contract debt is repaid from the payouts just credited, oldest failure first.
+        var failures = RepayTransportDebt(_demoCampaign.TransportFailures, postings.Sum(p => p.Credits), out long repaid);
+        credits = checked(credits - repaid);
+        var candidate = _demoCampaign with
+        {
+            StationJobs = jobs with { Obligations = obligations }, PassengerContracts = contracts, TransportFailures = failures
+        };
         DemoCampaignData.Validate(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
         ValidateDemoCampaignSections(candidate);
         // Commit: campaign receipt, people, money and the arrival voyage posting together.
@@ -149,12 +155,14 @@ public sealed partial class SimulationEngine
         {
             var record = _demoCampaign.PassengerContracts.FirstOrDefault(c => c.ContractId == obligation.ContractId);
             var ids = record?.PassengerIds ?? [];
-            if (obligation.Status == StationJobStatuses.Active) passengersAboard += ids.Count(aboard.Contains);
+            passengersAboard += ids.Count(aboard.Contains); // also failed contracts still waiting to disembark (US-0003)
             string state = obligation.Status == StationJobStatuses.Completed && record?.DeliveredAtGameTimeMs is not null
                 ? PassengerDeliveryStates.Delivered
                 : obligation.Status == StationJobStatuses.Active && now <= obligation.DeadlineGameTimeMs
                     ? PassengerDeliveryStates.Aboard
-                    : PassengerDeliveryStates.Overdue;
+                    : obligation.Status == StationJobStatuses.Active
+                        ? PassengerDeliveryStates.Overdue
+                        : PassengerDeliveryStates.Failed; // EP-0034 US-0003: expired, cancelled or lost
             contracts.Add(new PassengerContract(obligation.ContractId, obligation.OfferId, obligation.Type,
                 obligation.OriginStationId, obligation.DestinationStationId, obligation.Count, obligation.AcceptedAtGameTimeMs,
                 obligation.DeadlineGameTimeMs, obligation.Payout, obligation.Status,

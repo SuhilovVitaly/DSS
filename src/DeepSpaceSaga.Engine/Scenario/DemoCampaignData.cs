@@ -37,6 +37,10 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("passengerContracts")]
     public ImmutableArray<PassengerContractData> PassengerContracts { get; init; } = [];
 
+    /// <summary>EP-0034 US-0003: terminal failures (cancelled, expired, lost) with penalty, debt and disembarkation.</summary>
+    [JsonPropertyName("transportFailures")]
+    public ImmutableArray<TransportFailureData> TransportFailures { get; init; } = [];
+
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
@@ -49,6 +53,7 @@ public sealed record DemoCampaignData(
             throw new ScenarioException("Invalid demo campaign transport: passenger capacity is derived, not persisted.");
         ValidateStationJobs(data, gameTimeMs);
         ValidatePassengerContracts(data, gameTimeMs);
+        ValidateTransportFailures(data, gameTimeMs);
         var ids = new HashSet<string>(StringComparer.Ordinal);
         long previousSequence = 0;
         long previousRevision = 0;
@@ -133,6 +138,70 @@ public sealed record DemoCampaignData(
             o.Status != StationJobStatuses.Completed || contracts.Contains(o.ContractId));
         if (!valid) throw new ScenarioException("Invalid demo campaign passenger contracts.");
     }
+
+    /// <summary>
+    /// Atomic structural check of the transport failures (EP-0034 US-0003): exactly one record per failed or cancelled
+    /// transport obligation, a reason matching the journal status, the penalty split paid + repaid + debt, the boarded
+    /// passengers of the contract and a consistent disembarkation. World membership is checked by the engine on Load.
+    /// </summary>
+    private static void ValidateTransportFailures(DemoCampaignData data, long gameTimeMs)
+    {
+        if (data.Transport?.TransportFailures is not null)
+            throw new ScenarioException("Invalid demo campaign transport: the transport failures projection is not persisted.");
+        if (data.TransportFailures.IsDefault)
+            throw new ScenarioException("Invalid demo campaign transport failures.");
+        var obligations = data.StationJobs?.Obligations ?? [];
+        var contracts = new HashSet<string>(StringComparer.Ordinal);
+        bool valid = data.TransportFailures.IsEmpty || data.StationJobs is not null;
+        foreach (var f in data.TransportFailures)
+        {
+            if (!valid) break;
+            var o = f is null ? null : obligations.FirstOrDefault(x => x.ContractId == f.ContractId);
+            var boarded = f is null ? null : data.PassengerContracts.FirstOrDefault(c => c.ContractId == f.ContractId);
+            valid = f is not null && o is not null && contracts.Add(f.ContractId) && SimulationEngine.IsTransportJob(o.Type) &&
+                (f.Reason == TransportFailureReasons.Cancelled ? o.Status == StationJobStatuses.Cancelled
+                    : TransportFailureReasons.IsKnownOutcome(f.Reason) && o.Status == StationJobStatuses.Failed) &&
+                o.ClosedAtGameTimeMs == f.FailedAtGameTimeMs &&
+                (f.Reason != TransportFailureReasons.Expired || f.FailedAtGameTimeMs == o.DeadlineGameTimeMs + 1) &&
+                f.PostingId == TransportFailureReasons.PostingIdFor(f.ContractId) &&
+                f.PenaltyCredits >= 0 && f.PenaltyPaid >= 0 && f.RepaidCredits >= 0 && f.DebtCredits >= 0 &&
+                f.PenaltyPaid + f.RepaidCredits + f.DebtCredits == f.PenaltyCredits &&
+                (f.Reason != TransportFailureReasons.CarrierLost || f.PenaltyCredits == 0) &&
+                !f.PassengerIds.IsDefault && f.PassengerIds.SequenceEqual(boarded?.PassengerIds ?? [], StringComparer.Ordinal) &&
+                boarded?.DeliveredAtGameTimeMs is null &&
+                (f.DisembarkedAtGameTimeMs is null) == (f.DisembarkStationId is null) &&
+                (f.DisembarkedAtGameTimeMs is not { } left ||
+                    !f.PassengerIds.IsEmpty && f.Reason != TransportFailureReasons.CarrierLost &&
+                    !string.IsNullOrWhiteSpace(f.DisembarkStationId) && left >= f.FailedAtGameTimeMs && left <= gameTimeMs);
+        }
+        // A closed transport obligation always carries its failure record, so a penalty cannot be replayed.
+        valid = valid && obligations.All(o => o is null || !SimulationEngine.IsTransportJob(o.Type) ||
+            o.Status is not (StationJobStatuses.Failed or StationJobStatuses.Cancelled) || contracts.Contains(o.ContractId));
+        if (!valid) throw new ScenarioException("Invalid demo campaign transport failures.");
+    }
+}
+
+/// <summary>
+/// Persisted transport failure (EP-0034 US-0003). The penalty is split into what was paid at the failure, what later
+/// contract payouts repaid and what is still owed. Passengers of a failed contract stay aboard until a confirmed
+/// docking; then the time and station of their disembarkation are recorded once.
+/// </summary>
+public sealed record TransportFailureData(
+    [property: JsonPropertyName("contractId")] string ContractId,
+    [property: JsonPropertyName("reason")] string Reason,
+    [property: JsonPropertyName("failedAtGameTimeMs")] long FailedAtGameTimeMs,
+    [property: JsonPropertyName("penaltyCredits")] long PenaltyCredits,
+    [property: JsonPropertyName("penaltyPaid")] long PenaltyPaid,
+    [property: JsonPropertyName("repaidCredits")] long RepaidCredits,
+    [property: JsonPropertyName("debtCredits")] long DebtCredits,
+    [property: JsonPropertyName("postingId")] string PostingId,
+    [property: JsonPropertyName("passengerIds")] ImmutableArray<string> PassengerIds,
+    [property: JsonPropertyName("disembarkedAtGameTimeMs")] long? DisembarkedAtGameTimeMs = null,
+    [property: JsonPropertyName("disembarkStationId")] string? DisembarkStationId = null)
+{
+    /// <summary>Passengers still aboard waiting for a confirmed docking (never for a lost carrier).</summary>
+    [JsonIgnore]
+    public bool DisembarkPending => !PassengerIds.IsDefaultOrEmpty && DisembarkedAtGameTimeMs is null && Reason != TransportFailureReasons.CarrierLost;
 }
 
 /// <summary>

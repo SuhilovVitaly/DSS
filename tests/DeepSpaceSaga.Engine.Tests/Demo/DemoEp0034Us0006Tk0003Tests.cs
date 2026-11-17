@@ -144,8 +144,10 @@ public sealed class DemoEp0034Us0006Tk0003Tests
         var day2 = Board(engine, 2 * GameCalendar.DayMs);
         Assert.DoesNotContain(day2.Offers, o => o.PublishedAtGameTimeMs == 0);
         Assert.All(day2.Offers.GroupBy(o => o.OriginStationId), g => Assert.Equal(6, g.Count()));
-        // The journal survives the refresh; the obligation's deadline is calendar time and does not move.
-        Assert.Equal(obligation, Assert.Single(day2.Obligations));
+        // The journal survives the refresh; the obligation's deadline is calendar time and does not move: since
+        // EP-0034-US-0003 the unfulfilled obligation expires exactly one millisecond after that deadline.
+        Assert.Equal(obligation with { Status = StationJobStatuses.Failed, ClosedAtGameTimeMs = obligation.DeadlineGameTimeMs + 1 },
+            Assert.Single(day2.Obligations));
     }
 
     [Fact]
@@ -202,7 +204,8 @@ public sealed class DemoEp0034Us0006Tk0003Tests
             // An expired offer is stale: day 2 no longer shows day-0 offers and acceptance is refused.
             var expiredId = board.Offers.First(o => o.OriginStationId == Start && o.Id != first.Id).Id;
             Board(engine, 2 * GameCalendar.DayMs);
-            var expired = engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("a-expired", applied.Revision, expiredId));
+            long revisionAtDay2 = engine.CaptureSnapshotForTests(2 * GameCalendar.DayMs, SimulationSpeed.Speed0, 2 * GameCalendar.DayMs / 300).DemoCampaign!.Revision;
+            var expired = engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("a-expired", revisionAtDay2, expiredId));
             Assert.False(expired.Applied);
             Assert.Contains(expired.Reason, new[] { StationJobReasons.OfferNotFound, StationJobReasons.OfferExpired });
         }
@@ -253,6 +256,7 @@ public sealed class DemoEp0034Us0006Tk0003Tests
             {
                 save["gameState"]!["demoCampaign"]!.AsObject().Remove("stationJobs");
                 save["gameState"]!["demoCampaign"]!.AsObject().Remove("passengerContracts");
+                save["gameState"]!["demoCampaign"]!.AsObject().Remove("transportFailures"); // EP-0034-US-0003
             });
             var fresh = Board(legacy, noon);
             Assert.Empty(fresh.Obligations);
