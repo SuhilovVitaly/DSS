@@ -18,6 +18,7 @@ public sealed partial class SimulationEngine
         long draws = 0;
         int chance = 2500 + (int)Math.Round(GetAssignedEngineerBonusFraction() * 10000);
         var sources = ImmutableArray.CreateBuilder<LootSourceData>();
+        var frozen = session.Capture();
         foreach (var drone in session.Battle.Drones.Where(d => d.Side != session.PlayerSide).OrderBy(d => d.Id, StringComparer.Ordinal))
         {
             if (drone.Status == TacticalDroneStatus.Air) continue;
@@ -39,8 +40,9 @@ public sealed partial class SimulationEngine
             }
             Add("ammo", "torpedo.t1", drone.AmmoCurrent);
             if (drone.Decoy is { } decoy) Add("decoy", decoy.Id, drone.DecoyCharges);
-            var pilot = new LootPilotSnapshot(LootPilotIdentity(session.Id, drone.Id, drone.PilotId), drone.PilotName ?? drone.PilotId, drone.PilotPortraitAssetId,
-                true, null, Gender: drone.PilotGender ?? CrewGender.Female);
+            var build = frozen.Units.Single(u => u.Id == drone.Id).Build!;
+            var pilot = new LootPilotSnapshot(LootPilotIdentity(session.Id, drone.Id, build.PilotId), build.PilotName, build.PilotPortraitAssetId,
+                true, null, Gender: build.PilotGender ?? CrewGender.Female);
             sources.Add(new(drone.Id, "DisabledDrone", layoutId, drone.Pose.X, drone.Pose.Y, drone.Pose.Course,
                 pilot, consumables.ToImmutable(), null, InitializeLootModules(session.Id, drone, seed, ref draws, chance)));
         }

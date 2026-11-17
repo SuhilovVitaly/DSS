@@ -115,3 +115,5 @@ Include SimulationEngine.CampaignRoundtrip.cs (actual company projection owner),
 
 ## Execution
 Implemented atomic arrest with actual free cabins minus boarded people and unboarded commitments; no food prerequisite. Frozen pilot identity namespaced by battle/drone, prisoner provenance validated against retained victory. UI capture flag derives solely from custody ledger. Old absent custody remains empty; legacy reserved field default0. Engine/test-project build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk2-build.log); runtime tests deferred to complete US9 boundary.
+
+US9 boundary and independent review reproduced a pilot-name mismatch: raw runtime enemy PilotName may be null while the tactical snapshot resolves the catalog display name. Loot materialization now takes all pilot presentation facts from the frozen tactical build, keeping arrest/load provenance exact. Initial failures preserved in us9-engine.log/us9-client.log; rerun pending.
