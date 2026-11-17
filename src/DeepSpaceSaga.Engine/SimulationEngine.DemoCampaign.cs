@@ -93,7 +93,7 @@ public sealed partial class SimulationEngine
 
     private DemoCampaignSnapshot BuildDemoCampaignProjection() => new(
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
-        BuildDemoTransportProjection(), BuildPirateGroupsProjection(), _demoCampaign.Rewards,
+        BuildDemoTransportProjection(), BuildPirateGroupsProjection(), BuildDemoRewardsProjection(),
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
         BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes());
 
@@ -107,6 +107,9 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case AcceptBountyCommand or CancelBountyCommand:
+                PrepareTargetBounty(command, ref candidate, ref reason);
+                break;
             case SelectDemoRouteCommand route:
                 PrepareThreatRoute(route, ref reason, ref commit);
                 break;

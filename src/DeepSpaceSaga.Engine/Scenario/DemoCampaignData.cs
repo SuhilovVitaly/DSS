@@ -4,6 +4,9 @@ using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
+public sealed record BountyOrderData(string Id, string IssuerStationId, string TargetGroupId,
+    long RewardTokens, bool Tracking, string? PaidPostingId = null);
+
 /// <summary>Campaign metadata only. Resources remain in the existing authoritative world.</summary>
 public sealed partial record DemoCampaignData(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,
@@ -19,6 +22,9 @@ public sealed partial record DemoCampaignData(
 {
     [JsonPropertyName("catalogFingerprint")]
     public string? CatalogFingerprint { get; init; }
+
+    public string? BountyCatalogFingerprint { get; init; }
+    public ImmutableArray<BountyOrderData> BountyOrders { get; init; } = [];
 
     [JsonPropertyName("pilotMemorial")]
     public ImmutableArray<PilotMemorialEntry> PilotMemorial { get; init; } = [];
@@ -65,6 +71,15 @@ public sealed partial record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        if (data.BountyOrders.IsDefault || data.BountyOrders.Any(b => b is null ||
+            string.IsNullOrWhiteSpace(b.Id) || string.IsNullOrWhiteSpace(b.IssuerStationId) ||
+            string.IsNullOrWhiteSpace(b.TargetGroupId) || b.RewardTokens <= 0 ||
+            b.PaidPostingId is not null && string.IsNullOrWhiteSpace(b.PaidPostingId)) ||
+            data.BountyOrders.Select(b => b.Id).Distinct(StringComparer.Ordinal).Count() != data.BountyOrders.Length ||
+            data.BountyOrders.Select(b => b.TargetGroupId).Distinct(StringComparer.Ordinal).Count() != data.BountyOrders.Length ||
+            data.BountyCatalogFingerprint is { } bountyHash && (bountyHash.Length != 64 || !bountyHash.All(Uri.IsHexDigit)) ||
+            !data.BountyOrders.IsEmpty && data.BountyCatalogFingerprint is null)
+            throw new ScenarioException("Invalid saved bounty orders.");
         ValidateEncounterHistory(data);
         if (data.WorldEncounter is { } encounter && (encounter.Binding is null || encounter.Seed < 0 ||
             encounter.Phase is not (WorldEncounterPhases.Captured or WorldEncounterPhases.PendingBattle or WorldEncounterPhases.Finished) ||

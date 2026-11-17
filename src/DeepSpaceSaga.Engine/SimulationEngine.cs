@@ -515,6 +515,7 @@ public sealed partial class SimulationEngine : IDisposable
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
         DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
         restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
+        restoredDemoCampaign = PrepareBountiesForLoad(restoredDemoCampaign);
         ValidateSensorDialogueSave(restoredDemoCampaign, scenario with { GameState = gs });
         if (restoredDemoCampaign.WorldEncounter is { Phase: WorldEncounterPhases.PendingBattle } &&
             (restoredDemoCampaign.PendingSensorReport is not null || gs.DialogueState?.ActiveDialogue is not null ||
