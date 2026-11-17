@@ -99,3 +99,7 @@ Adding loot SKUs changes the catalog and station profile identities. Extend this
 ## Execution — 2026-11-17
 
 Added fixed light/heavy/carrier scrap, existing torpedo mapping, one scrap SKU and finite industrial demand (target5000, zero stock, unchanged budget). Exact catalog/profile compatibility preserves prior economic state and validates continuation before publication. Independent migration review found no weakened drift check; US6 must add the exact scrap-only predecessor when introducing trophies. Client build PASS (0 warnings/errors), scoped formatting/diff PASS; tests authored, NOT RUN until US3 boundary. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us3-tk2-build.log.
+
+## Boundary correction — market demand coverage
+
+US3 Client boundary failed because the existing Profile economy schema requires hourlyInputs+hourlyConsumption to cover every demand SKU. Added independent consumption for loot demand only: A baseline scrap10kg/hour, each trophy/charge1unit/hour. Existing production inputs/outputs and budgets are unchanged. Structural predecessor filtering removes only these exact newly added consumption rows. Correction also covers dependent US6 trophy content. Initial US3 Client result 5/6; final retry follows corrections.

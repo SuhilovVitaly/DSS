@@ -127,7 +127,16 @@
           { "itemTypeId": "item.energy-cells", "quantity": 12 },
           { "itemTypeId": "item.electronics", "quantity": 4 }
         ],
-        "hourlyConsumption": [],
+        "hourlyConsumption": [
+          { "itemTypeId": "item.scrap", "quantity": 10 },
+          { "itemTypeId": "item.trophy.weapon.gun.sword.t1", "quantity": 1 },
+          { "itemTypeId": "item.trophy.weapon.gun.spear.t1", "quantity": 1 },
+          { "itemTypeId": "item.trophy.armor.plate.medium", "quantity": 1 },
+          { "itemTypeId": "item.trophy.engine.drive.standard", "quantity": 1 },
+          { "itemTypeId": "item.trophy.shield.shield.t1", "quantity": 1 },
+          { "itemTypeId": "item.trophy.decoy.decoy.t1", "quantity": 1 },
+          { "itemTypeId": "item.decoy-charge.t1", "quantity": 1 }
+        ],
         "stockTargets": [
           { "itemTypeId": "item.trophy.weapon.gun.sword.t1", "targetStock": 50 },
           { "itemTypeId": "item.trophy.weapon.gun.spear.t1", "targetStock": 50 },

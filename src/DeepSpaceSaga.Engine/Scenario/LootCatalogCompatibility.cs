@@ -17,6 +17,7 @@ internal static class LootCatalogCompatibility
         InitialInventory = profile.InitialInventory.Where(s => !Removed(s.ItemTypeId, keepScrap)).ToImmutableArray(),
         Economy = profile.Economy is { } economy ? economy with
         {
+            HourlyConsumption = economy.HourlyConsumption.Where(s => !Removed(s.ItemTypeId, keepScrap)).ToImmutableArray(),
             StockTargets = economy.StockTargets.Where(s => !Removed(s.ItemTypeId, keepScrap)).ToImmutableArray()
         } : null
     };
