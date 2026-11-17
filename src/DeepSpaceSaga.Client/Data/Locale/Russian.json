@@ -2,6 +2,8 @@
   "Demo.Pirate.NoContacts": "Пиратских контактов нет",
   "Demo.Pirate.Unknown": "Неопознанный носитель",
   "Demo.Pirate.Observed": "Пиратский контакт",
+  "Demo.Pirate.LastKnown": "Последняя известная позиция",
+  "Demo.Pirate.ObservationAge": "Давность контакта: {0:0} с при ×1",
   "Demo.Pirate.DebugVisible": "Неподтверждённый контакт (отладка)",
   "Demo.Pirate.Captured": "Перехват",
   "Demo.Pirate.Lair": "Логово",

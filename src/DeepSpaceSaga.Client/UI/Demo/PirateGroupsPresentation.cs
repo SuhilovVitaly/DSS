@@ -10,18 +10,23 @@ internal static class PirateGroupsPresentation
     internal static IReadOnlyList<Marker> Markers(DemoEncountersSnapshot? encounters) =>
         encounters is null || encounters.Groups.IsDefaultOrEmpty ? [] : encounters.Groups.Select(group =>
         {
-            string type = !group.IsDetected || group.Signatures.IsDefaultOrEmpty ? Localization.Get("Demo.Pirate.Unknown")
+            bool known = group.IsDetected || group.Status == PirateGroupStatuses.LastKnown;
+            string type = !known || group.Signatures.IsDefaultOrEmpty ? Localization.Get("Demo.Pirate.Unknown")
                 : string.Join(" + ", group.Signatures.Select(s => Localization.Get(s.DisplayNameKey)));
             string status = Localization.Get(group.Status switch
             {
                 PirateGroupStatuses.Captured => "Demo.Pirate.Captured",
                 PirateGroupStatuses.DebugVisible => "Demo.Pirate.DebugVisible",
+                PirateGroupStatuses.LastKnown => "Demo.Pirate.LastKnown",
                 _ => "Demo.Pirate.Observed"
             });
-            string count = group.IsDetected && group.ApproximateDroneCount is { } approximate
+            string count = known && group.ApproximateDroneCount is { } approximate
                 ? " · " + string.Format(Localization.Get("Demo.Pirate.ApproximateDrones"), approximate) : "";
             return new Marker(group.Id, group.X, group.Y, status + ": " + type + count, group.IsDetected,
-                group.IsDetected ? MapEvasionPresentation.Describe(group.Pursuit) : "");
+                group.Status == PirateGroupStatuses.LastKnown
+                    ? string.Format(Localization.Get("Demo.Pirate.ObservationAge"), group.ObservationAgeMotionMs / 250.0) +
+                      " · " + MapEvasionPresentation.Describe(group.Pursuit)
+                    : group.IsDetected ? MapEvasionPresentation.Describe(group.Pursuit) : "");
         }).ToArray();
 
     internal static void Draw(SKCanvas canvas, DemoEncountersSnapshot? encounters, CameraState camera, int width, int height)

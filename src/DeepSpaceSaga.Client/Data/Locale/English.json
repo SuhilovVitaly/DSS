@@ -2,6 +2,8 @@
   "Demo.Pirate.NoContacts": "No pirate contacts",
   "Demo.Pirate.Unknown": "Unidentified carrier",
   "Demo.Pirate.Observed": "Pirate contact",
+  "Demo.Pirate.LastKnown": "Last observed position",
+  "Demo.Pirate.ObservationAge": "Contact age: {0:0} s at ×1",
   "Demo.Pirate.DebugVisible": "Unconfirmed contact (debug)",
   "Demo.Pirate.Captured": "Intercepted",
   "Demo.Pirate.Lair": "Lair",
