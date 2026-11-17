@@ -44,3 +44,7 @@ loot. These scenarios remain NOT RUN until the owner runs the game.
 ## US1 completion — 2026-11-17
 
 Published tickets: TK1 813fad2d; TK5 13e1fc38; TK4 d280058e; TK2 7b1651ea; TK3 08719981. Independent review found missing search-region text; fixed and pushed e97a9230. Initial thematic tests: Contracts 3/3, Engine 17/17, Client 7/7. After correction: Engine bounty 13/13, Client bounty 7/7; unchanged Contracts/neighbor cases were not repeated. Logs and TRX: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us1-*-tests.log and us1-review-*-tests.log, matching results directories. Native remains NOT RUN. All pushes to origin feature branch confirmed by push results. US2 payment and US11 map geometry remain pending.
+
+## US2 completion — 2026-11-17
+
+Published: TK1 d0c6a409; TK2 f8c687be; TK4 b80b8fb1; TK3 3fa67841. Combined bounty US1/US2 thematic checks PASS: Contracts 5/5, Engine 20/20, Client 11/11. These include live local-session claim/reopen for both unaccepted and cancelled targets, overflow and corrupted posting rejection. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us2-*-tests.log and matching results directories. Independent review of a37646de..3fa67841 found no actionable defects. Native NOT RUN.
