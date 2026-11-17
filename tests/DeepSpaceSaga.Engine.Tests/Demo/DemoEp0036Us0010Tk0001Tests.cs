@@ -22,7 +22,7 @@ public sealed class DemoEp0036Us0010Tk0001Tests
     [Fact]
     public void EnumValuesAppendOnly()
     {
-        Assert.Equal(7, (int)TacticalBattleLogKind.Destroyed);
+        Assert.Equal(8, (int)TacticalBattleLogKind.Destroyed);
         Assert.Equal(17, (int)TacticalBattleLogKind.Moved);
         Assert.Equal(18, (int)TacticalBattleLogKind.SelfDestructed);
     }

@@ -88,3 +88,5 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 
 ## Execution
 Append-only SelfDestructed18; deterministic per-carrier journal entry for movement/debug and ordered fire steps, including self-destruction before other squad carriers finish. Ordinary damage logs unchanged. Owning Engine/test build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us10-tk1-build.log); tests deferred to US10 boundary.
+
+US10 boundary: 41/42 Engine checks passed; new append-only test incorrectly expected Destroyed=7 (historically8, Disabled=7). Corrected assertion without changing production enum. Evidence us10-engine.log; repeat pending.
