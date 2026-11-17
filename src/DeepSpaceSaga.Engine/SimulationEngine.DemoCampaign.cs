@@ -41,6 +41,8 @@ public sealed partial class SimulationEngine
             Action? commit = null;
             if (command.ExpectedRevision != _demoCampaign.Revision) reason = DemoCampaignReasons.StaleRevision;
             else if (_tacticalBattleSession is not null) reason = DemoCampaignReasons.BattleActive;
+            else if (HasCapturedEncounter && command is not (BeginEncounterBattleCommand or DismissSensorContactReportRequest or SetFogOfWarRequest))
+                reason = "encounter_captured";
             else if (_objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
                 reason = DemoCampaignReasons.CarrierDestroyed;
             else
@@ -74,6 +76,7 @@ public sealed partial class SimulationEngine
     private void TickDemoCampaign(long gameTimeMs)
     {
         ObservePirateGroups(gameTimeMs);
+        PublishCapturedEncounter();
         OpenPendingSensorReport(_processedSimulationTimeMs);
         PublishStationJobs(gameTimeMs); // EP-0034 US-0006: idempotent per calendar bucket, also while paused
         DeliverPassengerContracts(gameTimeMs); // EP-0034 US-0002: idempotent, a Completed contract never pays again
@@ -91,7 +94,7 @@ public sealed partial class SimulationEngine
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
         BuildDemoTransportProjection(), BuildPirateGroupsProjection(), _demoCampaign.Rewards,
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
-        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport);
+        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection());
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
 
@@ -103,6 +106,9 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case BeginEncounterBattleCommand begin:
+                PrepareEncounterBattle(begin, ref candidate, ref reason, ref commit);
+                break;
             case DismissSensorContactReportRequest dismiss:
                 if (candidate.PendingSensorReport?.BatchId != dismiss.BatchId) reason = "sensor_batch_mismatch";
                 else if (_dialogue.Active is { DialogueDefinitionId: not SensorReportDialogueId }) reason = "dialogue_active";

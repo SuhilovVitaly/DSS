@@ -43,6 +43,7 @@ public sealed record DemoCampaignData(
 
     public ImmutableArray<SensorContactReport> SensorReports { get; init; } = [];
     public SensorContactReportBatch? PendingSensorReport { get; init; }
+    public WorldEncounterData? WorldEncounter { get; init; }
 
     /// <summary>EP-0034 US-0006: published offers and the obligations journal; null until the first publication.</summary>
     [JsonPropertyName("stationJobs")]
@@ -63,6 +64,13 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        if (data.WorldEncounter is { } encounter && (encounter.Binding is null || encounter.Seed < 0 ||
+            encounter.Phase is not (WorldEncounterPhases.Captured or WorldEncounterPhases.PendingBattle or WorldEncounterPhases.Finished) ||
+            encounter.Binding.EncounterId != "encounter:" + encounter.Binding.GroupId ||
+            encounter.Binding.BattleId != "battle:" + encounter.Binding.GroupId ||
+            data.PirateWorld?.Groups.SingleOrDefault(g => g.GroupId == encounter.Binding.GroupId) is not { CompositionMaterialized: true } group ||
+            (encounter.Phase == WorldEncounterPhases.Finished ? !group.Retired : group.Retired || group.Phase != "captured")))
+            throw new ScenarioException("Invalid world encounter binding.");
         if (data.SensorReports.IsDefault || data.SensorReports.Length > 4 || data.SensorReports.Any(r => r is null ||
             r.ReportId != "report:" + r.GroupId || string.IsNullOrWhiteSpace(r.GroupId) || r.ObservedMotionTimeMs < 0 ||
             !double.IsFinite(r.BearingDegrees) || r.BearingDegrees < 0 || r.BearingDegrees >= 360 ||

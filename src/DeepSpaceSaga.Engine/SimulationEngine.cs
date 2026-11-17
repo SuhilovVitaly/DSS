@@ -172,6 +172,7 @@ public sealed partial class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             if (_tacticalBattleSession is not null && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
+            if (HasCapturedEncounter && speed != SimulationSpeed.Speed0) return "encounter_captured";
             if (_demoCampaign.PendingSensorReport is not null && speed != SimulationSpeed.Speed0) return "sensor_report_pending";
             if (IsStoppedByStationSecurity) return StationSecurityStoppedReason;
             if (!Enum.IsDefined(speed)) throw new ArgumentOutOfRangeException(nameof(speed));
@@ -2310,7 +2311,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
-            if (_tacticalBattleSession is not null)
+            if (_tacticalBattleSession is not null || HasCapturedEncounter)
             {
                 RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, TacticalBattleActiveReason);
                 continue;
