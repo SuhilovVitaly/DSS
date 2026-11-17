@@ -105,3 +105,7 @@ Status: implemented; **validation pending at story end** (owner cadence). No tes
 Checks: `dotnet build tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -c Release` — 0 warnings/0 errors (`D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0001-20261117/tk0005-build.log`); both JSON files parse.
 
 Assumption A-06: US-0001 has no player command (TK-0001 A-01), so no pending/confirmed command texts are added; they belong to US-0002. Real readability on screen is checked by TK-0004 and the release UI pass, not by parity tests.
+
+## Story-end correction (2026-11-17)
+
+Story run found `NoRawReasonCodeLeaks` too strict: the stable code `unavailable` is also an ordinary English word in the explanation ("Passenger data is unavailable…"). The test now forbids verbatim snake_case codes, any `_`, and text equal to the code; dictionaries unchanged.

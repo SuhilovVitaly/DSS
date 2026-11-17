@@ -66,8 +66,11 @@ public sealed class DemoEp0034Us0001Tk0005Tests
             foreach (var code in ReasonCodes)
             {
                 string text = dictionary[Prefix + code];
-                Assert.DoesNotContain(code, text, StringComparison.Ordinal);
+                // "unavailable" is also an ordinary English word; snake_case codes must never appear verbatim.
+                if (code.Contains('_'))
+                    Assert.DoesNotContain(code, text, StringComparison.Ordinal);
                 Assert.DoesNotContain("_", text, StringComparison.Ordinal);
+                Assert.NotEqual(code, text);
                 Assert.DoesNotContain("PassengerCapacity", text, StringComparison.Ordinal);
             }
         }
