@@ -468,7 +468,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 height - 20, MenuStyle.TextStatus);
 
         _debugConsoleOverlay.Render(canvas, DebugConsole, width, height, _debugConsoleUiScale);
-        if (_session?.AutosaveStatus is { Length: > 0 } saveStatus)
+        if (_session is { IsPlayerShipDestroyed: false } && _session.Buffer.Latest?.Snapshot.IsTacticalBattleActive != true && _session.AutosaveStatus is { Length: > 0 } saveStatus)
             canvas.DrawText(Localization.Get("Demo.Save." + saveStatus), width / 2f, height - 48, MenuStyle.TextStatus);
         return index;
     }
@@ -983,7 +983,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 return;
             }
             if (EnsureShipDestroyedScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or ScreenEvent.Exit or
-                ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.NewGame)) return;
+                ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.NewGame or ScreenEvent.ContinueCheckpoint)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
                 (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
                 ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle) &&
@@ -1051,6 +1051,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                         await StartTutorialAsync();
                     else
                         OpenScenarioSelect();
+                    break;
+                case ScreenEvent.ContinueCheckpoint:
+                    if (!await LoadSlotCoreAsync(DeepSpaceSaga.Engine.LocalClient.SaveSlotNaming.ContinuationSlotId, "Checkpoint") && _screens.Current is ShipDestroyedScreen terminal)
+                        terminal.ShowStatus("Demo.Save.LoadFailed");
                     break;
                 case ScreenEvent.ContinueCampaign:
                     try
@@ -1377,7 +1381,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             _screens.Push(CreateTacticalBattleView(flow));
             _modalDepth = 1;
             session.DebugTuningFiles.Activate();
-            session.ActivateAutosave();
+            session.ActivateAutosave(saveInitialState: false);
         }
         catch (Exception ex)
         {
@@ -2136,7 +2140,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             if (newSession is not null) await newSession.DisposeAsync();
             previousSession?.DebugTuningFiles.Activate();
             previousSession?.ActivateAutosave();
-            if (!_closing)
+            if (!_closing && logPrefix is not ("Continue" or "Checkpoint"))
             {
                 await OpenLoadWindowAsync();
                 if (_screens.Current is LoadScreen load) load.ShowError(SessionConnectionLoader.LoadErrorKey(ex));
@@ -2158,7 +2162,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         }
 
         newSession.DebugTuningFiles.Activate();
-        newSession.ActivateAutosave();
+        newSession.ActivateAutosave(saveInitialState: false);
 
         return true;
     }

@@ -7,18 +7,22 @@ public sealed partial class GameSessionHandle
     private readonly object _autosaveStateGate = new();
     private bool _autosaveActive;
     private AuthoritativeSnapshot? _autosaveLatest;
-    private long _autosaveObservedSequence = -1, _autosaveRequestGeneration;
+    private long _autosaveObservedRevision = -1, _autosaveRequestGeneration;
     private string? _autosaveDock;
     private Task _pendingAutosave = Task.CompletedTask;
     private string _autosaveStatus = "";
-    public string AutosaveStatus => Volatile.Read(ref _autosaveStatus);
+    private bool _autosaveBaselinePending;
+    private long _savedStatusUntil;
+    public string AutosaveStatus => Volatile.Read(ref _autosaveStatus) is "Saved" && Environment.TickCount64 >= Interlocked.Read(ref _savedStatusUntil)
+        ? "" : Volatile.Read(ref _autosaveStatus);
 
-    public void ActivateAutosave()
+    public void ActivateAutosave(bool saveInitialState = true)
     {
         lock (_autosaveStateGate)
         {
             if (_disposed) return;
             _autosaveActive = true;
+            if (!saveInitialState) _autosaveBaselinePending = true;
             if (_autosaveLatest is { } snapshot) ObserveAutosave(snapshot);
         }
     }
@@ -29,13 +33,19 @@ public sealed partial class GameSessionHandle
         lock (_autosaveStateGate)
         {
             _autosaveLatest = snapshot;
-            if (!_autosaveActive || _disposed || snapshot.IsTacticalBattleActive) return;
             var ship = snapshot.Objects.FirstOrDefault(o => o.ObjectId == snapshot.PlayerShipObjectId);
             string? dock = ship?.IsDocked == true ? ship.DockedStationObjectId : null;
-            bool changed = snapshot.DemoCampaign.CommitSequence != _autosaveObservedSequence || dock is not null && dock != _autosaveDock;
+            if (_autosaveBaselinePending)
+            {
+                _autosaveObservedRevision = snapshot.DemoCampaign.Revision;
+                _autosaveDock = dock;
+                _autosaveBaselinePending = false;
+            }
+            if (!_autosaveActive || _disposed || snapshot.IsTacticalBattleActive || ship?.IsDestroyed == true) return;
+            bool changed = snapshot.DemoCampaign.Revision != _autosaveObservedRevision || dock is not null && dock != _autosaveDock;
             _autosaveDock = dock;
             if (!changed) return;
-            _autosaveObservedSequence = snapshot.DemoCampaign.CommitSequence;
+            _autosaveObservedRevision = snapshot.DemoCampaign.Revision;
             QueueAutosave(snapshot.DemoCampaign.CommitSequence);
         }
     }
@@ -44,7 +54,7 @@ public sealed partial class GameSessionHandle
     {
         lock (_autosaveStateGate)
         {
-            if (!_autosaveActive || _disposed || _autosaveLatest?.DemoCampaign is not { } state) return Task.CompletedTask;
+            if (!_autosaveActive || _disposed || _autosaveLatest is not { IsTacticalBattleActive: false, DemoCampaign: { } state } || IsPlayerShipDestroyed) return Task.CompletedTask;
             return QueueAutosave(state.CommitSequence);
         }
     }
@@ -59,7 +69,11 @@ public sealed partial class GameSessionHandle
             try { await _connection.RequestAutosaveAsync(sequence).ConfigureAwait(false); status = "Saved"; }
             catch (Exception error) { WriteDiagnostic("CAMPAIGN autosave failed: " + error.Message); status = "Failed"; }
             lock (_autosaveStateGate)
-                if (generation == _autosaveRequestGeneration && !_disposed) Volatile.Write(ref _autosaveStatus, status);
+                if (generation == _autosaveRequestGeneration && !_disposed)
+                {
+                    if (status == "Saved") Interlocked.Exchange(ref _savedStatusUntil, Environment.TickCount64 + 5000);
+                    Volatile.Write(ref _autosaveStatus, status);
+                }
         });
         return _pendingAutosave;
     }

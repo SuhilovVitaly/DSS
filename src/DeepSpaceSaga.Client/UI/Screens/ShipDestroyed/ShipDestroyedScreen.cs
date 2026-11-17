@@ -12,7 +12,7 @@ public sealed class ShipDestroyedScreen : IScreen
     private ScreenEvent _hovered;
     private string? _status;
     public void ShowStatus(string key) => _status = key;
-    private static readonly ScreenEvent[] Actions = [ScreenEvent.OpenLoadWindow, ScreenEvent.MainMenu, ScreenEvent.QuickLoad, ScreenEvent.NewGame];
+    private static readonly ScreenEvent[] Actions = [ScreenEvent.OpenLoadWindow, ScreenEvent.MainMenu, ScreenEvent.ContinueCheckpoint, ScreenEvent.NewGame];
     private ScreenEvent _focused = ScreenEvent.OpenLoadWindow;
 
     internal ShipDestroyedLayout Layout => _layout;
@@ -70,13 +70,13 @@ public sealed class ShipDestroyedScreen : IScreen
             TextAlign = SKTextAlign.Center,
             Typeface = MenuStyle.TextStatus.Typeface
         };
-        string defeatText = Localization.Get(_status ?? "Demo.Outcome.Rollback");
+        string defeatText = Localization.Get(_status ?? "ShipDestroyed.Defeat");
         float defeatMeasured = defeat.MeasureText(defeatText);
         if (defeatMeasured > available) defeat.TextSize *= available / defeatMeasured;
         canvas.DrawText(defeatText, _layout.Panel.MidX, _layout.Panel.Bottom - 12 * _layout.Scale, defeat);
         Draw(_layout.Load, "ShipDestroyed.Load", ScreenEvent.OpenLoadWindow);
         Draw(_layout.MainMenu, "ShipDestroyed.MainMenu", ScreenEvent.MainMenu);
-        Draw(_layout.Continue, "Demo.Save.Continue", ScreenEvent.QuickLoad);
+        Draw(_layout.Continue, "Demo.Save.Continue", ScreenEvent.ContinueCheckpoint);
         Draw(_layout.NewGame, "Demo.Start.NewGame", ScreenEvent.NewGame);
         canvas.Restore();
 
@@ -100,5 +100,5 @@ internal readonly record struct ShipDestroyedLayout(SKRect Panel, SKRect Load, S
 
     internal ScreenEvent Hit(float x, float y) => Load.Contains(x, y) ? ScreenEvent.OpenLoadWindow :
         MainMenu.Contains(x, y) ? ScreenEvent.MainMenu :
-        Continue.Contains(x, y) ? ScreenEvent.QuickLoad : NewGame.Contains(x, y) ? ScreenEvent.NewGame : ScreenEvent.None;
+        Continue.Contains(x, y) ? ScreenEvent.ContinueCheckpoint : NewGame.Contains(x, y) ? ScreenEvent.NewGame : ScreenEvent.None;
 }

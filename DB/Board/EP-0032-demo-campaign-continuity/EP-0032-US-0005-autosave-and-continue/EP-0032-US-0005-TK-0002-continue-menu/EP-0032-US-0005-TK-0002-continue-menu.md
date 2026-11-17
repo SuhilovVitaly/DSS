@@ -127,3 +127,9 @@ Story-end checks: Engine 23 PASS (`D:/DeepSpaceSaga/artifacts/validation/ep-0032
 Final review correction: Continue must also display LoadFailed when full candidate validation succeeded but session adoption later fails. HandleScreenEvent already serializes the transition; use the shared boolean LoadSlotCoreAsync result instead of discarding it through the void UI wrapper.
 
 Correction verification: final/client.log, 126 Client PASS; no game launch.
+
+## Review correction scope — 2026-11-17
+
+User requested autonomous fixes of the supplied production review, tests only at the end. Related scope includes owning campaign/autosave/content/menu/session files, localized feedback, focused Demo tests and current documentation. Preserve a living continuation before owned sorties; never overwrite it with terminal state; Continue skips terminal candidates. Load establishes an autosave baseline without writing. Validate only demo content for demo worlds; fingerprint only the stable cluster contract with old cluster-hash compatibility. Keep development Credits disabled. Confirmed command receipts survive presentation teardown; rejected requests do not trigger autosave (observe revision). Bound replay history to1024 with expected-revision protection for older applied commands. No game launch or manual acceptance.
+
+Review-fix validation: focused Engine DemoEp0032 corpus 27/27 PASS (engine4.log), focused Client DemoEp0032 + ShipDestroyedScreenTests + ScreenEventTests + MenuLayoutTests 133/133 PASS (client3.log). Logs: D:/DeepSpaceSaga/artifacts/validation/ep-0032-review/20261117-check/. Release owning builds included in tests; scoped whitespace and diff checks clean. No game/native launch. See ../../ReviewCorrections.md.

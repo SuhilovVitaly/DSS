@@ -100,7 +100,7 @@ public sealed class MainMenuScreen : IScreen
         DrawButton(canvas, pl, pt, MenuLayout.NewGameY, NewGameLabel, MenuButton.NewGame);
         DrawButton(canvas, pl, pt, MenuLayout.LoadY, Localization.Get("MainMenu.Load"), MenuButton.Load);
         DrawButton(canvas, pl, pt, MenuLayout.SettingsY, Localization.Get("MainMenu.Settings"), MenuButton.Settings);
-        DrawButton(canvas, pl, pt, MenuLayout.CreditsY, Localization.Get("Demo.Save.Continue"), MenuButton.Continue);
+        DrawButton(canvas, pl, pt, MenuLayout.CreditsY, Localization.Get(_demoProfile ? "Demo.Save.Continue" : "MainMenu.Credits"), _demoProfile ? MenuButton.Continue : MenuButton.Credits);
         DrawButton(canvas, pl, pt, MenuLayout.ExitY, Localization.Get("MainMenu.Exit"), MenuButton.Exit);
         if (_status.Length > 0) canvas.DrawText(_status, panelRect.MidX, panelRect.Bottom - 45, MenuStyle.TextStatus);
     }
@@ -108,8 +108,8 @@ public sealed class MainMenuScreen : IScreen
     internal static void DrawWindowShell(SKCanvas canvas, SKRect bounds) =>
         GenericWindowTypeA.Draw(canvas, bounds);
 
-    private static bool IsEnabled(MenuButton button) =>
-        button is MenuButton.NewGame or MenuButton.Continue or MenuButton.Load or MenuButton.Settings or MenuButton.Exit;
+    private bool IsEnabled(MenuButton button) =>
+        button is MenuButton.NewGame or MenuButton.Load or MenuButton.Settings or MenuButton.Exit || _demoProfile && button == MenuButton.Continue;
 
     private ButtonState GetState(MenuButton id, bool active)
     {

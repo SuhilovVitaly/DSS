@@ -87,7 +87,7 @@ public class ScreenEventTests
     [Fact]
     public void MainMenu_Continue_is_enabled_for_hover_and_click()
     {
-        var screen = new MainMenuScreen();
+        var screen = new MainMenuScreen(true);
         var (x, y) = ButtonCenter(MenuLayout.CreditsY);
         TriggerRender(screen);
         Assert.True(screen.OnMouseMove(x, y));

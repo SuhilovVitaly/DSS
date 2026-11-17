@@ -42,6 +42,7 @@ public enum ScreenEvent
     None,
     NewGame,
     ContinueCampaign,
+    ContinueCheckpoint,
     ScenarioSelected,
     Exit,
     OpenGameMenu,
