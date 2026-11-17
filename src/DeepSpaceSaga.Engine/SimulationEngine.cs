@@ -532,6 +532,7 @@ public sealed partial class SimulationEngine : IDisposable
             SelectedObjectId = null;
             _clock.Reset(gs.GameTimeMs, speed, gs.MotionTimeMs, gs.MotionQuarterRemainder);
             _stationSecurityStop = null;
+            _piratePauseClock = null;
             lock (_commandGate) _tacticalBattleRefusedCommands.Clear();
             _nextEngineCycleId = 0;
             _nextShipEventId = 0;
@@ -706,6 +707,7 @@ public sealed partial class SimulationEngine : IDisposable
             // loop condition no-ops when no time has passed), so no external speed check is
             // needed here.
             AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
+            if (_piratePauseClock is { } pirateStop) { clockState = pirateStop; gameTimeMs = pirateStop.MotionTimeMs; }
             if (_stationSecurityStop is { } stopped)
             {
                 clockState = stopped;
@@ -1137,6 +1139,7 @@ public sealed partial class SimulationEngine : IDisposable
         // ticked since) would be captured stale. Idempotent: a cycle already caught up to
         // gameTimeMs is a no-op here (same guard BuildSnapshot relies on).
         AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
+        if (_piratePauseClock is { } pirateStop) { clockState = pirateStop; gameTimeMs = pirateStop.MotionTimeMs; }
         ThrowIfStoppedByStationSecurity();
 
         // Mirror BuildSnapshot's other half: a command the player sent in the narrow
@@ -3546,14 +3549,20 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
+            var pirateStep = AdvancePirateWorld(next);
+            next = pirateStep.Time;
             _appliedMotionTimeMs = next;
-            AdvancePirateWorld(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
             if (IsStoppedByStationSecurity) return;
             CompleteActiveEngineCycles(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
+            if (pirateStep.Stopped)
+            {
+                _piratePauseClock = new(surveyCalendarAt(next), SimulationSpeed.Speed0, next);
+                return;
+            }
             if (next >= gameTimeMs) break;
         }
     }

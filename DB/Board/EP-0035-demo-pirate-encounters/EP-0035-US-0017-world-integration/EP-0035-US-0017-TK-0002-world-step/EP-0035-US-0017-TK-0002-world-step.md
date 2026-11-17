@@ -5,7 +5,7 @@ ticket: EP-0035-US-0017-TK-0002-world-step
 title: Интеграция motion шага и атомарных событий встречи
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0017-TK-0001-campaign-dispatch, EP-0035-US-0002-TK-0002-engine, EP-0035-US-0003-TK-0002-engine, EP-0035-US-0010-TK-0003-dialogue-engine, EP-0035-US-0012-TK-0002-aggregate-engine]
@@ -43,3 +43,7 @@ NOT RUN. Focused Ep0035Us0017Tk0002Tests проверяет: FastStep_NoTunnelTh
 
 ## Definition of Done
 Served AC подтверждены focused integration evidence, existing behavior сохранено; нет выхода за allowlist. Native ускорение/пауза/диалог/перехват отдельно, acceptance OPEN до проверки. Planning не разрешает production/build/commit. US0006 documentation после всех интеграций.
+
+Execution scope expands MapEvasion.cs/PirateComposition.cs and a PirateWorldStep partial: swept player acquisition and capture choose earliest event; all group motion is sampled at that committed boundary. Existing integral-ms clock rounds event up by at most1motion ms while exact capture time remains recorded. Calendar mapping uses the existing AdvanceWorldTo mapping, applies equal-time economy events once, then resets the same clock. Snapshot/save/travel share pause boundary; pending report/capture/battle/storage freeze world. No second clock or render motion.
+
+Build PASS us17-tk2-build.log; scoped whitespace format performed. Tests after publication: Engine Ep0035 (all epic integration layers), EconomyTime/StationSecurity relevant regression, Client sensor/capture/recovery. Native remains NOT RUN.

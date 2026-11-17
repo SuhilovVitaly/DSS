@@ -12,14 +12,14 @@ public sealed partial class SimulationEngine
         ? world.Groups.Where(g => !g.Retired && g.Phase != "captured" && g.MotionPlan is not null && g.MotionPlan.EndMs > world.LastMotionTimeMs)
             .Select(g => g.MotionPlan!.EndMs).DefaultIfEmpty(checked(world.LastMotionTimeMs + PirateControlStepMs)).Min() : long.MaxValue;
 
-    private void AdvancePirateWorld(long motionTimeMs)
+    private (long Time, bool Stopped) AdvancePirateWorld(long motionTimeMs)
     {
-        if (_demoCampaign.PirateWorld is not { } world || motionTimeMs <= world.LastMotionTimeMs) return;
+        if (_demoCampaign.PirateWorld is not { } world || motionTimeMs <= world.LastMotionTimeMs) return (motionTimeMs, false);
         var player = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         if (player is null || player.IsDestroyed)
         {
             _demoCampaign = _demoCampaign with { PirateWorld = world with { LastMotionTimeMs = motionTimeMs } };
-            return;
+            return (motionTimeMs, false);
         }
         var start = _objects.Single(o => o.InitialMotion.ObjectId == _demoDefinitions.Cluster!.StartStationId).InitialMotion;
         var safe = new PiratePoint(start.X, start.Y);
@@ -30,6 +30,8 @@ public sealed partial class SimulationEngine
         double dt = (motionTimeMs - world.LastMotionTimeMs) / 1000.0;
         var groups = world.Groups.ToBuilder();
         (int Index, double Time, string Id)? capture = null;
+        var discoveries = new List<(string Id, double Time)>();
+        double playerRadius = EvaluateCarrierSensor(player)?.RadiusWorldUnits ?? 0;
         bool alreadyCaptured = world.Groups.Any(g => !g.Retired && g.Phase == "captured");
         for (int i = 0; i < groups.Count; i++)
         {
@@ -40,24 +42,33 @@ public sealed partial class SimulationEngine
             {
                 var planned = PlanPirateGroup(group, world, previousPose, safe, capability.MaxSpeedKmS, capability.SensorRadius,
                     PirateControlStepMs / 1000.0, out var origin);
-                group = planned with { X = group.X, Y = group.Y, Direction = group.Direction, SpeedKmS = group.SpeedKmS,
-                    MotionPlan = new(origin, world.LastMotionTimeMs, checked(world.LastMotionTimeMs + PirateControlStepMs)) };
+                group = planned with
+                {
+                    X = group.X,
+                    Y = group.Y,
+                    Direction = group.Direction,
+                    SpeedKmS = group.SpeedKmS,
+                    MotionPlan = new(origin, world.LastMotionTimeMs, checked(world.LastMotionTimeMs + PirateControlStepMs))
+                };
             }
             var plan = group.MotionPlan!;
             var moved = HoldMotion.Sample(plan.Origin, motionTimeMs - plan.StartMs);
             var next = group with { X = moved.X, Y = moved.Y, Direction = moved.Direction, SpeedKmS = moved.SpeedKmS };
             groups[i] = next;
+            PiratePoint RelativeAt(double offset)
+            {
+                var pirate = HoldMotion.Sample(plan.Origin, world.LastMotionTimeMs + offset - plan.StartMs);
+                var target = PlayerAtFractionalTime(player, world.LastMotionTimeMs + offset);
+                return new(pirate.X - target.X, pirate.Y - target.Y);
+            }
+            double speedBound = (Math.Max(plan.Origin.SpeedKmS, plan.Origin.MaxSpeedKmS ?? 0) +
+                Math.Max(Math.Max(fromPlayer.SpeedKmS, pose.SpeedKmS), fromPlayer.MaxSpeedKmS ?? 0)) * .01;
+            if (!group.ReportConsumed && playerRadius > 0 &&
+                TrajectoryCircleEntry(RelativeAt, dt * 1000, speedBound, playerRadius) is { } discovered)
+                discoveries.Add((group.GroupId, world.LastMotionTimeMs + discovered));
             // Swept capture is only possible with a working pirate sensor. Safe-zone entry wins at the boundary.
             if (!alreadyCaptured && capability.SensorRadius >= 200)
             {
-                PiratePoint RelativeAt(double offset)
-                {
-                    var pirate = HoldMotion.Sample(plan.Origin, world.LastMotionTimeMs + offset - plan.StartMs);
-                    var target = PlayerAtFractionalTime(player, world.LastMotionTimeMs + offset);
-                    return new(pirate.X - target.X, pirate.Y - target.Y);
-                }
-                double speedBound = (Math.Max(plan.Origin.SpeedKmS, plan.Origin.MaxSpeedKmS ?? 0) +
-                    Math.Max(Math.Max(fromPlayer.SpeedKmS, pose.SpeedKmS), fromPlayer.MaxSpeedKmS ?? 0)) * .01;
                 double SafeClearance(double offset)
                 {
                     var target = PlayerAtFractionalTime(player, world.LastMotionTimeMs + offset);
@@ -77,12 +88,32 @@ public sealed partial class SimulationEngine
                 }
             }
         }
-        if (capture is { } hit)
+        double firstEvent = Math.Min(capture?.Time ?? double.PositiveInfinity,
+            discoveries.Select(d => d.Time).DefaultIfEmpty(double.PositiveInfinity).Min());
+        bool stopped = double.IsFinite(firstEvent);
+        if (stopped)
+        {
+            motionTimeMs = Math.Clamp((long)Math.Ceiling(firstEvent), world.LastMotionTimeMs, motionTimeMs);
+            for (int i = 0; i < groups.Count; i++)
+                if (!groups[i].Retired && groups[i].Phase != "captured" && groups[i].MotionPlan is { } plan)
+                {
+                    var at = HoldMotion.Sample(plan.Origin, motionTimeMs - plan.StartMs);
+                    groups[i] = groups[i] with { X = at.X, Y = at.Y, Direction = at.Direction, SpeedKmS = at.SpeedKmS };
+                }
+            pose = PredictMotion(player, motionTimeMs - player.StartGameTimeMs);
+            position = new(pose.X, pose.Y);
+        }
+        if (capture is { } hit && hit.Time <= motionTimeMs)
             groups[hit.Index] = groups[hit.Index] with { Phase = "captured", CapturedMotionTimeMs = hit.Time, MotionPlan = null };
         _demoCampaign = _demoCampaign with
         {
             PirateWorld = world with { Groups = groups.ToImmutable(), LastMotionTimeMs = motionTimeMs, LastPlayerPosition = position }
         };
+        foreach (var discovered in discoveries.Where(d => d.Time <= motionTimeMs).OrderBy(d => d.Id, StringComparer.Ordinal))
+            _demoCampaign = AddSensorReport(EnsurePirateComposition(_demoCampaign, discovered.Id), discovered.Id, pose, motionTimeMs);
+        if (discoveries.Any(d => d.Time <= motionTimeMs))
+            _demoCampaign = _demoCampaign with { Revision = checked(_demoCampaign.Revision + 1), CommitSequence = checked(_demoCampaign.CommitSequence + 1) };
+        return (motionTimeMs, stopped);
     }
 
     internal static PirateGroupData StepPirateGroup(PirateGroupData group, PirateWorldData world,
@@ -95,8 +126,13 @@ public sealed partial class SimulationEngine
         bool playerSafe = Distance(player.X, player.Y, start.X, start.Y) <= 8000;
         bool contact = !playerSafe && SensorCovers(sensorRadius, group.X, group.Y, player.X, player.Y);
         if (contact)
-            group = group with { Phase = "pursuit", LastObservedPlayer = player,
-                ContactEpoch = group.Phase == "pursuit" ? group.ContactEpoch : checked(group.ContactEpoch + 1), LastPursuitEndReason = null };
+            group = group with
+            {
+                Phase = "pursuit",
+                LastObservedPlayer = player,
+                ContactEpoch = group.Phase == "pursuit" ? group.ContactEpoch : checked(group.ContactEpoch + 1),
+                LastPursuitEndReason = null
+            };
         else if (playerSafe && group.Phase is "pursuit" or "last_known")
             group = group with { Phase = "return", LastPursuitEndReason = "start_safe" };
         else if (group.Phase == "pursuit") group = group with { Phase = "last_known" };

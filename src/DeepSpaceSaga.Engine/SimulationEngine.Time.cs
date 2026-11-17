@@ -37,7 +37,7 @@ public sealed partial class SimulationEngine
         ArgumentNullException.ThrowIfNull(command);
         lock (_worldStateLock)
         {
-            if (_tacticalBattleSession is not null) return new(false, TacticalBattleActiveReason, CaptureSnapshot());
+            if (_tacticalBattleSession is not null || HasCapturedEncounter || _encounterStoragePending) return new(false, TacticalBattleActiveReason, CaptureSnapshot());
             if (IsStoppedByStationSecurity) return new(false, StationSecurityStoppedReason, CaptureSnapshot());
             if (string.IsNullOrWhiteSpace(command.CommandId) || !Enum.IsDefined(command.Destination))
                 return new(false, "invalid_transition", CaptureSnapshot());
@@ -54,6 +54,7 @@ public sealed partial class SimulationEngine
             long targetSimulationTime = checked(_clock.SimulationTimeMs +
                 GameCalendar.HourMs / SimulationSpeedExtensions.BaseGameSecondsPerRealSecond);
             AdvanceWorldTo(targetTime, targetSimulationTime);
+            if (_piratePauseClock is not null) return new(false, "pirate_contact_pause", CaptureSnapshot());
             if (IsStoppedByStationSecurity) return new(false, StationSecurityStoppedReason, CaptureSnapshot());
             _clock.Reset(targetTime, SimulationSpeed.Speed0, targetSimulationTime, _clock.Capture().MotionQuarterRemainder);
             _stationDistrict = command.Destination;
