@@ -33,10 +33,11 @@ public sealed class DemoEp0034Us0001Tk0002Tests
         Assert.Equal(shared.HullLayout!.Cells.Select(c => (c.X, c.Y)), demo.HullLayout!.Cells.Select(c => (c.X, c.Y)));
         // Original identities remain; EP36 adds exactly the dedicated demo engineer.
         Assert.Equal(shared.Crew!.Select(c => c.CrewId), demo.Crew!.Where(c => c.CrewId != "CHR-PLAYER-ENGINEER").Select(c => c.CrewId));
-        Assert.Single(demo.Crew.Where(c => c.CrewId == "CHR-PLAYER-ENGINEER"));
+        Assert.Single(demo.Crew!, c => c.CrewId == "CHR-PLAYER-ENGINEER");
         Assert.Equal(shared.CarrierState!.OwnedDrones!.Select(d => (d.DroneId, d.CrewId)),
             demo.CarrierState!.OwnedDrones!.Select(d => (d.DroneId, d.CrewId)));
-        Assert.Equal(0, demo.CarrierState.ReservedCabins);
+        // Legacy manifest field remains accepted; runtime ignores this old empty-cabin reserve.
+        Assert.Equal(shared.CarrierState.ReservedCabins, demo.CarrierState.ReservedCabins);
 
         // The only installed module difference remains one additional living quarters.
         var added = demo.Modules!.Select(m => m.ModuleId).Except(shared.Modules!.Select(m => m.ModuleId)).ToArray();
