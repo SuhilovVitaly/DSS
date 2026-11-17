@@ -4,7 +4,7 @@ story: EP-0035-US-0012-pirate-squadrons
 ticket: EP-0035-US-0012-TK-0001-contracts
 title: Контракт группы и настройки появления
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0035-US-0011-TK-0005-generation-engine]
@@ -111,3 +111,7 @@ G-35-18 CLOSED D-35-45: earliest continuous capture, deterministic tie, посл
 Остаток G-35-09/15: abnormal/partial battle outcomes и корректное world continuation без новой механики тактического отступления. Normal single capture/report/continue уже D-35-42.
 A-35-18 стартовая позиция игрока отдельно от станции требует проверки actual scenario; отдельный clearance не утверждён. При обычном старте у start station800 уже покрывает sensor separation.
 Прочие продуктовые decisions (radii,skill/ETA,equipment,spawn count/weights/norespawn,operator,fog,lifetime,batching) закрыты. Routine module physical stats/конкретные patrol waypoint coordinates остаются implementation/balance деталями; narrative deferred внеscope.
+
+
+## Execution 2026-11-17
+Implemented stable member carrier IDs under one group token, without drone inventory. Debug settings DTO declares normal fog=true and squad chance10%; application/lifetime validation belongs to later engine/client tickets. Dependency is published US1-TK1 and US11-TK1 contracts; group engine follows these schemas. Build/format/diff PASS; evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us12-tk1-build.log. Tests NOT RUN until US12 boundary.

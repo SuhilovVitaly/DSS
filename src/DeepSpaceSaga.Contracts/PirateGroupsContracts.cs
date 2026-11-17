@@ -15,7 +15,12 @@ public sealed record PirateGroupSnapshot(
     string Status,
     int? ApproximateDroneCount = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PirateSignatureObservation>))]
-    ImmutableArray<PirateSignatureObservation> Signatures = default);
+    ImmutableArray<PirateSignatureObservation> Signatures = default,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PirateMemberSnapshot>))]
+    ImmutableArray<PirateMemberSnapshot> Members = default);
+
+/// <summary>Stable member carrier identity within a single observed world group.</summary>
+public sealed record PirateMemberSnapshot(string CarrierId, string SignatureTypeId);
 
 public sealed partial record DemoEncountersSnapshot
 {

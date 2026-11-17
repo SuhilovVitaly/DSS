@@ -34,3 +34,12 @@ public static class DebugTuningReasonCodes
     public const string ValueOutOfRange = "debug_value_out_of_range";
     public const string SessionNotRunning = "debug_session_not_running";
 }
+
+/// <summary>Process-scoped demo debug values. Never campaign save data; squad chance affects only New Game.</summary>
+public sealed record DemoDebugSettings(bool FogOfWar = true, int PirateSquadChancePercent = 10);
+
+public static class DemoDebugCommandTypes
+{
+    public const string PirateSquadChance = "debug.pirate_squad_chance";
+    public const string FogOfWar = "debug.fog_of_war";
+}
