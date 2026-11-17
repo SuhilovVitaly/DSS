@@ -59,7 +59,7 @@ public sealed class Ep0035RouteCaptureIntegrationTests
             engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
             long motion = 0;
             bool captured = false, completed = false;
-            for (int step = 0; step < 8000; step++)
+            for (int step = 0; motion < 100_000_000; step++)
             {
                 motion += stepMs;
                 snapshot = engine.CaptureSnapshotForTests(motion * 300, SimulationSpeed.Speed1, motion);
@@ -72,7 +72,7 @@ public sealed class Ep0035RouteCaptureIntegrationTests
                 if (step % 7 == 0)
                 {
                     var paused = engine.CaptureSnapshotForTests(motion * 300, SimulationSpeed.Speed0, motion);
-                    Assert.Equal(snapshot.Objects.Single(o => o.ObjectId == ship.ObjectId), paused.Objects.Single(o => o.ObjectId == ship.ObjectId));
+                    Assert.Equal(System.Text.Json.JsonSerializer.Serialize(snapshot.Objects.Single(o => o.ObjectId == ship.ObjectId)), System.Text.Json.JsonSerializer.Serialize(paused.Objects.Single(o => o.ObjectId == ship.ObjectId)));
                 }
                 if (step == 5) engine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true, true), true);
             }
