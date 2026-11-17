@@ -5,7 +5,7 @@ ticket: EP-0035-US-0009-TK-0004-crew-presentation
 title: Показ оператора сенсора в экипаже
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0035-US-0009-TK-0003-start-content]
@@ -121,3 +121,8 @@ D-35-42 пользователь: «Да, принимаем: если пере�
 При реальном pirate sensor contact и distance<=20км authoritative atomic capture фиксирует encounter. Player detection alone не capture. Для новой группы report+pause по batch policy; dismissal сохраняет Speed0; explicitcontinue начинает бой. Уже captured нельзя отменить сменой курса на паузе. Previously reported group не создаёт повторный automatic modal; используется существующий battle transition. Save/Load сохраняет pending capture, не даёт free escape. G-35-09 normal single-group inside-capture CLOSED; остаток: simultaneous capture CLOSED D-35-45: select earliest, no merge; recovery CLOSED D-35-47.
 Tests NOT RUN: MainMenuOverrides_NoSession; OverridesSurviveNewGameLoadUntilExit; Restart_NormalDefaults; Save_NoOverrides; Chance_ExistingGroupsUnchanged; IrinaAbsentUnassigned_Fallback; AssignedIrina_Bonus; BrokenSensor_NoDetection; Reassignment_NoDuplicateReport; NewlyRevealedGroup_NormalBatch; CaptureThenReport_StaysPaused; ExplicitContinue_StartsUnavoidableBattle; PausedCourse_CannotUndoCapture; LoadPendingCapture_NoEscape; PlayerDetectionOnly_NoCapture.
 Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-35-19; конкретные patrol routes ещё балансируются.
+
+
+## Execution 2026-11-17
+Ship roster identifies the existing assigned crew; sensor summary uses authoritative base/effective values and localized availability. Every current carrier snapshot refreshes the view even when a loaded revision matches, preventing stale assignment. No extra character row. Release Client.Tests build PASS (0 warnings/errors); scoped format/diff PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us9-tk4-build.log. Tests NOT RUN until US9 boundary; native NOT RUN, owner-only.
+

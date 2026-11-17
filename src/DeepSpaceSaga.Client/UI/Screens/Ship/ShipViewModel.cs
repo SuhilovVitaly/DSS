@@ -21,14 +21,15 @@ public sealed class ShipViewModel
     public bool IsDestroyed { get; private init; }
     public ImmutableArray<DroneRow> Drones { get; private init; } = ImmutableArray<DroneRow>.Empty;
     public ImmutableArray<CrewRow> Crew { get; private init; } = ImmutableArray<CrewRow>.Empty;
+    public SensorOperatorSnapshot? SensorOperator { get; private init; }
     public CabinRow Cabins { get; private init; } = new(0, 0, 0, 0);
 
     public sealed record DroneRow(string Id, int AmmoCurrent, int AmmoCapacity, int CurrentHull, bool Destroyed,
         bool Disabled = false, bool Uncrewed = false, ImmutableArray<string> Equipment = default);
-    public sealed record CrewRow(string Id, string DisplayName, CrewRole? Role);
+    public sealed record CrewRow(string Id, string DisplayName, CrewRole? Role, bool IsSensorOperator = false);
     public sealed record CabinRow(int TotalCabins, int OccupiedCabins, int ReservedCabins, int FreeCabins);
 
-    public static ShipViewModel From(CarrierOperationsSnapshot? carrier)
+    public static ShipViewModel From(CarrierOperationsSnapshot? carrier, SensorOperatorSnapshot? sensorOperator = null)
     {
         if (carrier is null)
             return new ShipViewModel { Unsupported = true };
@@ -42,6 +43,7 @@ public sealed class ShipViewModel
             HullMax = carrier.HullMax,
             Revision = carrier.Revision,
             IsDestroyed = carrier.IsDestroyed,
+            SensorOperator = sensorOperator,
             Drones = carrier.OwnedDrones.IsDefaultOrEmpty
                 ? ImmutableArray<DroneRow>.Empty
                 : carrier.OwnedDrones
@@ -56,7 +58,7 @@ public sealed class ShipViewModel
                     .ToImmutableArray(),
             Crew = carrier.Crew.IsDefaultOrEmpty
                 ? ImmutableArray<CrewRow>.Empty
-                : carrier.Crew.Select(c => new CrewRow(c.Id, c.DisplayName, c.Role)).ToImmutableArray(),
+                : carrier.Crew.Select(c => new CrewRow(c.Id, c.DisplayName, c.Role, c.Id == sensorOperator?.CrewId)).ToImmutableArray(),
             Cabins = carrier.CabinReservation is { } cabin
                 ? new CabinRow(cabin.TotalCabins, cabin.OccupiedCabins, cabin.ReservedCabins, cabin.FreeCabins)
                 : new CabinRow(0, 0, 0, 0),

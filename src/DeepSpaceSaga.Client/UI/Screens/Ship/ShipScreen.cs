@@ -268,7 +268,7 @@ public sealed partial class ShipScreen : IScreen
     {
         string? selectedId = _selectedRow >= 0 && _selectedRow < _drones.Length ? _drones[_selectedRow].Id : null;
         _revision = snapshot.Revision;
-        _model = ShipViewModel.From(snapshot);
+        _model = ShipViewModel.From(snapshot, _campaign?.Invoke()?.SensorOperator);
         _drones = _model.Drones.ToArray();
         int index = selectedId is null ? -1 : Array.FindIndex(_drones, drone => drone.Id == selectedId);
         _selectedRow = index;
@@ -277,7 +277,8 @@ public sealed partial class ShipScreen : IScreen
 
     public void Render(SKCanvas canvas, int width, int height)
     {
-        if (_carrier?.Invoke() is { } live && live.Revision != _revision) Rebuild(live);
+        // A loaded snapshot may reuse a revision; assignment changes must not retain the old operator.
+        if (_carrier?.Invoke() is { } live) Rebuild(live);
         _screenWidth = width;
         _screenHeight = height;
 
@@ -328,9 +329,10 @@ public sealed partial class ShipScreen : IScreen
             float crewY = pt + ct + 20;
             foreach (var member in _model.Crew)
             {
-                canvas.DrawText($"{member.DisplayName} ({member.Role})", pl + cl, crewY, bodyPaint);
+                canvas.DrawText(SensorCrewLabel(member), pl + cl, crewY, bodyPaint);
                 crewY += ShipLayout.BodyLineHeight;
             }
+            DrawSensorOperator(canvas, pl + cl, crewY, bodyPaint);
         }
 
         if (_campaign is not null)
