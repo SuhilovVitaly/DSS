@@ -12,7 +12,7 @@ depends_on: [EP-0036-US-0005-TK-0001-current-contracts]
 files_touched: 3
 serves: [AC-01, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
-revision: 1
+revision: 2
 ---
 
 # Board, реестр и состояние демо
@@ -77,9 +77,9 @@ No API change.
 
 ## Definition of Done
 
-- Все шаги выполнены только в allowlist, тесты проверяют указанные исходы и ошибки.
+- Все документационные шаги выполнены только в allowlist; ссылки и фактические утверждения проверены по owning sources.
 - Served AC имеют evidence вклада этого слоя; story end-to-end/native/product gates не закрыты автоматически.
-- Focused checks и owning build/format проходят либо конкретное исходное падение записано как блокер; timeout не PASS.
+- Для documentation-only изменения проходят проверки локальных ссылок, ID/зависимостей, согласованности с owning sources и git diff --check; build/test/format игры не требуются.
 - Public API, units, persistence, idempotency и ограничения соблюдены; нет скрытого follow-up вне Board.
 - Evidence в `D:/DeepSpaceSaga/artifacts/validation/<ticket>/<unique-run>/`, status/решения в Board, актуальные контракты в Documentation.
 - Удалены только собственные disposable scripts/caches/results; сохранены необходимые ссылки evidence, нет мусора в корнях workspace/repo.

@@ -1,16 +1,16 @@
 ---
 source_request: "Декомпозировать EP-0032…EP-0041 в тикеты до первого демо; добавить недостающие истории."
-current_review: complete
+current_review: plan-review
 approval_kind: workflow
 revision: 2
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0004-reward-continuation
 title: Прозрачный итог боя в кампании
-stage: approved
-plan_status: approved
+stage: draft
+plan_status: draft
 priority: P0
 workstream: feature
-dependencies: [EP-0036-US-0002-bounty-payment, EP-0036-US-0003-simple-loot, EP-0035-US-0004-encounter-continuation]
+dependencies: [EP-0036-US-0002-bounty-payment, EP-0036-US-0003-simple-loot, EP-0035-US-0004-encounter-continuation, EP-0036-US-0006-module-salvage, EP-0036-US-0007-postbattle-loot-lifecycle, EP-0036-US-0009-prisoner-custody]
 created: 2026-11-16T19:49:59Z
 implementation_status: not-started
 ---
@@ -30,6 +30,9 @@ implementation_status: not-started
 - [EP-0036-US-0002-bounty-payment](../EP-0036-US-0002-bounty-payment/EP-0036-US-0002-bounty-payment.md)
 - [EP-0036-US-0003-simple-loot](../EP-0036-US-0003-simple-loot/EP-0036-US-0003-simple-loot.md)
 - [EP-0035-US-0004-encounter-continuation](../../EP-0035-demo-pirate-encounters/EP-0035-US-0004-encounter-continuation/EP-0035-US-0004-encounter-continuation.md)
+- [EP-0036-US-0006-module-salvage](../EP-0036-US-0006-module-salvage/EP-0036-US-0006-module-salvage.md)
+- [EP-0036-US-0007-postbattle-loot-lifecycle](../EP-0036-US-0007-postbattle-loot-lifecycle/EP-0036-US-0007-postbattle-loot-lifecycle.md)
+- [EP-0036-US-0009-prisoner-custody](../EP-0036-US-0009-prisoner-custody/EP-0036-US-0009-prisoner-custody.md)
 
 ## Completion evidence
 
@@ -77,13 +80,17 @@ implementation_status: not-started
 - [EP-0036-US-0002-bounty-payment](../EP-0036-US-0002-bounty-payment/EP-0036-US-0002-bounty-payment.md)
 - [EP-0036-US-0003-simple-loot](../EP-0036-US-0003-simple-loot/EP-0036-US-0003-simple-loot.md)
 - [EP-0035-US-0004-encounter-continuation](../../EP-0035-demo-pirate-encounters/EP-0035-US-0004-encounter-continuation/EP-0035-US-0004-encounter-continuation.md)
+- [EP-0036-US-0006-module-salvage](../EP-0036-US-0006-module-salvage/EP-0036-US-0006-module-salvage.md)
+- [EP-0036-US-0007-postbattle-loot-lifecycle](../EP-0036-US-0007-postbattle-loot-lifecycle/EP-0036-US-0007-postbattle-loot-lifecycle.md)
+- [EP-0036-US-0009-prisoner-custody](../EP-0036-US-0009-prisoner-custody/EP-0036-US-0009-prisoner-custody.md)
 
 ## Approved ticket map
 
 | Порядок / ID | Title | Layer | Dependencies | Served criteria |
 |---|---|---|---|---|
-| 1. [EP-0036-US-0004-TK-0001-reward-roundtrip](EP-0036-US-0004-TK-0001-reward-roundtrip/EP-0036-US-0004-TK-0001-reward-roundtrip.md) | Единственность добычи и выплат после Load | engine | EP-0036-US-0002-TK-0003-client, EP-0036-US-0003-TK-0004-client, EP-0035-US-0004-TK-0002-encounter-ui | AC-01, AC-02, AC-03, AC-04 |
-| 2. [EP-0036-US-0004-TK-0002-reward-report](EP-0036-US-0004-TK-0002-reward-report/EP-0036-US-0004-TK-0002-reward-report.md) | Проверяемая сводка боя и оплаты | client | EP-0036-US-0004-TK-0001-reward-roundtrip | AC-01, AC-02, AC-03, AC-04 |
+| 1. [EP-0036-US-0004-TK-0001-reward-roundtrip](EP-0036-US-0004-TK-0001-reward-roundtrip/EP-0036-US-0004-TK-0001-reward-roundtrip.md) | Единственность добычи и выплат после Load | engine | EP-0036-US-0007-TK-0005-postbattle-continuation, EP-0036-US-0009-TK-0003-capacity-and-rations, EP-0036-US-0002-TK-0002-engine | AC-01, AC-02, AC-03, AC-04 |
+| 2. [EP-0036-US-0004-TK-0002-reward-report](EP-0036-US-0004-TK-0002-reward-report/EP-0036-US-0004-TK-0002-reward-report.md) | Проверяемая сводка боя и оплаты | client | EP-0036-US-0004-TK-0001-reward-roundtrip, EP-0036-US-0006-TK-0004-client | AC-01, AC-02, AC-03, AC-04 |
+| 3. [EP-0036-US-0004-TK-0003-restored-loot-route](EP-0036-US-0004-TK-0003-restored-loot-route/EP-0036-US-0004-TK-0003-restored-loot-route.md) | Восстановленный маршрут на карту лута | client | EP-0036-US-0007-TK-0004-postbattle-map, EP-0036-US-0007-TK-0005-postbattle-continuation | AC-01, AC-04 |
 
 ## Invariants
 
@@ -93,3 +100,11 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Актуальный контракт продолжения после груминга
+
+Эта история объединяет postbattle source geometry/loot ledger, целые cargo trophies, prisoners и bounty entitlement. Предыдущие формулировки «сохранение результата после боя» расширены: LootOpen сохраняется и возвращает на тактическую карту без active battle и без prebattle replay. Частичный сбор, terminal attempts, arrest identity и единственный sortie commit переживают Load. Награда к получению, выплаченная награда, стоимость trophies, взятые/оставленные предметы и боевые потери показываются раздельно; оценка не является cash.
+
+Дополнительный тикет [EP-0036-US-0004-TK-0003-restored-loot-route](EP-0036-US-0004-TK-0003-restored-loot-route/EP-0036-US-0004-TK-0003-restored-loot-route.md) — client routing через SkiaWindow/TacticalBattleFlow/GameSessionHandle. Он зависит от US7 TK4/TK5, а не запускает бой заново.
+
+Текущая карта: TK0001 integration roundtrip → TK0002 report; независимо после US7TK4/TK5 выполняется TK0003 recovered route. Все три обязательны для AC-01…04. Формальные dependencies на новые истории перечислены в frontmatter; их incomplete runtime не объявляется готовым тестовым scaffold.
