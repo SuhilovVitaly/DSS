@@ -129,7 +129,7 @@ public sealed class Ep0029Us0009Tk0003Tests
     {
         // The engine's rearm rejection shape: no Snapshot, only the current authoritative revision.
         var screen = Screen((_, _) => new ValueTask<CarrierCommandResponse>(new CarrierCommandResponse(
-            Accepted: false, Reason: "stale revision", Revision: 9)));
+            Accepted: false, Reason: "stale_revision", Revision: 9)));
         Render(screen);
         ClickRow(screen, 0);
         ClickConfirm(screen, 4);
@@ -141,7 +141,7 @@ public sealed class Ep0029Us0009Tk0003Tests
         Assert.Equal(42, screen.TorpedoStock);
         // The rejection still carries the current revision, so the next retry is not stale.
         Assert.Equal(9, screen.Revision);
-        Assert.Contains("stale revision", screen.Status);
+        Assert.Equal(DeepSpaceSaga.Client.UI.Demo.CampaignRoundtripPresentation.RearmReason("stale_revision"), screen.Status);
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public sealed class Ep0029Us0009Tk0003Tests
         {
             requests.Add(request);
             return new ValueTask<CarrierCommandResponse>(requests.Count == 1
-                ? new CarrierCommandResponse(Accepted: false, Reason: "stale revision", Revision: 9)
+                ? new CarrierCommandResponse(Accepted: false, Reason: "stale_revision", Revision: 9)
                 : new CarrierCommandResponse(Accepted: true, Revision: 10, Transferred: 4));
         });
         Render(screen);
@@ -186,7 +186,8 @@ public sealed class Ep0029Us0009Tk0003Tests
         await screen.PendingRearm!; // handled by the screen: the task does not fault
 
         Assert.False(screen.IsPending);
-        Assert.Contains("engine offline", screen.Status);
+        Assert.Equal(DeepSpaceSaga.Client.UI.Demo.CampaignRoundtripPresentation.RearmReason("unavailable"), screen.Status);
+        Assert.DoesNotContain("engine offline", screen.Status);
         Assert.Equal(2, screen.Drones.Single(d => d.Id == "DRN-1").AmmoCurrent);
         Assert.Equal(42, screen.TorpedoStock);
     }
