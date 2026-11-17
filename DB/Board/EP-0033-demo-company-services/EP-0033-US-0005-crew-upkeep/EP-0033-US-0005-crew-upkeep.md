@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0033-US-0004-pilot-recruitment, EP-0034-US-0002-passenger-contract]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Понятное содержание компании
@@ -93,3 +93,6 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story-boundary validation and remaining dependency
+Payroll/debt and actual crew/passenger food projection implemented. Final checks: 19 Engine, 12 Contracts, 100 Client PASS (includes real Engine-backed screen service flow and existing rearm regressions). Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-final/Engine.log, Contracts.log, Client3.log and screens/. Headless raster review is not native/product acceptance. EP-0034-US-0002 passenger-contract end-to-end integration remains OPEN; no passenger-contract runtime was fabricated.
