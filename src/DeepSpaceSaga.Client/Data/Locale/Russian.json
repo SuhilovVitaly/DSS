@@ -1106,5 +1106,12 @@
   "Demo.Pursuit.Escaped": "Преследование завершено",
   "Demo.Pursuit.Safe": "Безопасная зона START",
   "Demo.Pursuit.Lost": "Контакт потерян",
-  "Demo.Pursuit.Telemetry": "{0:0.0} км · скорость сближения {1:0.00} км/с"
+  "Demo.Pursuit.Telemetry": "{0:0.0} км · скорость сближения {1:0.00} км/с",
+  "Demo.SensorReport.Intro": "Обнаружены пиратские контакты. Симуляция на паузе.",
+  "Demo.SensorReport.Script": "Автоматический доклад сенсора",
+  "Demo.SensorReport.Contact": "{0}\nПеленг {1:0.0}° · дальность {2:0.0} км\nОколо {3} дронов\n{4}",
+  "Demo.SensorReport.Eta": "Ожидаемый перехват через {0:0.0} с при 1×",
+  "Demo.SensorReport.NoEta": "На текущих курсах перехват не ожидается",
+  "Demo.SensorReport.Acknowledge": "Принято — остаться на паузе",
+  "Demo.SensorReport.Footer": "При необходимости измените курс. Возобновите движение явно, когда будете готовы."
 }

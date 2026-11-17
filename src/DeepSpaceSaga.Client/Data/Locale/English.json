@@ -1106,5 +1106,12 @@
   "Demo.Pursuit.Escaped": "Pursuit ended",
   "Demo.Pursuit.Safe": "START safe zone",
   "Demo.Pursuit.Lost": "Contact lost",
-  "Demo.Pursuit.Telemetry": "{0:0.0} km · closing speed {1:0.00} km/s"
+  "Demo.Pursuit.Telemetry": "{0:0.0} km · closing speed {1:0.00} km/s",
+  "Demo.SensorReport.Intro": "Pirate contacts detected. Simulation paused.",
+  "Demo.SensorReport.Script": "Automatic sensor report",
+  "Demo.SensorReport.Contact": "{0}\nBearing {1:0.0}° · range {2:0.0} km\nAbout {3} drones\n{4}",
+  "Demo.SensorReport.Eta": "Estimated intercept in {0:0.0} s at 1×",
+  "Demo.SensorReport.NoEta": "No intercept predicted on current courses",
+  "Demo.SensorReport.Acknowledge": "Acknowledged — remain paused",
+  "Demo.SensorReport.Footer": "Change course if needed. Resume explicitly when ready."
 }
