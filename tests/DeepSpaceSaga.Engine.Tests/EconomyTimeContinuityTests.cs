@@ -517,9 +517,12 @@ public class EconomyTimeContinuityTests
             SurplusThresholdPermille: 1500,
             BudgetRegenerationDivisorPerDay: 24));
 
+    private static string ContentRoot([System.Runtime.CompilerServices.CallerFilePath] string source = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(source)!, "../../src/DeepSpaceSaga.Client"));
+
     private static GameDataRegistry RealRegistry()
     {
-        string root = Demo.DemoEp0033Us0001Tk0003Tests.Root();
+        string root = ContentRoot();
         return EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
     }
 
@@ -1357,7 +1360,7 @@ public class EconomyTimeContinuityTests
     [InlineData("Undocked")]
     public void Shipping_explicit_cargo_is_preserved_bounded_and_validated_after_save_load(string scenarioName)
     {
-        string root = Demo.DemoEp0033Us0001Tk0003Tests.Root();
+        string root = ContentRoot();
         string scenarioPath = Path.Combine(root, "Scenarios", scenarioName, "scenario.json");
         var authored = ScenarioLoader.LoadFromFile(scenarioPath).GameState.SpaceObjects.Single(obj => obj.ObjectId == "SPC-0002");
         using var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"), scenarioPath);
