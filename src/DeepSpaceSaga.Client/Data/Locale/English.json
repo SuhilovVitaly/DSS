@@ -946,5 +946,17 @@
   "Demo.Replacement.Slot": "Hangar {0}, slot {1} — next",
   "Demo.Replacement.Empty": "No available hangar slot",
   "Demo.Replacement.Confirmed": "Purchase completed; pilot and ammunition supplied separately",
-  "Demo.Replacement.Help": "Select a drone for equipment. Prices exclude pilot and ammunition."
+  "Demo.Replacement.Help": "Select a drone for equipment. Prices exclude pilot and ammunition.",
+  "Demo.Recruitment.Title": "Pilot recruitment",
+  "Demo.Recruitment.Hire": "Hire for {0} cr",
+  "Demo.Recruitment.Skills": "Accuracy {0}; maneuver {1}; initiative {2}",
+  "Demo.Recruitment.Terms": "Wage {0}/day; offer expires {1} ms",
+  "Demo.Recruitment.Cabins": "Free cabins: {0} (reserve excluded)",
+  "Demo.Recruitment.Assign": "Assign selected pilot",
+  "Demo.Recruitment.Pilot": "Pilot: {0} — next",
+  "Demo.Recruitment.Drone": "Drone: {0} — next",
+  "Demo.Recruitment.Confirmed": "Crew updated",
+  "Demo.Recruitment.Empty": "No available pilot offers at this station",
+  "Demo.Recruitment.NoPilot": "No pilot available",
+  "Demo.Recruitment.NoDrone": "No operational drone available"
 }

@@ -946,5 +946,17 @@
   "Demo.Replacement.Slot": "Ангар {0}, место {1} — следующее",
   "Demo.Replacement.Empty": "Нет свободного места в ангаре",
   "Demo.Replacement.Confirmed": "Покупка завершена; пилот и боезапас приобретаются отдельно",
-  "Demo.Replacement.Help": "Для оснащения выберите дрон. Пилот и боезапас не включены."
+  "Demo.Replacement.Help": "Для оснащения выберите дрон. Пилот и боезапас не включены.",
+  "Demo.Recruitment.Title": "Наём пилотов",
+  "Demo.Recruitment.Hire": "Нанять за {0} кр",
+  "Demo.Recruitment.Skills": "Точность {0}; манёвр {1}; инициатива {2}",
+  "Demo.Recruitment.Terms": "Жалованье {0}/день; срок предложения {1} мс",
+  "Demo.Recruitment.Cabins": "Свободные каюты: {0} (без резерва)",
+  "Demo.Recruitment.Assign": "Назначить выбранного пилота",
+  "Demo.Recruitment.Pilot": "Пилот: {0} — следующий",
+  "Demo.Recruitment.Drone": "Дрон: {0} — следующий",
+  "Demo.Recruitment.Confirmed": "Состав экипажа обновлён",
+  "Demo.Recruitment.Empty": "На этой станции нет предложений пилотов",
+  "Demo.Recruitment.NoPilot": "Нет доступного пилота",
+  "Demo.Recruitment.NoDrone": "Нет доступного дрона"
 }
