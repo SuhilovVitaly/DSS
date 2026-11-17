@@ -136,10 +136,13 @@ public sealed class Ep0029Us0013Tk0003Tests
         Assert.Equal(24, hullCells.Distinct().Count());
 
         var modules = manifest.RootElement.GetProperty("modules").EnumerateArray().ToArray();
-        Assert.Equal(9, modules.Length);
+        Assert.Equal(10, modules.Length);
         var occupied = modules.SelectMany(module => module.GetProperty("occupiedCells").EnumerateArray()
             .Select(cell => (X: cell.GetProperty("x").GetInt32(), Y: cell.GetProperty("y").GetInt32()))).ToArray();
-        Assert.Equal(15, occupied.Distinct().Count());
+        Assert.Equal(16, occupied.Distinct().Count());
+        var sensor = Assert.Single(modules, m => m.GetProperty("moduleId").GetString() == "MOD-PLAYER-SENSOR-01");
+        var sensorCell = Assert.Single(sensor.GetProperty("occupiedCells").EnumerateArray());
+        Assert.Equal((3, 4), (sensorCell.GetProperty("x").GetInt32(), sensorCell.GetProperty("y").GetInt32()));
         Assert.All(occupied, cell => Assert.Contains(cell, hullCells));
 
         var quarters = modules.Where(module =>
