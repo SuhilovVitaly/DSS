@@ -229,6 +229,8 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
         Directory.CreateDirectory(ships);
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Data", "Ships", "starter-carrier.json"),
             Path.Combine(ships, "starter-carrier.json"));
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Data", "Ships", "demo-starter-carrier.json"),
+            Path.Combine(ships, "demo-starter-carrier.json"));
         string destination = Path.Combine(directory, "Settings.json");
         File.WriteAllText(destination, settings.ToJsonString());
         return destination;

@@ -92,3 +92,5 @@ Acceptance / tests NOT RUN: WinLossDrawTimeout_SelectedGroupRetired; SurvivingHu
 Execution scope: PhasePanel.Outcome.cs adds separate actual carrier hull rows and campaign Draw/Timeout defeat label, with single return action; expand TacticalBattleFlow/Screen/Overlay for no campaign abort/new battle and matching tests. Engine settlement mapping remains TK3; no client damage or reward calculation.
 
 Build PASS us15-tk2-build.log. Tests deferred until US15 boundary. Separate hull rows retain actual damage; campaign result offers no new battle, Draw/Timeout display defeat.
+
+Story regression correction: existing Ep0019Scenes temporary content copied only the legacy starter manifest, while current default scenario uses demo-starter-carrier.json. Extend test fixture to copy both shipped manifests. This retains actual current scenario ownership; no production fallback. First run lacked DSS_VALIDATION_ROOT; rerun with absolute root exposed this missing fixture file. Engine5/5 PASS; Client18/26 with8 fixture failures; independent review no actionable defects.
