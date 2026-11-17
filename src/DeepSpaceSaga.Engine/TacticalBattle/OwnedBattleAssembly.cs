@@ -81,7 +81,7 @@ internal static class OwnedBattleAssembly
         var assembledCarriers = carriers.ToImmutable();
         var battle = new TacticalBattle(catalog, scenarioId, seed, assembledDrones, assembledCarriers,
             selectedTactics.ToImmutable(), random)
-        { Anomalies = TacticalAnomalyGenerator.Generate(catalog, seed, assembledDrones, assembledCarriers) };
+        { Anomalies = TacticalAnomalyGenerator.Generate(catalog, seed, assembledDrones, assembledCarriers), ScenarioDisplayName = encounter.Name };
 
         for (int i = 0; i < encounter.Sides.Length; i++)
         {

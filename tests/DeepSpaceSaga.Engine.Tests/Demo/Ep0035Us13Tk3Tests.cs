@@ -36,6 +36,7 @@ public sealed class Ep0035Us13Tk3Tests
             var wing = ship.CarrierState!.OwnedDrones!.ToImmutableArray();
             var battle = OwnedBattleAssembly.Create(catalog, ship.ObjectId, 350, 35, wing, crew, scenario, group.GroupId, 123);
             Assert.Equal(3, battle.Carriers.Length);
+            Assert.Equal("Pirate encounter", TacticalBattleSession.Create(battle, "world-capture", "A").Capture().ScenarioName);
             Assert.Equal(12, battle.Drones.Count(d => d.Side == "B"));
             Assert.All(battle.Drones.Where(d => d.Side == "A"), d => Assert.Equal(ship.ObjectId, d.OriginCarrierId));
             Assert.All(battle.Drones.Where(d => d.Side == "B").GroupBy(d => d.OriginCarrierId), g => Assert.Equal(6, g.Count()));

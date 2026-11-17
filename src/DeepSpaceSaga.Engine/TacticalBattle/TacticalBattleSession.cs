@@ -268,7 +268,7 @@ internal sealed class TacticalBattleSession
         : revision != Revision ? TacticalBattleRejectionCode.StaleRevision : Phase != phase ? TacticalBattleRejectionCode.WrongPhase : TacticalBattleRejectionCode.None;
 
     public TacticalBattleSnapshot Capture() => new(Id, Revision, Phase, Battle.Turn, PlayerSide, Battle.Seed, Battle.ScenarioId,
-        Battle.Catalog.Scenarios[Battle.ScenarioId].Name,
+        Battle.ScenarioDisplayName ?? Battle.Catalog.Scenarios[Battle.ScenarioId].Name,
         TacticalBattleConstants.SideOrder.Select((side, i) => new TacticalSideTactic(side, Battle.Tactics[i])).ToImmutableArray(),
         TacticalBattleSnapshotBuilder.Units(Battle), Phase == TacticalBattlePhase.Move ? Battle.ActiveDrones(PlayerSide)
             .Select(d => new TacticalDroneOrder(d.Id, d.Order.Speed, d.Order.Turn)).ToImmutableArray() : [], _paths,

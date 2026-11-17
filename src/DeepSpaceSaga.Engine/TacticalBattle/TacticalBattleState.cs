@@ -88,6 +88,7 @@ internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, stri
 {
     public TacticalBattleCatalog Catalog { get; } = catalog;
     public string ScenarioId { get; } = scenarioId;
+    public string? ScenarioDisplayName { get; init; }
     public long Seed { get; } = seed;
     public ImmutableArray<TacticalAnomaly> Anomalies { get; init; } = [];
     public ImmutableArray<TacticalDrone> Drones { get; } = drones;

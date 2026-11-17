@@ -35,6 +35,6 @@ public sealed partial class SimulationEngine
         own = own with { Carrier = ownCarrier, Carriers = [ownCarrier],
             Drones = own.Drones.Select(d => d with { OriginCarrierId = ownCarrier.Id }).ToImmutableArray() };
         enemy = enemy with { Carrier = carriers[0], Carriers = carriers.ToImmutable(), Drones = drones.ToImmutable() };
-        return TacticalBattleContentLoader.NormalizeScenario(template with { Name = groupId, Sides = [own, enemy], Goal = null });
+        return TacticalBattleContentLoader.NormalizeScenario(template with { Name = "Pirate encounter", Sides = [own, enemy], Goal = null });
     }
 }
