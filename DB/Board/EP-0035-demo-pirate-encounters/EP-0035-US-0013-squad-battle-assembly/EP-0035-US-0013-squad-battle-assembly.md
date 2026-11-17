@@ -4,7 +4,7 @@ story: EP-0035-US-0013-squad-battle-assembly
 title: Два пиратских носителя и их дроны в одном бою
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 dependencies: [EP-0035-US-0012-pirate-squadrons, EP-0035-US-0003-world-battle]
 created: 2026-11-17
 current_review: complete
@@ -12,7 +12,7 @@ revision: 1
 source_request: "Эскадра пока два Логова; оба носителя и все дроны одновременно на поле; вероятность10% меняется консолью."
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; current execution and validation: [ExecutionStatus](../ExecutionStatus.md).
 
 # Два пиратских носителя и их дроны в одном бою
 

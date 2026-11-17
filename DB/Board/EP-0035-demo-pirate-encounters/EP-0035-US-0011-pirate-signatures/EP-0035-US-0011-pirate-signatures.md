@@ -4,14 +4,14 @@ story: EP-0035-US-0011-pirate-signatures
 title: Сигнатуры Логова и Танкреда и скрытый состав дронов
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 priority: P0
 dependencies: [EP-0035-US-0001-visible-threats, EP-0035-US-0009-sensor-operator]
 created: 2026-11-17T11:37:31Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; current execution and validation: [ExecutionStatus](../ExecutionStatus.md).
 
 # Сигнатуры Логова и Танкреда и скрытый состав дронов
 

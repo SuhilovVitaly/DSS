@@ -5,7 +5,7 @@ ticket: EP-0035-US-0005-TK-0001-contracts
 title: Контракт: Выбор маршрута с учётом угрозы и срока
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0035-US-0001-TK-0004-client, EP-0034-US-0002-TK-0003-client]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Контракт: Выбор маршрута с учётом угрозы и срока
 

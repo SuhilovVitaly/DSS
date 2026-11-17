@@ -5,7 +5,7 @@ ticket: EP-0035-US-0006-TK-0002-board-status
 title: Board, реестр и состояние демо
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0035-US-0006-TK-0001-current-contracts]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Board, реестр и состояние демо
 
@@ -101,3 +101,4 @@ Durable prebattle pending checkpoint ДО tactical start: committed capture, fix
 Win/loss settlement exactly once, затем durable finished checkpoint до map/end. Failed write удерживает pending result/retry storage, не restart/reapply. Crash при atomic persistence даёт либо old durable pending battle replay, либо durable finished state. Intermediate damage persistence не обещается.
 G-35-19 CLOSED. US0016 owns engine checkpoint, local-client durable storage и client recovery. Legacy aborted settlement не используется для ordinary EP35 unfinished battle; debug/tutorial context отдельно.
 Tests NOT RUN: checkpoint-before-start; same composition/playerstate/seed replay; no navigable escape; failedwrite retryonly; atomicoldpending-orfinished; exactlyonce rewards/losses; no pending loss via autosave.
+Scope: Board status/card synchronization, ticket SHA inventory, relevant README/DemoPlan, Graphify scope and fresh rebuild. Publication receipt is verified after commit; full suite/final review follow this story. Historical planning and intermediate failures remain history.

@@ -4,7 +4,7 @@ story: EP-0035-US-0012-pirate-squadrons
 title: Эскадра из двух Логов на карте и вероятность появления
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 dependencies: [EP-0035-US-0001-visible-threats, EP-0035-US-0011-pirate-signatures]
 created: 2026-11-17
 current_review: complete
@@ -12,7 +12,7 @@ revision: 1
 source_request: "Эскадра пока два Логова; оба носителя и все дроны одновременно на поле; вероятность10% меняется консолью."
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; current execution and validation: [ExecutionStatus](../ExecutionStatus.md).
 
 # Эскадра из двух Логов на карте и вероятность появления
 

@@ -5,7 +5,7 @@ ticket: EP-0035-US-0004-TK-0001-encounter-roundtrip
 title: Непрерывность угроз и преследования
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0003-TK-0003-client]
@@ -15,7 +15,7 @@ created: 2026-11-16T20:32:46.441Z
 revision: 1
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; implementation status and published commits: see current execution ledger.
 
 # Непрерывность угроз и преследования
 

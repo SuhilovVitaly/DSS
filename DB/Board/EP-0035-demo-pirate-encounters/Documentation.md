@@ -12,8 +12,12 @@ epic_approval_utc: 2026-11-16T19:49:59Z
 priority: P0
 workstream: feature
 dependencies: [EP-0032-demo-campaign-continuity, EP-0034-demo-transport-contracts, EP-0033-demo-company-services]
-implementation_status: not-started
+implementation_status: implemented
 ---
+
+## Исполнение
+
+Все 17 историй / 66 тикетов реализованы; публикация последнего documentation ticket и завершающие gates отражены в [ExecutionStatus](ExecutionStatus.md). [Ticket → SHA → push](Tickets.md). Native/product acceptance — NOT RUN, осмотр владельцем. Старые NOT STARTED/NOT RUN в датированных решениях ниже описывают момент планирования.
 
 ## Текущий нормативный итог грумминга после D-35-50
 Эта сводка — текущая точка входа. Следующие старые разделы сохраняют chronology решений; старые «G открыт», «proposal не принят» и численные A применяются только там, где НЕ superseded текущими D. Все ранее закрытые G01…19 не требуют повторного продуктового согласования; конкретные остатки перечислены ниже.

@@ -12,10 +12,10 @@ priority: P0
 workstream: feature
 dependencies: [EP-0035-US-0001-visible-threats, EP-0035-US-0002-map-evasion, EP-0035-US-0003-world-battle, EP-0035-US-0004-encounter-continuation, EP-0035-US-0005-route-threat-choice, EP-0035-US-0007-carrier-sensors, EP-0035-US-0008-fog-of-war-debug, EP-0035-US-0009-sensor-operator, EP-0035-US-0010-sensor-contact-dialogue, EP-0035-US-0011-pirate-signatures, EP-0035-US-0012-pirate-squadrons, EP-0035-US-0013-squad-battle-assembly, EP-0035-US-0014-squad-battle-rules, EP-0035-US-0015-squad-battle-continuation, EP-0035-US-0016-encounter-recovery, EP-0035-US-0017-world-integration]
 created: 2026-11-16T20:02:53Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; current execution and validation: [ExecutionStatus](../ExecutionStatus.md).
 
 # Документация проекта по итогам эпика
 

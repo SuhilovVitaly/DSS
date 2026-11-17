@@ -12,10 +12,10 @@ priority: P0
 workstream: feature
 dependencies: [EP-0032-US-0001-campaign-roundtrip, EP-0032-US-0004-demo-campaign-start, EP-0035-US-0007-carrier-sensors]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
-> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Implementation NOT STARTED.
+> Current authority: D-35-50 и текущая сводка эпика supersede исторические G/A ниже. Закрытые product gaps не блокируют исполнение автоматически; actual source/allowlist review и acceptance остаются обязательными. Original planning baseline; current execution and validation: [ExecutionStatus](../ExecutionStatus.md).
 
 # Наблюдаемая угроза на маршруте
 

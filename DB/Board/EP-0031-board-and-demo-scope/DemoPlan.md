@@ -457,3 +457,7 @@ Tests NOT RUN: SeriesTurnCap_PlayerDefeat; TimeoutPreservesActualDamageAndPilotS
 ## Аудит EP-0035 — 2026-11-17
 
 Итог: 17 историй / 66 тикетов. Добавлена [US0017 — интеграция мира](../EP-0035-demo-pirate-encounters/EP-0035-US-0017-world-integration/EP-0035-US-0017-world-integration.md), два engine-тикета: ранний campaign dispatcher и интеграция motion шага. Полная актуальная карта и зависимости — в [эпике](../EP-0035-demo-pirate-encounters/Documentation.md); [исправления аудита](../EP-0035-demo-pirate-encounters/GroomingAudit.md). D-35-50: после завершённого боя участвовавшая группа удаляется с карты; actual damage и durable recovery сохраняются. Старые численные карты выше — история изменений, не текущий состав. Реализация не начата.
+
+## EP-0035 implementation update — 2026-11-17
+
+17 stories /66 tickets implemented, including final project documentation. Current execution, publication and remaining validation gates: [EP-0035 execution](../EP-0035-demo-pirate-encounters/ExecutionStatus.md). Previous not-started counts/notes are planning history. Native/product acceptance awaits owner.
