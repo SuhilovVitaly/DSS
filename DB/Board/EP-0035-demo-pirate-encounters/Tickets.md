@@ -24,7 +24,7 @@
 | [EP-0035-US-0005-TK-0003](EP-0035-US-0005-route-threat-choice/EP-0035-US-0005-TK-0003-client/EP-0035-US-0005-TK-0003-client.md) | `c58497186d8db6f52c248c8a1e35650803191535` | verified remote ancestor |
 | [EP-0035-US-0005-TK-0004](EP-0035-US-0005-route-threat-choice/EP-0035-US-0005-TK-0004-localized-feedback/EP-0035-US-0005-TK-0004-localized-feedback.md) | `eb47d7b1923db1d61ff84625371b07bfef0d12ff` | verified remote ancestor |
 | [EP-0035-US-0006-TK-0001](EP-0035-US-0006-documentation/EP-0035-US-0006-TK-0001-current-contracts/EP-0035-US-0006-TK-0001-current-contracts.md) | `16bc84a29baf0a8689eb29f6bd533f1a133a5673` | verified remote ancestor |
-| [EP-0035-US-0006-TK-0002](EP-0035-US-0006-documentation/EP-0035-US-0006-TK-0002-board-status/EP-0035-US-0006-TK-0002-board-status.md) | `this ticket commit (verify after publication)` | pending this commit |
+| [EP-0035-US-0006-TK-0002](EP-0035-US-0006-documentation/EP-0035-US-0006-TK-0002-board-status/EP-0035-US-0006-TK-0002-board-status.md) | `698c6e7169a4a24407590f4677f25a01b5222ccd` | verified remote ancestor |
 | [EP-0035-US-0007-TK-0001](EP-0035-US-0007-carrier-sensors/EP-0035-US-0007-TK-0001-contracts/EP-0035-US-0007-TK-0001-contracts.md) | `34bf0dc412e8c81c532dc5a1b6ac2474c4e4c9af` | verified remote ancestor |
 | [EP-0035-US-0007-TK-0002](EP-0035-US-0007-carrier-sensors/EP-0035-US-0007-TK-0002-module-schema/EP-0035-US-0007-TK-0002-module-schema.md) | `35cd9400ab637046525a446411e20fab82571227` | verified remote ancestor |
 | [EP-0035-US-0007-TK-0003](EP-0035-US-0007-carrier-sensors/EP-0035-US-0007-TK-0003-sensor-content/EP-0035-US-0007-TK-0003-sensor-content.md) | `422410e560747758e3b5fd96f1599b5a3d393d23` | verified remote ancestor |

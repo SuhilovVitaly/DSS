@@ -37,7 +37,7 @@ PILOT_EP='DB/Board/EP-0023-pilot-card-commands'
 TABLETOP_EP='DB/Board/EP-0024-battle-field-redesign'
 CLIENT_TABLETOP_EP='DB/Board/EP-0026-tabletop-client-ui'
 MAP_HISTORY_EPS=['DB/Board/EP-0002-procedural-solar-system','DB/Board/EP-0003-station-clusters-and-trade-geography','DB/Board/EP-0004-ai-territories-and-map-environment']
-EXCLUDED={**{'DB/Board/EP-0035-demo-pirate-encounters/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','ExecutionHistory','DocumentationImpact','FinalValidation','Tickets')},
+EXCLUDED={'DB/Board/EP-0035-demo-pirate-encounters/EP-0035-US-0006-documentation/EP-0035-US-0006-TK-0002-board-status/EP-0035-US-0006-TK-0002-board-status.md':'final graph publication receipt',**{'DB/Board/EP-0035-demo-pirate-encounters/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','ExecutionHistory','DocumentationImpact','FinalValidation','Tickets','ReviewFindings')},
 **{'DB/Board/EP-0033-demo-company-services/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact','FinalValidation','AcceptanceCoverage','Tickets')},
  'DB/Board/EP-0033-demo-company-services/EP-0033-US-0006-documentation/EP-0033-US-0006-TK-0002-board-status/EP-0033-US-0006-TK-0002-board-status.md':'final graph publication receipt',
 **{CLIENT_TABLETOP_EP+'/'+name+'.md':'graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact','AcceptanceCoverage','Tickets')},
