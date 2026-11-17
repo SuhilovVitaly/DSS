@@ -131,3 +131,5 @@ G-35-02M technical baseline: passive 1-cell sensor, mass 100 kg, 150 structure p
 
 ## Execution 2026-11-17
 Passive category, player/pirate modules and non-overlapping starter installation implemented. Release Engine.Tests build, scoped whitespace and diff checks PASS. Headless content tests compiled, NOT RUN until US0007 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-execution/sensor-content-build.log and sensor-content-format.log. Pirate world-group installation is verified by its owning group story, not claimed here.
+
+Full-suite correction scope: ScenarioEngineTests, TetrarchLoadoutTests and EP29 starter footprint oracle must include the real sensor at (3,4). Keep 24 hull cells, nonoverlap and every existing module assertion; shared starter now10modules/16cells, demo adds quarters =>11/17. Independent review confirmed changed sensor manifest is the cause; unrelated baseline failures remain separately reported.

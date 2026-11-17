@@ -33,6 +33,7 @@ public sealed class Ep0029Us0011Tk0002Tests
 
     private static readonly Dictionary<string, (int X, int Y)[]> ApprovedFootprints = new(StringComparer.Ordinal)
     {
+        ["MOD-PLAYER-SENSOR-01"] = [(3, 4)],
         ["MOD-PLAYER-BRIDGE-01"] = [(4, 0)],
         ["MOD-PLAYER-LIVING-QUARTERS-01"] = [(3, 1)],
         ["MOD-PLAYER-LIVING-QUARTERS-02"] = [(5, 1)],
@@ -125,7 +126,7 @@ public sealed class Ep0029Us0011Tk0002Tests
             hullCells.OrderBy(c => c.Y).ThenBy(c => c.X));
 
         var modules = manifest.RootElement.GetProperty("modules").EnumerateArray().ToArray();
-        Assert.Equal(9, modules.Length);
+        Assert.Equal(10, modules.Length);
         Assert.Equal(ApprovedFootprints.Keys.Order(StringComparer.Ordinal),
             modules.Select(m => m.GetProperty("moduleId").GetString()!).Order(StringComparer.Ordinal));
 
@@ -147,8 +148,8 @@ public sealed class Ep0029Us0011Tk0002Tests
             }
         }
 
-        Assert.Equal(15, occupied.Count);
-        Assert.Equal(9, hullSet.Count - occupied.Count);
+        Assert.Equal(16, occupied.Count);
+        Assert.Equal(8, hullSet.Count - occupied.Count);
     }
 
     [Fact]

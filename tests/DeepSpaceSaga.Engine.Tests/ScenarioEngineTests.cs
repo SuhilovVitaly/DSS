@@ -166,7 +166,7 @@ public class ScenarioEngineTests
         Assert.Equal(9, playerShip.HullLayout.Height);
         Assert.Equal(24, playerShip.HullLayout.Cells.Count);
 
-        Assert.Equal(9, playerShip.Modules?.Count);
+        Assert.Equal(10, playerShip.Modules?.Count);
         Assert.Equal("ship.tetrarch", playerShip.ShipClassId);
         var cargoModule = Assert.Single(playerShip.Modules ?? [], m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         Assert.Equal("module.container.basic", cargoModule.ModuleTypeId);
@@ -248,7 +248,7 @@ public class ScenarioEngineTests
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
         // Settings.defaultScenario is the demo New Game: the shared starter plus one more four-cabin
         // living quarters for passengers (EP-0034-US-0001-TK-0002).
-        Assert.Equal(10, playerShip.Modules.Length);
+        Assert.Equal(11, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         // Module type registry order follows the deterministic (ordinal) sort of
@@ -279,7 +279,7 @@ public class ScenarioEngineTests
             stack => registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).TypeId == itemTypeId).Quantity;
 
     [Fact]
-    public void Real_default_scenario_occupies_16_of_24_hull_cells()
+    public void Real_default_scenario_occupies_17_of_24_hull_cells()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
             TestPaths.Repository,
@@ -294,25 +294,26 @@ public class ScenarioEngineTests
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(10, playerShip.Modules.Length);
+        Assert.Equal(11, playerShip.Modules.Length);
         Assert.NotNull(playerShip.HullLayout);
         Assert.Equal(24, playerShip.HullLayout!.Cells.Count);
 
-        // The default (demo) scenario: the shared starter's seven 1-cell modules and two 2x2 medium bays
-        // (15 cells) plus the demo passenger quarters at (4,1) occupy 16 distinct hull cells (EP-0034-US-0001).
+        // The default (demo) scenario: the shared starter's eight 1-cell modules and two 2x2 medium bays
+        // (16 cells) plus the demo passenger quarters at (4,1) occupy 17 distinct hull cells (EP-0034-US-0001).
         var occupiedCells = playerShip.Modules.SelectMany(m => m.OccupiedCells).ToArray();
-        Assert.Equal(16, occupiedCells.Length);
+        Assert.Equal(17, occupiedCells.Length);
         Assert.DoesNotContain((3, 2), occupiedCells);
         Assert.Contains((4, 1), occupiedCells);
-        Assert.Equal(16, occupiedCells.Distinct().Count());
+        Assert.Contains((3, 4), occupiedCells);
+        Assert.Equal(17, occupiedCells.Distinct().Count());
 
         // Every occupied cell must belong to the object's hull layout.
         var hullCells = playerShip.HullLayout.Cells.Select(c => (c.X, c.Y)).ToHashSet();
         Assert.All(occupiedCells, cell => Assert.Contains(cell, hullCells));
 
-        // Eight authored hull cells, including both former weapon positions, remain unoccupied.
+        // Seven authored hull cells, including both former weapon positions, remain unoccupied.
         int freeCells = hullCells.Count - occupiedCells.Distinct().Count();
-        Assert.Equal(8, freeCells);
+        Assert.Equal(7, freeCells);
     }
 
     // --- story-20260901-112254 (Batch A, U3): AuthoritativeSnapshot.PlayerCrewCount / ---
