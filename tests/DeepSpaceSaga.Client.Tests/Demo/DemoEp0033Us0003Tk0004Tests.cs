@@ -27,6 +27,7 @@ public sealed class DemoEp0033Us0003Tk0004Tests
                 return ValueTask.FromResult(new DemoCampaignResponse(command.CommandId, true, null, 2));
             });
         Draw(screen);
+        screen.OnMouseDown(ShipLayout.PanelLeft(1920) + 1100, ShipLayout.PanelTop(1080) + 106);
         var row = ShipLayout.WingRowLocalRect(0);
         screen.OnMouseDown(ShipLayout.PanelLeft(1920) + row.Left + 5, ShipLayout.PanelTop(1080) + row.Top + 5);
         screen.OnMouseDown(ShipLayout.PanelLeft(1920) + 1100, ShipLayout.PanelTop(1080) + 280);
