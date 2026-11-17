@@ -79,14 +79,15 @@ public sealed class DemoEp0036Us0004Tk0001Tests
             Assert.True(engine.ExecuteDemoCampaign(new DismissSensorContactReportRequest("ack-next", state.Revision, report.BatchId)).Applied);
         state = engine.CaptureSnapshot().DemoCampaign!;
         var checkpoint = engine.CapturePendingEncounterCheckpoint(new("next", state.Revision, state.WorldEncounter!.Binding.EncounterId));
-        var before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        using var target = DemoEp0033Us0001Tk0003Tests.Demo();
+        var before = ScenarioLoader.Serialize(target.CaptureSaveState());
         var corrupt = checkpoint with { GameState = checkpoint.GameState with { DemoCampaign = checkpoint.GameState.DemoCampaign! with {
             LootSession = checkpoint.GameState.DemoCampaign!.LootSession! with { Phase = LootPhases.Open } } } };
-        Assert.Throws<ScenarioException>(() => engine.LoadScenario(corrupt, true));
-        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+        Assert.Throws<ScenarioException>(() => target.LoadScenario(corrupt, true));
+        Assert.Equal(before, ScenarioLoader.Serialize(target.CaptureSaveState()));
         // The unchanged closed ledger remains compatible with a legitimate next-battle checkpoint.
-        engine.LoadScenario(checkpoint, true);
-        Assert.True(engine.IsTacticalBattleActive);
+        target.LoadScenario(checkpoint, true);
+        Assert.True(target.IsTacticalBattleActive);
     }
 
     [Fact]
