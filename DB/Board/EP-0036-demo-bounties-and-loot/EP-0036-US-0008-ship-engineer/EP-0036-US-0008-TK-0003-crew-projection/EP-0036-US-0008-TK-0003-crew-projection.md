@@ -12,7 +12,7 @@ files_touched: 2
 serves: [AC-01, AC-03, AC-04]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 ---
 
 # Проекция реального инженера без второго состояния
@@ -101,3 +101,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Execution — 2026-11-17
+
+Crew projection carries runtime salvage skill. One integration test covers identity/getter/cabins/PeopleFed/ordinary employment without introducing a second count. Engine build/scoped format/diff PASS; test NOT RUN until US8 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us8-tk3-build.log.

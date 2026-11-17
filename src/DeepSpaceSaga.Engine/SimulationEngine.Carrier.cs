@@ -112,7 +112,8 @@ public partial class SimulationEngine
                 Accuracy: member.AccuracySkill,
                 Maneuver: member.ManeuverabilitySkill,
                 Initiative: member.Initiative,
-                SensorRangeBonusPercent: member.SensorRangeBonusPercent));
+                SensorRangeBonusPercent: member.SensorRangeBonusPercent,
+                SalvageBonusPercentagePoints: member.SalvageBonusPercentagePoints));
         }
         return crew.ToImmutable();
     }
