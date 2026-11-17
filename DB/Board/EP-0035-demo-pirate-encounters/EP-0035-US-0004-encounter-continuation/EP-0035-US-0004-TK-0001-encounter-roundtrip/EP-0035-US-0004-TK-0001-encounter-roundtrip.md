@@ -177,3 +177,5 @@ Existing retirement/recovery is supplied by US15/US16. This ticket adds saved pr
 Implementation complete: persisted independent observations and private last-contact timestamps, strict additive validation, last-known projection without hidden motion. Five new phase/atomic-load cases plus US15/16 retirement/replay regressions queued for story boundary. Build and scoped formatting PASS; tests NOT RUN at ticket boundary. Evidence us4-tk1-build.log under designated resume run.
 
 Independent review found snapshot-dependent observation refresh. Fix refreshes established memory only at authoritative shared 250ms controller boundaries; initial acquisition still records immediately. Added one-shot vs 125ms snapshot partition regression after contact loss. Initial US4 Engine 95/95 PASS; this new regression remains queued until fix publication.
+
+Story validation after review correction: Engine 96/96 PASS (all Ep0035), Client 25/25 PASS (all Ep0035). Evidence us4-reviewed-tests.log and us4-Client-tests.log under D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Route/cargo/passenger exposure acceptance remains owned by US5; native owner gate NOT RUN.
