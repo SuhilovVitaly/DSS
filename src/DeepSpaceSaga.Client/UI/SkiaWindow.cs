@@ -1185,7 +1185,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                     if (_session is not null && _screens.Current is StationScreen stationScreen &&
                         _pendingUndockCommandId is null)
                     {
-                        _pendingUndockCommandId = _session.SendUndockCommand(stationScreen.SelectedDestinationId);
+                        var departureSession = _session;
+                        if (await stationScreen.ConfirmSelectedRouteAsync() && ReferenceEquals(_session, departureSession) &&
+                            ReferenceEquals(_screens.Current, stationScreen))
+                            _pendingUndockCommandId = departureSession.SendUndockCommand(stationScreen.SelectedDestinationId);
                     }
                     break;
                 case ScreenEvent.OpenDialogue:

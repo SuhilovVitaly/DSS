@@ -6,6 +6,7 @@ using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using System.Collections.Immutable;
+using DeepSpaceSaga.Client.UI.Demo;
 
 namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
@@ -53,11 +54,16 @@ public sealed class StationScreen : IScreen
     private StationButton _hoveredButton = StationButton.None;
     private bool _isExitButtonHovered;
     private string? _selectedDestinationId;
+    private string? _selectedRouteId;
+    private bool _routePending;
+    private string? _routeFeedback;
     private string? _selectionStationId;
     private int _routeScroll;
     internal int RouteScrollOffset => _routeScroll;
     internal System.Collections.Immutable.ImmutableArray<StationRouteRow> RouteRows =>
-        StationRoutePresentation.Build(_buffer?.Latest?.Snapshot.TradingRoutes ?? default)
+        (_buffer?.Latest?.Snapshot.DemoCampaign?.ThreatRoutes is { } threats
+            ? ThreatRoutesPresentation.Rows(threats, _buffer.Latest.Snapshot.GameTimeMs)
+            : StationRoutePresentation.Build(_buffer?.Latest?.Snapshot.TradingRoutes ?? default))
             .Select(row => ClusterMapPresentation.ClusterName(_buffer?.Latest?.Snapshot, row.DestinationStationObjectId) is { } cluster
                 ? row with { PrimaryText = row.PrimaryText.Replace(row.DestinationStationObjectId, $"{row.DestinationStationObjectId} · {cluster}", StringComparison.Ordinal) } : row)
             .ToImmutableArray();
@@ -67,6 +73,8 @@ public sealed class StationScreen : IScreen
         get
         {
             RefreshRouteSelection(_buffer?.Latest?.Snapshot);
+            if (_routePending) return null;
+            if (_selectedRouteId is not null && !RouteRows.Any(r => r.RouteId == _selectedRouteId && r.IsEnabled)) return null;
             return _selectedDestinationId;
         }
     }
@@ -76,6 +84,7 @@ public sealed class StationScreen : IScreen
         get
         {
             RefreshRouteSelection(_buffer?.Latest?.Snapshot);
+            if (_routePending || _selectedRouteId is not null && !RouteRows.Any(r => r.RouteId == _selectedRouteId && r.IsEnabled)) return null;
             var options = _buffer?.Latest?.Snapshot.Voyage?.RouteOptions ?? default;
             return RouteRows.Any(r => r.DestinationStationObjectId == _selectedDestinationId && r.IsEnabled) &&
                 !options.IsDefaultOrEmpty && options.Any(option => option.IsAvailable &&
@@ -90,10 +99,16 @@ public sealed class StationScreen : IScreen
         if (stationId != _selectionStationId)
         {
             _selectedDestinationId = null;
+            _selectedRouteId = null;
             _routeScroll = 0;
         }
         _selectionStationId = stationId;
-        var rows = StationRoutePresentation.Build(snapshot?.TradingRoutes ?? default);
+        var rows = RouteRows;
+        if (_selectedRouteId is null && snapshot?.DemoCampaign?.ThreatRoutes?.SelectedRouteId is { } saved && rows.FirstOrDefault(r => r.RouteId == saved) is { } savedRow)
+        {
+            _selectedRouteId = saved;
+            _selectedDestinationId = savedRow.DestinationStationObjectId;
+        }
         _routeScroll = Math.Clamp(_routeScroll, 0, Math.Max(0, rows.Length - StationLayout.VisibleRouteRows));
         if (snapshot?.Voyage is not { Phase: VoyagePhases.Docked } voyage || voyage.RouteOptions.IsDefaultOrEmpty || rows.IsDefaultOrEmpty)
         {
@@ -105,6 +120,33 @@ public sealed class StationScreen : IScreen
                 option.DestinationStationObjectId == row.DestinationStationObjectId && option.IsAvailable && option.BlockReasonCode is null))?.DestinationStationObjectId
                 ?? rows.FirstOrDefault(row => row.IsEnabled && voyage.RouteOptions.Any(option =>
                 option.DestinationStationObjectId == row.DestinationStationObjectId && option.IsAvailable && option.BlockReasonCode is null))?.DestinationStationObjectId;
+        if (!rows.Any(r => r.RouteId == _selectedRouteId && r.DestinationStationObjectId == _selectedDestinationId))
+            _selectedRouteId = rows.FirstOrDefault(r => r.DestinationStationObjectId == _selectedDestinationId && r.IsEnabled)?.RouteId;
+    }
+
+    internal async Task<bool> ConfirmSelectedRouteAsync()
+    {
+        if (_routePending) return false;
+        RefreshRouteSelection(_buffer?.Latest?.Snapshot);
+        if (_buffer?.Latest?.Snapshot.DemoCampaign?.ThreatRoutes is not { } routes) return true;
+        if (!HasValidVisit || _session is null || _selectedRouteId is null) return false;
+        var campaign = _buffer.Latest.Snapshot.DemoCampaign!;
+        string routeId = _selectedRouteId;
+        _routePending = true;
+        _routeFeedback = Localization.Get("Demo.Route.Pending");
+        try
+        {
+            var response = await _session.ExecuteDemoCampaignAsync(new SelectDemoRouteCommand(
+                "select-route:" + Guid.NewGuid().ToString("N"), campaign.Revision, routeId, routes.Revision));
+            _routeFeedback = ThreatRoutesPresentation.Reason(response.Reason);
+            return response.Applied && HasValidVisit && routeId == _selectedRouteId;
+        }
+        catch (Exception)
+        {
+            _routeFeedback = Localization.Get("Demo.Route.Failed");
+            return false;
+        }
+        finally { _routePending = false; }
     }
 
     internal static string RouteOptionText(VoyageRouteOptionSnapshot option) =>
@@ -216,7 +258,12 @@ public sealed class StationScreen : IScreen
             {
                 if (!RouteRect(i).Contains(x, y)) continue;
                 var row = rows[i + _routeScroll];
-                if (row.IsEnabled) _selectedDestinationId = row.DestinationStationObjectId;
+                if (row.IsEnabled && !_routePending)
+                {
+                    _selectedDestinationId = row.DestinationStationObjectId;
+                    _selectedRouteId = row.RouteId;
+                    _routeFeedback = null;
+                }
                 return ScreenEvent.None;
             }
         for (int i = 0; i < 4; i++)
@@ -428,7 +475,8 @@ public sealed class StationScreen : IScreen
         {
             var row = rows[i + _routeScroll];
             var rect = RouteRect(i);
-            TabletopStyle.Field(canvas, rect, focused: row.DestinationStationObjectId == _selectedDestinationId);
+            TabletopStyle.Field(canvas, rect, focused: row.RouteId is null
+                ? row.DestinationStationObjectId == _selectedDestinationId : row.RouteId == _selectedRouteId);
             text.TextSize = 12;
             text.Color = !row.IsEnabled ? MenuStyle.ColorTextDim : row.Availability == TradingRouteAvailability.Restricted || row.Risk == TradingRouteRisk.Elevated
                 ? TabletopStyle.Danger : MenuStyle.ColorText;
@@ -444,6 +492,7 @@ public sealed class StationScreen : IScreen
             if (row.ActiveEventText is { } events) canvas.DrawText(events, rect.Left + 8, rect.Top + 63, text);
         }
         canvas.Restore();
+        if (_routeFeedback is not null) canvas.DrawText(_routeFeedback, pl + 400, pt + 790, text);
         if (rows.Length > StationLayout.VisibleRouteRows)
             canvas.DrawText($"{_routeScroll + 1}-{Math.Min(_routeScroll + StationLayout.VisibleRouteRows, rows.Length)} / {rows.Length}  Scroll", pl + 400, pt + 745, text);
         if (snapshot?.Voyage?.BlockReasonCode is { } reasonCode)
