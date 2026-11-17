@@ -35,8 +35,18 @@ EP-0033-US-0005-crew-upkeep depends on EP-0034-US-0002; nothing in EP-0034 depen
 | EP-0034-US-0001-TK-0003-engine | `1329c059` | implemented, story tests PASS |
 | EP-0034-US-0001-TK-0005-localized-feedback | `bc87d851`, `ba14ef23` | implemented, story tests PASS |
 | EP-0034-US-0001-TK-0004-client | `406522f3` | implemented, story tests PASS |
+| EP-0034-US-0006-TK-0001-contracts | `759692d7` | implemented, story tests PASS |
+| EP-0034-US-0006-TK-0002-content | `81e358c1` | implemented, story tests PASS |
+| EP-0034-US-0006-TK-0003-engine | `7aec0af0`, `4c1e3689` | implemented, story tests PASS |
+| EP-0034-US-0006-TK-0005-localized-feedback | `559ce508` | implemented, story tests PASS |
+| EP-0034-US-0006-TK-0004-client | `ec009bf5` | implemented, story tests PASS |
 
 US-0001 evidence: [story validation](EP-0034-US-0001-passenger-ready-start/EP-0034-US-0001-passenger-ready-start.md#story-validation-2026-11-17). Native/product gates OPEN.
 Save format: no bump in US-0001 (passenger capacity is derived, not persisted); A-P2 not triggered yet.
 Shared files touched by US-0001 (EP-0033 merge watch): `DemoCampaign.cs` (Contracts, `partial` keyword), `SimulationEngine.DemoCampaign.cs` (projection token), `SimulationEngine.DemoStart.cs`, `DemoCampaignData.cs`, `StarterCarrierManifest.cs`, `Scenarios/Demo/scenario.json`, `English.json`/`Russian.json` (block after `Demo.Rearm.*`), `ShipScreen.cs`, `ScenarioEngineTests.cs`, `ModuleHealthBootstrapTests.cs`, `DemoEp0032Us0004Tk0002Tests.cs`.
 Open issue: EP-0032 demo tests hard-code `D:/DeepSpaceSaga/DSS` content and fail while EP-0033 content is in progress there.
+
+US-0006 evidence: [story validation](EP-0034-US-0006-station-job-board/EP-0034-US-0006-station-job-board.md#story-validation-2026-11-17). Native/product gates OPEN.
+Save format: no bump in US-0006 — `demoCampaign.stationJobs` is a new optional section of the schema-1 campaign data (older demo saves publish the current day on Load); A-P2 still not triggered.
+Shared files touched by US-0006 (EP-0033 merge watch): `SimulationEngine.DemoCampaign.cs` (two added lines: explicit `PrepareStationJobsCommand` after the shared partial hook, `PublishStationJobs` at the top of `TickDemoCampaign`; the single-implementation partial hooks stay free — EP-0033 implements them and changes their signature), `DemoCampaignData.cs` (`stationJobs` property, one validation call, `ValidateStationJobs` + `StationJobsStateData` at the end of the file), `DemoCampaignDefinitions.cs` (jobs schema records + validation, cargo reference check), `English.json`/`Russian.json` (`Demo.Jobs.*` block after `Demo.Passengers.unavailable`), `SkiaWindow.cs` (`OpenContractsAsync` only), `GameSessionScreen.cs` (J button / Ctrl+J lines, mechanics panel width ×3), `ContractsScreen.cs`, tests `DemoEp0032Us0001Tk0002Tests.cs` (shared `ContentRoot` now this checkout), `DemoEp0032ContentReviewTests.cs` (jobs literal + Root), `DemoEp0032ReceiptReviewTests.cs`, `DemoEp0032ReviewTests.cs`, `DemoEp0032Us0004Tk0003Tests.cs`. EP-0034-only new files: `StationJobsContracts.cs`, `SimulationEngine.StationJobs.cs`, `Data/Demo/jobs.json`, `StationJobsPresentation.cs`, `GameSessionScreen.Journal.cs`.
+Open issue resolved for this branch: the shared EP-0032 test `ContentRoot` reads this checkout since `4c1e3689` (client locale tests `DemoEp0032Us0001Tk0004Tests`/`DemoEp0032Us0002Tk0004Tests` still read `D:/DeepSpaceSaga/DSS` locale files; outside this story's area).

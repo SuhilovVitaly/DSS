@@ -5,7 +5,7 @@ ticket: EP-0034-US-0006-TK-0001-contracts
 title: Контракт: Доска заказов станции
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-validation-pending
+implementation_status: implemented
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0032-US-0004-TK-0004-client]

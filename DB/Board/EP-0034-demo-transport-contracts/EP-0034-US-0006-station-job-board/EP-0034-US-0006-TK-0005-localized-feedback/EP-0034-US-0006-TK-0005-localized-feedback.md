@@ -5,7 +5,7 @@ ticket: EP-0034-US-0006-TK-0005-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-validation-pending
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0006-TK-0003-engine]
