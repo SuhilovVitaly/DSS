@@ -95,6 +95,10 @@
     <None Update="Images\**\*.png;Images\**\*.jpg;Images\**\*.jpeg;Images\**\*.bmp;Images\**\*.gif;Images\**\*.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Images\Persons\ModularCrew\kneeling\**\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

@@ -25,6 +25,16 @@ internal static class ModularCrewPortraits
 
     internal static SKBitmap? Pilot(string root, string pilotId) => Assigned(root, "pilots", pilotId);
 
+    internal static string? AssignedOutfit(string root, string portraitPath)
+    {
+        try
+        {
+            var assignments = Read<Dictionary<string, Dictionary<string, Assignment>>>(Path.Combine(root, "Data", "UI", "modular-portraits.json"));
+            return assignments.TryGetValue("dialogue", out var entries) && entries.TryGetValue(Path.GetFileName(portraitPath), out var value) ? value.Outfit : null;
+        }
+        catch (Exception ex) when (IsAssetError(ex)) { return null; }
+    }
+
     private static SKBitmap? Assigned(string root, string surface, string key)
     {
         try

@@ -154,6 +154,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override void OnDeactivated()
     {
+        _lootWindow?.Dispose();
         _interactiveField?.Dispose();
         _interactiveField = null;
         _paintedClouds?.Dispose();

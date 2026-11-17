@@ -119,3 +119,9 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Prerequisite TK-0005 определяет источник состояния и UI. Ассеты, fallback, композиция, allowlist и проверки перечислены. Если prerequisite изменит пути/API, сначала актуализировать Board; не расширять production layers молча. Не запускать исполнение из факта создания этого документа.
+
+## Asset drift and scope correction
+The current kneeling README/index supersede the draft generic-composition assumption: four exact portrait IDs now have 28 repaired precomposed images (v3 proportions, repaired necks), and explicitly prohibit overlaying heads again. Use these current corrected assemblies by exact portrait identity/outfit; unknown/unprepared identities retain their own portrait or neutral placeholder. Do not reuse the example transform on other heads or alter existing pilot assignments. Package the existing prepared kneeling assets/index/profiles in this ticket, without modifying their pixels. Add TacticalBattleScreen.OnDeactivated disposal for the owned one-image cache. This is an explicit missing-asset fallback, not a claim that every possible portrait has approved kneeling artwork.
+
+## Execution
+Integrated exact-identity repaired v3 pose selection for all seven prepared outfits, default pilot only when no outfit assigned. Pending uses original portrait; missing/incompatible assembly uses original or neutral name card. Cache owns one selected image and disposes on target change/deactivation. Profiles/index copied to output and publish; existing prepared assets included unchanged. Client/test build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk6-build.log). Native NOT RUN; generic unprepared head/body registrations are not inferred from example metadata.

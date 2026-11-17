@@ -1,12 +1,15 @@
 using System.Globalization;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Client.UI.Portraits;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Demo;
 
 /// <summary>Scrollable object details on the existing tactical map, without a second window.</summary>
-public sealed class BattleLootWindow(BattleLootPresentation presentation)
+public sealed class BattleLootWindow(BattleLootPresentation presentation) : IDisposable
 {
+    private readonly PrisonerPortraits _portraits = new(AppContext.BaseDirectory);
+    public void Dispose() => _portraits.Dispose();
     private sealed record ActionHit(SKRect Bounds, Func<Task<bool>> Action);
     private readonly List<ActionHit> _actions = [];
     private readonly BattleLootConsumablesPanel _consumables = new(presentation);
@@ -63,6 +66,14 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation)
                     () => presentation.SubmitAsync((id, revision, battle, drone) => new ArrestPilotCommand(id, revision, battle, drone)), clip);
                 if (!pilot.Captured && pilot.CaptureReason is { } reason) Wrapped(canvas, L(reason), clip.Left + 4, y + 86, clip.Width - 8, 12);
                 y += 112;
+                if (_portraits.Get(pilot) is { } portrait)
+                {
+                    // Uniform fit; preserve the full kneeling pose, including knees and hands.
+                    float scale = Math.Min((clip.Width - 8) / portrait.Width, 240f / portrait.Height);
+                    float w = portrait.Width * scale, h = portrait.Height * scale;
+                    canvas.DrawBitmap(portrait, new SKRect(clip.MidX - w / 2, y, clip.MidX + w / 2, y + h));
+                    y += h + 12;
+                }
             }
             foreach (var row in _consumables.Rows())
             {
