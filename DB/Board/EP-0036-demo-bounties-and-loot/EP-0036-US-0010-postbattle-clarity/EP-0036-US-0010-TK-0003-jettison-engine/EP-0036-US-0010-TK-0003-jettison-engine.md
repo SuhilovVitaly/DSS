@@ -5,7 +5,7 @@ ticket: EP-0036-US-0010-TK-0003-jettison-engine
 title: Выброс груза во время сбора лута
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: complete
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0007-TK-0003-postbattle-lifecycle, EP-0036-US-0003-TK-0003-engine]

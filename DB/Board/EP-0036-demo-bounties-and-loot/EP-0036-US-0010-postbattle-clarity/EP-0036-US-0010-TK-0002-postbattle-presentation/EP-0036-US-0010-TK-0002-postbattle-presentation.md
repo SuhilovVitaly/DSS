@@ -5,7 +5,7 @@ ticket: EP-0036-US-0010-TK-0002-postbattle-presentation
 title: Самоуничтожение, вреки и подсказка сбора на карте
 stage: draft
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: complete
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0010-TK-0001-selfdestruct-log, EP-0036-US-0007-TK-0004-postbattle-map]
