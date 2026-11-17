@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 namespace DeepSpaceSaga.Engine.Scenario;
 
 public sealed record PiratePoint(double X, double Y);
-public sealed record PirateCarrierData(string CarrierId, string SignatureTypeId, ShipModuleData Sensor,
+public sealed record PirateCarrierData(string CarrierId, string SignatureTypeId, ShipModuleData Sensor, ShipModuleData Engine,
     bool IsDestroyed = false);
 public sealed record PirateGroupData(string GroupId, double X, double Y, double Direction, double SpeedKmS,
     ImmutableArray<PirateCarrierData> Members, ImmutableArray<PiratePoint> PatrolPoints, int NextPatrolPoint = 1,

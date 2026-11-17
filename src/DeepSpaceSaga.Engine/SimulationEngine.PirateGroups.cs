@@ -41,7 +41,8 @@ public sealed partial class SimulationEngine
             var profile = definition.Profiles.Single(p => p.SignatureTypeId == type);
             var module = _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(profile.SensorModuleTypeId));
             var members = Enumerable.Range(1, squad ? 2 : 1).Select(i => new PirateCarrierData($"{id}:carrier:{i}", type,
-                new($"{id}:sensor:{i}", module.TypeId, [new(0, 0)], module.StructurePointsMax, "On", "Ready", null, []))).ToImmutableArray();
+                new($"{id}:sensor:{i}", module.TypeId, [new(0, 0)], module.StructurePointsMax, "On", "Ready", null, []),
+                new($"{id}:engine:{i}", engine.TypeId, [new(0, 0)], engine.StructurePointsMax, "On", "Ready", null, []))).ToImmutableArray();
             var random = PirateRandom(seed, "placement:" + id);
             ImmutableArray<PiratePoint> route = [];
             double reserve = Math.Pow(maximum * 1.1, 2) / (2 * acceleration) * 10 + 10;
@@ -61,14 +62,14 @@ public sealed partial class SimulationEngine
             if (route.IsEmpty) throw new ScenarioException("No feasible pirate patrol placement after 256 attempts; world unchanged.");
             groups.Add(new(id, route[0].X, route[0].Y, 90, 0, members, route));
         }
-        var world = new PirateWorldData(1, maximum, acceleration, engine.AngularInertiaDegPerSec!.Value, state.MotionTimeMs, groups.ToImmutable());
+        var world = new PirateWorldData(2, maximum, acceleration, engine.AngularInertiaDegPerSec!.Value, state.MotionTimeMs, groups.ToImmutable());
         ValidatePirateWorld(world, objects, state);
         return campaign with { PirateWorld = world };
     }
 
     private void ValidatePirateWorld(PirateWorldData world, IReadOnlyList<SpaceObjectRuntime> objects, GameStateData state)
     {
-        if (_demoDefinitions.Encounters is not { } definition || world.Version != 1 || world.Groups.IsDefault || world.Groups.Length != 4 ||
+        if (_demoDefinitions.Encounters is not { } definition || world.Version != 2 || world.Groups.IsDefault || world.Groups.Length != 4 ||
             !double.IsFinite(world.CapturedPlayerMaxSpeedKmS) || world.CapturedPlayerMaxSpeedKmS <= 0 ||
             !double.IsFinite(world.AccelerationKmS2) || world.AccelerationKmS2 <= 0 ||
             !double.IsFinite(world.TurnRateDegreesPerSecond) || world.TurnRateDegreesPerSecond <= 0 ||
@@ -109,6 +110,14 @@ public sealed partial class SimulationEngine
                     sensor.ModuleTypeId != definition.Profiles.Single(p => p.SignatureTypeId == member.SignatureTypeId).SensorModuleTypeId ||
                     sensor.StructurePoints < 0 || sensor.StructurePoints > _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(sensor.ModuleTypeId)).StructurePointsMax)
                     throw new ScenarioException("Invalid saved pirate carrier or sensor.");
+                if (member.Engine is not { } drive || string.IsNullOrWhiteSpace(drive.ModuleId) || !ids.Add(drive.ModuleId) ||
+                    !_registry.ModuleTypes.Contains(drive.ModuleTypeId) ||
+                    !IsEngineCategory(_registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(drive.ModuleTypeId))) ||
+                    drive.StructurePoints < 0 || drive.StructurePoints > _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(drive.ModuleTypeId)).StructurePointsMax ||
+                    drive.PowerState is not ("On" or "Off") || drive.OperationalState is not ("Ready" or "Disabled") ||
+                    drive.OccupiedCells is not { Count: 1 } || drive.OccupiedCells[0] is not { X: 0, Y: 0 } ||
+                    drive.ActiveCycle is not null || drive.OperatorCrewId is not null || drive.Cargo is not { Count: 0 })
+                    throw new ScenarioException("Invalid saved pirate engine module.");
             }
         }
     }
@@ -140,6 +149,22 @@ public sealed partial class SimulationEngine
 
     private static Random PirateRandom(ulong seed, string fact) =>
         RngStreamNames.CreateDeterministicRandom(RngStreamSeedDerivation.DeriveStreamSeed(seed, "pirate/v1/" + fact));
+
+    internal (double MaxSpeedKmS, double SensorRadius) PirateGroupCapabilities(PirateGroupData group, PirateWorldData world)
+    {
+        double speed = double.PositiveInfinity, radius = 0;
+        foreach (var member in group.Members.Where(m => !m.IsDestroyed))
+        {
+            var profile = _demoDefinitions.Encounters!.Profiles.Single(p => p.SignatureTypeId == member.SignatureTypeId);
+            speed = Math.Min(speed, PirateModuleOperational(member.Engine) ? world.CapturedPlayerMaxSpeedKmS * profile.SpeedFactor : 0);
+            if (PirateModuleOperational(member.Sensor))
+                radius = Math.Max(radius, _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(member.Sensor.ModuleTypeId)).SensorRadiusWorldUnits ?? 0);
+        }
+        return (double.IsPositiveInfinity(speed) ? 0 : speed, radius);
+    }
+
+    private static bool PirateModuleOperational(ShipModuleData module) =>
+        !module.Destroyed && module.StructurePoints > 0 && module.PowerState == "On" && module.OperationalState == "Ready";
     private static double Distance(double x, double y, double x2, double y2) => Math.Sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
     internal static double SegmentDistance(PiratePoint a, PiratePoint b, PiratePoint point)
     {
