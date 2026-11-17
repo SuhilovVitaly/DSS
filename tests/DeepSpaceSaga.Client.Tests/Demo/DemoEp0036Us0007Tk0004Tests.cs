@@ -35,10 +35,10 @@ public sealed class DemoEp0036Us0007Tk0004Tests
                 }
             }
         }, true);
-        campaign = engine.CaptureSnapshot().DemoCampaign!;
-        Assert.True(engine.ExecuteDemoCampaign(new DismissSensorContactReportRequest("ack", campaign.Revision, campaign.PendingSensorReport!.BatchId)).Applied);
-        campaign = engine.CaptureSnapshot().DemoCampaign!;
-        Assert.True(engine.ExecuteDemoCampaign(new BeginEncounterBattleCommand("begin", campaign.Revision, campaign.WorldEncounter!.Binding.EncounterId)).Applied);
+        var current = engine.CaptureSnapshot().DemoCampaign!;
+        Assert.True(engine.ExecuteDemoCampaign(new DismissSensorContactReportRequest("ack", current.Revision, current.PendingSensorReport!.BatchId)).Applied);
+        current = engine.CaptureSnapshot().DemoCampaign!;
+        Assert.True(engine.ExecuteDemoCampaign(new BeginEncounterBattleCommand("begin", current.Revision, current.WorldEncounter!.Binding.EncounterId)).Applied);
         var battle = engine.TacticalBattleSessionForTests!;
         foreach (var drone in battle.Battle.Drones.Where(d => d.Side == "B")) drone.Status = TacticalDroneStatus.Disabled;
         battle.Battle.CheckVictory();
