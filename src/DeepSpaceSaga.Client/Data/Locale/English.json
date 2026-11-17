@@ -289,6 +289,7 @@
   "TacticalBattle.Refusal.Unsupported": "This connection does not support battles.",
   "TacticalBattle.Refusal.WorldNotPaused": "Pause the world before starting a battle.",
   "TacticalBattle.Refusal.ReceiptExpired": "This command was already processed and its response expired.",
+  "TacticalBattle.Refusal.NoAmmo": "This drone has no ammunition remaining.",
   "TacticalBattle.Refusal.NoReadyDrones": "No drones are ready to launch.",
   "TacticalBattle.Refusal.CarrierNotReady": "The carrier ship is not ready for battle.",
   "TacticalBattle.Refusal.StaleCarrierState": "The ship state changed — refresh and retry.",
