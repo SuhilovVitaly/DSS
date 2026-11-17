@@ -5,7 +5,7 @@ using DeepSpaceSaga.Contracts;
 namespace DeepSpaceSaga.Engine.Scenario;
 
 /// <summary>Campaign metadata only. Resources remain in the existing authoritative world.</summary>
-public sealed record DemoCampaignData(
+public sealed partial record DemoCampaignData(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,
     [property: JsonPropertyName("revision")] long Revision = 0,
     [property: JsonPropertyName("commitSequence")] long CommitSequence = 0,
@@ -65,6 +65,7 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        ValidateEncounterHistory(data);
         if (data.WorldEncounter is { } encounter && (encounter.Binding is null || encounter.Seed < 0 ||
             encounter.Phase is not (WorldEncounterPhases.Captured or WorldEncounterPhases.PendingBattle or WorldEncounterPhases.Finished) ||
             encounter.Binding.EncounterId != "encounter:" + encounter.Binding.GroupId ||
