@@ -7,7 +7,9 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private DemoDebugSettings _demoDebugSettings = new();
+    private static DemoDebugSettings _processDemoDebugSettings = new();
+    private static readonly object DemoDebugSettingsGate = new();
+    private static DemoDebugSettings DemoDebugSettings => Volatile.Read(ref _processDemoDebugSettings);
 
     private DemoCampaignData PreparePirateWorldForLoad(DemoCampaignData campaign,
         IReadOnlyList<SpaceObjectRuntime> objects, GameStateData state, bool isSave, ulong seed)
@@ -32,11 +34,12 @@ public sealed partial class SimulationEngine
         var start = objects.Single(o => o.InitialMotion.ObjectId == _demoDefinitions.Cluster!.StartStationId).InitialMotion;
         var stations = objects.Where(o => o.ObjectType == SpaceObjectType.Station).Select(o => o.InitialMotion).ToArray();
         var groups = ImmutableArray.CreateBuilder<PirateGroupData>();
+        int squadChance = DemoDebugSettings.PirateSquadChancePercent;
         for (int index = 0; index < definition.GroupCount; index++)
         {
             string id = $"pirate:{index + 1:D2}";
             var types = PirateRandom(seed, "type:" + id);
-            bool squad = types.Next(100) < _demoDebugSettings.PirateSquadChancePercent;
+            bool squad = types.Next(100) < squadChance;
             string type = squad || types.Next(2) == 0 ? PirateSignatureTypes.Lair : PirateSignatureTypes.Tancred;
             var profile = definition.Profiles.Single(p => p.SignatureTypeId == type);
             var module = _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(profile.SensorModuleTypeId));
@@ -134,7 +137,7 @@ public sealed partial class SimulationEngine
         foreach (var group in world.Groups.Where(g => !g.Retired).OrderBy(g => g.GroupId, StringComparer.Ordinal))
         {
             bool detected = SensorCovers(radius, pose.X, pose.Y, group.X, group.Y);
-            if (!detected && _demoDebugSettings.FogOfWar) continue;
+            if (!detected && DemoDebugSettings.FogOfWar) continue;
             double angle = group.Direction * Math.PI / 180;
             result.Add(new(group.GroupId, group.X, group.Y, Math.Sin(angle) * group.SpeedKmS * 10,
                 -Math.Cos(angle) * group.SpeedKmS * 10, time, detected,

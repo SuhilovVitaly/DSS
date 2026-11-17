@@ -4,7 +4,7 @@ story: EP-0035-US-0012-pirate-squadrons
 ticket: EP-0035-US-0012-TK-0004-debug-engine
 title: Авторитетное изменение шанса эскадры
 stage: draft
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0035-US-0012-TK-0003-spawn-content]
@@ -113,3 +113,7 @@ G-35-18 CLOSED D-35-45: earliest continuous capture, deterministic tie, посл
 Остаток G-35-09/15: abnormal/partial battle outcomes и корректное world continuation без новой механики тактического отступления. Normal single capture/report/continue уже D-35-42.
 A-35-18 стартовая позиция игрока отдельно от станции требует проверки actual scenario; отдельный clearance не утверждён. При обычном старте у start station800 уже покрывает sensor separation.
 Прочие продуктовые decisions (radii,skill/ETA,equipment,spawn count/weights/norespawn,operator,fog,lifetime,batching) закрыты. Routine module physical stats/конкретные patrol waypoint coordinates остаются implementation/balance деталями; narrative deferred внеscope.
+
+
+## Execution 2026-11-17
+Added SimulationEngine.DemoDebug.cs as process-scoped owning API: atomic query/set integer0..100, immutable settings snapshot, default10. NewGame captures chance before generating its first group; Load and current campaign groups are untouched. No JSON/settings persistence. Main-menu factory adapter is next client ticket; no session required by Engine API. Build PASS0 warnings/errors; format/diff PASS; evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us12-tk4-build.log. Tests NOT RUN until US12 boundary.
