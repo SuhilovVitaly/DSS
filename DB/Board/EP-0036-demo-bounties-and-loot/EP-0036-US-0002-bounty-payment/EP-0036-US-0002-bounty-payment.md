@@ -11,11 +11,16 @@ workstream: feature
 dependencies: [EP-0036-US-0001-target-bounty, EP-0035-US-0003-world-battle]
 created: 2026-11-16T19:49:59Z
 revision: 4
-implementation_status: implemented-tested
+implementation_status: implemented
 source_request: "Груминг EP-0036; зафиксировать решения пользователя через сабагента"
 ---
 
 # Однократная оплата подтверждённой победы
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Входное техническое задание
 

@@ -1,21 +1,26 @@
 ---
 source_request: "Декомпозировать EP-0032…EP-0041 в тикеты до первого демо; добавить недостающие истории."
-current_review: plan-review
+current_review: implementation-review
 approval_kind: workflow
 revision: 2
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0004-reward-continuation
 title: Прозрачный итог боя в кампании
-stage: draft
-plan_status: draft
+stage: approved
+plan_status: executed
 priority: P0
 workstream: feature
 dependencies: [EP-0036-US-0002-bounty-payment, EP-0036-US-0003-simple-loot, EP-0035-US-0004-encounter-continuation, EP-0036-US-0006-module-salvage, EP-0036-US-0007-postbattle-loot-lifecycle, EP-0036-US-0009-prisoner-custody]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Прозрачный итог боя в кампании
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Связь с техническим заданием
 

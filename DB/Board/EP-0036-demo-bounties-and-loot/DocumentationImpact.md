@@ -37,3 +37,7 @@ Compared final code with owning current contracts. Historical Board planning rem
 | `DB/Documentation/README.md` | Updated against owning Engine/Contracts/Client source; current rules and navigation. |
 
 Graphify, Board registry and coverage are completed by US5 TK2. Tests/native history stays in Board and workspace artifacts, never Documentation.
+
+## Navigation and shared Board
+
+Graphify.md / GraphifyRebuild.md and tools/graphify/rebuild.py include EP36. Board README current EP36 row updated; DemoPlan execution paragraph added while preserving owner grooming edits unstaged. Other EP34/EP41 owner files are untouched. Initial EP36 plan cards/assets were task inputs. No root README exists.

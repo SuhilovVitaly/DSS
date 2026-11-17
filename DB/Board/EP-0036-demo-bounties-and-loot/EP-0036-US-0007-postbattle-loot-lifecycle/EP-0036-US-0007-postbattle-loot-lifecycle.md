@@ -2,19 +2,24 @@
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0007-postbattle-loot-lifecycle
 title: Самоуничтожение и фаза лута на тактической карте
-stage: draft
-plan_status: draft
-current_review: plan-review
+stage: approved
+plan_status: executed
+current_review: implementation-review
 revision: 1
 created: 2026-11-17T19:21:02Z
 priority: P0
 workstream: feature
 dependencies: []
-implementation_status: complete
+implementation_status: implemented
 planning_status: decomposed
 ---
 
 # Самоуничтожение и фаза лута на тактической карте
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Связь с техническим заданием
 

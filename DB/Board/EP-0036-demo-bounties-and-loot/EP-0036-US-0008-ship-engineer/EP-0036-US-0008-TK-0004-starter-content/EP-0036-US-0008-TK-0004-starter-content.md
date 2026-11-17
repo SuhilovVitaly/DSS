@@ -12,10 +12,15 @@ files_touched: 4
 serves: [AC-01, AC-04]
 created: 2026-11-17T19:18:11Z
 revision: 1
-implementation_status: implemented-tested
+implementation_status: implemented
 ---
 
 # Отдельный инженер в стартовом составе демо
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 

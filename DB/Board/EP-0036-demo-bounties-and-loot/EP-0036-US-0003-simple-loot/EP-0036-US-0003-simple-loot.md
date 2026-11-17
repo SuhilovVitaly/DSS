@@ -2,19 +2,24 @@
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0003-simple-loot
 title: Пообъектный сбор расходников и металлолома
-stage: draft
-plan_status: draft
-current_review: plan-review
+stage: approved
+plan_status: executed
+current_review: implementation-review
 revision: 5
 created: 2026-11-17T19:21:02Z
 priority: P0
 workstream: feature
 dependencies: [EP-0035-US-0003-world-battle]
-implementation_status: implemented-tested
+implementation_status: implemented
 planning_status: decomposed
 ---
 
 # Пообъектный сбор расходников и металлолома
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Связь с техническим заданием
 

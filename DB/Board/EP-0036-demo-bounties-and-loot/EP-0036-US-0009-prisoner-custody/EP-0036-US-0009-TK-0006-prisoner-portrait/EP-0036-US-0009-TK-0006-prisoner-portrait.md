@@ -12,10 +12,15 @@ files_touched: 5
 serves: [AC-04, AC-05, AC-06]
 created: 2026-11-17T19:50:17Z
 revision: 1
-implementation_status: complete
+implementation_status: implemented
 ---
 
 # Изображение захваченного пилота в позе пленного
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 

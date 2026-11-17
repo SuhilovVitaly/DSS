@@ -3,9 +3,9 @@ epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0007-postbattle-loot-lifecycle
 ticket: EP-0036-US-0007-TK-0004-postbattle-map
 title: Клики по тактическим остаткам и выход с предупреждением
-stage: draft
+stage: approved
 approval_kind: workflow
-implementation_status: complete
+implementation_status: implemented
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0007-TK-0003-postbattle-lifecycle, EP-0036-US-0003-TK-0004-client, EP-0036-US-0006-TK-0004-client]
@@ -16,6 +16,11 @@ revision: 1
 ---
 
 # Клики по тактическим остаткам и выход с предупреждением
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 

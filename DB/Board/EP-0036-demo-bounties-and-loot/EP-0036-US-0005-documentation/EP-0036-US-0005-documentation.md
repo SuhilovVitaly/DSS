@@ -6,16 +6,21 @@ revision: 3
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0005-documentation
 title: Документация проекта по итогам эпика
-stage: draft
-plan_status: draft
+stage: approved
+plan_status: executed
 priority: P0
 workstream: feature
 dependencies: [EP-0036-US-0001-target-bounty, EP-0036-US-0002-bounty-payment, EP-0036-US-0003-simple-loot, EP-0036-US-0004-reward-continuation, EP-0036-US-0006-module-salvage, EP-0036-US-0007-postbattle-loot-lifecycle, EP-0036-US-0008-ship-engineer, EP-0036-US-0009-prisoner-custody, EP-0036-US-0010-postbattle-clarity, EP-0036-US-0011-bounty-map-area, EP-0036-US-0012-loot-debug-commands]
 created: 2026-11-16T20:02:53Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Документация проекта по итогам эпика
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Связь с техническим заданием
 

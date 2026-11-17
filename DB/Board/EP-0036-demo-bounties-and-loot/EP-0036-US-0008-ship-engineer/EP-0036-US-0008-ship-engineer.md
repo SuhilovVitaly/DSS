@@ -10,10 +10,15 @@ revision: 1
 created: 2026-11-17T19:18:11Z
 source_request: "Интерактивный груминг EP-0036 и запись принятых решений через сабагентов."
 dependencies: [EP-0033-US-0005-crew-upkeep]
-implementation_status: implemented-tested
+implementation_status: implemented
 ---
 
 # Стартовый инженер и личный навык демонтажа
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Входное техническое задание
 

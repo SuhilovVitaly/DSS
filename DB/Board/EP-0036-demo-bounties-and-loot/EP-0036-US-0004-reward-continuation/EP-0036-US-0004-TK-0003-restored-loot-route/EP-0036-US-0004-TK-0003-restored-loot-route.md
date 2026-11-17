@@ -3,7 +3,7 @@ epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0004-reward-continuation
 ticket: EP-0036-US-0004-TK-0003-restored-loot-route
 title: Открытие сохранённой карты лута при продолжении кампании
-stage: draft
+stage: approved
 approval_kind: workflow
 implementation_status: implemented
 layer: client
@@ -16,6 +16,11 @@ revision: 3
 ---
 
 # Открытие сохранённой карты лута при продолжении кампании
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 [Story](../EP-0036-US-0004-reward-continuation.md): замкнуть реальный postbattle save/load/report путь, не выдавать DTO за продолжение игры.

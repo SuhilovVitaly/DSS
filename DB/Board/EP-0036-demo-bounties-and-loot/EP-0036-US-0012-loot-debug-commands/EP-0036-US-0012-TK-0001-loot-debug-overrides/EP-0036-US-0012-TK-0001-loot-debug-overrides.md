@@ -3,9 +3,9 @@ epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0012-loot-debug-commands
 ticket: EP-0036-US-0012-TK-0001-loot-debug-overrides
 title: Отладочные переопределения бросков лута и бонуса инженера
-stage: draft
+stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0006-TK-0003-engine, EP-0036-US-0003-TK-0003-engine, EP-0036-US-0008-TK-0002-identity-and-skill]
@@ -16,6 +16,11 @@ revision: 1
 ---
 
 # Отладочные переопределения бросков лута и бонуса инженера
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 

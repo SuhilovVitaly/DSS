@@ -1,18 +1,23 @@
 ---
 epic: EP-0036-demo-bounties-and-loot
 title: Боевые заказы и пообъектная добыча
-stage: draft
-current_review: plan-review
-plan_status: draft
-implementation_status: not-started
+stage: approved
+current_review: implementation-review
+plan_status: executed
+implementation_status: implemented
 priority: P0
 workstream: feature
 dependencies: [EP-0034-demo-transport-contracts, EP-0035-demo-pirate-encounters]
 created: 2026-11-16T19:49:59Z
-approval_scope: "Общий прежний план approved; текущие решения груминга записаны отдельно, реализация не разрешена"
+approval_scope: "Explicit whole-epic execution under EpicExecutionPrompt; native/product acceptance remains OPEN"
 ---
 
 # EP-0036 — Боевые заказы и пообъектная добыча
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Актуальный контракт груминга
 
@@ -29,7 +34,7 @@ approval_scope: "Общий прежний план approved; текущие р�
 Решения пользователя и отменённые ранние предложения сохранены ниже в хронологии. Для актуального исполнения приоритет имеют этот раздел, текущие story AC и текущие ticket API/steps; ранние ограничения «только торпеды и лом», «без пленных» и требование новой прочности superseded. Численные content A — baseline плейтеста, не продуктовая приёмка.
 
 ## Текущий состав
-**12 историй / 48 тикетов.** Все новые реализации NOT STARTED; planning DRAFT/DECOMPOSED. Сверка 2026-11-17T19:41:16Z добавила US6 TK5, US10–US12 (D-36-34…37). Дополнение 2026-11-17T19:50:17Z: US9 TK6 — изображение захваченного пилота в позе пленного.
+**12 историй / 48 тикетов реализованы.** Дальнейшая запись о DRAFT/DECOMPOSED — историческое планирование. Сверка 2026-11-17T19:41:16Z добавила US6 TK5, US10–US12 (D-36-34…37). Дополнение 2026-11-17T19:50:17Z: US9 TK6 — изображение захваченного пилота в позе пленного.
 
 | Story | Результат | Тикетов |
 |---|---|---:|
@@ -79,7 +84,7 @@ Ticket DAG — источник порядка внутри взаимосвяз
 
 ## Статусы поставки
 
-Planning: подготовлено по одобренному плану. Implementation: NOT STARTED. Automated/runtime/native/product acceptance: NOT RUN / OPEN. Никаких новых свидетельств готовности игры этот документ не создаёт.
+Исторический статус до поручения на исполнение: Planning подготовлено; Implementation NOT STARTED. Automated/runtime/native/product acceptance: NOT RUN / OPEN. Никаких новых свидетельств готовности игры этот документ не создаёт.
 
 
 ## Тикетная декомпозиция первого демо

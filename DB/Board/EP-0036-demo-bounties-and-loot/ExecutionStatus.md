@@ -32,7 +32,7 @@ Each test process is capped at 300000 ms and writes under the sole validation ro
 
 ## Publication and acceptance
 
-Preparation in progress. No implementation ticket completed or tested yet.
+Historical preparation baseline (superseded by completion entries below): no implementation was complete at task start.
 Ticket SHA/push evidence will be recorded after publication; a commit never embeds
 its own predicted SHA. Independent preflight review is in progress.
 
@@ -94,3 +94,14 @@ Both tickets published. Engine22/22 and Client12/12 PASS including affected boun
 ## US-0012 validation
 Engine: 31/31 (us12-engine.log). Client: 77/78 (us12-client.log); existing FinishedTutorialClosesNormally raced asynchronous tutorial journal writer (IOException sharing violation), isolated repeat passed 1/1 (us12-client-repeat.log), no product code change. Both independent reviews found no actionable defects. Native console NOT RUN — owner launch only. Evidence root remains D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/.
 
+
+
+## US-0004 and final review
+
+Published 3 tickets and corrections; first Engine boundary 28/28. Client first 9/11: two fixture errors (active-battle save attempt and missing input/render activation); corrected to use real prebattle checkpoint/new candidate session. Follow-up Engine 21/22 and Client 6/7 exposed fixture attempting replacement during captured encounter; corrected fresh-target setup. Final US4 Engine 3/3 (us4-engine-final), Client 4/4 (us4-client-final). Independent whole-epic review found and closed two P2s: conflicting Open A/Pending B Load before publication and stale report after next non-victory. Documentation review exposed F5/F9 loot gate and cabin prisoner summary; fixed in 6291aa73/b6613c23, targeted final checks below.
+
+Scoped dotnet format whitespace ran for changed C# only (format.log/format.err); formatting-only changes do not alter behavior. Current documentation: 31 files, all local links resolve (documentation-links.json), independent wording corrections applied.
+
+## Final thematic validation plan
+
+No full suite. After documentation: Client filter DemoEp0036Us0004|DemoEp0036Us0007|DemoEp0036Us0009|DemoEp0036Us0010|DemoEp0034Us0001|KeysDuringBattleTests checks changed shared loot wrapping/locale/cabin summary and F5/F9 exception without enabling active-battle world keys. These are headless tests (no game window). Contracts filter DemoEp0036Us0003 checks additive loot projection serialization. Engine final US4 3/3 and relevant neighbors above remain valid: no semantic Engine change since pass; no redundant rerun. All processes bounded at 300000ms, outputs in this run root. Final docs/Board/graph static checks and independent final review follow.

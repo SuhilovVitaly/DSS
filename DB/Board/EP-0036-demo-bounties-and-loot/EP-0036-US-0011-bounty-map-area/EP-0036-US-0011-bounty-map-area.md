@@ -2,21 +2,26 @@
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0011-bounty-map-area
 title: Район цели bounty на звёздной карте
-stage: draft
-plan_status: draft
+stage: approved
+plan_status: executed
 approval_kind: workflow
-current_review: plan-review
+current_review: implementation-review
 revision: 1
 created: 2026-11-17T19:41:16Z
 priority: P1
 workstream: feature
 dependencies: [EP-0036-US-0001-target-bounty]
-implementation_status: complete
+implementation_status: implemented
 planning_status: decomposed
 source_request: "прочитай нарезанные тикеты эпика и реши что мы забыли и что нужно добавить"
 ---
 
 # Район цели bounty на звёздной карте
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Связь с техническим заданием
 

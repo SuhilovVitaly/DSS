@@ -3,9 +3,9 @@ epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0011-bounty-map-area
 ticket: EP-0036-US-0011-TK-0002-starmap-area
 title: Район цели bounty на звёздной карте
-stage: draft
+stage: approved
 approval_kind: workflow
-implementation_status: complete
+implementation_status: implemented
 layer: client
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0011-TK-0001-search-area-projection, EP-0036-US-0001-TK-0003-client]
@@ -16,6 +16,11 @@ revision: 1
 ---
 
 # Район цели bounty на звёздной карте
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 

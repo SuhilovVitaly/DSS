@@ -5,7 +5,7 @@ ticket: EP-0036-US-0001-TK-0005-bounty-schema
 title: Схема фиксированных станционных bounty
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-tested
+implementation_status: implemented
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0001-TK-0001-contracts]
@@ -16,6 +16,11 @@ revision: 1
 ---
 
 # Схема фиксированных станционных bounty
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 

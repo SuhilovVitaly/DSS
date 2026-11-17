@@ -5,7 +5,7 @@ ticket: EP-0036-US-0005-TK-0002-board-status
 title: Board, реестр и состояние демо
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0036-US-0005-TK-0001-current-contracts]
@@ -16,6 +16,11 @@ revision: 2
 ---
 
 # Board, реестр и состояние демо
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 
@@ -87,3 +92,7 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution scope and evidence
+
+Draft allowlist expanded to all canonical EP36 status cards, Tickets/AcceptanceCoverage/DocumentationImpact/ExecutionStatus and tools/graphify/rebuild.py plus graph guides. Board: 12 stories, 48 tickets, zero missing links/dependencies or ticket cycles (board-validation.json). Graph rebuild includes EP36, excludes evolving publication ledgers to avoid circular hashes. Final thematic test plan is recorded in ExecutionStatus before execution; native/game NOT RUN. Shared DemoPlan owner edits remain unstaged; only execution paragraph was committed with manual-save regression correction.

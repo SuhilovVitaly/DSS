@@ -3,9 +3,9 @@ epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0010-postbattle-clarity
 ticket: EP-0036-US-0010-TK-0001-selfdestruct-log
 title: Запись самоуничтожения носителя в журнале боя
-stage: draft
+stage: approved
 approval_kind: workflow
-implementation_status: complete
+implementation_status: implemented
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0036-US-0007-TK-0002-carrier-selfdestruct]
@@ -16,6 +16,11 @@ revision: 1
 ---
 
 # Запись самоуничтожения носителя в журнале боя
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 

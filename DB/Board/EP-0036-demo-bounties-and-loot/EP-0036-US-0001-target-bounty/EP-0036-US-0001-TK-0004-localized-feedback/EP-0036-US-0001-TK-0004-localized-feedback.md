@@ -5,7 +5,7 @@ ticket: EP-0036-US-0001-TK-0004-localized-feedback
 title: Bounty content и RU/EN условия
 stage: approved
 approval_kind: workflow
-implementation_status: implemented-tested
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0001-TK-0005-bounty-schema]
@@ -16,6 +16,11 @@ revision: 3
 ---
 
 # Bounty content и RU/EN условия
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 
