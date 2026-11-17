@@ -238,6 +238,14 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             File.Copy(file, target);
         }
+        var services = JsonNode.Parse(File.ReadAllText(Path.Combine(demoSource, "services.json")))!;
+        foreach (var portrait in services["recruitment"]!["portraits"]!.AsArray())
+        {
+            string relative = portrait!.GetValue<string>();
+            string target = Path.Combine(directory, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(Path.Combine(AppContext.BaseDirectory, relative), target);
+        }
         string destination = Path.Combine(directory, "Settings.json");
         File.WriteAllText(destination, settings.ToJsonString());
         return destination;
