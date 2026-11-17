@@ -88,3 +88,11 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite-создатели новых файлов указаны в depends_on. Draft означает ожидаемую сверку плана, не отсутствующую игровую реализацию.
+
+## Execution scope correction
+
+Also touch ModuleSalvagePresentation.cs and BattleLootConsumablesPanel.cs solely to use the same TradeItemPresentation for loot and trade names, avoiding divergent naming paths. The shared consumable panel exposes a default localized Rows() overload; custom display-name injection remains available for tests.
+
+## Execution — 2026-11-17
+
+Added data-driven Trade.Item/Trade.Description fallbacks for every actual loot SKU; old 13 name/description cases remain unchanged. Trophy descriptions explicitly say sale-only/no installation. Shared loot panels consume the trade presenter; scrap uses kilogram units. Client build/JSON parse/scoped format/diff PASS. Authored tests combine all-SKU localized names, sale-only wording, legacy parity and RU/EN coverage; NOT RUN until US6 boundary. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us6-tk5-build.log.
