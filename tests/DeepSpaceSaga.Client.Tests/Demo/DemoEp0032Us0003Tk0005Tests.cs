@@ -7,7 +7,7 @@ public sealed class DemoEp0032Us0003Tk0005Tests
     [Fact]
     public void LocaleKeysAndPlaceholdersMatch()
     {
-        const string root = "D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Data/Locale/";
+        string root = DemoCheckoutPaths.ClientRoot + "/Data/Locale/";
         var ru = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(root + "Russian.json"))!;
         var en = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(root + "English.json"))!;
         var keys = en.Keys.Where(k => k.StartsWith("Demo.Outcome.")).Order().ToArray();
