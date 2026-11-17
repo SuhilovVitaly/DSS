@@ -4,7 +4,7 @@ namespace DeepSpaceSaga.Contracts;
 public abstract record DemoCampaignCommand(string CommandId, long ExpectedRevision);
 
 public sealed record DemoCampaignResponse(string CommandId, bool Applied, string? Reason, long Revision,
-    StationRepairSnapshot? StationRepair = null);
+    StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null);
 
 /// <summary>Absent sections indicate unavailable features, never implicit resources or entitlements.</summary>
 public sealed record DemoCampaignSnapshot(
@@ -19,7 +19,7 @@ public sealed record DemoCampaignSnapshot(
     DemoStartSnapshot? Start = null);
 
 public sealed record DemoCompanySnapshot(CampaignRoundtripSnapshot? Roundtrip = null, PilotLossSnapshot? PilotLoss = null,
-    CampaignOutcomeSnapshot? Outcome = null, StationRepairSnapshot? StationRepair = null);
+    CampaignOutcomeSnapshot? Outcome = null, StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null);
 public sealed record DemoTransportSnapshot;
 public sealed record DemoEncountersSnapshot;
 public sealed record DemoRewardsSnapshot;
