@@ -154,3 +154,6 @@ Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-3
 ## Execution scope 2026-11-17
 Existing dialogue runtime resolves ship crew name/portrait, opens pending batch only when no other dialogue is active, blocks speed resume while pending, and acknowledges without restoring pre-report speed. Campaign dispatcher supports revisioned dismissal; load preflight checks dialogue/batch identity. Scope adds central DemoCampaign dispatcher wiring; no parallel dialogue runtime. Tests cover actual crew identity, script fallback, pending save/load and explicit resume; station regression at story boundary.
 Build PASS us10-tk3-build.log in D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/. Tests NOT RUN until story completion.
+
+### Story boundary fixture correction 2026-11-17
+InitialEngine9new tests PASS;12existing station dialogue tests failed solely in ContentPath discovery because build output is correctly outside repository. Scope adds DialogueTests.cs source-anchored content lookup; all semantic assertions preserved. Added queued report behind active station dialogue integration. Client14/Contracts2PASS; Engine rerun follows corrective publication.

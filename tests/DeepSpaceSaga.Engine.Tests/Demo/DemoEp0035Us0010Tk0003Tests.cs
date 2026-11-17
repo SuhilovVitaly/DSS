@@ -34,7 +34,7 @@ public sealed class DemoEp0035Us0010Tk0003Tests
     }
 
     [Fact]
-    public void MissingAssignmentUsesScriptWithoutPortrait_AndExistingDialogueIsNotOverwritten()
+    public void MissingAssignmentUsesScriptWithoutPortrait()
     {
         using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         engine.LoadScenario(DemoEp0035Us0010Tk0002Tests.ContactScenario(engine, script: true), true);
@@ -42,5 +42,28 @@ public sealed class DemoEp0035Us0010Tk0003Tests
         Assert.Equal("sensor-script", snapshot.ActiveDialogue!.ParticipantId);
         Assert.Null(snapshot.ActiveDialogue.SpeakerPortraitImage);
         Assert.Null(snapshot.DemoCampaign!.PendingSensorReport!.Reports[0].OperatorCrewId);
+    }
+
+    [Fact]
+    public void ExistingDialogueIsPreservedAndReportWaitsForItsAcknowledgement()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        var scenario = DemoEp0035Us0010Tk0002Tests.ContactScenario(engine);
+        var active = new DialogueState("existing", "dialogue.station-docking", "SPC-0002", "operator", "request_ship_id", 0, true,
+            [], "Dialogue.Docking.RequestShipId", "Dock Operator", "Station Operator", null,
+            System.Collections.Immutable.ImmutableDictionary<string, string>.Empty);
+        scenario = scenario with { GameState = scenario.GameState with
+        {
+            DialogueState = new(active, DeepSpaceSaga.Engine.Dialogue.DialogueProgressState.Empty,
+                System.Collections.Immutable.ImmutableHashSet<string>.Empty, 1, 1, SimulationSpeed.Speed3)
+        } };
+        engine.LoadScenario(scenario, true);
+        var snapshot = engine.CaptureSnapshot();
+        Assert.Equal("existing", snapshot.ActiveDialogue!.InstanceId);
+        Assert.NotNull(snapshot.DemoCampaign!.PendingSensorReport);
+        engine.ReceiveDialogueCommand(new("close-existing", DialogueAction.Abort, "existing", 0));
+        snapshot = engine.CaptureSnapshot();
+        Assert.Equal("dialogue.sensor-pirate-contact", snapshot.ActiveDialogue!.DialogueDefinitionId);
+        Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
     }
 }
