@@ -29,8 +29,12 @@ public sealed partial class SimulationEngine
     private void AcknowledgeSensorReport()
     {
         if (_demoCampaign.PendingSensorReport is null) return;
-        _demoCampaign = _demoCampaign with { PendingSensorReport = null,
-            Revision = checked(_demoCampaign.Revision + 1), CommitSequence = checked(_demoCampaign.CommitSequence + 1) };
+        _demoCampaign = _demoCampaign with
+        {
+            PendingSensorReport = null,
+            Revision = checked(_demoCampaign.Revision + 1),
+            CommitSequence = checked(_demoCampaign.CommitSequence + 1)
+        };
     }
 
     private static void ValidateSensorDialogueSave(DemoCampaignData campaign, ScenarioFile scenario)

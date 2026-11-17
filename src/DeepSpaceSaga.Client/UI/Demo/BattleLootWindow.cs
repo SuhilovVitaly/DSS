@@ -71,7 +71,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation, Func<s
                 var clip = new SKRect(Bounds.Left + 16, Bounds.Top + 115, Bounds.Right - 16, Bounds.Bottom - 12);
                 canvas.Save(); canvas.ClipRect(clip);
                 float y = clip.Top + 18 - _scroll;
-                foreach (string line in report()) { Text(canvas, line, clip.Left, y, 12); y += 26; }
+                foreach (string line in report()) y = Wrapped(canvas, line, clip.Left, y, clip.Width, 12) + 8;
                 _contentHeight = y - clip.Top + _scroll;
                 canvas.Restore();
                 _scroll = Math.Clamp(_scroll, 0, Math.Max(0, _contentHeight - clip.Height));
@@ -206,7 +206,7 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation, Func<s
         using var paint = new SKPaint { Color = new(230, 237, 240), TextSize = size, IsAntialias = true };
         c.DrawText(text, x, y, paint);
     }
-    private static void Wrapped(SKCanvas c, string text, float x, float y, float width, float size)
+    private static float Wrapped(SKCanvas c, string text, float x, float y, float width, float size)
     {
         using var paint = new SKPaint { TextSize = size };
         string line = "";
@@ -217,5 +217,6 @@ public sealed class BattleLootWindow(BattleLootPresentation presentation, Func<s
             line = line.Length == 0 ? word : line + " " + word;
         }
         Text(c, line, x, y, size);
+        return y + size + 6;
     }
 }

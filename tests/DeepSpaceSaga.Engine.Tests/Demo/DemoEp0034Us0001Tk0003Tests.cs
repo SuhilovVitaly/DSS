@@ -187,8 +187,12 @@ public sealed class DemoEp0034Us0001Tk0003Tests
                 {
                     ["PassengerCapacity"] = new JsonObject
                     {
-                        ["TotalCabins"] = 99, ["CrewCabins"] = 0, ["PassengerCabins"] = 0,
-                        ["ReservedCabins"] = 0, ["FreeCabins"] = 99, ["LifeSupportReason"] = null,
+                        ["TotalCabins"] = 99,
+                        ["CrewCabins"] = 0,
+                        ["PassengerCabins"] = 0,
+                        ["ReservedCabins"] = 0,
+                        ["FreeCabins"] = 99,
+                        ["LifeSupportReason"] = null,
                     },
                 }).Dispose());
         }

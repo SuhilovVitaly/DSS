@@ -30,9 +30,12 @@ public sealed partial class SimulationEngine
         reason = ArrestReason(candidate, loot, source);
         if (reason is not null) return;
         var pilot = source!.Pilot!;
-        candidate = candidate with { Prisoners = candidate.Prisoners.Add(new("prisoner:" + pilot.SourcePilotId,
+        candidate = candidate with
+        {
+            Prisoners = candidate.Prisoners.Add(new("prisoner:" + pilot.SourcePilotId,
             PlayerShipObjectId!, loot.BattleId, source.ObjectId, pilot.SourcePilotId, pilot.DisplayName, pilot.PortraitAssetId,
-            _clock.GameTimeMs, pilot.Gender)) };
+            _clock.GameTimeMs, pilot.Gender))
+        };
     }
     private LootPilotSnapshot? ProjectLootPilot(BattleLootData loot, LootSourceData source) => source.Pilot is not { } pilot ? null : pilot with
     {

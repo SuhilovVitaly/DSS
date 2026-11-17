@@ -157,7 +157,8 @@ public sealed partial class SimulationEngine
             if (_tacticalBattleSession.Id != request.BattleId) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongBattle);
             if (BeginPostBattleLoot() is { } newlySettled)
                 return new TacticalBattleResponse(request.CommandId, true, TacticalBattleRejectionCode.None,
-                    TacticalBattlePhase.Over, _demoCampaign.LootSession!.Map, []) { Settlement = newlySettled };
+                    TacticalBattlePhase.Over, _demoCampaign.LootSession!.Map, [])
+                { Settlement = newlySettled };
             var session = _tacticalBattleSession;
             if (HasCapturedEncounter && session.Battle.Result is null)
                 return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongPhase);

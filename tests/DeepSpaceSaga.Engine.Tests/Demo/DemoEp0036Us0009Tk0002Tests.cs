@@ -31,8 +31,14 @@ public sealed class DemoEp0036Us0009Tk0002Tests
     {
         using var engine = DemoEp0036Us0007Tk0003Tests.Won();
         var save = engine.CaptureSaveState();
-        save = save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(s =>
-            s.ObjectId == save.GameState.PlayerShipObjectId ? s with { Passengers = Enumerable.Range(0, 50).Select(i => new ShipPassengerData("p" + i, "Guest")).ToArray() } : s).ToArray() } };
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(s =>
+            s.ObjectId == save.GameState.PlayerShipObjectId ? s with { Passengers = Enumerable.Range(0, 50).Select(i => new ShipPassengerData("p" + i, "Guest")).ToArray() } : s).ToArray()
+            }
+        };
         engine.LoadScenario(save, true);
         var state = engine.CaptureSnapshot().DemoCampaign!;
         var loot = state.Rewards!.Loot!;

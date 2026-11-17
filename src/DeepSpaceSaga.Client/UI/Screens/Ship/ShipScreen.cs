@@ -362,24 +362,24 @@ public sealed partial class ShipScreen : IScreen
             }
             else if (_showCrew)
             {
-            var (cl, ct, cr, _) = ShipLayout.CrewPanelLocalRect();
-            float crewY = pt + ct + 60;
-            foreach (var member in _model.Crew)
-            {
-                canvas.DrawText(ShipCrewPanel.EngineerLabel(member) ?? SensorCrewLabel(member), pl + cl, crewY, bodyPaint);
-                crewY += ShipLayout.BodyLineHeight;
-            }
-            DrawSensorOperator(canvas, pl + cl, crewY, bodyPaint);
-            crewY += 2 * ShipLayout.BodyLineHeight;
-
-            // Passenger cabins (EP-0034 US-0001): shown under the crew list, read-only engine numbers.
-            crewY += ShipLayout.BodyLineHeight / 2f;
-            foreach (var line in PassengerLines)
-                foreach (var row in WrapToWidth(line, cr - cl, MenuStyle.TextStatus))
+                var (cl, ct, cr, _) = ShipLayout.CrewPanelLocalRect();
+                float crewY = pt + ct + 60;
+                foreach (var member in _model.Crew)
                 {
-                    canvas.DrawText(row, pl + cl, crewY, MenuStyle.TextStatus);
+                    canvas.DrawText(ShipCrewPanel.EngineerLabel(member) ?? SensorCrewLabel(member), pl + cl, crewY, bodyPaint);
                     crewY += ShipLayout.BodyLineHeight;
                 }
+                DrawSensorOperator(canvas, pl + cl, crewY, bodyPaint);
+                crewY += 2 * ShipLayout.BodyLineHeight;
+
+                // Passenger cabins (EP-0034 US-0001): shown under the crew list, read-only engine numbers.
+                crewY += ShipLayout.BodyLineHeight / 2f;
+                foreach (var line in PassengerLines)
+                    foreach (var row in WrapToWidth(line, cr - cl, MenuStyle.TextStatus))
+                    {
+                        canvas.DrawText(row, pl + cl, crewY, MenuStyle.TextStatus);
+                        crewY += ShipLayout.BodyLineHeight;
+                    }
             }
         }
 

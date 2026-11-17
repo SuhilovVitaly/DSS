@@ -109,7 +109,9 @@ public sealed partial class SimulationEngine
         // failures), so the autosave captures it instead of the pre-payout docking state.
         var candidate = _demoCampaign with
         {
-            StationJobs = jobs with { Obligations = obligations }, PassengerContracts = contracts, TransportFailures = failures,
+            StationJobs = jobs with { Obligations = obligations },
+            PassengerContracts = contracts,
+            TransportFailures = failures,
             Revision = checked(_demoCampaign.Revision + 1),
             CommitSequence = checked(_demoCampaign.CommitSequence + 1)
         };

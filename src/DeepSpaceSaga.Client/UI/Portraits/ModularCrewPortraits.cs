@@ -148,16 +148,16 @@ internal static class ModularCrewPortraits
             int top = (int)Math.Clamp(MathF.Floor(transform.Ty), 0, BodyHeight);
             int bottom = (int)Math.Clamp(MathF.Ceiling(transform.Ty + transform.Scale * BodyWidth), 0, BodyHeight);
             for (int y = top; y < bottom; y++)
-            for (int x = left; x < right; x++)
-            {
-                int light = 255 - shadow.GetPixel(x, y).Red;
-                if (light == 255)
-                    continue;
-                var pixel = placed.GetPixel(x, y);
-                if (pixel.Alpha != 0)
-                    placed.SetPixel(x, y, new SKColor(Darken(pixel.Red, light), Darken(pixel.Green, light),
-                        Darken(pixel.Blue, light), pixel.Alpha));
-            }
+                for (int x = left; x < right; x++)
+                {
+                    int light = 255 - shadow.GetPixel(x, y).Red;
+                    if (light == 255)
+                        continue;
+                    var pixel = placed.GetPixel(x, y);
+                    if (pixel.Alpha != 0)
+                        placed.SetPixel(x, y, new SKColor(Darken(pixel.Red, light), Darken(pixel.Green, light),
+                            Darken(pixel.Blue, light), pixel.Alpha));
+                }
             return placed;
         }
         catch

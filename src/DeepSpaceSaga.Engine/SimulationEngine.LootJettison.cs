@@ -49,8 +49,11 @@ public sealed partial class SimulationEngine
             remaining -= amount;
         }
         var finance = PrepareVoyageCargoRemoval(_voyageLedgers, itemIndex, command.Quantity);
-        candidate = candidate with { LootSession = candidate.LootSession! with
-        { Jettison = candidate.LootSession.Jettison.Add(new(command.CommandId, command.ItemTypeId, command.Quantity)) } };
+        candidate = candidate with
+        {
+            LootSession = candidate.LootSession! with
+            { Jettison = candidate.LootSession.Jettison.Add(new(command.CommandId, command.ItemTypeId, command.Quantity)) }
+        };
         commit = () => { _objects[index] = ship with { Modules = modules }; _voyageLedgers = finance; };
     }
 }

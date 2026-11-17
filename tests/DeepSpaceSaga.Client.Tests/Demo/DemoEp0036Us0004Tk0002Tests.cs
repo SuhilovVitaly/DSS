@@ -19,9 +19,12 @@ public sealed class DemoEp0036Us0004Tk0002Tests
         Assert.Equal(before.GameState.PlayerTokens, engine.PlayerCredits);
     }
 
-    [Fact]
-    public void ReportSeparatesReceiptsEstimatesLossesAndUnknownProfit()
+    [Theory]
+    [InlineData("English")]
+    [InlineData("Russian")]
+    public void ReportSeparatesReceiptsEstimatesLossesAndUnknownProfit(string language)
     {
+        using var locale = Localization.UseLocaleForTests(language);
         var loot = new LootSessionSnapshot("battle", LootPhases.Closed,
             [new("drone", "DisabledDrone", [new("item.torpedo", 2, false, null) { OriginalQuantity = 5 }], null,
                 [new("m", "engine", "e", "item.loot.engine", "Engine", "Intact", 100, 2500, LootAttemptStates.Failed, false, null)],
@@ -38,8 +41,11 @@ public sealed class DemoEp0036Us0004Tk0002Tests
         Assert.Equal(0, campaign.Rewards!.BountyPayment!.Entries[0].PaidTokens);
         Assert.Equal(LootAttemptStates.Failed, loot.Objects[0].Modules[0].State);
         Assert.Contains(Localization.Get("reward_report.notice"), text);
-        var later = campaign with { Company = new(Roundtrip: new(new("later-battle", "ship", 2, false,
-            ["new-loss"], 11, SortieExitKind.Completed))) };
+        var later = campaign with
+        {
+            Company = new(Roundtrip: new(new("later-battle", "ship", 2, false,
+            ["new-loss"], 11, SortieExitKind.Completed)))
+        };
         string laterText = string.Join('\n', RewardReportPresentation.Lines(later));
         Assert.Contains("later-battle", laterText);
         Assert.Contains("new-loss", laterText);
