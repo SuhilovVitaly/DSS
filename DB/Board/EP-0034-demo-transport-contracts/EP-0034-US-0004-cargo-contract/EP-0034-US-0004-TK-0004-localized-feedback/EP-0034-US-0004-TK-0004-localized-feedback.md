@@ -5,7 +5,7 @@ ticket: EP-0034-US-0004-TK-0004-localized-feedback
 title: RU/EN условия, результаты и причины отказа
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0034-US-0004-TK-0002-engine]
@@ -94,3 +94,19 @@ No API change. Существующие словари Russian/English; язык
 ## Self-containment check
 
 История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+
+## Execution result (2026-11-17)
+
+Статус: implemented; **validation pending at story end** (каденция владельца: на тикет — сборка, story-тесты в конце US-0004). PASS истории здесь не заявляется.
+
+Изменённые файлы (ровно 3):
+
+- `src/DeepSpaceSaga.Client/Data/Locale/English.json`, `Russian.json` — блок `Demo.CargoContracts.*` после `Demo.TransportFailures.Reason.battle_active`: `Title`, `Empty`, `Unavailable`, `Hold` (3 параметра: т опечатано / т своих товаров / т свободно), `NotForSale`, `Line` (7: тонны, товар, откуда, куда, оплата, срок, состояние), `Sealed` (4), `Delivered` (2), `Returned` (2), `State.{aboard,overdue,delivered,return_pending,returned,lost,unavailable}`. Одинаковые ключи и placeholders в обоих словарях.
+- Там же точечно уточнён текст `Demo.TransportFailures.CancelConfirm` (US-0003): «пассажиры и груз по контракту остаются на борту до следующей стыковки со станцией» — иначе подтверждение отмены груза говорило бы только о пассажирах (A-01). Ключ и placeholders не менялись.
+- `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0034Us0004Tk0004Tests.cs` — `StoryKeysExistInBothLocales` (точный набор ключей, RU кириллица, общие ключи отказов доски/провалов существуют), `FormatArgumentsMatch`, `NoRawReasonCodeLeaks`.
+
+Проверки: red — без новых ключей (stash словарей) 3/3 падали, TRX `D:/DeepSpaceSaga/artifacts/validation/EP-0034/us0004-tk0004/locale-red.trx`; green — `DemoEp0034Us0004Tk0004|Us0003Tk0004|Us0002Tk0004` 9/9 (TRX `.../us0004-tk0004/locale.trx`). Читаемость на экране — UI-тикет TK-0003 и итоговая EP-0040-US-0005.
+
+Допущения:
+
+- A-01 (content): отказы приёма груза (`insufficient_cargo_space` и др.) и отмены используют существующие тексты `Demo.Jobs.Reason.*`/`Demo.TransportFailures.Reason.*`; отдельных кодов отказа у груза нет (TK-0001 A-03). Название товара берётся из существующих `Trade.Item*` через клиентскую презентацию, persistent item id не переводится.
