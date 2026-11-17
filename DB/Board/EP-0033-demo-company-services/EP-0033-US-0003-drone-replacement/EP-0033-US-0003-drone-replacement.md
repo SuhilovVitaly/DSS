@@ -12,7 +12,7 @@ priority: P0
 workstream: feature
 dependencies: [EP-0033-US-0002-ammunition-supply]
 created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Замена потерянного дрона и ограниченное оснащение
@@ -92,3 +92,6 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Story-boundary validation
+34 Engine, 8 Contracts, 49 Client tests PASS across implemented stories and relevant regressions. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0033/20261117-us0003/engine6.log, Contracts.log, Client.log. Native/product/balance gates remain OPEN.
