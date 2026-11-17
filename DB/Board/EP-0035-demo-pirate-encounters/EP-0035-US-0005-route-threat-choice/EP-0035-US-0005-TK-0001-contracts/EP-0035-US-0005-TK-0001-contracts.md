@@ -108,3 +108,8 @@ Native запуск — только после проверки display layout,
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+### Execution contract
+ThreatRoutesSnapshot carries revision, options, selected identity and authoritative reasons. Waypoints use world units; ETA/deadline calendar milliseconds; fuel kilograms through existing VoyageFuel. No hidden group positions. Route selection is revisioned DemoCampaign command and does not charge fuel; existing undock reserves once. Scope adds optional ThreatRoutes to DemoCampaignSnapshot and typed serialization regression. Technical assumption: unknown threats remain explicitly unknown; known exposure uses persisted player observations, never debug visibility.
+
+Implementation complete; Contracts build PASS, diff check PASS. Tests authored, NOT RUN until story boundary. Evidence us5-tk1-build.log in designated resume run.
