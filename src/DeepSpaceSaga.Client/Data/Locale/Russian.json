@@ -1113,5 +1113,16 @@
   "Demo.SensorReport.Eta": "Ожидаемый перехват через {0:0.0} с при 1×",
   "Demo.SensorReport.NoEta": "На текущих курсах перехват не ожидается",
   "Demo.SensorReport.Acknowledge": "Принято — остаться на паузе",
-  "Demo.SensorReport.Footer": "При необходимости измените курс. Возобновите движение явно, когда будете готовы."
+  "Demo.SensorReport.Footer": "При необходимости измените курс. Возобновите движение явно, когда будете готовы.",
+  "Demo.Encounter.Title": "Перехват пиратами",
+  "Demo.Encounter.Warning": "Пираты перехватили ваш носитель. Бой неизбежен. Тактического отступления нет: бой заканчивается победой или поражением. В бой вступят ваш носитель, экипаж и текущие запасы.",
+  "Demo.Encounter.Continue": "Продолжить — начать бой",
+  "Demo.Encounter.Pending": "Подготовка боя…",
+  "Demo.Encounter.Refused": "Не удалось начать бой. {0}",
+  "Demo.Encounter.encounter_not_captured": "Эта встреча больше недоступна.",
+  "Demo.Encounter.sensor_report_pending": "Сначала подтвердите доклад сенсоров.",
+  "Demo.Encounter.dialogue_active": "Сначала завершите текущий разговор.",
+  "Demo.Encounter.battle_unavailable": "Данные боя недоступны.",
+  "Demo.Encounter.stale_revision": "Ситуация изменилась. Повторите действие.",
+  "Demo.Encounter.Unavailable": "Соединение или сохранение недоступно. Повторите попытку, чтобы продолжить."
 }

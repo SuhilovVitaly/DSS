@@ -1113,5 +1113,16 @@
   "Demo.SensorReport.Eta": "Estimated intercept in {0:0.0} s at 1×",
   "Demo.SensorReport.NoEta": "No intercept predicted on current courses",
   "Demo.SensorReport.Acknowledge": "Acknowledged — remain paused",
-  "Demo.SensorReport.Footer": "Change course if needed. Resume explicitly when ready."
+  "Demo.SensorReport.Footer": "Change course if needed. Resume explicitly when ready.",
+  "Demo.Encounter.Title": "Pirate interception",
+  "Demo.Encounter.Warning": "The pirates have intercepted your carrier. This battle cannot be avoided. There is no tactical retreat: the battle ends in victory or defeat. Your current carrier, crew and supplies will enter combat.",
+  "Demo.Encounter.Continue": "Continue to battle",
+  "Demo.Encounter.Pending": "Preparing battle…",
+  "Demo.Encounter.Refused": "Battle could not start. {0}",
+  "Demo.Encounter.encounter_not_captured": "This encounter is no longer available.",
+  "Demo.Encounter.sensor_report_pending": "Acknowledge the sensor report first.",
+  "Demo.Encounter.dialogue_active": "Finish the current conversation first.",
+  "Demo.Encounter.battle_unavailable": "Battle data is unavailable.",
+  "Demo.Encounter.stale_revision": "The situation changed. Try again.",
+  "Demo.Encounter.Unavailable": "The connection or saved checkpoint is unavailable. Retry to continue."
 }
