@@ -76,7 +76,8 @@ public sealed partial class SimulationEngine
             !double.IsFinite(world.CapturedPlayerMaxSpeedKmS) || world.CapturedPlayerMaxSpeedKmS <= 0 ||
             !double.IsFinite(world.AccelerationKmS2) || world.AccelerationKmS2 <= 0 ||
             !double.IsFinite(world.TurnRateDegreesPerSecond) || world.TurnRateDegreesPerSecond <= 0 ||
-            world.LastMotionTimeMs < 0 || world.LastMotionTimeMs > state.MotionTimeMs)
+            world.LastMotionTimeMs < 0 || world.LastMotionTimeMs > state.MotionTimeMs ||
+            world.LastPlayerPosition is { } oldPlayer && (!double.IsFinite(oldPlayer.X) || !double.IsFinite(oldPlayer.Y)))
             throw new ScenarioException("Invalid saved pirate world.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         var start = objects.Single(o => o.InitialMotion.ObjectId == _demoDefinitions.Cluster!.StartStationId).InitialMotion;
@@ -87,11 +88,17 @@ public sealed partial class SimulationEngine
                 !double.IsFinite(group.SpeedKmS) || group.SpeedKmS < 0 || group.SpeedKmS > world.CapturedPlayerMaxSpeedKmS * 1.1 ||
                 group.Members.IsDefault || group.Members.Length is < 1 or > 2 || group.PatrolPoints.IsDefault || group.PatrolPoints.Length != 4 ||
                 group.NextPatrolPoint is < 0 or > 3 || group.Phase is not ("patrol" or "pursuit" or "last_known" or "return" or "captured") ||
-                group.ApproximateDroneCount is < 0 ||
+                group.ApproximateDroneCount is < 0 || group.ContactEpoch < 0 ||
+                group.LastPursuitEndReason is not (null or "start_safe" or "contact_lost") ||
+                group.CapturedMotionTimeMs is { } captured && (!double.IsFinite(captured) || captured < 0 || captured > state.MotionTimeMs) ||
+                (group.Phase == "captured") != (group.CapturedMotionTimeMs is not null) ||
                 group.LastObservedPlayer is { } seen && (!double.IsFinite(seen.X) || !double.IsFinite(seen.Y)))
                 throw new ScenarioException("Invalid saved pirate group.");
             if (!group.Retired && Distance(group.X, group.Y, start.X, start.Y) <= definition.Pursuit.StartSafeRadius)
                 throw new ScenarioException("Pirate group is inside START safe zone.");
+            if (!group.Retired && !SafePirateManeuver(group,
+                new(group.GroupId, group.X, group.Y, group.SpeedKmS, group.Direction), new(start.X, start.Y), world.AccelerationKmS2, 0, 0))
+                throw new ScenarioException("Saved pirate momentum cannot brake outside START.");
             for (int i = 0; i < group.PatrolPoints.Length; i++)
             {
                 var point = group.PatrolPoints[i];
@@ -145,7 +152,8 @@ public sealed partial class SimulationEngine
                 detected ? group.ApproximateDroneCount : null,
                 detected ? group.Members.Select(m => new PirateSignatureObservation(group.GroupId, m.SignatureTypeId,
                     m.SignatureTypeId == "lair" ? "Demo.Pirate.Lair" : "Demo.Pirate.Tancred", time)).ToImmutableArray() : [],
-                detected ? group.Members.Select(m => new PirateMemberSnapshot(m.CarrierId, m.SignatureTypeId)).ToImmutableArray() : []));
+                detected ? group.Members.Select(m => new PirateMemberSnapshot(m.CarrierId, m.SignatureTypeId)).ToImmutableArray() : [],
+                detected ? ObservePursuit(group, pose, time) : null));
         }
         return new() { Groups = result.ToImmutable() };
     }

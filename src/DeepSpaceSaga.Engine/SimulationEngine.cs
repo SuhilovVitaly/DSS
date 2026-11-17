@@ -3513,7 +3513,7 @@ public sealed partial class SimulationEngine : IDisposable
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
         if (IsStoppedByStationSecurity) return;
-        if (!HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (_demoCampaign.PirateWorld is null && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _appliedMotionTimeMs = gameTimeMs;
@@ -3524,6 +3524,7 @@ public sealed partial class SimulationEngine : IDisposable
         while (true)
         {
             long next = gameTimeMs;
+            next = Math.Min(next, NextPirateControlTime());
             foreach (var obj in _objects)
             {
                 if (obj.InitialMotion.ObjectId != PlayerShipObjectId) continue;
@@ -3537,6 +3538,7 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
             _appliedMotionTimeMs = next;
+            AdvancePirateWorld(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
             if (IsStoppedByStationSecurity) return;
