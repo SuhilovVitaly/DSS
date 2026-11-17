@@ -101,6 +101,7 @@ public sealed partial class SimulationEngine
         if (command is not ILootCampaignCommand lootCommand || candidate.LootSession is not { } loot || loot.BattleId != lootCommand.BattleId)
         { reason = BattleLootReasons.WrongBattle; return; }
         if (loot.Phase != LootPhases.Open) { reason = BattleLootReasons.LootClosed; return; }
+        if (command is JettisonCargoCommand jettison) { PrepareJettisonCargo(jettison, ref candidate, ref reason, ref commit); return; }
         string? objectId = command switch
         {
             CollectLootConsumablesCommand c => c.ObjectId,
@@ -148,19 +149,21 @@ public sealed partial class SimulationEngine
             {
                 string? reason = !open ? BattleLootReasons.LootClosed : c.Remaining == 0 ? BattleLootReasons.AlreadyAttempted :
                     !TryPrepareLootCargo(c.ItemTypeId, 1, out _) ? BattleLootReasons.CargoFull : null;
-                return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason);
+                return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason, _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(c.ItemTypeId)).UnitMassKg);
             }).ToImmutableArray(),
             s.Scrap is { } scrap ? ProjectScrap(scrap, open) : null,
             s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open)).ToImmutableArray(), ProjectLootPilot(loot, s), s.X, s.Y, s.Direction)).ToImmutableArray();
         return new(loot.BattleId, loot.Phase, objects, open && objects.Any(s =>
             s.Consumables.Any(c => c.Remaining > 0) || s.Scrap?.State == LootAttemptStates.NotAttempted ||
-            s.Modules.Any(m => m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }));
+            s.Modules.Any(m => m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }))
+        { Cargo = BuildLootCargo(), FreeCargoKg = LootFreeCargoKg() };
     }
 
     private ScrapLootSnapshot ProjectScrap(LootScrapData scrap, bool open)
     {
         string? reason = !open ? BattleLootReasons.LootClosed : scrap.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
             !TryPrepareLootCargo(scrap.ItemTypeId, scrap.Quantity, out _) ? BattleLootReasons.CargoFull : null;
-        return new(scrap.ItemTypeId, scrap.Quantity, scrap.ChanceBasisPoints, scrap.State, reason is null, reason);
+        return new(scrap.ItemTypeId, scrap.Quantity, scrap.ChanceBasisPoints, scrap.State, reason is null, reason,
+            checked(scrap.Quantity * _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(scrap.ItemTypeId)).UnitMassKg));
     }
 }

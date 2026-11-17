@@ -52,6 +52,6 @@ public sealed partial class SimulationEngine
         string? reason = !open ? BattleLootReasons.LootClosed : module.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
             !TryPrepareLootCargo(module.ItemTypeId, 1, out _) ? BattleLootReasons.CargoFull : null;
         return new(module.InstanceId, module.Category, module.CatalogId, module.ItemTypeId, item.DisplayName, "intact",
-            item.BasePriceCredits ?? 0, module.ChanceBasisPoints, module.State, reason is null, reason);
+            item.BasePriceCredits ?? 0, module.ChanceBasisPoints, module.State, reason is null, reason, item.UnitMassKg);
     }
 }

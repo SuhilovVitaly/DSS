@@ -91,3 +91,9 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite-создатели новых файлов указаны в depends_on. Draft означает ожидаемую сверку плана, не отсутствующую игровую реализацию.
+
+## Scope correction
+Add backward-compatible authoritative cargo/free-mass and item mass fields to loot projections, plus ModuleSalvage.cs mass projection. TK4 needs engine-owned quantity steps and exact shortage rather than a client catalog guess. Reuse voyage cargo-removal accounting when discarding cargo; no money posting.
+
+## Execution
+Atomic ordinary-cargo jettison honors storage kind, positive sell step, available quantity, current open battle and command identity. Uses RemoveCargoCost plus voyage removal accounting; no credit/world-object creation. Persisted jettison ledger and authoritative cargo/free-mass projection feed UI. Engine/test build PASS after correcting TypeId name (us10-tk3-build-repeat.log under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/); authored tests deferred to US10 boundary.

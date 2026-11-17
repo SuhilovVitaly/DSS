@@ -4,6 +4,7 @@ using DeepSpaceSaga.Contracts;
 namespace DeepSpaceSaga.Engine.Scenario;
 
 public sealed record LootConsumableData(string ItemTypeId, long OriginalQuantity, long Remaining, bool Destroyed);
+public sealed record LootJettisonData(string CommandId, string ItemTypeId, long Quantity);
 public sealed record LootScrapData(string ItemTypeId, long Quantity, int ChanceBasisPoints, string State = LootAttemptStates.NotAttempted);
 public sealed record LootModuleData(string InstanceId, string Category, string CatalogId, string ItemTypeId,
     bool Destroyed, int ChanceBasisPoints, string State = LootAttemptStates.NotAttempted);
@@ -13,6 +14,7 @@ public sealed record LootSourceData(string ObjectId, string Kind, string LayoutI
 public sealed record BattleLootData(string BattleId, string Phase, string CatalogFingerprint, ulong Seed, long DrawCount,
     TacticalBattleSnapshot Map, ImmutableArray<LootSourceData> Sources)
 {
+    public ImmutableArray<LootJettisonData> Jettison { get; init; } = [];
     internal static void Validate(BattleLootData? data)
     {
         if (data is null) return;
@@ -22,6 +24,8 @@ public sealed record BattleLootData(string BattleId, string Phase, string Catalo
             data.DrawCount >= 0 && data.Map is not null && data.Map.BattleId == data.BattleId &&
             !data.Sources.IsDefault && data.Sources.All(s => s is not null));
         Require(data.Sources.Select(s => s.ObjectId).Distinct(StringComparer.Ordinal).Count() == data.Sources.Length);
+        Require(!data.Jettison.IsDefault && data.Jettison.All(j => j is not null && !string.IsNullOrWhiteSpace(j.CommandId) && !string.IsNullOrWhiteSpace(j.ItemTypeId) && j.Quantity > 0) &&
+            data.Jettison.Select(j => j.CommandId).Distinct(StringComparer.Ordinal).Count() == data.Jettison.Length);
         long expectedDraws = 0;
         bool Attempt(string state) => state is LootAttemptStates.NotAttempted or LootAttemptStates.Failed or LootAttemptStates.Collected;
         foreach (var s in data.Sources)
