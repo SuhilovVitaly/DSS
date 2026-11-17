@@ -2570,6 +2570,7 @@ public sealed partial class SimulationEngine : IDisposable
                 _voyageState = departureVoyage;
             }
             _activeRepairQuote = null;
+            _activeDecoyQuote = null;
             _objects[objectIndex] = obj with
             {
                 InitialMotion = currentMotion with { Orbit = null, OrbitSampleSimulationTimeMs = null, WorldOffsetX = 0, WorldOffsetY = 0 },

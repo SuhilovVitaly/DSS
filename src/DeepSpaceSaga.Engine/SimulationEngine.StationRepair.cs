@@ -15,6 +15,12 @@ public sealed partial class SimulationEngine
     partial void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
         ref bool handled, ref string? reason, ref Action? commit)
     {
+        if (command is DecoyQuoteRequest or ResupplyDecoyCommand)
+        {
+            handled = true;
+            PrepareSupply(command, ref candidate, ref reason, ref commit);
+            return;
+        }
         if (command is not (RepairQuoteRequest or RepairCommand)) return;
         handled = true;
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);

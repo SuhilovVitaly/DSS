@@ -49,7 +49,8 @@ public sealed partial class SimulationEngine
             long revision = applied ? checked(_demoCampaign.Revision + 1) : _demoCampaign.Revision;
             long sequence = checked(_demoCampaign.CommitSequence + 1);
             var response = new DemoCampaignResponse(command.CommandId, applied, reason, revision,
-                applied ? candidate.Company?.StationRepair : null);
+                applied ? candidate.Company?.StationRepair : null,
+                applied ? candidate.Company?.Supply : null);
             candidate = (applied ? candidate : _demoCampaign) with
             {
                 Revision = revision,

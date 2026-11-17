@@ -35,7 +35,7 @@ public sealed record DemoCampaignData(
         if (data.Company?.StationRepair is { } repair)
         {
             if (repair.Postings.IsDefault || repair.Postings.Any(p => p is null || string.IsNullOrWhiteSpace(p.Id) ||
-                string.IsNullOrWhiteSpace(p.TargetId) || p.Kind != "repair" || p.Amount < 0 || p.GameTimeMs < 0 || p.GameTimeMs > gameTimeMs) ||
+                string.IsNullOrWhiteSpace(p.TargetId) || p.Kind is not ("repair" or "decoy") || p.Amount < 0 || p.GameTimeMs < 0 || p.GameTimeMs > gameTimeMs) ||
                 repair.Postings.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != repair.Postings.Length)
                 throw new ScenarioException("Invalid company repair postings.");
             if (repair.LastResult is { } result && (result.Paid < 0 ||

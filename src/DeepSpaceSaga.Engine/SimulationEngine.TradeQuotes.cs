@@ -307,6 +307,7 @@ public sealed partial class SimulationEngine
     private void ResetQuoteSession()
     {
         _activeRepairQuote = null;
+            _activeDecoyQuote = null;
         _issuedQuotes.Clear();
         _quoteIdByRequestId.Clear();
         _issuedQuoteOrder.Clear();

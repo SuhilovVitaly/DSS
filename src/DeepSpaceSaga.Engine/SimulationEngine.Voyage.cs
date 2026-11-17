@@ -129,6 +129,7 @@ public sealed partial class SimulationEngine
             _voyageLedgers = terminalFinance;
             _voyageState = null;
             _activeRepairQuote = null;
+            _activeDecoyQuote = null;
             int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
             if (shipIndex >= 0 && _objects[shipIndex].IsDocked)
                 _objects[shipIndex] = _objects[shipIndex] with
