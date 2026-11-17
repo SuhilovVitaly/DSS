@@ -89,6 +89,6 @@ public sealed class DemoEp0036Us0003Tk0003Tests
         var stack = SimulationEngine.AddCargoCost(new CargoStackRuntime(0, 4, null, [CargoAcquisitionSources.LegacyUnknown]), 0, 2, 0, "salvaged");
         Assert.Equal(6, stack.Quantity);
         Assert.Null(stack.CostBasisCredits);
-        Assert.Equal([CargoAcquisitionSources.LegacyUnknown], stack.AcquisitionSources);
+        Assert.Equal(CargoAcquisitionSources.LegacyUnknown, Assert.Single(stack.AcquisitionSources));
     }
 }
