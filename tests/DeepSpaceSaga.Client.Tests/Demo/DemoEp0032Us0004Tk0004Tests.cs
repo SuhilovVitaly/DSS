@@ -7,6 +7,23 @@ namespace DeepSpaceSaga.Client.Tests.Demo;
 public sealed class DemoEp0032Us0004Tk0004Tests
 {
     [Fact]
+    public void MissingOrUnknownProfileFallsBackWithoutCrashing()
+    {
+        var directory = "D:/DeepSpaceSaga/artifacts/validation/ep-0032-review/fixtures/" + Guid.NewGuid().ToString("N");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            string path = directory + "/Settings.json";
+            Assert.False(DemoStartPresentation.IsDemoProfile(path));
+            File.WriteAllText(path, """{"gameSettings":{"campaignProfile":"future-profile"}}""");
+            Assert.False(DemoStartPresentation.IsDemoProfile(path));
+            File.WriteAllText(path, "{broken");
+            Assert.False(DemoStartPresentation.IsDemoProfile(path));
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Fact]
     public void PublicProfileUsesDemoForTutorialAndHidesDevelopmentScenarios()
     {
         const string root = "D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client";
