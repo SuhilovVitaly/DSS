@@ -2491,11 +2491,11 @@ public sealed partial class SimulationEngine : IDisposable
             return TryStartTradeCommand(command, gameTimeMs);
 
         if (command.CommandType == ShipEngineCommandTypes.TurnHold)
-            return TryTurnHold(command, gameTimeMs);
+            return HandleThreatManualOverride(TryTurnHold(command, gameTimeMs));
         if (command.CommandType == ShipEngineCommandTypes.SpeedHold)
-            return TrySpeedHold(command, gameTimeMs);
+            return HandleThreatManualOverride(TrySpeedHold(command, gameTimeMs));
 
-        return ExecuteTurnHoldOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs));
+        return HandleThreatManualOverride(ExecuteTurnHoldOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs)));
     }
     /// <summary>1 world unit = 100 m (DB/Documentation/00-Process/CLAUDE.md developer guide), so 1 km = 10 world units.</summary>
     private const double WorldUnitsPerKm = 10.0;
@@ -2569,6 +2569,8 @@ public sealed partial class SimulationEngine : IDisposable
                 double departureDx = departureMotion.X - currentMotion.X;
                 double departureDy = departureMotion.Y - currentMotion.Y;
                 double distance = Math.Sqrt(departureDx * departureDx + departureDy * departureDy);
+                if (_voyageState?.ThreatRoute is { } planned && planned.Option.DestinationStationId == command.TargetObjectId)
+                    distance = ThreatPathLength(new(planned.OriginX, planned.OriginY), planned.Option.Waypoints);
                 if (!double.IsFinite(distance) || distance <= 0)
                     return CommandStartOutcome.Rejected(CommandReasonCodes.VoyageDestinationUnavailable);
                 var fuelBlocker = PrepareVoyageFuel(obj, route.BaseEdge.DistanceKm, route.EffectiveFuelMultiplierPermille,
@@ -2582,7 +2584,8 @@ public sealed partial class SimulationEngine : IDisposable
                     RiskProfileId: route.BaseEdge.RiskProfileId, ActiveEventIds: route.ActiveEventIds,
                     StartedGameTimeMs: _processedWorldTimeMs,
                     ArrivalGameTimeMs: checked(_processedWorldTimeMs + route.EffectiveTravelEstimateGameTimeMs),
-                    FuelReservationParts: fuelParts, FuelDistanceKm: fuelDistance, FuelEfficiencyKmPerKg: efficiency);
+                    FuelReservationParts: fuelParts, FuelDistanceKm: fuelDistance, FuelEfficiencyKmPerKg: efficiency,
+                    ThreatRoute: _voyageState?.ThreatRoute is { } chosen && chosen.Option.DestinationStationId == command.TargetObjectId ? chosen : null);
                 try { BeginVoyageLedger(departureVoyage, _processedWorldTimeMs); }
                 catch (OverflowException) { return CommandStartOutcome.Rejected("value_overflow"); }
                 _voyageState = departureVoyage;
@@ -3556,6 +3559,7 @@ public sealed partial class SimulationEngine : IDisposable
             UpdateStationSecurity(next);
             if (IsStoppedByStationSecurity) return;
             CompleteActiveEngineCycles(next);
+            AdvanceThreatRoute(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             if (pirateStep.Stopped)

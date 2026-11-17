@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Engine.Dialogue;
+using DeepSpaceSaga.Contracts;
 using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Engine.Scenario;
@@ -193,7 +194,11 @@ public sealed record VoyageStateData(
     [property: JsonPropertyName("arrivalGameTimeMs")] long? ArrivalGameTimeMs = null,
     [property: JsonPropertyName("fuelReservationParts")] IReadOnlyList<VoyageFuelReservationPartData>? FuelReservationParts = null,
     [property: JsonPropertyName("fuelDistanceKm")] decimal? FuelDistanceKm = null,
-    [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
+    [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null,
+    ThreatRouteSelectionData? ThreatRoute = null);
+
+public sealed record ThreatRouteSelectionData(ThreatRouteOption Option, double OriginX, double OriginY,
+    int NextWaypoint = 0, bool NavigationStarted = false, bool Suspended = false);
 
 public sealed record VoyageFuelReservationPartData(
     [property: JsonPropertyName("moduleId")] string ModuleId,

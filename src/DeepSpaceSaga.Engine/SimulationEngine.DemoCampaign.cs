@@ -95,7 +95,7 @@ public sealed partial class SimulationEngine
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
         BuildDemoTransportProjection(), BuildPirateGroupsProjection(), _demoCampaign.Rewards,
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
-        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection());
+        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes());
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
 
@@ -107,6 +107,9 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case SelectDemoRouteCommand route:
+                PrepareThreatRoute(route, ref reason, ref commit);
+                break;
             case BeginEncounterBattleCommand begin:
                 PrepareEncounterBattle(begin, ref candidate, ref reason, ref commit);
                 break;

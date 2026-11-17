@@ -157,7 +157,9 @@ public sealed partial class SimulationEngine
         var edge = departureMap.Edges.Single(e => Connects(e, voyage.OriginStationObjectId!, voyage.DestinationStationObjectId!));
         try
         {
-            if (voyage.FuelDistanceKm != CaptureFuelDistance(edge.DistanceKm))
+            double distance = voyage.ThreatRoute is { } selected
+                ? ThreatPathLength(new(selected.OriginX, selected.OriginY), selected.Option.Waypoints) / 10 : edge.DistanceKm;
+            if (voyage.FuelDistanceKm != CaptureFuelDistance(distance))
                 throw new ScenarioException("voyageState fuel distance differs from its materialized edge.");
         }
         catch (Exception error) when (error is OverflowException or FormatException)
