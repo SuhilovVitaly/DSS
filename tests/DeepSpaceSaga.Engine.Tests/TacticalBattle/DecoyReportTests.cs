@@ -8,11 +8,13 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 [Trait("Category", "Balance")]
 public sealed class DecoyReportTests
 {
-    [Fact]
-    public void Report_decoy_effect_over_series()
+    public static IEnumerable<object[]> Ranges() => Enumerable.Range(0, 10).Select(i => new object[] { i * 100 + 1, (i + 1) * 100 });
+    [Theory]
+    [MemberData(nameof(Ranges))]
+    public void Report_decoy_effect_over_series(int seedStart, int seedEnd)
     {
         var catalog = AssemblyTests.Catalog();
-        string directory = Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT")!, "ep0020-decoy");
+        string directory = Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT")!, "ep0020-decoy", $"{seedStart}-{seedEnd}");
         Directory.CreateDirectory(directory);
         var rows = new List<object>();
         var csv = new List<string> { "tactic,battles,launches,decoyed,hits,launchesPerBattle,consumedFraction,meanChanceBefore,meanChanceAfter,missFraction" };
@@ -20,7 +22,7 @@ public sealed class DecoyReportTests
         {
             long launched = 0, shots = 0, hits = 0;
             double before = 0, after = 0;
-            for (int seed = 1; seed <= 1000; seed++)
+            for (int seed = seedStart; seed <= seedEnd; seed++)
             {
                 var battle = Battle.Create(catalog, "initial", seed, new Dictionary<string, string> { ["A"] = tactic });
                 long available = battle.Drones.Sum(d => d.DecoyCharges);
@@ -34,12 +36,12 @@ public sealed class DecoyReportTests
                 before += stats.DecoyChanceBefore; after += stats.DecoyChanceAfter;
             }
             Assert.True(launched > 0 && shots > 0);
-            double perBattle = launched / 1000.0, consumed = shots / (double)launched;
+            double perBattle = launched / (double)(seedEnd - seedStart + 1), consumed = shots / (double)launched;
             double meanBefore = before / shots, meanAfter = after / shots, miss = 1 - hits / (double)shots;
             rows.Add(new
             {
                 tactic,
-                battles = 1000,
+                battles = seedEnd - seedStart + 1,
                 launches = launched,
                 decoyed = shots,
                 hits,
@@ -49,7 +51,7 @@ public sealed class DecoyReportTests
                 meanChanceAfter = meanAfter,
                 missFraction = miss
             });
-            csv.Add(string.Join(',', new[] { tactic, "1000", launched.ToString(CultureInfo.InvariantCulture),
+            csv.Add(string.Join(',', new[] { tactic, (seedEnd - seedStart + 1).ToString(CultureInfo.InvariantCulture), launched.ToString(CultureInfo.InvariantCulture),
                 shots.ToString(CultureInfo.InvariantCulture), hits.ToString(CultureInfo.InvariantCulture),
                 perBattle.ToString("R", CultureInfo.InvariantCulture), consumed.ToString("R", CultureInfo.InvariantCulture),
                 meanBefore.ToString("R", CultureInfo.InvariantCulture), meanAfter.ToString("R", CultureInfo.InvariantCulture),
@@ -57,7 +59,7 @@ public sealed class DecoyReportTests
         }
         File.WriteAllLines(Path.Combine(directory, "decoy-report.csv"), csv);
         File.WriteAllText(Path.Combine(directory, "summary.json"), JsonSerializer.Serialize(new
-        { battles = 5000, missFactor = catalog.Decoys["decoy.t1"].MissFactor, aiThreshold = catalog.Rules.Decoy.AiThreatChance, rows },
+        { battles = 5 * (seedEnd - seedStart + 1), missFactor = catalog.Decoys["decoy.t1"].MissFactor, aiThreshold = catalog.Rules.Decoy.AiThreatChance, rows },
             new JsonSerializerOptions { WriteIndented = true }));
     }
 }
