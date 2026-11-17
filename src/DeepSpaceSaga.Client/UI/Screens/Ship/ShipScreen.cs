@@ -61,6 +61,9 @@ public sealed partial class ShipScreen : IScreen
     internal int SelectedQuantity => _quantity;
     internal string Status => _status;
     internal bool IsPending => _controller.IsPending;
+    /// <summary>Passenger capacity text from the latest authoritative demo snapshot; empty outside the demo campaign.</summary>
+    internal IReadOnlyList<string> PassengerLines => _campaign is null ? []
+        : PassengerCapacityPresentation.Lines(_campaign()?.Transport?.PassengerCapacity);
 
     public void OnActivated() => _isCloseHovered = false;
 
@@ -298,13 +301,22 @@ public sealed partial class ShipScreen : IScreen
                 DrawRearmControls(canvas, pl, pt);
 
             // Crew panel (right half): one line per crew member.
-            var (cl, ct, _, _) = ShipLayout.CrewPanelLocalRect();
+            var (cl, ct, cr, _) = ShipLayout.CrewPanelLocalRect();
             float crewY = pt + ct;
             foreach (var member in _model.Crew)
             {
                 canvas.DrawText($"{member.DisplayName} ({member.Role})", pl + cl, crewY, MenuStyle.TextStatus);
                 crewY += ShipLayout.BodyLineHeight;
             }
+
+            // Passenger cabins (EP-0034 US-0001): shown under the crew list, read-only engine numbers.
+            crewY += ShipLayout.BodyLineHeight / 2f;
+            foreach (var line in PassengerLines)
+                foreach (var row in WrapToWidth(line, cr - cl, MenuStyle.TextStatus))
+                {
+                    canvas.DrawText(row, pl + cl, crewY, MenuStyle.TextStatus);
+                    crewY += ShipLayout.BodyLineHeight;
+                }
         }
 
         if (_campaign is not null)
@@ -319,6 +331,28 @@ public sealed partial class ShipScreen : IScreen
             DrawMemorial(canvas, pl, pt);
         }
         DrawCloseButton(canvas, pl, pt);
+    }
+
+    /// <summary>Greedy word wrap so localized explanations stay inside the crew panel.</summary>
+    internal static IReadOnlyList<string> WrapToWidth(string text, float width, SKPaint paint)
+    {
+        var rows = new List<string>();
+        string current = "";
+        foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string candidate = current.Length == 0 ? word : current + " " + word;
+            if (current.Length > 0 && paint.MeasureText(candidate) > width)
+            {
+                rows.Add(current);
+                current = word;
+            }
+            else
+            {
+                current = candidate;
+            }
+        }
+        if (current.Length > 0) rows.Add(current);
+        return rows;
     }
 
     private void DrawRearmControls(SKCanvas canvas, float panelLeft, float panelTop)
