@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 /// <summary>
 /// Read-only model for the Ship overlay, built purely from the authoritative
 /// <see cref="CarrierOperationsSnapshot"/>. Formatting and the per-drone max selectable quantity are
-/// computed here; eligibility is always the engine's decision — this model never fabricates a wing
+/// computed here; eligibility is always the engine's decision â€” this model never fabricates a wing
 /// or grants a carrier surface to a legacy ship.
 /// </summary>
 public sealed class ShipViewModel
@@ -24,7 +24,7 @@ public sealed class ShipViewModel
     public CabinRow Cabins { get; private init; } = new(0, 0, 0, 0);
 
     public sealed record DroneRow(string Id, int AmmoCurrent, int AmmoCapacity, int CurrentHull, bool Destroyed,
-        bool Disabled = false, bool Uncrewed = false);
+        bool Disabled = false, bool Uncrewed = false, ImmutableArray<string> Equipment = default);
     public sealed record CrewRow(string Id, string DisplayName, CrewRole? Role);
     public sealed record CabinRow(int TotalCabins, int OccupiedCabins, int ReservedCabins, int FreeCabins);
 
@@ -48,7 +48,11 @@ public sealed class ShipViewModel
                     .Select(d => new DroneRow(d.Id, d.AmmoCurrent, d.AmmoCapacity, d.CurrentHull,
                         !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("destroyed"),
                         !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("disabled"),
-                        !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("no_pilot")))
+                        !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("no_pilot"),
+                        new[] { d.FrameId, d.WeaponId, d.ArmorId, d.DecoyId }
+                            .Where(id => !string.IsNullOrEmpty(id)).Select(id => id!)
+                            .Concat(d.ShieldId is { } shield ? Enumerable.Repeat(shield, Math.Max(0, d.ShieldCount)) : [])
+                            .Concat(d.EngineIds.IsDefault ? [] : d.EngineIds).ToImmutableArray()))
                     .ToImmutableArray(),
             Crew = carrier.Crew.IsDefaultOrEmpty
                 ? ImmutableArray<CrewRow>.Empty

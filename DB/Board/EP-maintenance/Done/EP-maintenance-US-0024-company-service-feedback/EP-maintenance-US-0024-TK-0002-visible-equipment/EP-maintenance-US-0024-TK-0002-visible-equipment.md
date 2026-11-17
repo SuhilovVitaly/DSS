@@ -4,7 +4,7 @@ story: EP-maintenance-US-0024-company-service-feedback
 ticket: EP-maintenance-US-0024-TK-0002-visible-equipment
 title: Состав предложения и установленное оснащение
 stage: approved
-implementation_status: in-progress
+implementation_status: implemented
 layer: client
 serves: [AC-02]
 ---
@@ -34,3 +34,8 @@ Engine владеет деньгами и оснащением. Render не от
 
 ## Tests / Definition of Done
 Добавить регрессию в именованный test file; focused Client suite и owning Release build, scoped format, diff check. Все тестовые процессы ограничить 300000 ms; outputs: D:/DeepSpaceSaga/artifacts/validation/ep-0033-review/20261117-fixes/. Проверки выполняются в конце истории. Перед push записать результаты и перенести завершённый тикет в Done вместе с историей.
+
+## Результат и проверки
+Показаны локализованные Items каждого предложения и фактические frame/weapon/armor/decoy/shield/engine выбранного дрона; повторяющиеся модули сгруппированы с количеством. Неизвестные IDs не теряются. Carrier revision обновляет оснащение после подтверждения. Кнопки перенесены вместе с hit testing.
+
+58/58 focused Client tests PASS, Release build PASS: D:/DeepSpaceSaga/artifacts/validation/ep-0033-review/20261117-fixes/final2.log. Filter: FullyQualifiedName~DemoEp0033|FullyQualifiedName~Ep0029Us0009Tk000. Scoped dotnet format whitespace PASS (format.log/format.err); diff check PASS. OfferContentsAndInstalledEquipmentFollowConfirmedCarrier проверяет RU/EN, полный состав, переход оснащения и клик четвёртого предложения. Headless screenshots screens/shipyard-Russian.png и shipyard-English.png просмотрены; переносы не закрывают кнопки. Native UI в этом исправлении не запускался; прежние external/product gates остаются открытыми.

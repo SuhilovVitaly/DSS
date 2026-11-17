@@ -967,5 +967,15 @@
   "Demo.Upkeep.Confirmed": "Долг погашен на выбранную сумму",
   "Demo.Upkeep.Help": "Долг не блокирует мирные рейсы",
   "Demo.Services.Paid": "Оплачено {0} Tokens.",
-  "Demo.Repair.already_applied": "Эта команда уже выполнена."
+  "Demo.Repair.already_applied": "Эта команда уже выполнена.",
+  "Demo.Replacement.Installed": "Установлено — {0}",
+  "Demo.Replacement.Item.light": "Лёгкий корпус",
+  "Demo.Replacement.Item.heavy": "Тяжёлый корпус",
+  "Demo.Replacement.Item.gun.sword.t1": "Оружие: меч I",
+  "Demo.Replacement.Item.gun.spear.t1": "Оружие: копьё I",
+  "Demo.Replacement.Item.plate.medium": "Средняя броня",
+  "Demo.Replacement.Item.plate.heavy": "Тяжёлая броня",
+  "Demo.Replacement.Item.shield.t1": "Щит I",
+  "Demo.Replacement.Item.decoy.t1": "Ловушки I",
+  "Demo.Replacement.Item.drive.standard": "Стандартный двигатель"
 }

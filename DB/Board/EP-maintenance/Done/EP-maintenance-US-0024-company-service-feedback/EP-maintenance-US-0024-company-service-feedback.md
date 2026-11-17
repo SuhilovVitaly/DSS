@@ -3,7 +3,7 @@ epic: EP-maintenance
 story: EP-maintenance-US-0024-company-service-feedback
 title: Актуальное снабжение и видимое оснащение
 stage: approved
-implementation_status: in-progress
+implementation_status: implemented
 dependencies: []
 current_review: complete
 revision: 1
@@ -23,11 +23,14 @@ revision: 1
 ## Approved ticket map
 | Ticket | Layer | Dependencies | Serves |
 |---|---|---|---|
-| TK-0001-live-supply | client | none | AC-01 |
-| TK-0002-visible-equipment | client | TK-0001 | AC-02 |
+| [TK-0001-live-supply](EP-maintenance-US-0024-TK-0001-live-supply/EP-maintenance-US-0024-TK-0001-live-supply.md) | client | none | AC-01 |
+| [TK-0002-visible-equipment](EP-maintenance-US-0024-TK-0002-visible-equipment/EP-maintenance-US-0024-TK-0002-visible-equipment.md) | client | TK-0001 | AC-02 |
 
 ## Non-goals
 Правила Engine, цены, сохранения и полный демо-плейтест не меняются.
 
 ## Gaps and backlog
 Прежние внешние/product gates EP-0033 остаются открытыми. Native-приёмка не следует из headless теста.
+
+## Проверки и публикация
+Обе P2 исправлены. Supply red-test воспроизвёл проблему; итоговый focused corpus 58/58 PASS. RU/EN headless snapshots проверены. Supply опубликован в 80c2432d; восстановление UTF-8 подписей — ae38d7be. Верфь публикуется отдельным коммитом этой истории. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0033-review/20261117-fixes/. Временные build/results/temp удалены после проверок; логи и PNG сохранены. Native не запускался.

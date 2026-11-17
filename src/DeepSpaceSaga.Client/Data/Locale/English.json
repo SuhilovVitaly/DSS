@@ -967,5 +967,15 @@
   "Demo.Upkeep.Confirmed": "Debt payment completed",
   "Demo.Upkeep.Help": "Debt does not prevent peaceful travel",
   "Demo.Services.Paid": "Paid {0} Tokens.",
-  "Demo.Repair.already_applied": "This command has already been applied."
+  "Demo.Repair.already_applied": "This command has already been applied.",
+  "Demo.Replacement.Installed": "Installed — {0}",
+  "Demo.Replacement.Item.light": "Light frame",
+  "Demo.Replacement.Item.heavy": "Heavy frame",
+  "Demo.Replacement.Item.gun.sword.t1": "Sword I weapon",
+  "Demo.Replacement.Item.gun.spear.t1": "Spear I weapon",
+  "Demo.Replacement.Item.plate.medium": "Medium armor",
+  "Demo.Replacement.Item.plate.heavy": "Heavy armor",
+  "Demo.Replacement.Item.shield.t1": "Shield I",
+  "Demo.Replacement.Item.decoy.t1": "Decoy I",
+  "Demo.Replacement.Item.drive.standard": "Standard engine"
 }
