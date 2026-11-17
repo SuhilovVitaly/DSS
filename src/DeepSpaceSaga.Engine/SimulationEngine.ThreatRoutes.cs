@@ -131,8 +131,14 @@ public sealed partial class SimulationEngine
     {
         var type = ship.Modules.Select(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex)).FirstOrDefault(IsEngineCategory);
         double acceleration = (type?.LinearInertiaMps2 ?? 0) / 1000.0;
-        double ramp = acceleration > 0 ? Math.Max(0, (GetMaxSpeedKmS(ship) ?? pose.SpeedKmS) - pose.SpeedKmS) / acceleration : 0;
-        return checked(Math.Max(1, (long)Math.Ceiling(route.EffectiveTravelEstimateGameTimeMs * distanceKm / route.BaseEdge.DistanceKm + ramp * 300000)));
+        double cycleSeconds = type is null ? 0 : ComputeEffectiveCycleTimeMs(type, ShipEngineCommandTypes.Accelerate) / 1000.0;
+        double maximum = GetMaxSpeedKmS(ship) ?? pose.SpeedKmS;
+        // Preserve an existing departure speed. From rest, one existing acceleration
+        // cycle starts motion; immediately steer at that speed, with no blind run-up.
+        double cruise = pose.SpeedKmS > 0 ? pose.SpeedKmS : Math.Min(maximum, acceleration * cycleSeconds);
+        double startup = pose.SpeedKmS <= 0 ? cycleSeconds : 0;
+        return checked(Math.Max(1, (long)Math.Ceiling(route.EffectiveTravelEstimateGameTimeMs * distanceKm / route.BaseEdge.DistanceKm *
+            (cruise > 0 ? maximum / cruise : 1) + startup * 300000)));
     }
 
     private void AdvanceThreatRoute(long time)
@@ -147,7 +153,7 @@ public sealed partial class SimulationEngine
         if (engine is null) return;
         if (engine.ActiveCycle is { } cycle &&
             (cycle.CommandType != ShipEngineCommandTypes.Accelerate || cycle.CommandId?.StartsWith("route:", StringComparison.Ordinal) != true ||
-             pose.SpeedKmS + 1e-6 < (GetMaxSpeedKmS(ship) ?? pose.SpeedKmS))) return;
+             pose.SpeedKmS <= 0)) return;
         if (selected.NavigationStarted)
         {
             var current = PredictMotion(ship, Math.Max(0, time - ship.StartGameTimeMs));
@@ -164,7 +170,7 @@ public sealed partial class SimulationEngine
             if (selected.NextWaypoint >= selected.Option.Waypoints.Length) return;
         }
         var target = selected.Option.Waypoints[selected.NextWaypoint];
-        bool accelerate = pose.SpeedKmS + 1e-6 < (GetMaxSpeedKmS(ship) ?? pose.SpeedKmS);
+        bool accelerate = pose.SpeedKmS <= 0;
         var command = new PlayerCommand($"route:{state.VoyageId}:{selected.NextWaypoint}:{time}", 0, ship.InitialMotion.ObjectId,
             engine.ModuleId, accelerate ? ShipEngineCommandTypes.Accelerate : ShipEngineCommandTypes.Orbit,
             TargetWorldX: target.X, TargetWorldY: target.Y);
