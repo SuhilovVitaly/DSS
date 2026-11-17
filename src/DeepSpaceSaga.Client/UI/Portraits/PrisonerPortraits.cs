@@ -13,11 +13,11 @@ internal sealed class PrisonerPortraits(string root) : IDisposable
     internal SKBitmap? Get(LootPilotSnapshot pilot, string? assignedOutfit = null)
     {
         string? asset = pilot.PortraitAssetId;
-        string outfit = assignedOutfit ?? (asset is null ? null : ModularCrewPortraits.AssignedOutfit(root, asset)) ?? "pilot";
-        string key = pilot.SourcePilotId + "|" + asset + "|" + outfit + "|" + pilot.Captured + "|kneeling-v3-repaired";
+        string key = pilot.SourcePilotId + "|" + asset + "|" + assignedOutfit + "|" + pilot.Captured + "|" + pilot.Gender + "|kneeling-v3-repaired";
         if (_key == key) return _image;
         Dispose(); _key = key;
         if (string.IsNullOrWhiteSpace(asset)) return null;
+        string outfit = assignedOutfit ?? ModularCrewPortraits.AssignedOutfit(root, asset) ?? "pilot";
         try
         {
             // Validate the authoritative asset even when an assembled variant is available.
