@@ -19,11 +19,12 @@ public sealed partial class SimulationEngine
                 candidate = EnsurePirateComposition(candidate, group.GroupId);
                 candidate = AddSensorReport(candidate, group.GroupId, pose, _processedSimulationTimeMs);
             }
-        if (ReferenceEquals(candidate, _demoCampaign)) return;
+        if (ReferenceEquals(candidate, _demoCampaign)) { RememberPirateObservations(); return; }
         candidate = candidate with { Revision = checked(candidate.Revision + 1), CommitSequence = checked(candidate.CommitSequence + 1) };
         DemoCampaignData.Validate(candidate, Math.Max(gameTimeMs, candidate.LastTickGameTimeMs));
         ValidatePirateCompositions(candidate);
         _demoCampaign = candidate;
+        RememberPirateObservations();
     }
 
     // Capture calls this same path before its durable prebattle checkpoint, even without player detection.

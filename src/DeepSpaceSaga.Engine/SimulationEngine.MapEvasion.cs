@@ -130,6 +130,7 @@ public sealed partial class SimulationEngine
             {
                 Phase = "pursuit",
                 LastObservedPlayer = player,
+                LastObservedPlayerTimeMs = world.LastMotionTimeMs,
                 ContactEpoch = group.Phase == "pursuit" ? group.ContactEpoch : checked(group.ContactEpoch + 1),
                 LastPursuitEndReason = null
             };

@@ -18,7 +18,8 @@ public sealed record PirateGroupSnapshot(
     ImmutableArray<PirateSignatureObservation> Signatures = default,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PirateMemberSnapshot>))]
     ImmutableArray<PirateMemberSnapshot> Members = default,
-    PursuitSnapshot? Pursuit = null)
+    PursuitSnapshot? Pursuit = null,
+    long ObservationAgeMotionMs = 0)
 {
     public bool IsDebugVisible => !IsDetected && Status == PirateGroupStatuses.DebugVisible;
 }
@@ -37,4 +38,5 @@ public static class PirateGroupStatuses
     public const string Observed = "observed";
     public const string DebugVisible = "debug_visible";
     public const string Captured = "captured";
+    public const string LastKnown = "last_known";
 }

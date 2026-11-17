@@ -94,6 +94,20 @@ public sealed partial class SimulationEngine
                 (group.Phase == "captured") != (group.CapturedMotionTimeMs is not null) ||
                 group.LastObservedPlayer is { } seen && (!double.IsFinite(seen.X) || !double.IsFinite(seen.Y)))
                 throw new ScenarioException("Invalid saved pirate group.");
+            if (group.LastObservedPlayerTimeMs is { } seenTime &&
+                (seenTime < 0 || seenTime > world.LastMotionTimeMs || group.LastObservedPlayer is null))
+                throw new ScenarioException("Invalid pirate last contact time.");
+            if (group.PlayerObservation is { } observed &&
+                (!group.ReportConsumed || !double.IsFinite(observed.X) || !double.IsFinite(observed.Y) ||
+                 !double.IsFinite(observed.VelocityX) || !double.IsFinite(observed.VelocityY) ||
+                 observed.MotionTimeMs < 0 || observed.MotionTimeMs > world.LastMotionTimeMs ||
+                 observed.Pursuit is not { } pursuit || pursuit.GroupId != group.GroupId ||
+                 string.IsNullOrWhiteSpace(pursuit.EventId) ||
+                 pursuit.ObservedStatus is not (PursuitStatuses.Approaching or PursuitStatuses.Receding or PursuitStatuses.Captured or PursuitStatuses.Escaped) ||
+                 pursuit.EndReason is not (null or "start_safe" or "contact_lost") ||
+                 pursuit.ObservedMotionTimeMs != observed.MotionTimeMs || !double.IsFinite(pursuit.RangeWorldUnits) ||
+                 pursuit.RangeWorldUnits < 0 || !double.IsFinite(pursuit.ClosingSpeedWorldUnitsPerSecond)))
+                throw new ScenarioException("Invalid saved player observation.");
             if (!group.Retired && Distance(group.X, group.Y, start.X, start.Y) <= definition.Pursuit.StartSafeRadius)
                 throw new ScenarioException("Pirate group is inside START safe zone.");
             if (!group.Retired && !SafePirateManeuver(group,
@@ -163,7 +177,17 @@ public sealed partial class SimulationEngine
         foreach (var group in world.Groups.Where(g => !g.Retired).OrderBy(g => g.GroupId, StringComparer.Ordinal))
         {
             bool detected = SensorCovers(radius, pose.X, pose.Y, group.X, group.Y);
-            if (!detected && DemoDebugSettings.FogOfWar) continue;
+            if (!detected && DemoDebugSettings.FogOfWar)
+            {
+                if (group.PlayerObservation is { } observed)
+                    result.Add(new(group.GroupId, observed.X, observed.Y, observed.VelocityX, observed.VelocityY,
+                        observed.MotionTimeMs, false, PirateGroupStatuses.LastKnown, group.ApproximateDroneCount,
+                        group.Members.Select(m => new PirateSignatureObservation(group.GroupId, m.SignatureTypeId,
+                            m.SignatureTypeId == "lair" ? "Demo.Pirate.Lair" : "Demo.Pirate.Tancred", observed.MotionTimeMs)).ToImmutableArray(),
+                        group.Members.Select(m => new PirateMemberSnapshot(m.CarrierId, m.SignatureTypeId)).ToImmutableArray(),
+                        observed.Pursuit, Math.Max(0, time - observed.MotionTimeMs)));
+                continue;
+            }
             double angle = group.Direction * Math.PI / 180;
             result.Add(new(group.GroupId, group.X, group.Y, Math.Sin(angle) * group.SpeedKmS * 10,
                 -Math.Cos(angle) * group.SpeedKmS * 10, time, detected,
