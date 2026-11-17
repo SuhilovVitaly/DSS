@@ -5,7 +5,7 @@ ticket: EP-0036-US-0002-TK-0004-localized-feedback
 title: RU/EN получение награды без предварительного принятия
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0036-US-0002-TK-0002-engine]
@@ -111,3 +111,7 @@ Owning build: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj
 ## Self-containment check
 
 Описаны authority, identity, отсутствие acceptance prerequisite, frozen definitions, schema, dependencies, allowlist, шаги и named tests. Открытого продуктового вопроса по этому результату нет; численный content baseline — A-B05 для плейтеста, не обещание доказанного баланса.
+
+## Execution — 2026-11-17
+
+RU/EN claim, separate due/paid, confirmed payment and refusal keys added. Existing claim_at_issuer/cancellation_free explain retroactive entitlement. JSON parse, formatting and diff PASS. PaymentKeys_ParityAndReasons covers added keys/placeholders; tests NOT RUN until US2 completion.
