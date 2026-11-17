@@ -92,3 +92,15 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution scope correction
+
+Also update TacticalBattleFlow.cs for authoritative FinishBattleLoot via the existing session and for waiting before modal navigation. Shared map input is implemented in a TacticalBattleScreen.Loot.cs partial to keep the existing screen readable. BattleLootWindow composes existing panels and a scrollable per-object view; tests use headless SKSurface only. No native window/game launch.
+Also extend BattleLootPresentation with ClearSelection for closing the object panel without leaving loot, so other sources remain reachable.
+Also extend SkiaWindow.cs Load/OpenTacticalBattle recovery routing: the existing pending-only gate otherwise rejects a valid frozen LootOpen map. Finished encounter plus matching open loot is a valid recovery; it must not start a new battle.
+
+Also add a locale-owned numeric culture key in RU/EN so chance formatting follows the selected game language rather than OS culture.
+
+## Execution — 2026-11-17
+
+Added selectable source rings using the same map projection, a scrollable shared loot window (individual/all consumable buttons, scrap, module rows), panel close and independent map selection. Escape warns, cancel keeps loot, confirmation dispatches FinishBattleLoot and navigation waits for its receipt. Flow and Skia recovery adopt the frozen map without starting combat. Explicit pending/error presentation remains visible. Client build/scoped format/diff PASS; authored real-session screen-input and headless SKSurface tests NOT RUN until all five US7 tickets complete. No native/game launch. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk4-final-build.log.

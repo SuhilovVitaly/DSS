@@ -1019,9 +1019,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                     {
                         Localization.ApplyLanguage(Localization.ReadLanguageSetting(SettingsFilePath));
                         var captured = battleSession.DemoCampaign?.WorldEncounter;
+                        bool openLoot = battleSession.DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open };
                         var flow = new TacticalBattleFlow(battleSession)
-                        { CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } ? captured : null };
-                        if (captured is { Phase: WorldEncounterPhases.PendingBattle } && await flow.StartEncounterAsync())
+                        { CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } || openLoot ? captured : null };
+                        if ((captured is { Phase: WorldEncounterPhases.PendingBattle } || openLoot) && await flow.StartEncounterAsync())
                         {
                             await PushModalAsync(CreateTacticalBattleView(flow), () => ReferenceEquals(_session, battleSession));
                             break;
@@ -2181,8 +2182,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             {
                 using var recoveryTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                 while (newSession.DemoCampaign is null) await Task.Delay(10, recoveryTimeout.Token);
-                if (newSession.DemoCampaign.WorldEncounter is not { Phase: WorldEncounterPhases.PendingBattle } encounter)
-                    throw new IOException("Recovered battle has no pending encounter.");
+                var encounter = newSession.DemoCampaign.WorldEncounter;
+                bool frozenLoot = newSession.DemoCampaign.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == recovered.BattleId;
+                if (encounter is null || encounter.Phase != WorldEncounterPhases.PendingBattle && !frozenLoot)
+                    throw new IOException("Recovered battle has no pending encounter or frozen loot.");
                 recoveredEncounter = new(newSession) { CampaignEncounter = encounter };
                 if (!recoveredEncounter.AdoptRecoveredEncounter(recovered)) throw new IOException("Recovered battle identity mismatch.");
             }

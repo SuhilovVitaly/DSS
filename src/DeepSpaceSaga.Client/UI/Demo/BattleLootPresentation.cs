@@ -37,6 +37,7 @@ public sealed class BattleLootPresentation(Func<DemoCampaignCommand, Task<DemoCa
             return true;
         }
     }
+    public void ClearSelection() { lock (_gate) _selected = null; }
 
     public Task<bool> CollectAsync(string itemId, long quantity) => SubmitAsync((id, revision, battle, source) =>
         new CollectLootConsumablesCommand(id, revision, battle, source, itemId, quantity));

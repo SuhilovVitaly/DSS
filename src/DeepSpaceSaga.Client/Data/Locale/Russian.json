@@ -1175,6 +1175,7 @@
   "Demo.Encounter.stale_revision": "Ситуация изменилась. Повторите действие.",
   "Demo.Encounter.Unavailable": "Соединение или сохранение недоступно. Повторите попытку, чтобы продолжить.",
   "loot.title": "Добыча после боя",
+  "loot.number_culture": "ru-RU",
   "loot.select_source": "Выберите дрон или врек на карте.",
   "loot.empty": "Здесь больше нечего забирать.",
   "loot.collect": "Забрать",

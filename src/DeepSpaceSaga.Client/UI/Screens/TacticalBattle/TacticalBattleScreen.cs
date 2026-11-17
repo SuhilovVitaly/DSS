@@ -198,6 +198,18 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
+        if (ObserveLoot())
+        {
+            if (BlockWorldKey(key, modifiers) || repeat || Flow.Pending) return ScreenEvent.None;
+            if (key == Key.Escape)
+            {
+                if (_lootWindow!.ConfirmDiscard) { _lootWindow.CancelExit(); return ScreenEvent.None; }
+                return RequestLootExit();
+            }
+            if (key is Key.Enter or Key.KeypadEnter && _lootWindow!.ConfirmDiscard && !_lootWindow.Presentation.Pending)
+            { Flow.ConfirmLootDiscard = true; return ScreenEvent.CloseTacticalBattle; }
+            return ScreenEvent.None;
+        }
         if (_skin.Metric("ui.pilot-column", "slim", 0) == 1 && key == Key.Space && modifiers == KeyModifiers.None && !repeat &&
             !ConfirmExit && !TurnBusy && SalvoInFlight)
         {
@@ -333,6 +345,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        if (ObserveLoot()) return LootClick(DesignPoint(x, y), button);
         if (ConfirmExit) return base.OnMouseDown(x, y, button);
         var p = DesignPoint(x, y);
         if (Tutorial?.OnMouseDown(p, button) == true) return ScreenEvent.None;
@@ -389,6 +402,11 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         var p = DesignPoint(x, y);
+        if (ObserveLoot())
+        {
+            if (!_lootWindow!.Scroll(p, delta) && !_lootWindow.ConfirmDiscard) _camera.Zoom(p.X, p.Y, delta);
+            return ScreenEvent.None;
+        }
         if (!ConfirmExit && Tutorial?.OnMouseWheel(p, delta) == true) return ScreenEvent.None;
         if (!ConfirmExit && _logTab.OnMouseWheel(p.X, p.Y, delta)) return ScreenEvent.None;
         if (!ConfirmExit && !TurnBusy && !HasSalvoPresentation && _pilotColumn.ScrollTargets(SelectedPlanningDrone, p, delta))

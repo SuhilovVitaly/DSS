@@ -34,6 +34,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public bool IsTutorial { get; init; }
     public WorldEncounterSnapshot? CampaignEncounter { get; init; }
     public bool IsCampaign => CampaignEncounter is not null;
+    internal bool ConfirmLootDiscard { get; set; }
     internal bool AdoptRecoveredEncounter(TacticalBattleSnapshot state)
     {
         if (CampaignEncounter?.Binding.BattleId != state.BattleId) return false;
@@ -108,6 +109,19 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {
+        if (Session.DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == State?.BattleId)
+        {
+            if (Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;
+            try
+            {
+                var response = await Session.ExecuteDemoCampaignAsync(new FinishBattleLootCommand(NewIdentity("loot-finish"),
+                    Session.DemoCampaign.Revision, loot.BattleId, ConfirmLootDiscard));
+                if (response.Applied) return Forget();
+                Volatile.Write(ref _error, Localization.Get("loot." + response.Reason));
+                return false;
+            }
+            finally { Volatile.Write(ref _pending, 0); }
+        }
         if (IsCampaign && !CheckpointPending && State?.Phase != TacticalBattlePhase.Over) return false;
         // A mapped Unavailable after the engine committed means the engine no longer has a battle
         // but the continuation checkpoint was not written. Retry only that pending BattleId: the

@@ -1175,6 +1175,7 @@
   "Demo.Encounter.stale_revision": "The situation changed. Try again.",
   "Demo.Encounter.Unavailable": "The connection or saved checkpoint is unavailable. Retry to continue.",
   "loot.title": "Battle loot",
+  "loot.number_culture": "en-US",
   "loot.select_source": "Select a drone or wreck on the map.",
   "loot.empty": "Nothing remains to collect.",
   "loot.collect": "Collect",
