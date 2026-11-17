@@ -905,7 +905,7 @@
   "Demo.Jobs.OfferPassengers": "{0} пасс. до {1}",
   "Demo.Jobs.OfferCargo": "{0} т груза до {1}",
   "Demo.Jobs.OfferTerms": "{0} токенов · срок {1} после принятия · заказ снимут {2}",
-  "Demo.Jobs.OfferPayout": "Оплата: ({0} база + {1} за груз + {2} за {3} км) × срочность {4} × риск {5}",
+  "Demo.Jobs.OfferPayout": "Оплата: ({0} база + {1} за загрузку + {2} за {3} км) × срочность {4} × риск {5}",
   "Demo.Jobs.ObligationLine": "{0}: {1} до {2} · {3} токенов · срок {4} · {5}",
   "Demo.Jobs.Duration": "{0} ч {1} мин",
   "Demo.Jobs.Time": "день {0}, {1}:{2}",

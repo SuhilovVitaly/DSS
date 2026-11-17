@@ -1,14 +1,17 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Demo;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.Contracts;
 
 /// <summary>
-/// Contracts overlay (DB/Documentation/02-FirstRelease/Screens/Contracts.md). Placeholder shell only —
-/// passenger contracts are not implemented yet, so the panel just shows a single "not
-/// available yet" line instead of live contract data. Split out of the original `Hire`
+/// Contracts overlay (DB/Documentation/02-FirstRelease/Screens/Contracts.md). EP-0034 US-0006: shows the
+/// authoritative station job board of the docked station and the single obligations journal (also in flight,
+/// opened from the map). Acceptance is sent as a typed campaign command through the session; the screen only
+/// displays engine terms, verdicts and responses and never resubmits on reopen. Split out of the original `Hire`
 /// screen (which now covers crew hiring specifically — DB/Documentation/02-FirstRelease/Screens/Hire.md)
 /// so passenger contracts have their own screen. Opened from
 /// <see cref="Station.StationScreen"/>'s `CONTRACTS` button (ScreenEvent.OpenContracts) as
@@ -66,12 +69,91 @@ public sealed class ContractsScreen : IScreen
         _fuelHoverStartedAtMs is { } startedAtMs
         && Environment.TickCount64 - startedAtMs >= MenuStyle.TooltipHoverDelaySeconds * 1000;
 
-    private const string PlaceholderLine = "Contracts: not available yet";
+    // EP-0034 US-0006 job board: typed transport, the in-flight acceptance and its confirmed result.
+    private readonly Func<DemoCampaignSnapshot?>? _campaign;
+    private readonly Func<DemoCampaignCommand, ValueTask<DemoCampaignResponse>>? _execute;
+    private readonly object _jobsGate = new();
+    private readonly List<(SKRect Rect, string OfferId)> _acceptButtons = [];
+    private string? _pendingCommandId;
+    private string? _jobsFeedback;
+    private bool _jobsFeedbackIsError;
+    private int _hoveredAcceptIndex = -1;
 
-    public ContractsScreen(SnapshotBuffer? buffer = null)
+    private const float JobsLeftMargin = 40f;
+    private const float JobsColumnWidth = 960f;
+    private const float JobsRowHeight = 96f;
+    private const float AcceptButtonWidth = 150f;
+    private const float JournalLeft = 1040f;
+    private static readonly SKPaint JobsHeadingPaint = new() { Typeface = MenuStyle.TextButton.Typeface, TextSize = 18f, Color = TabletopStyle.Ink, IsAntialias = true };
+    private static readonly SKPaint JobsTextPaint = new() { Typeface = MenuStyle.TextStatus.Typeface, TextSize = 14f, Color = TabletopStyle.Ink, IsAntialias = true };
+    private static readonly SKPaint JobsDimPaint = new() { Typeface = MenuStyle.TextStatus.Typeface, TextSize = 13f, Color = TabletopStyle.Secondary, IsAntialias = true };
+    private static readonly SKPaint JobsWarnPaint = new() { Typeface = MenuStyle.TextStatus.Typeface, TextSize = 13f, Color = TabletopStyle.Danger, IsAntialias = true };
+    private static readonly SKPaint JobsOkPaint = new() { Typeface = MenuStyle.TextStatus.Typeface, TextSize = 14f, Color = TabletopStyle.Success, IsAntialias = true };
+    private static readonly SKPaint JobsButtonPaint = new() { Typeface = MenuStyle.TextButton.Typeface, TextSize = MenuStyle.ButtonFontSize, Color = TabletopStyle.Ink, IsAntialias = true };
+
+    public ContractsScreen(SnapshotBuffer? buffer = null, Func<DemoCampaignSnapshot?>? campaign = null,
+        Func<DemoCampaignCommand, ValueTask<DemoCampaignResponse>>? execute = null)
     {
         _buffer = buffer;
+        _campaign = campaign;
+        _execute = execute;
     }
+
+    /// <summary>Test seam — the board/journal exactly as drawn from the latest authoritative campaign snapshot.</summary>
+    internal StationJobsView JobsView =>
+        StationJobsPresentation.Build((_campaign?.Invoke() ?? _buffer?.Latest?.Snapshot.DemoCampaign)?.Transport?.StationJobs, StationName);
+
+    /// <summary>Test seam — pending/confirmed/rejected line of the last acceptance on this screen.</summary>
+    internal string? JobsFeedback { get { lock (_jobsGate) return _jobsFeedback; } }
+
+    internal bool IsAcceptPending { get { lock (_jobsGate) return _pendingCommandId is not null; } }
+
+    internal IReadOnlyList<(SKRect Rect, string OfferId)> AcceptButtons => _acceptButtons;
+
+    /// <summary>
+    /// Send one acceptance for an offer the engine marked acceptable. A second click while a command is in flight,
+    /// or a click on an offer with an engine blocker, sends nothing and only shows the reason.
+    /// </summary>
+    internal Task? TryAcceptOffer(string offerId)
+    {
+        var campaign = _campaign?.Invoke() ?? _buffer?.Latest?.Snapshot.DemoCampaign;
+        string? blocker = _execute is null || campaign is null
+            ? DemoCampaignReasons.Unavailable
+            : StationJobReasons.AcceptBlocker(campaign.Transport?.StationJobs, offerId);
+        AcceptJobOfferCommand command;
+        lock (_jobsGate)
+        {
+            if (_pendingCommandId is not null) return null;
+            if (blocker is not null)
+            {
+                _jobsFeedback = StationJobsPresentation.Reason(blocker);
+                _jobsFeedbackIsError = true;
+                return null;
+            }
+            command = new AcceptJobOfferCommand("jobs-accept-" + Guid.NewGuid().ToString("N"), campaign!.Revision, offerId);
+            _pendingCommandId = command.CommandId;
+            _jobsFeedback = StationJobsPresentation.Pending;
+            _jobsFeedbackIsError = false;
+        }
+        return CompleteAcceptAsync(command);
+    }
+
+    private async Task CompleteAcceptAsync(AcceptJobOfferCommand command)
+    {
+        DemoCampaignResponse response;
+        try { response = await _execute!(command).ConfigureAwait(false); }
+        catch (Exception) { response = new(command.CommandId, false, DemoCampaignReasons.Unavailable, command.ExpectedRevision); }
+        lock (_jobsGate)
+        {
+            if (_pendingCommandId != command.CommandId) return;
+            _pendingCommandId = null;
+            _jobsFeedbackIsError = !response.Applied;
+            _jobsFeedback = response.Applied ? StationJobsPresentation.Accepted : StationJobsPresentation.Reason(response.Reason);
+        }
+    }
+
+    private string StationName(string stationId) =>
+        _buffer?.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == stationId)?.DisplayName is { Length: > 0 } name ? name : stationId;
 
     public void OnActivated()
     {
@@ -81,6 +163,7 @@ public sealed class ContractsScreen : IScreen
         _crewHoverStartedAtMs = null;
         _tokensHoverStartedAtMs = null;
         _fuelHoverStartedAtMs = null;
+        _hoveredAcceptIndex = -1;
     }
 
     public void OnDeactivated() { }
@@ -99,6 +182,13 @@ public sealed class ContractsScreen : IScreen
         if (IsStationNameHit(x, y))
             return ScreenEvent.NavigateToStation;
 
+        foreach (var (rect, offerId) in _acceptButtons)
+            if (rect.Contains(x, y))
+            {
+                _ = TryAcceptOffer(offerId);
+                return ScreenEvent.None;
+            }
+
         // Click on the dimmed background outside the panel also closes it.
         if (!ContractsLayout.IsInsidePanel(x, y, _screenWidth, _screenHeight))
             return ScreenEvent.CloseContracts;
@@ -113,6 +203,7 @@ public sealed class ContractsScreen : IScreen
     {
         _isStationNameHovered = IsStationNameHit(x, y);
         _isExitButtonHovered = IsExitButtonHit(x, y);
+        _hoveredAcceptIndex = _acceptButtons.FindIndex(b => b.Rect.Contains(x, y));
 
         // Not a button — hovering it only shows a delayed tooltip (see Render), so it must
         // not affect the interactive-cursor swap the way the name link / exit button do.
@@ -136,7 +227,7 @@ public sealed class ContractsScreen : IScreen
         else
             _fuelHoverStartedAtMs = null;
 
-        return _isStationNameHovered || _isExitButtonHovered;
+        return _isStationNameHovered || _isExitButtonHovered || _hoveredAcceptIndex >= 0;
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
@@ -162,12 +253,7 @@ public sealed class ContractsScreen : IScreen
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
             fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs, missingRations: snapshot?.MissingRations ?? 0);
 
-        float center = pl + ContractsLayout.PanelWidth / 2f;
-        float top = pt + ContractsLayout.BodyStartY - 24;
-        var emptyState = new SKRect(center - 270, top, center + 270, top + 38);
-        TabletopStyle.Field(canvas, emptyState);
-        emptyState.Inflate(-10, 0);
-        TabletopStyle.Label(canvas, emptyState, PlaceholderLine, MenuStyle.TextStatus);
+        DrawJobs(canvas, pl, pt);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
@@ -176,6 +262,81 @@ public sealed class ContractsScreen : IScreen
             isCrewHovered: IsCrewTooltipVisible,
             isTokensHovered: IsTokensTooltipVisible,
             isFuelHovered: IsFuelTooltipVisible);
+    }
+
+    /// <summary>Board of the docked station on the left, the journal on the right, the last result at the bottom.</summary>
+    private void DrawJobs(SKCanvas canvas, float pl, float pt)
+    {
+        var view = JobsView;
+        _acceptButtons.Clear();
+        float left = pl + JobsLeftMargin;
+        float y = pt + ContractsLayout.BodyStartY;
+
+        Text(canvas, view.Title, left, y, JobsColumnWidth, JobsHeadingPaint);
+        y += 30;
+        if (view.Notice is { } notice)
+        {
+            Text(canvas, notice, left, y, JobsColumnWidth, JobsDimPaint);
+            y += 26;
+        }
+        if (view.BoardEmpty is { } empty)
+            Text(canvas, empty, left, y, JobsColumnWidth, JobsDimPaint);
+
+        bool pending = IsAcceptPending;
+        foreach (var row in view.Offers)
+        {
+            var card = new SKRect(left, y, left + JobsColumnWidth, y + JobsRowHeight - 8);
+            TabletopStyle.Field(canvas, card);
+            float textWidth = JobsColumnWidth - AcceptButtonWidth - 36;
+            Text(canvas, row.Headline, card.Left + 12, card.Top + 6, textWidth, JobsTextPaint);
+            Text(canvas, row.Terms, card.Left + 12, card.Top + 26, textWidth, JobsDimPaint);
+            Text(canvas, row.Payout, card.Left + 12, card.Top + 46, textWidth, JobsDimPaint);
+            if (row.Blocker is { } blocker)
+                Text(canvas, blocker, card.Left + 12, card.Top + 66, textWidth, JobsWarnPaint);
+
+            var button = new SKRect(card.Right - AcceptButtonWidth - 12, card.MidY - 18, card.Right - 12, card.MidY + 18);
+            int index = _acceptButtons.Count;
+            _acceptButtons.Add((button, row.OfferId));
+            var state = !row.CanAccept || pending ? ButtonState.Disabled
+                : index == _hoveredAcceptIndex ? ButtonState.Hovered : ButtonState.Normal;
+            TabletopStyle.Button(canvas, button, state, primary: row.CanAccept);
+            var label = JobsButtonPaint;
+            label.Color = TabletopStyle.ButtonInk(state, primary: row.CanAccept);
+            TabletopStyle.Label(canvas, button, StationJobsPresentation.AcceptLabel, label);
+            y += JobsRowHeight;
+        }
+
+        float journalLeft = pl + JournalLeft;
+        float journalWidth = ContractsLayout.PanelWidth - JournalLeft - JobsLeftMargin;
+        float jy = pt + ContractsLayout.BodyStartY;
+        Text(canvas, view.JournalTitle, journalLeft, jy, journalWidth, JobsHeadingPaint);
+        jy += 30;
+        if (view.JournalEmpty is { } none)
+            Text(canvas, none, journalLeft, jy, journalWidth, JobsDimPaint);
+        float journalBottom = pt + ContractsLayout.PanelHeight - 60;
+        foreach (string line in view.Journal)
+        {
+            if (jy + ContractsLayout.BodyLineHeight > journalBottom) break;
+            foreach (string wrapped in ControlText.Wrap(ControlText.SafeSymbols(line), journalWidth, JobsTextPaint).Take(2))
+            {
+                Text(canvas, wrapped, journalLeft, jy, journalWidth, JobsTextPaint);
+                jy += 20;
+            }
+            jy += 8;
+        }
+
+        string? feedback;
+        bool error;
+        lock (_jobsGate) { feedback = _jobsFeedback; error = _jobsFeedbackIsError; }
+        if (feedback is not null)
+            Text(canvas, feedback, left, pt + ContractsLayout.PanelHeight - 44, ContractsLayout.PanelWidth - 2 * JobsLeftMargin,
+                error ? JobsWarnPaint : JobsOkPaint);
+    }
+
+    private static void Text(SKCanvas canvas, string text, float x, float y, float width, SKPaint paint)
+    {
+        var rect = new SKRect(x, y, x + width, y + paint.TextSize + 6);
+        ControlVisuals.DrawLabel(canvas, ControlText.Ellipsize(ControlText.SafeSymbols(text), width, paint), rect, paint);
     }
 
     /// <summary>True when (x, y) lands on the toolbar's station-name link (see StationToolbar).</summary>
