@@ -6,6 +6,8 @@ namespace DeepSpaceSaga.Client.Tests.Demo;
 public sealed class DemoEp0033Us0003Tk0004Tests
 {
     [Fact]
+    public void UncrewedDroneIsNotPresentedAsReady() => Assert.NotEqual("ready", ShipWingPanel.DroneStateLabel(false, false, true));
+    [Fact]
     public async Task PurchaseUsesExplicitSlotAndPendingBarrier()
     {
         var wait = new TaskCompletionSource<DemoCampaignResponse>();

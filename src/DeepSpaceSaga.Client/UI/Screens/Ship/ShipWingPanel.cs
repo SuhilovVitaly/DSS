@@ -6,8 +6,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.Ship;
 public static class ShipWingPanel
 {
     /// <summary>Stable state label; a destroyed drone is never presented as ready, and a disabled drone is not ready either.</summary>
-    public static string DroneStateLabel(bool destroyed, bool disabled = false) =>
-        destroyed ? "destroyed" : disabled ? "disabled" : "ready";
+    public static string DroneStateLabel(bool destroyed, bool disabled = false, bool uncrewed = false) =>
+        destroyed ? "destroyed" : disabled ? "disabled" : uncrewed ? Localization.Get("Demo.Recruitment.NoPilot") : "ready";
 
     public static string DroneAmmoText(int current, int capacity) => $"{current}/{capacity}";
 
@@ -18,6 +18,7 @@ public static class ShipWingPanel
             return "ready";
         if (drone.ReadinessReasons.Contains("destroyed"))
             return "destroyed";
+        if (drone.ReadinessReasons.Contains("no_pilot")) return Localization.Get("Demo.Recruitment.NoPilot");
         return "disabled";
     }
 

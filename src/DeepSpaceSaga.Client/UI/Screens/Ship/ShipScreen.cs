@@ -315,7 +315,7 @@ public sealed partial class ShipScreen : IScreen
                     canvas.DrawRect(rect, highlight);
                 }
                 string marker = i == _selectedRow ? "› " : "  ";
-                string state = ShipWingPanel.DroneStateLabel(drone.Destroyed, drone.Disabled);
+                string state = ShipWingPanel.DroneStateLabel(drone.Destroyed, drone.Disabled, drone.Uncrewed);
                 canvas.DrawText($"{marker}{drone.Id} — ammo {ShipWingPanel.DroneAmmoText(drone.AmmoCurrent, drone.AmmoCapacity)} ({state})",
                     rect.Left + 6, rect.Top + 19, MenuStyle.TextStatus);
             }
@@ -349,14 +349,15 @@ public sealed partial class ShipScreen : IScreen
 
     internal void RequestRepair(string target)
     {
-        if (_service is null || PendingService is { IsCompleted: false }) return;
+        if (_service is null || PendingService is { IsCompleted: false } || IsPending) return;
+        _supply = null;
         PendingService = SubmitService(new RepairQuoteRequest(_commandId(),
             Math.Max(_serviceRevision ?? 0, _campaign?.Invoke()?.Revision ?? 0), target));
     }
 
     internal void ConfirmRepair()
     {
-        if (_service is null || PendingService is { IsCompleted: false } || _repairState?.Quote is not { } quote) return;
+        if (_service is null || PendingService is { IsCompleted: false } || IsPending || _repairState?.Quote is not { } quote) return;
         PendingService = SubmitService(new RepairCommand(_commandId(), quote.Revision, quote.Id, quote.TargetId));
     }
 

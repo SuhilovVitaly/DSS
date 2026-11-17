@@ -213,7 +213,7 @@ public sealed partial class FinanceScreen : IScreen
         {
             using var servicePaint = new SKPaint { Color = MenuStyle.TextStatus.Color, TextSize = 16, IsAntialias = true };
             canvas.DrawText(Localization.Get(service.Kind switch { "decoy" => "Demo.Supply.Confirmed", "drone" or "equipment" => "Demo.Replacement.Tab", "hire" => "Demo.Recruitment.Title", _ => "Demo.Repair.Title" }), pl + 40, pt + 300, servicePaint);
-            canvas.DrawText(string.Format(Localization.Get("Demo.Repair.Confirmed"), service.Amount), pl + 40, pt + 325, servicePaint);
+            canvas.DrawText(string.Format(Localization.Get("Demo.Services.Paid"), service.Amount), pl + 40, pt + 325, servicePaint);
         }
         DrawUpkeep(canvas, pl, pt);
         DrawVoyageFinances(canvas, pl, pt);

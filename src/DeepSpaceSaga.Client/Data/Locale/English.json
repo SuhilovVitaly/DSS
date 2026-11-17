@@ -965,5 +965,7 @@
   "Demo.Upkeep.Next": "Next payroll in {0} h",
   "Demo.Upkeep.Pay": "Pay debt: {0} cr",
   "Demo.Upkeep.Confirmed": "Debt payment completed",
-  "Demo.Upkeep.Help": "Debt does not prevent peaceful travel"
+  "Demo.Upkeep.Help": "Debt does not prevent peaceful travel",
+  "Demo.Services.Paid": "Paid {0} Tokens.",
+  "Demo.Repair.already_applied": "This command has already been applied."
 }

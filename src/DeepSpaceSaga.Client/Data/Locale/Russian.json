@@ -965,5 +965,7 @@
   "Demo.Upkeep.Next": "Следующее начисление через {0} ч",
   "Demo.Upkeep.Pay": "Погасить долг: {0} кр",
   "Demo.Upkeep.Confirmed": "Долг погашен на выбранную сумму",
-  "Demo.Upkeep.Help": "Долг не блокирует мирные рейсы"
+  "Demo.Upkeep.Help": "Долг не блокирует мирные рейсы",
+  "Demo.Services.Paid": "Оплачено {0} Tokens.",
+  "Demo.Repair.already_applied": "Эта команда уже выполнена."
 }

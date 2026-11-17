@@ -24,7 +24,7 @@ public sealed class ShipViewModel
     public CabinRow Cabins { get; private init; } = new(0, 0, 0, 0);
 
     public sealed record DroneRow(string Id, int AmmoCurrent, int AmmoCapacity, int CurrentHull, bool Destroyed,
-        bool Disabled = false);
+        bool Disabled = false, bool Uncrewed = false);
     public sealed record CrewRow(string Id, string DisplayName, CrewRole? Role);
     public sealed record CabinRow(int TotalCabins, int OccupiedCabins, int ReservedCabins, int FreeCabins);
 
@@ -47,7 +47,8 @@ public sealed class ShipViewModel
                 : carrier.OwnedDrones
                     .Select(d => new DroneRow(d.Id, d.AmmoCurrent, d.AmmoCapacity, d.CurrentHull,
                         !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("destroyed"),
-                        !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("disabled")))
+                        !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("disabled"),
+                        !d.ReadinessReasons.IsDefaultOrEmpty && d.ReadinessReasons.Contains("no_pilot")))
                     .ToImmutableArray(),
             Crew = carrier.Crew.IsDefaultOrEmpty
                 ? ImmutableArray<CrewRow>.Empty
