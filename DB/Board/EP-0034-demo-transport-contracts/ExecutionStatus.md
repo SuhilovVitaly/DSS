@@ -37,7 +37,7 @@ EP-0033-US-0005-crew-upkeep depends on EP-0034-US-0002; nothing in EP-0034 depen
 | EP-0034-US-0001-TK-0004-client | `406522f3` | implemented, story tests PASS |
 | EP-0034-US-0006-TK-0001-contracts | `759692d7` | implemented, story tests PASS |
 | EP-0034-US-0006-TK-0002-content | `81e358c1` | implemented, story tests PASS |
-| EP-0034-US-0006-TK-0003-engine | `7aec0af0`, `4c1e3689` | implemented, story tests PASS |
+| EP-0034-US-0006-TK-0003-engine | `7aec0af0`, `4c1e3689`, `e65bd5df` (test paths) | implemented, story tests PASS |
 | EP-0034-US-0006-TK-0005-localized-feedback | `559ce508` | implemented, story tests PASS |
 | EP-0034-US-0006-TK-0004-client | `ec009bf5` | implemented, story tests PASS |
 | EP-0034-US-0002-TK-0001-contracts | `7533bdd1` | implemented, story tests PASS |
@@ -54,6 +54,9 @@ EP-0033-US-0005-crew-upkeep depends on EP-0034-US-0002; nothing in EP-0034 depen
 | EP-0034-US-0004-TK-0003-client | `1bdf2bb2` | implemented, story tests PASS |
 | EP-0034-US-0005-TK-0001-transport-roundtrip | `7cb9ac48` | implemented, story tests PASS |
 | EP-0034-US-0005-TK-0002-transport-flow | `02646620` | implemented, story tests PASS |
+| EP-0034-US-0006-TK-0006-feasible-deadlines | `1396e7c3` | implemented, focused + story-area regressions run (defect found in US-0005) |
+| EP-0034-US-0007-TK-0001-current-contracts | `58f13691` | implemented, documentation checks (links, `git diff --check`) |
+| EP-0034-US-0007-TK-0002-board-status | commit with this ticket ID (SHA via `git log`) | implemented, Board/link/ID checks, graph rebuilt |
 
 US-0001 evidence: [story validation](EP-0034-US-0001-passenger-ready-start/EP-0034-US-0001-passenger-ready-start.md#story-validation-2026-11-17). Native/product gates OPEN.
 Save format: no bump in US-0001 (passenger capacity is derived, not persisted); A-P2 not triggered yet.
@@ -90,3 +93,32 @@ Behaviour changes for EP-0033 and later stories: a passenger payout (`DeliverPas
 Shared files touched by US-0005 (EP-0033 merge watch): `SimulationEngine.PassengerContracts.cs` (candidate in `DeliverPassengerContracts` gains the revision/sequence bump), `English.json`/`Russian.json` (values of `Finance.PassengerPayout` and `Finance.PassengerPenalty` only). `ContractsScreen.cs`, `FinanceScreen.cs`, `SkiaWindow.cs`, `DemoCampaignData.cs`, `SimulationEngine.CargoContracts.cs` unchanged. EP-0034-only new files: tests `DemoEp0034Us0005Tk0001Tests.cs` (Engine), `DemoEp0034Us0005Tk0002Tests.cs` (Client).
 Known baseline outside the US-0004 filters, confirmed pre-existing against `75c801cf` sources: Engine `ClusterSaveStateTests` ×18, `FullMapLocalLoadTests` ×2, `MapEnvironmentSaveTests` ×1 (`solarSystem: invalid distance scale`, `insufficient_voyage_fuel`); Client `Ep0029Us0012Tk0001Tests.CheckpointFailureKeepsRetryWithoutResettlement` (IOException creating the temp `Saves` directory).
 Known limitations kept: dialogue cargo grants (`AddCargoItem`) ignore the contract reservation — no demo content uses that effect; hold damage below the reservation keeps sealed cargo and the single payout (verified), no destruction rule (battle stories). Balance observation for EP-0041 playtest: the three-burn flight SPC-0005 → SPC-0002 takes ≈ 9 h of calendar time against a 2.5 h ordinary deadline (the reverse route ≈ 1.2 h); deadlines from the max-speed ETA ignore turn geometry.
+
+Defect fix EP-0034-US-0006-TK-0006-feasible-deadlines (2026-11-17, [card](EP-0034-US-0006-station-job-board/EP-0034-US-0006-TK-0006-feasible-deadlines/EP-0034-US-0006-TK-0006-feasible-deadlines.md)): the US-0005 balance observation above was a real AC-02 defect of US-0006 — deadlines from the max-speed ETA were infeasible for a real flight (SPC-0005 → SPC-0002: 541.7 min flight vs 150 min ordinary deadline; urgent also infeasible on SPC-0005 → SPC-0006 and SPC-0006 → SPC-0007). New rule: deadline = max(minimum, ceil((maneuverGameTimeMs + ceil(ETA × cruisePermille / 1000)) × type‰ / 1000)); `jobs.json` `deadlines`: ordinary 1300, urgent 1100, cargo 1300, minimum 1 h, `maneuverGameTimeMs` 32 400 000 (9 h), `cruisePermille` 3200 (both optional, absent = old formula, validated `>= 0` / `>= 1000`). A real three-burn flight on every publishable ordered pair now fits ordinary/cargo with ≥ 34% and urgent with ≥ 13.5% margin. Payouts unchanged; saved offers/obligations keep frozen deadlines on Load; no save-format or fingerprint change. Regressions equal the baseline above; the single extra Client failure `DemoEp0032Us0004Tk0004Tests.PublicProfileUsesDemoForTutorialAndHidesDevelopmentScenarios` reads the sibling checkout `D:/DeepSpaceSaga/DSS` (now on `codex/ep-0035-demo-pirate-encounters`) and does not touch changed files. Evidence: `D:/DeepSpaceSaga/artifacts/validation/EP-0034/tk0006-deadlines-20261117T155842/`.
+Shared files touched (EP-0033 merge watch): `Content/DemoCampaignDefinitions.cs` (two optional members of `DemoJobDeadlines` + one validation line), `Data/Demo/jobs.json` (`deadlines` values). EP-0034-only: `SimulationEngine.StationJobs.cs`, test `DemoEp0034Us0006Tk0006Tests.cs`.
+
+## US-0007 documentation and final epic status (2026-11-17)
+
+Implementation: 7/7 stories, 27/27 tickets implemented and published on `feature/ep-0034-demo-transport-contracts` (origin); the table above maps every ticket to its commits, including corrections `a6cbce6d` (US-0001-TK-0002), `ba14ef23` (US-0001-TK-0005), `4c1e3689` and `e65bd5df` (US-0006-TK-0003, tests only) and the added defect ticket US-0006-TK-0006 `1396e7c3`. Service commits without a ticket: `e89980b4` (branch preparation) and story-validation records `c7d39b24`, `1f3b1eb1`, `7d8c3bae`, `bfd50bc7`, `75c801cf`, `34825dce`. The SHA of the TK-0002 commit is checked with `git log` after it is created and is not written here in advance.
+
+US-0007 evidence: [TK-0001 card](EP-0034-US-0007-documentation/EP-0034-US-0007-TK-0001-current-contracts/EP-0034-US-0007-TK-0001-current-contracts.md#результат-исполнения-2026-11-17) (impact inventory: 62 existing `DB/Documentation` documents checked, 19 changed, 2 created, 43 unchanged; 13 Markdown files outside `DB` checked, none affected) and [TK-0002 card](EP-0034-US-0007-documentation/EP-0034-US-0007-TK-0002-board-status/EP-0034-US-0007-TK-0002-board-status.md#результат-исполнения-2026-11-17). Current contracts: [mechanics](../../Documentation/02-FirstRelease/Mechanics/DemoTransportContracts.md), [engineering](../../Documentation/04-Engineering/DemoTransportContracts.md), [Contracts screen](../../Documentation/02-FirstRelease/Screens/Contracts.md).
+
+Verification status:
+
+- Automated: story-scoped tests of every story PASS (commands and logs in the story validation sections and the TK-0006 card). Known pre-existing failures, identical on the base sources: Engine regression set 8, Client regression set 30 + 2 `SessionHandleBattleTests…Localized` (`TacticalBattle.Refusal.NoAmmo` missing in main too), `EconomyTimeContinuityTests` 7 + `ClusterVoyageIntegrationTests` 7, save/load Engine 21 + Client 1 (`Ep0029Us0012Tk0001Tests.CheckpointFailureKeepsRetryWithoutResettlement`).
+- Final full-suite run (`dotnet build`/`dotnet test DeepSpaceSaga.sln`): recorded by orchestrator; not part of this documentation story.
+- Native window, manual playtest and product acceptance: **NOT RUN / OPEN** (headless renders are not native checks). No independent review and no human approval of A-assumptions or balance are claimed.
+- Save format: Save22 writer unchanged; four optional schema-1 campaign sections; campaign fingerprint unchanged (A-P2 never triggered).
+
+Open limitations (documented in the [engineering contract](../../Documentation/04-Engineering/DemoTransportContracts.md#ограничения)):
+
+- dialogue cargo grants (`AddCargoItem`) ignore the contract hold reservation — not used by demo content;
+- hold damage below the reservation keeps sealed cargo (no destruction rule; battle epics);
+- deadlines ignore direction and turn radius: short reverse routes get a generous deadline, a max-speed pilot can miss it because of the turn — calibration in the EP-0041 playtest;
+- the Contracts screen has no scrolling: a long journal and sections are clipped at the panel bottom;
+- tick transitions of contracts bump `Revision`, so a command sent with the previous revision gets a localized `stale_revision` (retry with the current snapshot succeeds);
+- one snapshot interval spanning a deadline and a meal boundary consumes rations before expiry (bounded by the interval).
+
+Merge watch for EP-0033 (already merged to `origin/main` `0c06524b`; both branches changed these files since `83782f77`): code — `DemoCampaign.cs` (Contracts), `SimulationEngine.cs`, `SimulationEngine.DemoCampaign.cs`, `SimulationEngine.Carrier.cs`, `Scenario/DemoCampaignData.cs`, `Content/DemoCampaignDefinitions.cs`, `ShipScreen.cs`, `SkiaWindow.cs`, `English.json`, `Russian.json`; documentation — `EngineRequirements.md`, `FirstReleaseRequirements.md`, `CrewAndHabitation.md`, `Money.md`, `Finance.md`, `ScreenCatalog.md`, `Ship.md`, `Station.md`, `TabletopClient.md`, `DemoCampaign.md`, `SaveFormat.md`, `Documentation/README.md`; Board — `DB/Board/README.md`, `EP-0041…/TicketPlan.md`, `EP-0031…/DemoPlan.md`. Main describes Hire as implemented and Contracts as a shell; this branch describes Contracts as implemented and Hire as a shell — a merge must keep both results. EP-0033-US-0005 crew upkeep consumes the passenger API recorded in the US-0002 entry above; EP-0033 durable command hashes and EP-0034 tick revision bumps both touch `DemoCampaignData`.
+
+Graphify: see the TK-0002 card (offline rebuild with a fresh EP-0034 host-semantic fragment; the maintained extractor corpus does not include the EP-0034 Board folder because `tools/graphify/rebuild.py` was not changed by this documentation-only story).

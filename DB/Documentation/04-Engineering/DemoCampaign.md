@@ -7,7 +7,10 @@
 agricultural, far_trade. Геометрия использует существующий TradingMap generator;
 это не запуск полного SolarSystem generator. Seed, station IDs и роли проверяются
 по [cluster.json](../../../src/DeepSpaceSaga.Client/Data/Demo/cluster.json).
-Стартовое имущество берётся из [demo-starter-carrier manifest](../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json) только на New Game.
+Стартовое имущество берётся только на New Game из демо-manifest
+[demo-starter-carrier.json](../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json):
+общий starter-carrier с дополнительным жилым модулем для четырёх пассажирских
+кают ([перевозки](DemoTransportContracts.md)); другие сценарии используют общий manifest.
 Обучение использует собственные дроны, пилотов и боезапас этого носителя.
 
 ## Последствия вылета
@@ -32,7 +35,7 @@ immutable command identity, expected revision, response и snapshot. Engine
 сохраняет окно из 1024 последних payload hash и ответов: повтор идентичной команды в окне возвращает прежний
 ответ, другая нагрузка с тем же ID отвергается. Для применённых команд, кроме запросов котировок, сохраняется долговечный hash: вне окна тот же payload получает `already_applied`, изменённый — `identity_conflict`. Исходный ответ вне окна не гарантируется; повторных side effects нет. Неподдерживаемые команды не
 выполняют gameplay. Company/Start проецируют подтверждённый мир. Transport содержит
-станционные предложения, пассажирские и грузовые обязательства, доставку и отказы.
+каюты, [станционные предложения](DemoTransportContracts.md), пассажирские и грузовые обязательства, доставку и отказы.
 Encounters содержит [пиратские встречи](../02-FirstRelease/Mechanics/DemoEncounters.md),
 наблюдения, доклады и связь с боем; ThreatRoutes — варианты рейса. Rewards,
 progression и story остаются поверхностями расширения.

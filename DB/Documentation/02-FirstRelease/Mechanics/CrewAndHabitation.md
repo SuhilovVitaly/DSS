@@ -8,7 +8,17 @@
 
 Зарплата фиксируется при найме и начисляется на календарной границе суток. Доступные Tokens погашают начисления, остаток становится долгом; Finance позволяет погасить выбранную сумму. Рационы потребляются существующим календарным механизмом для crew и реальных пассажиров. [Подробный контракт](../../04-Engineering/CompanyServices.md).
 
-[Пассажирские Contracts](../Screens/Contracts.md) создают настоящих пассажиров
-при подтверждённом принятии предложения с достаточной вместимостью. Engine
-сохраняет условия, срок и однократную выплату/отказ. Развитие пилотов и расширенная
-коммуникация имеют отдельных владельцев в Board.
+Люди размещаются в исправных Living quarters по cabin capacity. Демо-носитель
+стартует с дополнительным жилым модулем: шесть членов экипажа, два резервных
+места и четыре свободные каюты. Engine на каждом snapshot делит каюты на экипаж,
+пассажиров, резерв и свободные и сообщает причину, если новых людей нельзя
+принять: нет свободных кают, каюты переполнены (повреждённые модули) или пайков
+не хватает на сутки всем на борту и каждой свободной каюте. Ship показывает это
+разбиение. Пассажирский контракт принимается только при свободной каюте и
+сразу сажает реальных пассажиров, которые занимают каюты и потребляют пайки
+наравне с экипажем; условия, выплата и размещение сохраняются. Правила —
+[перевозки](DemoTransportContracts.md).
+
+Источники: [modules-livingquarters.json](../../../../src/DeepSpaceSaga.Client/Data/Modules/LivingQuarters/modules-livingquarters.json), [demo-starter-carrier.json](../../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json), [SimulationEngine.PassengerCapacity.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.PassengerCapacity.cs), [HireScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Hire/HireScreen.cs), [ContractsScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Contracts/ContractsScreen.cs).
+
+Развитие пилотов и расширенная коммуникация имеют отдельных владельцев в Board.

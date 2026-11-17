@@ -113,17 +113,14 @@ public sealed partial class SimulationEngine
         var risk = jobs.Risk.First(r => r.RiskProfileId == edge.RiskProfileId);
         // Distances inside a rigid cluster group are constant; whole kilometres freeze them for the offer's lifetime.
         long routeKm = Math.Max(1, (long)Math.Round(edge.DistanceKm, MidpointRounding.AwayFromZero));
-        long etaMs = Math.Max(1, (long)Math.Ceiling(routeKm / speedKmS * 300 * 1000));
 
         int count;
         long massKg = 0, loadTokens;
         string? itemTypeId = null;
-        int deadlinePermille;
         if (StationJobTypes.CarriesPassengers(type))
         {
             count = fixedPassengers > 0 ? fixedPassengers : random.Next(1, maxPassengers + 1);
             loadTokens = checked(jobs.Rates.PerPassenger * count);
-            deadlinePermille = type == StationJobTypes.UrgentPassenger ? jobs.Deadlines.UrgentPermille : jobs.Deadlines.OrdinaryPermille;
         }
         else
         {
@@ -134,16 +131,50 @@ public sealed partial class SimulationEngine
             massKg = checked(units * unitMassKg);
             count = (int)Math.Min(int.MaxValue, units);
             loadTokens = checked(jobs.Rates.PerCargoTonne * tonnes);
-            deadlinePermille = jobs.Deadlines.CargoPermille;
         }
 
         int urgency = type == StationJobTypes.UrgentPassenger ? jobs.Rates.UrgencyPermille : 1000;
         var terms = new JobPayoutTerms(jobs.Rates.Base, loadTokens, checked(jobs.Rates.PerDistanceKm * routeKm), urgency, risk.Permille);
-        long deadline = Math.Max(jobs.Deadlines.MinimumGameTimeMs, CeilDiv(checked(etaMs * deadlinePermille), 1000));
+        long deadline = StationJobDeadlineMs(jobs.Deadlines, type, routeKm, speedKmS);
         return new JobOffer(
             string.Create(CultureInfo.InvariantCulture, $"jobs:{stationId}:{bucket}:{slot}"), type, stationId, destination,
             count, massKg, StationJobPayout(terms), deadline, publishedAt,
             checked(publishedAt + jobs.Limits.ExpiryGameTimeMs), risk.Band, routeKm, terms, itemTypeId);
+    }
+
+    /// <summary>
+    /// Delivery deadline of an order on a route of <paramref name="routeKm"/> whole km (TK-0006). The calendar flight
+    /// estimate is the content maneuver allowance (undocking, acceleration, approach turn, speed/heading
+    /// synchronization, docking) plus the max-speed ETA scaled to the cruise speed of an ordinary pilot; the order type
+    /// then adds its margin: max(minimum, ceil((maneuver + ceil(ETA x cruise / 1000)) x type / 1000)).
+    /// </summary>
+    internal static long StationJobDeadlineMs(DemoJobDeadlines deadlines, string type, long routeKm, double speedKmS)
+    {
+        long etaMs = Math.Max(1, (long)Math.Ceiling(routeKm / speedKmS * 300 * 1000));
+        long flightMs = checked(deadlines.ManeuverGameTimeMs + CeilDiv(checked(etaMs * deadlines.CruisePermille), 1000));
+        int permille = type == StationJobTypes.UrgentPassenger ? deadlines.UrgentPermille
+            : StationJobTypes.CarriesPassengers(type) ? deadlines.OrdinaryPermille : deadlines.CargoPermille;
+        return Math.Max(deadlines.MinimumGameTimeMs, CeilDiv(checked(flightMs * permille), 1000));
+    }
+
+    /// <summary>
+    /// Tools/tests: the deadline the board would publish now for <paramref name="type"/> on the direct route
+    /// <paramref name="origin"/> - <paramref name="destination"/>; null without a board or a route.
+    /// </summary>
+    internal long? StationJobDeadlineForTools(string type, string origin, string destination)
+    {
+        lock (_worldStateLock)
+        {
+            if (!StationJobsEnabled) return null;
+            var map = CurrentVoyageMap();
+            var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+            var edge = map?.Edges.FirstOrDefault(e => (e.FromStationObjectId == origin && e.ToStationObjectId == destination) ||
+                (e.FromStationObjectId == destination && e.ToStationObjectId == origin));
+            if (map is null || ship is null || edge is null) return null;
+            double speedKmS = GetMaxSpeedKmS(ship) ?? map.Rules.ReferenceSpeedMps / 1000;
+            long routeKm = Math.Max(1, (long)Math.Round(edge.DistanceKm, MidpointRounding.AwayFromZero));
+            return StationJobDeadlineMs(_demoDefinitions.Jobs!.Deadlines, type, routeKm, speedKmS);
+        }
     }
 
     /// <summary>Payout = ceil((base + load + distance) x urgency x risk / 1 000 000) whole Tokens.</summary>

@@ -16,10 +16,12 @@
     "urgencyPermille": 1500
   },
   "deadlines": {
-    "ordinaryPermille": 12000,
-    "urgentPermille": 8000,
-    "cargoPermille": 12000,
-    "minimumGameTimeMs": 3600000
+    "ordinaryPermille": 1300,
+    "urgentPermille": 1100,
+    "cargoPermille": 1300,
+    "minimumGameTimeMs": 3600000,
+    "maneuverGameTimeMs": 32400000,
+    "cruisePermille": 3200
   },
   "penalties": {
     "cancelPermille": 250,

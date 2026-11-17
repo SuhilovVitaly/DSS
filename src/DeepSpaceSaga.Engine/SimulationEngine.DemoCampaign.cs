@@ -67,7 +67,7 @@ public sealed partial class SimulationEngine
             };
             if (applied && command is not (RepairQuoteRequest or DecoyQuoteRequest))
                 candidate = candidate with { CommittedCommandHashes = candidate.CommittedCommandHashes.Add(command.CommandId, hash) };
-            ValidateDemoCampaignSections(candidate);
+            ValidateDemoCampaignSections(candidate, Math.Max(_clock.GameTimeMs, candidate.LastTickGameTimeMs));
             if (applied) commit?.Invoke();
             _demoCampaign = candidate;
             return response;
