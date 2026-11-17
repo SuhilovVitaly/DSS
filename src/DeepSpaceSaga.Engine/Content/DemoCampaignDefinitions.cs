@@ -35,6 +35,13 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
     DemoServicesDefinition? Services = null, DemoJobsDefinition? Jobs = null,
     DemoEncountersDefinition? Encounters = null, DemoProgressionDefinition? Progression = null)
 {
+    // Save22 originally hashed the shipped cluster bytes. Accept either checkout EOL,
+    // only while the semantic cluster is still the original contract.
+    private bool IsInitialLegacyFingerprint(string saved) => Fingerprint == "ED0B0694F34B4DA03E78F3465938AFDB61F0BECEF1730E8F6F9A8622F240248B" &&
+        (saved == "DD3D6B26BC6E7EE55064EAE4735CED0335328C42F4886C442B9E91FF5A6899B3" || saved == "4D897CEA83F2EBF04BD11DC0AA5FEB9CF0049BDE58A5965ACB332DBA5F29FA8B");
+
+    public string? LegacyClusterFingerprint { get; init; }
+
     private static readonly JsonSerializerOptions Options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -52,7 +59,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                 string file = Path.Combine(contentRoot, "Data", "Demo", name + ".json");
                 if (!File.Exists(file)) return null;
                 byte[] bytes = File.ReadAllBytes(file);
-                fingerprint.Append(name).Append(':').Append(Convert.ToHexString(SHA256.HashData(bytes))).Append(';');
+                if (name == "cluster") fingerprint.Append(name).Append(':').Append(Convert.ToHexString(SHA256.HashData(bytes))).Append(';');
                 return JsonSerializer.Deserialize<T>(bytes, Options) ?? throw new ScenarioException($"Missing {name} definition.");
             }
             var cluster = Read<DemoClusterDefinition>("cluster");
@@ -68,8 +75,9 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
             var encounters = Read<DemoEncountersDefinition>("encounters");
             var progression = Read<DemoProgressionDefinition>("progression");
             var definitions = new DemoCampaignDefinitions(cluster,
-                fingerprint.Length == 0 ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint.ToString()))),
-                services, jobs, encounters, progression);
+                cluster is null ? null : Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(cluster, Options))),
+                services, jobs, encounters, progression)
+            { LegacyClusterFingerprint = fingerprint.Length == 0 ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint.ToString()))) };
             definitions.Validate();
             if (services?.Recruitment is { } recruitment && recruitment.Portraits.Any(p => !File.Exists(Path.Combine(contentRoot, p))))
                 throw new ScenarioException("Demo recruitment portrait does not exist.");
@@ -147,7 +155,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
         if (Cluster is null) throw new ScenarioException("Demo campaign requires Data/Demo/cluster.json.");
         if (scenario.GameState.MasterSeed != Cluster.Seed)
             throw new ScenarioException("Demo world seed does not match the frozen cluster.");
-        if (scenario.GameState.DemoCampaign?.CatalogFingerprint is { } saved && saved != Fingerprint)
+        if (scenario.GameState.DemoCampaign?.CatalogFingerprint is { } saved && saved != Fingerprint && saved != LegacyClusterFingerprint && !IsInitialLegacyFingerprint(saved))
             throw new ScenarioException("incompatible_demo_catalog: saved campaign was not modified.");
         var stations = scenario.GameState.SpaceObjects.Where(o => o.ObjectType == "Station")
             .Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
