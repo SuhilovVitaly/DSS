@@ -142,11 +142,32 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
         return await TacticalCall(() => _engine.StartTacticalBattle(request!), cancellationToken).ConfigureAwait(false);
     }
     public ValueTask<TacticalBattleResponse> MoveTacticalBattleAsync(MoveTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
-        TacticalCall(() => _engine.MoveTacticalBattle(request), cancellationToken);
+        TacticalLootCall(() => _engine.MoveTacticalBattle(request), cancellationToken);
     public ValueTask<TacticalBattleResponse> FireTacticalBattleAsync(FireTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
-        TacticalCall(() => _engine.FireTacticalBattle(request), cancellationToken);
+        TacticalLootCall(() => _engine.FireTacticalBattle(request), cancellationToken);
     public ValueTask<TacticalBattleResponse> DebugDestroyTacticalUnitAsync(DebugDestroyTacticalUnitRequest request, CancellationToken cancellationToken = default) =>
-        TacticalCall(() => _engine.DebugDestroyTacticalUnit(request), cancellationToken);
+        TacticalLootCall(() => _engine.DebugDestroyTacticalUnit(request), cancellationToken);
+
+    private string? _pendingLootCheckpoint;
+    private async ValueTask<TacticalBattleResponse> TacticalLootCall(Func<TacticalBattleResponse> action, CancellationToken token)
+    {
+        await _checkpointGate.WaitAsync(token).ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_pendingLootCheckpoint is { } pending) await WriteContinuationCheckpointAsync(pending, token).ConfigureAwait(false);
+            var response = action();
+            if (response.Accepted && response.Settlement is { } settlement &&
+                _engine.CaptureSnapshot().DemoCampaign?.Rewards?.Loot?.BattleId == settlement.BattleId)
+            {
+                _pendingLootCheckpoint = settlement.BattleId;
+                _engine.SetEncounterStoragePending(true);
+                await WriteContinuationCheckpointAsync(settlement.BattleId, token).ConfigureAwait(false);
+            }
+            return response;
+        }
+        finally { _checkpointGate.Release(); }
+    }
 
     /// <summary>
     /// Exit the active battle and own the campaign-continuation storage phase (EP-0029 US-0012).
@@ -169,6 +190,8 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
         await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_pendingLootCheckpoint is { } pending) await WriteContinuationCheckpointAsync(pending, cancellationToken).ConfigureAwait(false);
             if (_settledExits.TryGetValue(request.BattleId, out var accepted))
             {
                 if (!_checkpointedBattles.Contains(request.BattleId))
@@ -209,6 +232,8 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
         if (string.IsNullOrWhiteSpace(_saveDirectory))
         {
             _checkpointedBattles.Add(battleId);
+            _pendingLootCheckpoint = null;
+            _pendingEncounterCheckpoint = null;
             _engine.SetEncounterStoragePending(false);
             return;
         }
@@ -217,6 +242,7 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
         {
             await SaveAsync(SaveSlotNaming.ContinuationSlotId, cancellationToken).ConfigureAwait(false);
             _checkpointedBattles.Add(battleId);
+            _pendingLootCheckpoint = null;
             _pendingEncounterCheckpoint = null;
             _engine.SetEncounterStoragePending(false);
         }
@@ -236,6 +262,24 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
+        if (command is ILootCampaignCommand loot)
+        {
+            await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                if (_pendingLootCheckpoint is { } pending) await WriteContinuationCheckpointAsync(pending, cancellationToken).ConfigureAwait(false);
+                var response = _engine.ExecuteDemoCampaign(command);
+                if (response.Applied)
+                {
+                    _pendingLootCheckpoint = loot.BattleId;
+                    _engine.SetEncounterStoragePending(true);
+                    await WriteContinuationCheckpointAsync(loot.BattleId, cancellationToken).ConfigureAwait(false);
+                }
+                return response;
+            }
+            finally { _checkpointGate.Release(); }
+        }
         if (command is BeginEncounterBattleCommand begin && !_engine.IsTacticalBattleActive)
         {
             await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -396,20 +440,20 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed)
-            return;
-
-        _disposed = true;
-
-        _cts.Cancel();
-
-        try { await _engineLoopTask.ConfigureAwait(false); }
-        finally
+        await _checkpointGate.WaitAsync().ConfigureAwait(false);
+        try
         {
-            await _saveGate.WaitAsync().ConfigureAwait(false);
-            try { _engine.Dispose(); _cts.Dispose(); }
-            finally { _saveGate.Release(); }
-            // Already queued saves must acquire the gate, observe disposal, and exit.
+            if (_disposed) return;
+            _disposed = true;
+            _cts.Cancel();
+            try { await _engineLoopTask.ConfigureAwait(false); }
+            finally
+            {
+                await _saveGate.WaitAsync().ConfigureAwait(false);
+                try { _engine.Dispose(); _cts.Dispose(); }
+                finally { _saveGate.Release(); }
+            }
         }
+        finally { _checkpointGate.Release(); }
     }
 }

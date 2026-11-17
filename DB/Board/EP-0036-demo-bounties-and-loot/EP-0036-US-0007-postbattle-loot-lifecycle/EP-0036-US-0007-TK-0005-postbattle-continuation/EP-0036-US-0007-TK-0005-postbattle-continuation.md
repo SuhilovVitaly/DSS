@@ -89,3 +89,11 @@ Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); 
 ## Self-containment check
 
 Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution scope correction
+
+Also update BattleLootPresentation.cs and TacticalBattleFlow.cs so a transport/storage failure retains the exact command identity for retry; otherwise a new UI identity could repeat an already-applied collect or leave a closed finish awaiting acknowledgement. This is the client half of the required no-double-grant checkpoint retry contract. Local connection disposal drains the checkpoint gate before disposing the engine.
+
+## Execution — 2026-11-17
+
+Victory-causing move/fire/debug actions and every successful loot action now write the current continuation before returning success. A pending failed write is retried under the checkpoint gate before another loot command; engine receipts retain exactly-once effects. UI retries preserve original identities; finish waits for durable acknowledgement. Disposal drains active checkpoint IO before engine disposal. Existing save gate already excludes prebattle replacement when WorldEncounter is Finished, so no autosave-file edit was necessary. Authored real file/failed-replace/autosave/load tests; Client (including LocalClient) build/scoped format/diff PASS, tests NOT RUN until US7 boundary. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us7-tk5-build.log.

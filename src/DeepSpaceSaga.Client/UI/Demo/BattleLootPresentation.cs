@@ -11,6 +11,7 @@ public sealed class BattleLootPresentation(Func<DemoCampaignCommand, Task<DemoCa
     private string? _observedBattleId;
     private long _revision;
     private int _pending;
+    private DemoCampaignCommand? _retryCommand;
     public bool Pending => Volatile.Read(ref _pending) != 0;
     public string? LastReason { get; private set; }
     public LootSessionSnapshot? State { get { lock (_gate) return _state; } }
@@ -21,6 +22,7 @@ public sealed class BattleLootPresentation(Func<DemoCampaignCommand, Task<DemoCa
         lock (_gate)
         {
             if (state?.BattleId == _observedBattleId && revision < _revision) return;
+            if (state?.BattleId != _observedBattleId) _retryCommand = null;
             if (state?.BattleId != _state?.BattleId || state?.Phase != LootPhases.Open) _selected = null;
             _observedBattleId = state?.BattleId;
             _state = state?.Phase == LootPhases.Open ? state : null;
@@ -54,13 +56,15 @@ public sealed class BattleLootPresentation(Func<DemoCampaignCommand, Task<DemoCa
             {
                 if (_state is null || needsSource && _selected is null) return false;
                 battle = _state.BattleId;
-                command = commandFactory("loot:" + Guid.NewGuid().ToString("N"), _revision, battle, _selected ?? "");
+                command = _retryCommand ?? commandFactory("loot:" + Guid.NewGuid().ToString("N"), _revision, battle, _selected ?? "");
+                _retryCommand = command;
             }
             var response = await execute(command);
             lock (_gate)
             {
                 if (_state?.BattleId != battle) return false;
-                LastReason = response.Reason;
+                if (response.Reason != DemoCampaignReasons.Unavailable) _retryCommand = null;
+                LastReason = response.Reason == DemoCampaignReasons.Unavailable ? "loot_unavailable" : response.Reason;
                 if (response.Rewards?.Loot is { } authoritative && authoritative.BattleId == battle)
                     Observe(authoritative, response.Revision);
                 else _revision = response.Revision;

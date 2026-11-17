@@ -35,6 +35,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public WorldEncounterSnapshot? CampaignEncounter { get; init; }
     public bool IsCampaign => CampaignEncounter is not null;
     internal bool ConfirmLootDiscard { get; set; }
+    private FinishBattleLootCommand? _pendingLootFinish;
     internal bool AdoptRecoveredEncounter(TacticalBattleSnapshot state)
     {
         if (CampaignEncounter?.Binding.BattleId != state.BattleId) return false;
@@ -109,15 +110,18 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {
-        if (Session.DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == State?.BattleId)
+        var loot = Session.DemoCampaign?.Rewards?.Loot;
+        if (_pendingLootFinish is not null || loot is { Phase: LootPhases.Open } && loot.BattleId == State?.BattleId)
         {
             if (Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;
             try
             {
-                var response = await Session.ExecuteDemoCampaignAsync(new FinishBattleLootCommand(NewIdentity("loot-finish"),
-                    Session.DemoCampaign.Revision, loot.BattleId, ConfirmLootDiscard));
+                _pendingLootFinish ??= new FinishBattleLootCommand(NewIdentity("loot-finish"),
+                    Session.DemoCampaign!.Revision, loot!.BattleId, ConfirmLootDiscard);
+                var response = await Session.ExecuteDemoCampaignAsync(_pendingLootFinish);
+                if (response.Reason != DemoCampaignReasons.Unavailable) _pendingLootFinish = null;
                 if (response.Applied) return Forget();
-                Volatile.Write(ref _error, Localization.Get("loot." + response.Reason));
+                Volatile.Write(ref _error, Localization.Get("loot." + (response.Reason == DemoCampaignReasons.Unavailable ? "loot_unavailable" : response.Reason)));
                 return false;
             }
             finally { Volatile.Write(ref _pending, 0); }
