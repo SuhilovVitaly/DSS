@@ -47,3 +47,12 @@ Evidence root: `D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-execution
 | US0007-TK0004 | 642e72baae5a2dbb07ff6b22f9b47c11b275afb6 | verified |
 
 US0007 boundary: filter FullyQualifiedName~DemoEp0035Us0007; Engine 18 PASS, Contracts 2 PASS, 0 failures/skips. Commands used Release/no-build/no-restore, explicit artifacts-path/results-directory and blame-hang-timeout 5m; actual processes finished in under 6 seconds. Logs sensor-engine-tests.log and sensor-contracts-tests.log under the evidence root. Full suite NOT RUN: remaining stories are incomplete. Operator modifiers and pirate-group integration are still required; these tests do not establish the complete encounter loop. Independent implementation review requested.
+
+## Current partial result
+The epic is NOT complete: 5 of 66 ticket implementations are published; 61 remain, and no complete pirate encounter loop is delivered. US0007's isolated sensor layer is verified, but cross-story operator/group acceptance is open. US0017 has only TK0001, so its tests remain deferred to its story boundary. Full Documentation/epic reading and full-epic review are not complete; dependency review must not be represented as either.
+
+Independent review of 0c06524b..642e72ba found no confirmed production defect and one coverage gap: direct ObserveSensorContact was untested. Follow-up 5d825019 adds the real object/time/pause/serialized-load test. Corrected US0007 boundary: 19 Engine PASS plus 2 Contracts PASS. Current log: D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-execution/sensor-reviewed-tests.log. No native window/game was launched.
+
+Remaining: US0001–0005, US0008–0016, US0017-TK0002, then US0006 documentation; dependency restructuring for early group/profile/member schema is required before US0001. EP34 prerequisite integration is still pending; it is not a blocker to all independent remaining work. Full suite, final Graphify rebuild, final review and owner acceptance are NOT RUN. No merge into main performed.
+
+Build intermediates and disposable TRX are removed after checks. Retained evidence: named build/format/test logs in the run directory. Source and Board changes are preserved in the published branch.
