@@ -35,6 +35,9 @@ public sealed record DemoCampaignData(
     [JsonPropertyName("receipts")]
     public ImmutableArray<DemoCampaignReceiptData> Receipts { get; init; } = [];
 
+    [JsonPropertyName("pirateCompositions")]
+    public ImmutableArray<PirateCompositionData> PirateCompositions { get; init; } = [];
+
     /// <summary>EP-0034 US-0006: published offers and the obligations journal; null until the first publication.</summary>
     [JsonPropertyName("stationJobs")]
     public StationJobsStateData? StationJobs { get; init; }
@@ -54,6 +57,15 @@ public sealed record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        if (data.PirateCompositions.IsDefault || data.PirateCompositions.Any(c => c is null ||
+            string.IsNullOrWhiteSpace(c.GroupId) || string.IsNullOrWhiteSpace(c.CarrierId) || c.GenerationVersion != 1 ||
+            c.SignatureTypeId is not (PirateSignatureTypes.Lair or PirateSignatureTypes.Tancred) || c.Drones.IsDefault ||
+            c.Drones.Length != (c.SignatureTypeId == PirateSignatureTypes.Lair ? 6 : 10) ||
+            c.Drones.Any(d => d is null || string.IsNullOrWhiteSpace(d.DroneId) ||
+                d.LayoutId is not ("light.sword.shield" or "light.spear" or "heavy.sword.shield" or "heavy.spear.shield"))) ||
+            data.PirateCompositions.Select(c => c.CarrierId).Distinct(StringComparer.Ordinal).Count() != data.PirateCompositions.Length ||
+            data.PirateCompositions.SelectMany(c => c.Drones).Select(d => d.DroneId).Distinct(StringComparer.Ordinal).Count() != data.PirateCompositions.Sum(c => c.Drones.Length))
+            throw new ScenarioException("Invalid saved pirate composition.");
         if (data.CommittedCommandHashes is null || data.CommittedCommandHashes.Any(p => string.IsNullOrWhiteSpace(p.Key) ||
             p.Value is not { Length: 64 } || !p.Value.All(Uri.IsHexDigit)))
             throw new ScenarioException("Invalid committed campaign identities.");
