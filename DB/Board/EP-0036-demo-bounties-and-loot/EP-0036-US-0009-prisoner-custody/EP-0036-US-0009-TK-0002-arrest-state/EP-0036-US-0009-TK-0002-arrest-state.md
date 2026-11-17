@@ -109,3 +109,9 @@ Owning build: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Scope correction
+Include SimulationEngine.CampaignRoundtrip.cs (actual company projection owner), SimulationEngine.BattleLoot.cs (derive capture state from prisoner ledger and namespace catalog pilot aliases by battle/drone), SimulationEngine.BattleLootLifecycle.cs (validate frozen pilot against outcome). This prevents duplicate capture flags and forged pilot identity on Load.
+
+## Execution
+Implemented atomic arrest with actual free cabins minus boarded people and unboarded commitments; no food prerequisite. Frozen pilot identity namespaced by battle/drone, prisoner provenance validated against retained victory. UI capture flag derives solely from custody ledger. Old absent custody remains empty; legacy reserved field default0. Engine/test-project build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk2-build.log); runtime tests deferred to complete US9 boundary.

@@ -39,7 +39,7 @@ public sealed partial class SimulationEngine
             }
             Add("ammo", "torpedo.t1", drone.AmmoCurrent);
             if (drone.Decoy is { } decoy) Add("decoy", decoy.Id, drone.DecoyCharges);
-            var pilot = new LootPilotSnapshot(drone.PilotId, drone.PilotName ?? drone.PilotId, drone.PilotPortraitAssetId,
+            var pilot = new LootPilotSnapshot(LootPilotIdentity(session.Id, drone.Id, drone.PilotId), drone.PilotName ?? drone.PilotId, drone.PilotPortraitAssetId,
                 true, null, Gender: drone.PilotGender ?? CrewGender.Female);
             sources.Add(new(drone.Id, "DisabledDrone", layoutId, drone.Pose.X, drone.Pose.Y, drone.Pose.Course,
                 pilot, consumables.ToImmutable(), null, InitializeLootModules(session.Id, drone, seed, ref draws, chance)));
@@ -149,10 +149,10 @@ public sealed partial class SimulationEngine
                 return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason);
             }).ToImmutableArray(),
             s.Scrap is { } scrap ? ProjectScrap(scrap, open) : null,
-            s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open)).ToImmutableArray(), s.Pilot, s.X, s.Y, s.Direction)).ToImmutableArray();
-        return new(loot.BattleId, loot.Phase, objects, open && loot.Sources.Any(s =>
+            s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open)).ToImmutableArray(), ProjectLootPilot(loot, s), s.X, s.Y, s.Direction)).ToImmutableArray();
+        return new(loot.BattleId, loot.Phase, objects, open && objects.Any(s =>
             s.Consumables.Any(c => c.Remaining > 0) || s.Scrap?.State == LootAttemptStates.NotAttempted ||
-            s.Modules.Any(m => !m.Destroyed && m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }));
+            s.Modules.Any(m => m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }));
     }
 
     private ScrapLootSnapshot ProjectScrap(LootScrapData scrap, bool open)

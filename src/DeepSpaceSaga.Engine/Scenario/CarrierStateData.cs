@@ -12,7 +12,7 @@ public sealed record CarrierStateData(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
     [property: JsonPropertyName("revision")] int Revision,
     [property: JsonPropertyName("hullCurrent")] int HullCurrent,
-    [property: JsonPropertyName("reservedCabins")] int ReservedCabins = 2,
+    [property: JsonPropertyName("reservedCabins")] int ReservedCabins = 0,
     [property: JsonPropertyName("ownedDrones")] IReadOnlyList<OwnedDroneData>? OwnedDrones = null,
     [property: JsonPropertyName("lastSettlement")] SortieSettlementData? LastSettlement = null,
     [property: JsonPropertyName("lastRearm")] RearmReceiptData? LastRearm = null)

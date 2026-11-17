@@ -72,6 +72,9 @@ public sealed partial class SimulationEngine
                 continue;
             }
             Require(source.Kind == "DisabledDrone" && unit.State == TacticalUnitState.Disabled && unit.Kind == TacticalUnitKind.Drone);
+            Require(unit.Build is { } build && source.Pilot is { Alive: true, Captured: false } pilot &&
+                pilot.SourcePilotId == LootPilotIdentity(loot.BattleId, unit.Id, build.PilotId) && pilot.DisplayName == build.PilotName &&
+                pilot.PortraitAssetId == build.PilotPortraitAssetId && pilot.Gender == (build.PilotGender ?? CrewGender.Female));
             var consumables = new Dictionary<string, long>(StringComparer.Ordinal);
             void Consumable(string category, string id, int quantity)
             {

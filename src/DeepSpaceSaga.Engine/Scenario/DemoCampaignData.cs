@@ -29,6 +29,7 @@ public sealed partial record DemoCampaignData(
     public ImmutableArray<BountyOrderData> BountyOrders { get; init; } = [];
     public ImmutableArray<BountyPaymentData> BountyPayments { get; init; } = [];
     public BattleLootData? LootSession { get; init; }
+    public ImmutableArray<PrisonerSnapshot> Prisoners { get; init; } = [];
 
     [JsonPropertyName("pilotMemorial")]
     public ImmutableArray<PilotMemorialEntry> PilotMemorial { get; init; } = [];
@@ -86,6 +87,15 @@ public sealed partial record DemoCampaignData(
             !data.BountyOrders.IsEmpty && data.BountyCatalogFingerprint is null)
             throw new ScenarioException("Invalid saved bounty orders.");
         ValidateEncounterHistory(data);
+        if (data.Prisoners.IsDefault || data.Prisoners.Any(p => p is null || string.IsNullOrWhiteSpace(p.ShipId) ||
+            string.IsNullOrWhiteSpace(p.DisplayName) || !Enum.IsDefined(p.Gender) || p.CapturedAt < 0 || p.CapturedAt > gameTimeMs ||
+            p.Id != "prisoner:" + p.SourcePilotId || !data.EncounterResults.Any(r => r.PlayerWon && r.Binding.BattleId == p.SourceBattleId &&
+                r.Units.Any(u => u.Id == p.SourceDroneId && u.Side == "B" && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Disabled &&
+                    u.Build is { } build && p.SourcePilotId == SimulationEngine.LootPilotIdentity(r.Binding.BattleId, u.Id, build.PilotId) &&
+                    p.DisplayName == build.PilotName && p.PortraitAssetId == build.PilotPortraitAssetId && p.Gender == (build.PilotGender ?? CrewGender.Female)))) ||
+            data.Prisoners.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != data.Prisoners.Length ||
+            data.Prisoners.Select(p => (p.SourceBattleId, p.SourceDroneId)).Distinct().Count() != data.Prisoners.Length)
+            throw new ScenarioException("Invalid prisoner custody provenance.");
         if (data.BountyPayments.IsDefault || data.BountyPayments.Any(p => p is null ||
             p.PostingId != "bounty:" + p.BountyId || p.RewardTokens <= 0 || p.PaidAtGameTimeMs < 0 || p.PaidAtGameTimeMs > gameTimeMs ||
             !data.BountyOrders.Any(b => b.Id == p.BountyId && b.PaidPostingId == p.PostingId &&

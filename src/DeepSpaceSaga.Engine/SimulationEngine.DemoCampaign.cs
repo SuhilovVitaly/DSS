@@ -111,6 +111,9 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case ArrestPilotCommand arrest:
+                PrepareArrestPilot(arrest, ref candidate, ref reason);
+                break;
             case FinishBattleLootCommand finish:
                 PrepareFinishBattleLoot(finish, ref candidate, ref reason, ref commit);
                 break;
