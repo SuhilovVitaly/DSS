@@ -5,7 +5,7 @@ ticket: EP-0035-US-0008-TK-0001-contracts
 title: Контракт тумана войны
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented-tests-pending
 layer: contracts
 matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0035-US-0001-TK-0001-contracts]
@@ -99,3 +99,7 @@ Placement: all human station spawn400км A-35-17, START hard800км D-35-43/A-3
 Additional allowed contracts files: src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs; src/DeepSpaceSaga.Contracts/DemoStartContracts.cs. Optional transient fog/chance bootstrap options, no save payload. Chance NewGame only; fog before first snapshot NewGame/Load. Existing matching contract test validates defaults/override.
 ## Audit: transient session options
 Owning contracts включают transient immutable session-start options (nullable fog override и squad chance), normal defaults true/10%, validation finite0..100. US0008-TK0004/0005 используют эти DTO до первого tick; сериализация save не включает options. Public snapshot distinguishes requested/effective override; hidden NPC data не добавлять.
+
+
+## Execution 2026-11-17
+Added typed revisioned SetFogOfWarRequest, optional effective FogOfWarSnapshot(defaulttrue), and separate computed IsDebugVisible. Reuse US12 DemoDebugSettings for the in-process factory API instead of duplicating transient options: owning process memory is read before generation and every projection, so no startup frame can precede applying it. No save DTO field. Build PASS0 warnings/errors; diff PASS; evidence D:/DeepSpaceSaga/artifacts/validation/ep-0035/20261117-resume/us8-tk1-build.log. Tests NOT RUN until US8 boundary.

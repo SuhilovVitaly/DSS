@@ -17,7 +17,10 @@ public sealed record PirateGroupSnapshot(
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PirateSignatureObservation>))]
     ImmutableArray<PirateSignatureObservation> Signatures = default,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<PirateMemberSnapshot>))]
-    ImmutableArray<PirateMemberSnapshot> Members = default);
+    ImmutableArray<PirateMemberSnapshot> Members = default)
+{
+    public bool IsDebugVisible => !IsDetected && Status == PirateGroupStatuses.DebugVisible;
+}
 
 /// <summary>Stable member carrier identity within a single observed world group.</summary>
 public sealed record PirateMemberSnapshot(string CarrierId, string SignatureTypeId);
