@@ -146,7 +146,7 @@ public sealed partial class SimulationEngine
             var ship = _objects[i];
             if (ship.IsDestroyed || ship.ObjectType != SpaceObjectType.PlayerShip) continue;
             long needed = (ship.Crew.IsDefault ? 0 : ship.Crew.Length)
-                + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
+                + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length) + GetPrisonerCount(ship.InitialMotion.ObjectId);
             if (needed == 0) continue;
             var modules = ship.Modules.ToBuilder();
             var finance = _voyageLedgers;

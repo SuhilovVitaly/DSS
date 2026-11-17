@@ -93,7 +93,7 @@ public partial class SimulationEngine
         return slots.ToImmutable();
     }
 
-    private const int ReservedPrisonerCabins = 2;
+    private const int ReservedPrisonerCabins = 0;
 
     private ImmutableArray<CrewMemberSnapshot> BuildCrewProjection(SpaceObjectRuntime ship)
     {
@@ -131,14 +131,15 @@ public partial class SimulationEngine
             }
         }
 
-        int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
+        int prisoners = GetPrisonerCount(ship.InitialMotion.ObjectId);
+        int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length) + prisoners;
         int reserved = ReservedPrisonerCabins;
         return new CabinReservationSnapshot(
             TotalCabins: operationalCabins,
             OccupiedCabins: occupied,
             ReservedCabins: reserved,
             FreeCabins: Math.Max(0, operationalCabins - occupied - reserved),
-            PrisonerCount: 0);
+            PrisonerCount: prisoners);
     }
 
     private static CrewGender ParseCrewGender(string? value) =>

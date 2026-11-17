@@ -56,7 +56,7 @@ public sealed partial class SimulationEngine
         // Feasibility uses the carrier design (cabins for passengers, total hold), never a momentary free count:
         // the actual free space is checked again on acceptance.
         var capacity = BuildPassengerCapacityProjection();
-        int passengerCabins = capacity is null ? 0 : Math.Max(0, capacity.TotalCabins - capacity.CrewCabins - capacity.ReservedCabins);
+        int passengerCabins = capacity is null ? 0 : Math.Max(0, capacity.TotalCabins - capacity.CrewCabins - capacity.PrisonerCabins);
         int maxPassengers = Math.Min(jobs.Limits.PassengerMax, passengerCabins);
         int maxTonnes = (int)Math.Min(jobs.Limits.CargoTonnesMax, CarrierHoldCapacityKg(ship) / 1000);
         double speedKmS = GetMaxSpeedKmS(ship) ?? map.Rules.ReferenceSpeedMps / 1000;

@@ -109,3 +109,9 @@ Owning build: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj
 ## Self-containment check
 
 Входы, planned API, allowlist, AC, порядок и named проверки перечислены. Внешние prerequisite результаты должны существовать до исполнения. Если реализация требует иных файлов или продуктового решения, сначала уточнить этот Board тикет, а не расширять diff.
+
+## Scope correction
+Include StationJobs.cs offer sizing (subtract actual prisoners), CrewRecruitment.cs (respect unboarded promises through the shared cabin helper), SimulationEngine.cs Load validation (custody must belong to the player carrier). These are necessary shared-capacity entry points beyond the original five-file estimate.
+
+## Execution
+Actual prisoners now consume shared cabins and scheduled rations; fixed reserve producer is zero. Crew payroll remains employment-only. Recruitment and passenger offer capacity respect custody; Load rejects prisoners assigned to a foreign ship. Engine/tests build PASS (D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us9-tk3-build.log); tests deferred to US9 boundary.

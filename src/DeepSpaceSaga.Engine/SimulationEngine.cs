@@ -506,6 +506,8 @@ public sealed partial class SimulationEngine : IDisposable
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
         ValidateCarrierStateForLoad(gs, runtimeObjects);
         var restoredDemoCampaign = DemoCampaignData.Validate(gs.DemoCampaign, gs.GameTimeMs);
+        if (restoredDemoCampaign.Prisoners.Any(p => p.ShipId != gs.PlayerShipObjectId))
+            throw new ScenarioException("Prisoner custody must belong to the player carrier.");
         ValidatePilotLossForLoad(restoredDemoCampaign, gs);
         ValidatePassengerContractsForLoad(restoredDemoCampaign, gs); // EP-0034 US-0002
         ValidateTransportFailuresForLoad(restoredDemoCampaign, gs); // EP-0034 US-0003

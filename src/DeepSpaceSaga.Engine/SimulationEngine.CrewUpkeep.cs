@@ -37,7 +37,7 @@ public sealed partial class SimulationEngine
         }
         return ledger with
         {
-            PeopleFed = ship.IsDestroyed ? 0 : ship.Crew.Length + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length),
+            PeopleFed = ship.IsDestroyed ? 0 : ship.Crew.Length + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length) + GetPrisonerCount(ship.InitialMotion.ObjectId),
             FoodRemaining = food,
             MissingRations = _economyTime.MissingRations
         };

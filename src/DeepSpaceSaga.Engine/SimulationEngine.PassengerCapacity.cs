@@ -51,7 +51,8 @@ public sealed partial class SimulationEngine
         int crew = ship.Crew.IsDefault ? 0 : ship.Crew.Length;
         int passengers = ship.Passengers.IsDefault ? 0 : ship.Passengers.Length;
         int reserved = ReservedPrisonerCabins;
-        long committed = (long)crew + passengers + reserved;
+        int prisoners = GetPrisonerCount(ship.InitialMotion.ObjectId);
+        long committed = (long)crew + passengers + prisoners;
         int free = (int)Math.Max(0, total - committed);
 
         string? reason = null;
@@ -63,12 +64,12 @@ public sealed partial class SimulationEngine
         {
             // Life support: the hold must feed everyone aboard plus every free cabin for one calendar day.
             long mealsPerDay = GameCalendar.DayMs / MealIntervalMs;
-            long needed = checked(((long)crew + passengers + free) * mealsPerDay);
+            long needed = checked(((long)crew + passengers + prisoners + free) * mealsPerDay);
             if (RationsAboard(ship) < needed)
                 reason = PassengerCapacityReasons.InsufficientFoodRations;
         }
 
-        return new PassengerCapacitySnapshot(total, crew, passengers, reserved, free, reason);
+        return new PassengerCapacitySnapshot(total, crew, passengers, reserved, free, reason, prisoners);
     }
 
     private long RationsAboard(SpaceObjectRuntime ship)
