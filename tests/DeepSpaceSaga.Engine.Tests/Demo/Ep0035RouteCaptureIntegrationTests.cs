@@ -28,23 +28,50 @@ public sealed class Ep0035RouteCaptureIntegrationTests
         var groups = world.Groups.Select((g, i) =>
         {
             double gx = i == 0 ? x : x + 100000 + i * 10000, gy = i == 0 ? y : y + 100000;
-            return g with { X = gx, Y = gy, SpeedKmS = 0, MotionPlan = null,
+            return g with
+            {
+                X = gx,
+                Y = gy,
+                SpeedKmS = 0,
+                MotionPlan = null,
                 PatrolPoints = [new(gx + 100, gy + 100), new(gx + 100, gy - 100), new(gx - 100, gy - 100), new(gx - 100, gy + 100)],
-                Members = g.Members.Select(m => m with { Engine = m.Engine with { StructurePoints = 0 },
-                    Sensor = i == 0 ? m.Sensor : m.Sensor with { PowerState = "Off" } }).ToImmutableArray() };
+                Members = g.Members.Select(m => m with
+                {
+                    Engine = m.Engine with { StructurePoints = 0 },
+                    Sensor = i == 0 ? m.Sensor : m.Sensor with { PowerState = "Off" }
+                }).ToImmutableArray()
+            };
         }).ToImmutableArray();
         // Observe through the real sensor/report path, then continue from the station.
-        var observedWorld = baseline with { GameState = baseline.GameState with { VoyageState = null,
-            DemoCampaign = campaign with { PirateWorld = world with { Groups = groups } },
-            SpaceObjects = baseline.GameState.SpaceObjects.Select(s => s.ObjectId == ship.ObjectId ? ship with
-                { PositionX = x, PositionY = y + 1500, IsDocked = false, DockedStationObjectId = null,
-                    FirstPortFeeGameTimeMs = null, NextPortFeeDueGameTimeMs = null } : s).ToArray() } };
+        var observedWorld = baseline with
+        {
+            GameState = baseline.GameState with
+            {
+                VoyageState = null,
+                DemoCampaign = campaign with { PirateWorld = world with { Groups = groups } },
+                SpaceObjects = baseline.GameState.SpaceObjects.Select(s => s.ObjectId == ship.ObjectId ? ship with
+                {
+                    PositionX = x,
+                    PositionY = y + 1500,
+                    IsDocked = false,
+                    DockedStationObjectId = null,
+                    FirstPortFeeGameTimeMs = null,
+                    NextPortFeeDueGameTimeMs = null
+                } : s).ToArray()
+            }
+        };
         engine.LoadScenario(observedWorld, true);
         var detected = engine.CaptureSnapshot().DemoCampaign!;
         Assert.True(engine.ExecuteDemoCampaign(new DismissSensorContactReportRequest("ack", detected.Revision, detected.PendingSensorReport!.BatchId)).Applied);
         var ready = engine.CaptureSaveState();
-        ready = ready with { GameState = ready.GameState with { VoyageState = baseline.GameState.VoyageState,
-            SpaceObjects = ready.GameState.SpaceObjects.Select(s => s.ObjectId == ship.ObjectId ? ship : s).ToArray() } };
+        ready = ready with
+        {
+            GameState = ready.GameState with
+            {
+                VoyageState = baseline.GameState.VoyageState,
+                SpaceObjects = ready.GameState.SpaceObjects.Select(s => s.ObjectId == ship.ObjectId ? ship : s).ToArray()
+            }
+        };
         foreach (bool detour in new[] { true, false })
         {
             engine.LoadScenario(ready, true);
