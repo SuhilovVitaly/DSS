@@ -52,3 +52,6 @@
 | [EP-0036-US-0011-TK-0002](EP-0036-US-0011-bounty-map-area/EP-0036-US-0011-TK-0002-starmap-area/EP-0036-US-0011-TK-0002-starmap-area.md) | `626ad784974f91ae1e2b475f092cda8be0aa7e32` | `d168adf3` | Published |
 | [EP-0036-US-0012-TK-0001](EP-0036-US-0012-loot-debug-commands/EP-0036-US-0012-TK-0001-loot-debug-overrides/EP-0036-US-0012-TK-0001-loot-debug-overrides.md) | `f6db9d6dfe0abcf74ced4ff2cd1d62a98f99e73b` |  | Published |
 | [EP-0036-US-0012-TK-0002](EP-0036-US-0012-loot-debug-commands/EP-0036-US-0012-TK-0002-console-commands/EP-0036-US-0012-TK-0002-console-commands.md) | `1aa5b61eff6f247cd9b30e61c965bd663d0d14a8` | `7c19d6cd` | Published |
+
+## Published owner-review corrections
+Original implementation SHAs above remain historical. Correction commits and nine-finding coverage: [ReviewCorrections](ReviewCorrections.md). Documentation contract correction US5 TK1: 7b2319a6, pushed to origin/feature/ep-0036-demo-bounties-and-loot. Final publication/graph receipt is owned by US5 TK2.

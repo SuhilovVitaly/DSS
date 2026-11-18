@@ -120,3 +120,6 @@ Retained graph evidence: graph/verification.json, graph/input-evidence.json, gra
 ## Cleanup and publication verification
 
 Task-owned build outputs, Graphify cache, helper scripts, temporary capacity fixtures, metrics and raster/screenshot outputs were removed. Retained only the referenced log/TRX and graph evidence under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/. Root inspection found no task-created temporary directory in workspace/repository; existing unrelated directories were preserved. No task worktree or running game exists. Final receipt is committed and pushed to the same verified upstream; exact remote HEAD is checked after its commit and reported to the owner.
+
+## Owner review corrections — 2026-11-18
+The original completion evidence above predates the owner's nine findings. Current disposition, per-ticket correction SHAs and validation are in [ReviewCorrections](ReviewCorrections.md). Confirmed defects are corrected; finding 4 did not reproduce under self-consistent foreign-manifest tests. Final Engine 96/96, Client 25/25, atomic replay follow-up 5/5; scoped format verification passes. Independent reviewer closed all actionable correction findings. Native/product remains NOT RUN — owner only.

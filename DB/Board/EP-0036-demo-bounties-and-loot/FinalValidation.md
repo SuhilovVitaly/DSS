@@ -41,3 +41,15 @@ Retained graph evidence: graph/verification.json, graph/input-evidence.json, gra
 ## Cleanup and publication verification
 
 Task-owned build outputs, Graphify cache, helper scripts, temporary capacity fixtures, metrics and raster/screenshot outputs were removed. Retained only the referenced log/TRX and graph evidence under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/. Root inspection found no task-created temporary directory in workspace/repository; existing unrelated directories were preserved. No task worktree or running game exists. Final receipt is committed and pushed to the same verified upstream; exact remote HEAD is checked after its commit and reported to the owner.
+
+## Owner review correction receipt — 2026-11-18
+
+[ReviewCorrections](ReviewCorrections.md) supersedes earlier evidence for changed paths. Functional Engine 96/96 and Client 25/25 passed; last atomic receipt classification/LocalClient follow-up passed 5/5. Build included in tests. Scoped whitespace verification passes. Independent reviewer closed both additional findings (closed historical SKU projection and historical receipt checkpoint race); no further concrete defect found in reviewed correction scope. Native/product NOT RUN — owner only.
+
+Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0036-review/20261118-corrections/`: final-engine.log + final-engine TRX, final-client.log + final-client TRX, atomic-replay.log + atomic-replay TRX, format-final.log/err, static-links.json. Intermediate failed fixture runs retained as documented history, not reported as final passes.
+
+Graphify rebuilt after final code/docs: 33,890 nodes, 86,079 edges, 1,170 communities; 1,275 code files and 1,122 Markdown files. `graph/verification.json` verifies 2,397 source hashes and 4 fresh selected semantic input hashes, zero missing files/out-of-range locations/dangling edges/self-loops. Existing parser limitation remains ModulePanelLocalizationTests.cs line25 partial AST, not a C# compiler error. Semantic coverage is selective; token usage unmeasured. Navigation graph is not runtime/performance/native evidence.
+
+All graph outputs are under the evidence root, including graph/graph.json, graph/graph.html, graph/GRAPH_REPORT.md, graph/input-evidence.json, graph/semantic-coverage.json and graph-semantic-review.json. Disposable graph/cache removed after process completion. No task-created worktree, temporary root directory or active validation process remains. Existing unrelated workspace directories and owner modifications were preserved.
+
+Documentation US5 TK1 correction: 7b2319a6, pushed. This final receipt belongs to US5 TK2; its own SHA and exact origin branch HEAD are verified after commit. Correction SHAs are mapped in ReviewCorrections; original ticket implementations remain historical in Tickets.md.
