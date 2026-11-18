@@ -98,3 +98,6 @@ Execution scope expansion: current contracts require replacing stale six-crew/tw
 
 ## Completion evidence
 31 current Markdown documents updated; exact inventory in DocumentationImpact.md. All relative links in changed current docs resolve (documentation-links.json). Independent review corrected offer capacity formula and passenger-only ration gate; discovered missing manual loot hotkeys and cabin prisoner summary were fixed in owning US4/US9 tickets. Native/product acceptance remains OPEN.
+
+## Owner review documentation (2026-11-18)
+Scope: DemoRewards.md, SaveFormat.md, DemoBountiesAndLoot.md. Describe closed audit compatibility, compact receipts/current hydrated projection, persisted PlayerSide default A, required loot content and shared promised-cabin reservations. Engine thematic verification PASS 96/96; Client pending. Review details and commit mapping in ReviewCorrections.md.
