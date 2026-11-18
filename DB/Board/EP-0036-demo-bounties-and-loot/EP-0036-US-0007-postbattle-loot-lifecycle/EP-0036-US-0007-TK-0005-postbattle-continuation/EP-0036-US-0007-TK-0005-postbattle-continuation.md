@@ -107,3 +107,6 @@ Victory-causing move/fire/debug actions and every successful loot action now wri
 Scope includes TacticalBattleFlow.cs and TacticalBattleScreen.cs plus Client/Engine US7 regression tests. Cached victory receipts must not checkpoint a closed ledger; an unavailable winning response must recover the authoritative frozen map without treating the failed write as success.
 
 Review corrections verified at US7 boundary: Engine 13/13 (us7-engine-review.log), Client 14/14 including bounty regression (us7-client-review.log), under D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/. Both real storage failure recovery and stale receipt after a new battle are covered. No game launch.
+
+## Owner review correction 6
+Extend scope to SimulationEngine.DemoCampaign.cs: save command receipt outcomes without derived Rewards snapshots; exact live retries stay unchanged, restored compact retries attach current Rewards and current revision without replaying effects. Existing integration tests add bounded save growth and retry coverage.

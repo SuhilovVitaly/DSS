@@ -8,6 +8,29 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0036Us0007Tk0005Tests
 {
+    [Fact]
+    public void SavedReceiptsDoNotDuplicateLootAndRetryDoesNotReplay()
+    {
+        using var engine = DemoEp0036Us0007Tk0003Tests.Won();
+        var state = engine.CaptureSnapshot().DemoCampaign!;
+        var command = new FinishBattleLootCommand("compact-close", state.Revision, state.Rewards!.Loot!.BattleId, true);
+        Assert.True(engine.ExecuteDemoCampaign(command).Applied);
+        int before = ScenarioLoader.Serialize(engine.CaptureSaveState()).Length;
+        for (int i = 0; i < 100; i++)
+            Assert.False(engine.ExecuteDemoCampaign(command with { CommandId = "rejected-" + i }).Applied);
+        var save = engine.CaptureSaveState();
+        Assert.All(save.GameState.DemoCampaign!.Receipts, r => Assert.Null(r.Response.Rewards));
+        Assert.InRange(ScenarioLoader.Serialize(save).Length - before, 1, 100_000);
+        using var restored = DemoEp0033Us0001Tk0003Tests.Demo();
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), true);
+        string saved = ScenarioLoader.Serialize(restored.CaptureSaveState());
+        var response = restored.ExecuteDemoCampaign(command);
+        Assert.True(response.Applied);
+        Assert.Equal(LootPhases.Closed, response.Rewards!.Loot!.Phase);
+        Assert.Equal(restored.CaptureSnapshot().DemoCampaign!.Revision, response.Revision);
+        Assert.Equal(saved, ScenarioLoader.Serialize(restored.CaptureSaveState()));
+    }
+
     private static string DirectoryForTest() => Directory.CreateDirectory(
         "D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/io-" + Guid.NewGuid().ToString("N")).FullName;
     private static string SavePath(string directory) => Path.Combine(directory, SaveSlotNaming.ToFileName(SaveSlotNaming.ContinuationSlotId));

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Engine.Content;
@@ -30,7 +31,8 @@ public sealed partial class SimulationEngine
             string hash = Convert.ToHexString(SHA256.HashData(bytes));
             var previous = _demoCampaign.Receipts.FirstOrDefault(r => r.Response.CommandId == command.CommandId);
             if (previous is not null)
-                return previous.PayloadHash == hash ? previous.Response
+                return previous.PayloadHash == hash ? previous.Response.Rewards is not null ? previous.Response
+                    : previous.Response with { Rewards = BuildDemoRewardsProjection(), Revision = _demoCampaign.Revision }
                     : new(command.CommandId, false, DemoCampaignReasons.IdentityConflict, _demoCampaign.Revision);
             if (_demoCampaign.CommittedCommandHashes.TryGetValue(command.CommandId, out string? committedHash))
                 return new(command.CommandId, false, committedHash == hash ? DemoCampaignReasons.AlreadyApplied : DemoCampaignReasons.IdentityConflict, _demoCampaign.Revision);
@@ -101,7 +103,11 @@ public sealed partial class SimulationEngine
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
         BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes(), DemoDebugSettings);
 
-    private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
+    private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign with
+    {
+        // Rewards are a derived view of the one authoritative ledger, not receipt history.
+        Receipts = _demoCampaign.Receipts.Select(r => r with { Response = r.Response with { Rewards = null } }).ToImmutableArray()
+    };
 
     // Central dispatch owns ordering. Feature helpers prepare candidates and deferred commits;
     // unsupported or rejected commands never mutate gameplay state.
