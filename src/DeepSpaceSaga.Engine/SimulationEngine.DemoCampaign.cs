@@ -21,7 +21,8 @@ public sealed partial class SimulationEngine
 
     public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command) => ExecuteDemoCampaign(command, out _);
 
-    internal DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command, out bool newlyApplied)
+    /// <summary>Reports a new application atomically, so transport never checkpoints a receipt replay.</summary>
+    public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command, out bool newlyApplied)
     {
         lock (_worldStateLock)
         {

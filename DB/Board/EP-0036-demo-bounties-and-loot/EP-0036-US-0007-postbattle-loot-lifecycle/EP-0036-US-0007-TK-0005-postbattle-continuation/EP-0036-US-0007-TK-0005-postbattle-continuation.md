@@ -114,3 +114,5 @@ Extend scope to SimulationEngine.DemoCampaign.cs: save command receipt outcomes 
 Independent review follow-up: LocalGameSessionConnection checkpoints only newly committed loot commands, not historical Applied receipt replays; pending failed writes still retry first. Regression closes A, starts B, retries Finish A and checks pending state remains clear. Extend test scope to EP34 US6 SaveLoad receipt comparison by serialized value, avoiding ImmutableArray reference equality.
 
 Concurrency review: replace non-atomic global sequence comparison with Engine internal newlyApplied out-result set under the same world lock as receipt dispatch. Another command cannot make a cached replay look newly applied. Public response contract unchanged.
+
+The overload is public on concrete SimulationEngine for cross-assembly LocalClient access; the existing one-argument API and transport DTO remain unchanged.
