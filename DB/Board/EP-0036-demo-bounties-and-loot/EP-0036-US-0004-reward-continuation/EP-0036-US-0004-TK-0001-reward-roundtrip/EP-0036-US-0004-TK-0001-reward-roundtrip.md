@@ -79,3 +79,5 @@ Review correction: pre-publication Load gate now requires Open loot to match the
 
 ## Owner review corrections (2026-11-18)
 Scope: findings 1 and 5. Closed loot keeps structural/frozen provenance validation without current loot balance identity; Open remains strict. Missing composition/layout references must reject with ScenarioException. Owning lifecycle and existing integration tests; validation pending at story boundary.
+
+Independent review follow-up: BattleLoot.cs added to scope. Closed session projects no actionable objects; full frozen audit remains persisted. This prevents closed content-independent audit from dereferencing obsolete SKUs. Test unknown closed SKU snapshot versus strict Open rejection. US4 initial tests PASS 5/5 (20261118-corrections/us4).

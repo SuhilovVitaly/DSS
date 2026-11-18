@@ -143,6 +143,9 @@ public sealed partial class SimulationEngine
     private LootSessionSnapshot? BuildBattleLootProjection()
     {
         if (_demoCampaign.LootSession is not { } loot) return null;
+        // Discarded sources remain in the save audit only; they cannot be acted on.
+        // Do not resolve their historical item identities against today's catalog.
+        if (loot.Phase == LootPhases.Closed) return new(loot.BattleId, loot.Phase, [], false);
         bool open = loot.Phase == LootPhases.Open;
         var ship = _objects.FirstOrDefault(s => s.InitialMotion.ObjectId == PlayerShipObjectId && !s.IsDestroyed);
         long[] holds = ship?.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0)
