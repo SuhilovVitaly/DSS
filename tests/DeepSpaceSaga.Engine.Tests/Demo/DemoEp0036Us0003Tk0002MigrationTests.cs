@@ -62,7 +62,28 @@ public sealed class DemoEp0036Us0003Tk0002MigrationTests
             SpaceObjects = old.SpaceObjects.Select(o => o.MarketProfileId is null ? o :
             o with { MarketProfileFingerprint = new string('0', 64) }).ToArray()
         };
+        corrupt = corrupt with { TradingEconomyContinuation = corrupt.TradingEconomyContinuation! with
+        { ConfigurationFingerprint = TradingEconomySaveMigration.ConfigurationFingerprint(corrupt) } };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with { GameState = corrupt }, true));
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var stationId = old.SpaceObjects.First(o => o.MarketProfileId is not null).MarketProfileId!;
+        var profile = registry.StationMarketProfiles.GetDefinition(registry.StationMarketProfiles.GetIndex(stationId));
+        var foreign = profile with { InitialCredits = profile.InitialCredits + 1 };
+        foreach (var tampered in new[]
+        {
+            old with { MarketEventCatalogFingerprint = new string('0', 64) },
+            old with { CatalogCompatibility = old.CatalogCompatibility! with { Fingerprint = new string('0', 64) } },
+            old with { SpaceObjects = old.SpaceObjects.Select(o => o.MarketProfileId == stationId ? o with
+                { MarketProfileFingerprint = LootCatalogCompatibility.Previous(foreign, keepScrap).Fingerprint } : o).ToArray() },
+            old with { SpaceObjects = old.SpaceObjects.Select(o => o.MarketProfileId is not null ? o with
+                { Inventory = o.Inventory!.Skip(1).ToArray() } : o).ToArray() }
+        })
+        {
+            var consistent = tampered with { TradingEconomyContinuation = tampered.TradingEconomyContinuation! with
+            { ConfigurationFingerprint = TradingEconomySaveMigration.ConfigurationFingerprint(tampered) } };
+            Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with { GameState = consistent }, true));
+            Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+        }
     }
 
     [Fact]

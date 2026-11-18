@@ -108,3 +108,6 @@ Added fixed light/heavy/carrier scrap, existing torpedo mapping, one scrap SKU a
 ## Boundary correction — market demand coverage
 
 US3 Client boundary failed because the existing Profile economy schema requires hourlyInputs+hourlyConsumption to cover every demand SKU. Added independent consumption for loot demand only: A baseline scrap10kg/hour, each trophy/charge1unit/hour. Existing production inputs/outputs and budgets are unchanged. Structural predecessor filtering removes only these exact newly added consumption rows. Correction also covers dependent US6 trophy content. Initial US3 Client result 5/6; final retry follows corrections.
+
+## Owner review finding 4
+Audit: fallback is preceded by ResolveMarketProfiles strict current/exact predecessor validation and catalog Accepts. No arbitrary foreign-market acceptance confirmed. Existing migration test extended with self-consistent tampered profile/event/catalog manifests and missing baseline stock. Production compatibility logic retained pending tests.
