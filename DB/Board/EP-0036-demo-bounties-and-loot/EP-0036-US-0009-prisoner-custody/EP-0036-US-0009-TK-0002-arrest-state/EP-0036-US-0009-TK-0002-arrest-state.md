@@ -125,3 +125,5 @@ US9 boundary and independent review reproduced a pilot-name mismatch: raw runtim
 
 ## Owner review correction 8
 Scope extends to WorldEncounterData.cs, WorldEncounterBattle.cs and BattleLootLifecycle.cs: persist PlayerSide (legacy default A), use it consistently for outcome, enemy identity and prisoner provenance. Integration tests include side B and mismatched frozen map. Tests pending at US9 boundary.
+
+Review correction tests: scoped whitespace formatted; behavior unchanged.

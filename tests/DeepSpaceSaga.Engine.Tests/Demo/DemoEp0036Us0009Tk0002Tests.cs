@@ -24,8 +24,11 @@ public sealed class DemoEp0036Us0009Tk0002Tests
         using var target = DemoEp0033Us0001Tk0003Tests.Demo();
         target.LoadScenario(save with { GameState = save.GameState with { DemoCampaign = changed } }, true);
         Assert.Single(target.CaptureSaveState().GameState.DemoCampaign!.Prisoners);
-        Assert.Throws<ScenarioException>(() => target.LoadScenario(save with { GameState = save.GameState with
-        { DemoCampaign = changed with { LootSession = changed.LootSession with { Map = changed.LootSession.Map with { PlayerSide = "A" } } } } }, true));
+        Assert.Throws<ScenarioException>(() => target.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            { DemoCampaign = changed with { LootSession = changed.LootSession with { Map = changed.LootSession.Map with { PlayerSide = "A" } } } }
+        }, true));
     }
 
     [Fact]
