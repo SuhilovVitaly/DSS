@@ -111,3 +111,5 @@ US3 Client boundary failed because the existing Profile economy schema requires 
 
 ## Owner review finding 4
 Audit: fallback is preceded by ResolveMarketProfiles strict current/exact predecessor validation and catalog Accepts. No arbitrary foreign-market acceptance confirmed. Existing migration test extended with self-consistent tampered profile/event/catalog manifests and missing baseline stock. Production compatibility logic retained pending tests.
+
+Review correction tests: scoped whitespace formatted; behavior unchanged.
