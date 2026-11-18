@@ -19,10 +19,13 @@ public sealed partial class SimulationEngine
         _demoDefinitions = definitions;
     }
 
-    public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command)
+    public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command) => ExecuteDemoCampaign(command, out _);
+
+    internal DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command, out bool newlyApplied)
     {
         lock (_worldStateLock)
         {
+            newlyApplied = false;
             if (command is null || string.IsNullOrWhiteSpace(command.CommandId))
                 return new(command?.CommandId ?? "", false, DemoCampaignReasons.InvalidIdentity, _demoCampaign.Revision);
 
@@ -75,6 +78,7 @@ public sealed partial class SimulationEngine
             _demoCampaign = candidate;
             response = response with { Rewards = BuildDemoRewardsProjection() };
             _demoCampaign = candidate with { Receipts = candidate.Receipts.SetItem(candidate.Receipts.Length - 1, new(hash, sequence, response)) };
+            newlyApplied = applied;
             return response;
         }
     }
