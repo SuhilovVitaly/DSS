@@ -15,8 +15,14 @@ public sealed class DemoEp0036Us0009Tk0003Tests
         var offer = jobs.Offers.First(o => StationJobTypes.CarriesPassengers(o.Type));
         var obligation = new JobObligation("contract:" + offer.Id, offer.Id, offer.Type, offer.OriginStationId, offer.DestinationStationId,
             1, 0, offer.Payout, save.GameState.GameTimeMs, save.GameState.GameTimeMs + offer.DeadlineDurationMs, StationJobStatuses.Active, offer.RiskBand);
-        engine.LoadScenario(save with { GameState = save.GameState with { DemoCampaign = campaign with
-        { StationJobs = jobs with { Obligations = jobs.Obligations.Add(obligation), Offers = jobs.Offers.Remove(offer) } } } }, true);
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                DemoCampaign = campaign with
+                { StationJobs = jobs with { Obligations = jobs.Obligations.Add(obligation), Offers = jobs.Offers.Remove(offer) } }
+            }
+        }, true);
         var snapshot = engine.CaptureSnapshot();
         var cabin = snapshot.CarrierOperations!.CabinReservation!;
         var capacity = snapshot.DemoCampaign!.Transport!.PassengerCapacity!;

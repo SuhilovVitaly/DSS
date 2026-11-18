@@ -129,3 +129,5 @@ Boundary fixture correction: retain the explicit-time helper's returned save rat
 Extend scope to Prisoners.cs and StationJobs.cs: shared cabin projection counts legacy unboarded passenger obligations as reservations, without double subtraction by job acceptance. Permanent prisoner reserve remains zero. Existing capacity tests cover screen/hiring agreement. Tests pending at story boundary.
 
 Regression follow-up: extend tests to DemoEp0034Us0002Tk0002Tests.cs; update obsolete 6 crew/2 permanent reserve expectations to shipped 7 crew/0 permanent reserve; retain exact boarding, meal and acceptance assertions. Initial US9 regression: 11 passed, 3 stale EP34 assertions; corrected run pending.
+
+Review correction tests: scoped whitespace formatted; behavior unchanged.
