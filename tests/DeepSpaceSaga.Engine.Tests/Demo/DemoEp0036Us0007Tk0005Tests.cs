@@ -35,7 +35,8 @@ public sealed class DemoEp0036Us0007Tk0005Tests
         using var engine = DemoEp0036Us0007Tk0003Tests.Won();
         var state = engine.CaptureSnapshot().DemoCampaign!;
         var command = new FinishBattleLootCommand("compact-close", state.Revision, state.Rewards!.Loot!.BattleId, true);
-        Assert.True(engine.ExecuteDemoCampaign(command).Applied);
+        Assert.True(engine.ExecuteDemoCampaign(command, out bool newlyApplied).Applied);
+        Assert.True(newlyApplied);
         int before = ScenarioLoader.Serialize(engine.CaptureSaveState()).Length;
         for (int i = 0; i < 100; i++)
             Assert.False(engine.ExecuteDemoCampaign(command with { CommandId = "rejected-" + i }).Applied);
@@ -45,8 +46,9 @@ public sealed class DemoEp0036Us0007Tk0005Tests
         using var restored = DemoEp0033Us0001Tk0003Tests.Demo();
         restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), true);
         string saved = ScenarioLoader.Serialize(restored.CaptureSaveState());
-        var response = restored.ExecuteDemoCampaign(command);
+        var response = restored.ExecuteDemoCampaign(command, out bool replayApplied);
         Assert.True(response.Applied);
+        Assert.False(replayApplied);
         Assert.Equal(LootPhases.Closed, response.Rewards!.Loot!.Phase);
         Assert.Equal(restored.CaptureSnapshot().DemoCampaign!.Revision, response.Revision);
         Assert.Equal(saved, ScenarioLoader.Serialize(restored.CaptureSaveState()));
