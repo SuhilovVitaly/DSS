@@ -13,7 +13,7 @@ public sealed class DemoEp0036Us0001Tk0005Tests
         try
         {
             string source = DemoEp0032Us0001Tk0002Tests.ContentRoot + "/Data/Demo/";
-            foreach (string name in new[] { "cluster", "encounters" })
+            foreach (string name in new[] { "cluster", "encounters", "loot" })
                 File.WriteAllText(root + "/Data/Demo/" + name + ".json", File.ReadAllText(source + name + ".json"));
             var jobs = JsonNode.Parse(File.ReadAllText(source + "jobs.json"))!.AsObject();
             jobs.Remove("bounties");
