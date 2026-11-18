@@ -54,7 +54,7 @@ public sealed partial class SimulationEngine
             sources.Add(new(carrier.Id, session.Battle.SelfDestructedCarrierIds.Contains(carrier.Id) ? "SelfDestructCarrier" : "Carrier", layout, carrier.Pose.X, carrier.Pose.Y, carrier.Pose.Course, null, [],
                 new(definitions.ScrapItemTypeId, definitions.CarrierScrapQuantityByLayout[layout], chance), []));
         }
-        return new(session.Id, LootPhases.Open, definitions.Fingerprint, seed, draws, session.Capture(), sources.ToImmutable());
+        return new(session.Id, LootPhases.Open, definitions.Fingerprint, seed, draws, frozen, sources.ToImmutable());
     }
 
     private bool TryPrepareLootCargo(string itemId, long quantity, out Action? commit)
@@ -144,25 +144,43 @@ public sealed partial class SimulationEngine
     {
         if (_demoCampaign.LootSession is not { } loot) return null;
         bool open = loot.Phase == LootPhases.Open;
+        var ship = _objects.FirstOrDefault(s => s.InitialMotion.ObjectId == PlayerShipObjectId && !s.IsDestroyed);
+        long[] holds = ship?.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0)
+            .Select(m => Math.Max(0, m.AvailableCapacityKg ?? 0)).ToArray() ?? [];
+        long freeMass = ship is null ? 0 : PlayerFreeHoldKg(ship);
+        int freeCabins = ship is null ? 0 : GetAvailablePrisonerCabins(ship, _demoCampaign);
+        bool CanFit(string itemId, long quantity)
+        {
+            if (ship is null || quantity <= 0 || !_registry.ItemTypes.Contains(itemId)) return false;
+            long mass = _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(itemId)).UnitMassKg;
+            if (mass <= 0 || quantity > freeMass / mass) return false;
+            long remaining = quantity;
+            foreach (long hold in holds)
+            {
+                remaining -= Math.Min(remaining, hold / mass);
+                if (remaining == 0) return true;
+            }
+            return false;
+        }
         var objects = loot.Sources.Select(s => new LootObjectSnapshot(s.ObjectId, s.Kind,
             s.Consumables.Where(c => !c.Destroyed).Select(c =>
             {
                 string? reason = !open ? BattleLootReasons.LootClosed : c.Remaining == 0 ? BattleLootReasons.AlreadyAttempted :
-                    !TryPrepareLootCargo(c.ItemTypeId, 1, out _) ? BattleLootReasons.CargoFull : null;
+                    !CanFit(c.ItemTypeId, 1) ? BattleLootReasons.CargoFull : null;
                 return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason, _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(c.ItemTypeId)).UnitMassKg) { OriginalQuantity = c.OriginalQuantity };
             }).ToImmutableArray(),
-            s.Scrap is { } scrap ? ProjectScrap(scrap, open) : null,
-            s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open)).ToImmutableArray(), ProjectLootPilot(loot, s), s.X, s.Y, s.Direction)).ToImmutableArray();
+            s.Scrap is { } scrap ? ProjectScrap(scrap, open, CanFit) : null,
+            s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open, CanFit)).ToImmutableArray(), ProjectLootPilot(loot, s, ship, freeCabins), s.X, s.Y, s.Direction)).ToImmutableArray();
         return new(loot.BattleId, loot.Phase, objects, open && objects.Any(s =>
             s.Consumables.Any(c => c.Remaining > 0) || s.Scrap?.State == LootAttemptStates.NotAttempted ||
             s.Modules.Any(m => m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }))
-        { Cargo = BuildLootCargo(), FreeCargoKg = LootFreeCargoKg() };
+        { Cargo = BuildLootCargo(), FreeCargoKg = freeMass };
     }
 
-    private ScrapLootSnapshot ProjectScrap(LootScrapData scrap, bool open)
+    private ScrapLootSnapshot ProjectScrap(LootScrapData scrap, bool open, Func<string, long, bool> canFit)
     {
         string? reason = !open ? BattleLootReasons.LootClosed : scrap.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
-            !TryPrepareLootCargo(scrap.ItemTypeId, scrap.Quantity, out _) ? BattleLootReasons.CargoFull : null;
+            !canFit(scrap.ItemTypeId, scrap.Quantity) ? BattleLootReasons.CargoFull : null;
         return new(scrap.ItemTypeId, scrap.Quantity, scrap.ChanceBasisPoints, scrap.State, reason is null, reason,
             checked(scrap.Quantity * _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(scrap.ItemTypeId)).UnitMassKg));
     }

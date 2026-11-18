@@ -60,7 +60,7 @@ public sealed partial class SimulationEngine
                 updated.Add(owned);
 
             var pilotLosses = PreparePilotLosses(shipId, session.Id, wing, lostIds.ToArray());
-            var campaign = PrepareEncounterSettlement(pilotLosses.Campaign, session);
+            var campaign = PrepareEncounterSettlement(pilotLosses.Campaign, session, loot?.Map);
             if (loot is not null) campaign = campaign with { LootSession = loot };
             ValidateDemoCampaignSections(campaign);
             long campaignRevision = checked(_demoCampaign.Revision + 1);

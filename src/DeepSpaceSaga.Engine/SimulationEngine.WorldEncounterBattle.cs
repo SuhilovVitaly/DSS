@@ -48,12 +48,12 @@ public sealed partial class SimulationEngine
         _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, _processedSimulationTimeMs, _clock.Capture().MotionQuarterRemainder);
     }
 
-    private static DemoCampaignData PrepareEncounterSettlement(DemoCampaignData campaign, TacticalBattleSession session)
+    private static DemoCampaignData PrepareEncounterSettlement(DemoCampaignData campaign, TacticalBattleSession session, TacticalBattleSnapshot? frozen = null)
     {
         if (campaign.WorldEncounter is not { Phase: WorldEncounterPhases.PendingBattle } encounter ||
             encounter.Binding.BattleId != session.Id) return campaign;
         if (campaign.EncounterResults.Any(r => r.Binding.BattleId == session.Id)) return campaign;
-        var snapshot = session.Capture();
+        var snapshot = frozen ?? session.Capture();
         if (snapshot.Outcome is null) throw new InvalidOperationException("Cannot settle an unfinished campaign encounter.");
         var world = campaign.PirateWorld!;
         int index = Enumerable.Range(0, world.Groups.Length).Single(i => world.Groups[i].GroupId == encounter.Binding.GroupId);

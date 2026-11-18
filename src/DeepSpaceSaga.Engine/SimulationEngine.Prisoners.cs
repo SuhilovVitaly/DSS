@@ -11,11 +11,13 @@ public sealed partial class SimulationEngine
     {
         return BuildCabinReservationProjection(ship, state).FreeCabins;
     }
-    private string? ArrestReason(DemoCampaignData state, BattleLootData loot, LootSourceData? source)
+    private string? ArrestReason(DemoCampaignData state, BattleLootData loot, LootSourceData? source, int? freeCabins = null, bool? shipAvailable = null)
     {
         if (loot.Phase != LootPhases.Open) return BattleLootReasons.LootClosed;
         if (source is not { Kind: "DisabledDrone", Pilot: { Alive: true } pilot }) return PrisonerCustodyReasons.NotCapturable;
         if (state.Prisoners.Any(p => p.SourceBattleId == loot.BattleId && p.SourceDroneId == source.ObjectId)) return PrisonerCustodyReasons.AlreadyCaptured;
+        if (shipAvailable is { } available)
+            return !available ? DemoCampaignReasons.CarrierDestroyed : freeCabins < 1 ? PrisonerCustodyReasons.NoCabin : null;
         var ship = _objects.FirstOrDefault(s => s.InitialMotion.ObjectId == PlayerShipObjectId && !s.IsDestroyed);
         return ship is null ? DemoCampaignReasons.CarrierDestroyed : GetAvailablePrisonerCabins(ship, state) < 1 ? PrisonerCustodyReasons.NoCabin : null;
     }
@@ -33,9 +35,9 @@ public sealed partial class SimulationEngine
             _clock.GameTimeMs, pilot.Gender))
         };
     }
-    private LootPilotSnapshot? ProjectLootPilot(BattleLootData loot, LootSourceData source) => source.Pilot is not { } pilot ? null : pilot with
+    private LootPilotSnapshot? ProjectLootPilot(BattleLootData loot, LootSourceData source, SpaceObjectRuntime? ship, int freeCabins) => source.Pilot is not { } pilot ? null : pilot with
     {
         Captured = _demoCampaign.Prisoners.Any(p => p.SourceBattleId == loot.BattleId && p.SourceDroneId == source.ObjectId),
-        CaptureReason = ArrestReason(_demoCampaign, loot, source)
+        CaptureReason = ArrestReason(_demoCampaign, loot, source, freeCabins, ship is not null)
     };
 }

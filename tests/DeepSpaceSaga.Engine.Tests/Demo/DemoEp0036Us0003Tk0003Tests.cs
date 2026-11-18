@@ -7,6 +7,16 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0036Us0003Tk0003Tests
 {
+    [Fact]
+    public void EncountersWithoutLootRejectBeforeCampaignPublication()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var definitions = DeepSpaceSaga.Engine.Content.DemoCampaignDefinitions.Load(DemoEp0033Us0001Tk0003Tests.Root());
+        Assert.Throws<ScenarioException>(() => engine.ConfigureDemoCampaign(definitions with { Loot = null }));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
     internal static BattleLootData Loot(SimulationEngine engine)
     {
         var session = engine.TacticalBattleSessionForTests!;

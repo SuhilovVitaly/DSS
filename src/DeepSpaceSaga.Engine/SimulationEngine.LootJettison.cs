@@ -7,12 +7,6 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private long LootFreeCargoKg()
-    {
-        var ship = _objects.FirstOrDefault(s => s.InitialMotion.ObjectId == PlayerShipObjectId && !s.IsDestroyed);
-        return ship is null ? 0 : Math.Max(0, ship.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0)
-            .Sum(m => Math.Max(0, m.AvailableCapacityKg ?? 0)) - ContractCargoReservedKg(_demoCampaign));
-    }
     private ImmutableArray<LootCargoSnapshot> BuildLootCargo()
     {
         var ship = _objects.FirstOrDefault(s => s.InitialMotion.ObjectId == PlayerShipObjectId && !s.IsDestroyed);

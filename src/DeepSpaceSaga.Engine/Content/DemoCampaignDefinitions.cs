@@ -135,6 +135,8 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
 
     private void Validate()
     {
+        if (Encounters is not null && Loot is null)
+            throw new ScenarioException("Demo encounters require Data/Demo/loot.json.");
         static void Require(bool valid, string section)
         {
             if (!valid) throw new ScenarioException("Invalid demo " + section + ".");

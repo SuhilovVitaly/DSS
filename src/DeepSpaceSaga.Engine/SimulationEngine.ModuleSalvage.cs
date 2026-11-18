@@ -46,11 +46,11 @@ public sealed partial class SimulationEngine
         commit = success ? grant : null;
     }
 
-    private ModuleLootSnapshot ProjectLootModule(LootModuleData module, bool open)
+    private ModuleLootSnapshot ProjectLootModule(LootModuleData module, bool open, Func<string, long, bool> canFit)
     {
         var item = _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(module.ItemTypeId));
         string? reason = !open ? BattleLootReasons.LootClosed : module.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
-            !TryPrepareLootCargo(module.ItemTypeId, 1, out _) ? BattleLootReasons.CargoFull : null;
+            !canFit(module.ItemTypeId, 1) ? BattleLootReasons.CargoFull : null;
         return new(module.InstanceId, module.Category, module.CatalogId, module.ItemTypeId, item.DisplayName, "intact",
             item.BasePriceCredits ?? 0, module.ChanceBasisPoints, module.State, reason is null, reason, item.UnitMassKg);
     }
