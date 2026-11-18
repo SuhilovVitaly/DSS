@@ -45,26 +45,32 @@ public sealed partial class SimulationEngine
             encounter.Binding.BattleId != loot.BattleId || campaign.PendingSensorReport is not null))
             throw new ScenarioException("Open loot requires its finished encounter and no pending sensor report.");
         var victory = campaign.EncounterResults.SingleOrDefault(r => r.Binding.BattleId == loot.BattleId && r.PlayerWon);
-        if (victory is null || loot.CatalogFingerprint != _demoDefinitions.Loot?.Fingerprint ||
+        if (victory is null ||
             loot.Map.Phase != TacticalBattlePhase.Over || System.Text.Json.JsonSerializer.Serialize(loot.Map.Outcome) != System.Text.Json.JsonSerializer.Serialize(victory.Outcome) ||
             System.Text.Json.JsonSerializer.Serialize(loot.Map.Units) != System.Text.Json.JsonSerializer.Serialize(victory.Units) ||
             loot.Sources.Any(s => !victory.Units.Any(u => u.Id == s.ObjectId && u.Side != loot.Map.PlayerSide)))
             throw new ScenarioException("Invalid or incompatible frozen battle loot.");
-        var definitions = _demoDefinitions.Loot!;
-        var catalog = _registry.TacticalBattle.Catalog!;
         void Require(bool valid) { if (!valid) throw new ScenarioException("Loot source does not match frozen battle/content."); }
         var expectedSources = victory.Units.Where(u => u.Side != loot.Map.PlayerSide &&
             (u.Kind == TacticalUnitKind.Carrier ? u.Hull == 0 : u.State is TacticalUnitState.Disabled or TacticalUnitState.Destroyed));
         Require(expectedSources.Select(u => u.Id).Order(StringComparer.Ordinal).SequenceEqual(loot.Sources.Select(s => s.ObjectId).Order(StringComparer.Ordinal)));
+        Require(loot.Sources.All(s => victory.Units.Any(u => u.Id == s.ObjectId && s.X == u.Pose.X && s.Y == u.Pose.Y && s.Direction == u.Pose.Course)));
+        // Closed ledgers are an immutable audit, not an entitlement to current content.
+        if (loot.Phase == LootPhases.Closed) return;
+        Require(loot.CatalogFingerprint == _demoDefinitions.Loot?.Fingerprint);
+        var definitions = _demoDefinitions.Loot ?? throw new ScenarioException("Missing loot content.");
+        var catalog = _registry.TacticalBattle.Catalog ?? throw new ScenarioException("Missing tactical content.");
         foreach (var source in loot.Sources)
         {
             var unit = victory.Units.Single(u => u.Id == source.ObjectId);
             Require(source.X == unit.Pose.X && source.Y == unit.Pose.Y && source.Direction == unit.Pose.Course);
-            var composition = campaign.PirateCompositions.Single(c => c.CarrierId == (unit.Kind == TacticalUnitKind.Carrier ? unit.Id : unit.OriginCarrierId));
+            var compositions = campaign.PirateCompositions.Where(c => c.CarrierId == (unit.Kind == TacticalUnitKind.Carrier ? unit.Id : unit.OriginCarrierId)).ToArray();
+            Require(compositions.Length == 1);
+            var composition = compositions[0];
             string layoutId = unit.Kind == TacticalUnitKind.Carrier
-                ? _demoDefinitions.Encounters!.Profiles.Single(p => p.SignatureTypeId == composition.SignatureTypeId).CarrierLayoutId
-                : composition.Drones.Single(d => d.DroneId == unit.Id).LayoutId;
-            Require(source.LayoutId == layoutId);
+                ? _demoDefinitions.Encounters?.Profiles.FirstOrDefault(p => p.SignatureTypeId == composition.SignatureTypeId)?.CarrierLayoutId ?? throw new ScenarioException("Missing loot carrier profile.")
+                : composition.Drones.FirstOrDefault(d => d.DroneId == unit.Id)?.LayoutId ?? throw new ScenarioException("Missing loot drone composition.");
+            Require(source.LayoutId == layoutId && catalog.Layouts.Contains(layoutId));
             var layout = catalog.Layouts[layoutId];
             if (source.Scrap is { } scrap)
             {

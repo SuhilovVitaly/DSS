@@ -9,6 +9,39 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 public sealed class DemoEp0036Us0004Tk0001Tests
 {
     [Fact]
+    public void BalanceChangeAcceptsClosedLedgerButRejectsOpenLedgerAtomically()
+    {
+        using var engine = DemoEp0036Us0007Tk0003Tests.Won();
+        var open = engine.CaptureSaveState();
+        var state = engine.CaptureSnapshot().DemoCampaign!;
+        Assert.True(engine.ExecuteDemoCampaign(new FinishBattleLootCommand("close-balance", state.Revision, state.Rewards!.Loot!.BattleId, true)).Applied);
+        var closed = engine.CaptureSaveState();
+        using var target = DemoEp0033Us0001Tk0003Tests.Demo();
+        var definitions = DeepSpaceSaga.Engine.Content.DemoCampaignDefinitions.Load(DemoEp0033Us0001Tk0003Tests.Root());
+        var loot = definitions.Loot!;
+        var frame = loot.DroneScrapQuantityByFrame.First();
+        target.ConfigureDemoCampaign(definitions with { Loot = loot with { DroneScrapQuantityByFrame = loot.DroneScrapQuantityByFrame.SetItem(frame.Key, frame.Value + 1) } });
+        target.LoadScenario(closed, true);
+        string before = ScenarioLoader.Serialize(target.CaptureSaveState());
+        Assert.Throws<ScenarioException>(() => target.LoadScenario(open, true));
+        Assert.Equal(before, ScenarioLoader.Serialize(target.CaptureSaveState()));
+        Assert.Equal(JsonSerializer.Serialize(closed.GameState.DemoCampaign!.LootSession), JsonSerializer.Serialize(target.CaptureSaveState().GameState.DemoCampaign!.LootSession));
+    }
+
+    [Fact]
+    public void MissingLootCompositionRejectsWithScenarioException()
+    {
+        using var engine = DemoEp0036Us0007Tk0003Tests.Won();
+        var save = engine.CaptureSaveState();
+        var campaign = save.GameState.DemoCampaign!;
+        using var target = DemoEp0033Us0001Tk0003Tests.Demo();
+        string before = ScenarioLoader.Serialize(target.CaptureSaveState());
+        Assert.Throws<ScenarioException>(() => target.LoadScenario(save with { GameState = save.GameState with
+        { DemoCampaign = campaign with { PirateCompositions = [] } } }, true));
+        Assert.Equal(before, ScenarioLoader.Serialize(target.CaptureSaveState()));
+    }
+
+    [Fact]
     public void AcceptedBounty_LootArrestRoundtrip_PaidOnlyOnce()
     {
         try
