@@ -81,3 +81,5 @@ Review correction: pre-publication Load gate now requires Open loot to match the
 Scope: findings 1 and 5. Closed loot keeps structural/frozen provenance validation without current loot balance identity; Open remains strict. Missing composition/layout references must reject with ScenarioException. Owning lifecycle and existing integration tests; validation pending at story boundary.
 
 Independent review follow-up: BattleLoot.cs added to scope. Closed session projects no actionable objects; full frozen audit remains persisted. This prevents closed content-independent audit from dereferencing obsolete SKUs. Test unknown closed SKU snapshot versus strict Open rejection. US4 initial tests PASS 5/5 (20261118-corrections/us4).
+
+Final correction supersedes prior no-objects approach: preserve closed report objects/outcomes, resolve optional display metadata safely (unknown historical SKU uses identity and zero unavailable mass/value); no actions enabled. ModuleSalvage.cs included for safe closed display lookup. This retains Contracts reward report history.

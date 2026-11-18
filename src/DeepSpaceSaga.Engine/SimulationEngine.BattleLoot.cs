@@ -143,9 +143,6 @@ public sealed partial class SimulationEngine
     private LootSessionSnapshot? BuildBattleLootProjection()
     {
         if (_demoCampaign.LootSession is not { } loot) return null;
-        // Discarded sources remain in the save audit only; they cannot be acted on.
-        // Do not resolve their historical item identities against today's catalog.
-        if (loot.Phase == LootPhases.Closed) return new(loot.BattleId, loot.Phase, [], false);
         bool open = loot.Phase == LootPhases.Open;
         var ship = _objects.FirstOrDefault(s => s.InitialMotion.ObjectId == PlayerShipObjectId && !s.IsDestroyed);
         long[] holds = ship?.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0)
@@ -170,7 +167,7 @@ public sealed partial class SimulationEngine
             {
                 string? reason = !open ? BattleLootReasons.LootClosed : c.Remaining == 0 ? BattleLootReasons.AlreadyAttempted :
                     !CanFit(c.ItemTypeId, 1) ? BattleLootReasons.CargoFull : null;
-                return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason, _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(c.ItemTypeId)).UnitMassKg) { OriginalQuantity = c.OriginalQuantity };
+                return new LootConsumableSnapshot(c.ItemTypeId, c.Remaining, reason is null, reason, LootItemDefinition(c.ItemTypeId)?.UnitMassKg ?? 0) { OriginalQuantity = c.OriginalQuantity };
             }).ToImmutableArray(),
             s.Scrap is { } scrap ? ProjectScrap(scrap, open, CanFit) : null,
             s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open, CanFit)).ToImmutableArray(), ProjectLootPilot(loot, s, ship, freeCabins), s.X, s.Y, s.Direction)).ToImmutableArray();
@@ -184,7 +181,12 @@ public sealed partial class SimulationEngine
     {
         string? reason = !open ? BattleLootReasons.LootClosed : scrap.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
             !canFit(scrap.ItemTypeId, scrap.Quantity) ? BattleLootReasons.CargoFull : null;
+        long mass = LootItemDefinition(scrap.ItemTypeId)?.UnitMassKg ?? 0;
         return new(scrap.ItemTypeId, scrap.Quantity, scrap.ChanceBasisPoints, scrap.State, reason is null, reason,
-            checked(scrap.Quantity * _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(scrap.ItemTypeId)).UnitMassKg));
+            mass > 0 && scrap.Quantity <= long.MaxValue / mass ? scrap.Quantity * mass : 0);
     }
+
+    // Closed audit identities may outlive their content; quantities and outcomes remain visible.
+    private Content.ItemTypeDefinition? LootItemDefinition(string id) => _registry.ItemTypes.Contains(id)
+        ? _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(id)) : null;
 }

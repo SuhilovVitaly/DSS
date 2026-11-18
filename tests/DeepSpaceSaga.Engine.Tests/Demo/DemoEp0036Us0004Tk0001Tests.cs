@@ -28,7 +28,9 @@ public sealed class DemoEp0036Us0004Tk0001Tests
         var frame = loot.DroneScrapQuantityByFrame.First();
         target.ConfigureDemoCampaign(definitions with { Loot = loot with { DroneScrapQuantityByFrame = loot.DroneScrapQuantityByFrame.SetItem(frame.Key, frame.Value + 1) } });
         target.LoadScenario(closed, true);
-        Assert.Empty(target.CaptureSnapshot().DemoCampaign!.Rewards!.Loot!.Objects);
+        var projected = target.CaptureSnapshot().DemoCampaign!.Rewards!.Loot!;
+        Assert.Equal(closedLoot.Sources.Length, projected.Objects.Length);
+        Assert.All(projected.Objects.Where(s => s.Scrap is not null), s => Assert.False(s.Scrap!.CanAttempt));
         string before = ScenarioLoader.Serialize(target.CaptureSaveState());
         Assert.Throws<ScenarioException>(() => target.LoadScenario(open, true));
         Assert.Equal(before, ScenarioLoader.Serialize(target.CaptureSaveState()));

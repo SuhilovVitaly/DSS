@@ -48,10 +48,10 @@ public sealed partial class SimulationEngine
 
     private ModuleLootSnapshot ProjectLootModule(LootModuleData module, bool open, Func<string, long, bool> canFit)
     {
-        var item = _registry.ItemTypes.GetDefinition(_registry.ItemTypes.GetIndex(module.ItemTypeId));
+        var item = LootItemDefinition(module.ItemTypeId);
         string? reason = !open ? BattleLootReasons.LootClosed : module.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
             !canFit(module.ItemTypeId, 1) ? BattleLootReasons.CargoFull : null;
-        return new(module.InstanceId, module.Category, module.CatalogId, module.ItemTypeId, item.DisplayName, "intact",
-            item.BasePriceCredits ?? 0, module.ChanceBasisPoints, module.State, reason is null, reason, item.UnitMassKg);
+        return new(module.InstanceId, module.Category, module.CatalogId, module.ItemTypeId, item?.DisplayName ?? module.ItemTypeId, "intact",
+            item?.BasePriceCredits ?? 0, module.ChanceBasisPoints, module.State, reason is null, reason, item?.UnitMassKg ?? 0);
     }
 }
