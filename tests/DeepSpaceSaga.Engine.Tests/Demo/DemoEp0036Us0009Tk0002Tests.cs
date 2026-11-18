@@ -7,6 +7,28 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 public sealed class DemoEp0036Us0009Tk0002Tests
 {
     [Fact]
+    public void SideBPrisonerProvenanceAndMapRoundtrip()
+    {
+        using var engine = DemoEp0036Us0009Tk0003Tests.Captured();
+        var save = engine.CaptureSaveState();
+        var campaign = save.GameState.DemoCampaign!;
+        var result = Assert.Single(campaign.EncounterResults);
+        var units = result.Units.Select(u => u with { Side = u.Side == "A" ? "B" : "A" }).ToImmutableArray();
+        var outcome = result.Outcome with { Kind = TacticalBattleOutcomeCode.B };
+        var loot = campaign.LootSession!;
+        var changed = campaign with
+        {
+            EncounterResults = [result with { PlayerSide = "B", Outcome = outcome, Units = units }],
+            LootSession = loot with { Map = loot.Map with { PlayerSide = "B", Outcome = outcome, Units = units } }
+        };
+        using var target = DemoEp0033Us0001Tk0003Tests.Demo();
+        target.LoadScenario(save with { GameState = save.GameState with { DemoCampaign = changed } }, true);
+        Assert.Single(target.CaptureSaveState().GameState.DemoCampaign!.Prisoners);
+        Assert.Throws<ScenarioException>(() => target.LoadScenario(save with { GameState = save.GameState with
+        { DemoCampaign = changed with { LootSession = changed.LootSession with { Map = changed.LootSession.Map with { PlayerSide = "A" } } } } }, true));
+    }
+
+    [Fact]
     public void DisabledEnemyPilot_ArrestedOnce_RepeatAndLoad_NoDuplicate()
     {
         using var engine = DemoEp0036Us0007Tk0003Tests.Won();

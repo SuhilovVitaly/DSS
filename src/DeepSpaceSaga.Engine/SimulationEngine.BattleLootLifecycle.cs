@@ -45,7 +45,7 @@ public sealed partial class SimulationEngine
             encounter.Binding.BattleId != loot.BattleId || campaign.PendingSensorReport is not null))
             throw new ScenarioException("Open loot requires its finished encounter and no pending sensor report.");
         var victory = campaign.EncounterResults.SingleOrDefault(r => r.Binding.BattleId == loot.BattleId && r.PlayerWon);
-        if (victory is null ||
+        if (victory is null || victory.PlayerSide != loot.Map.PlayerSide ||
             loot.Map.Phase != TacticalBattlePhase.Over || System.Text.Json.JsonSerializer.Serialize(loot.Map.Outcome) != System.Text.Json.JsonSerializer.Serialize(victory.Outcome) ||
             System.Text.Json.JsonSerializer.Serialize(loot.Map.Units) != System.Text.Json.JsonSerializer.Serialize(victory.Units) ||
             loot.Sources.Any(s => !victory.Units.Any(u => u.Id == s.ObjectId && u.Side != loot.Map.PlayerSide)))

@@ -90,7 +90,7 @@ public sealed partial record DemoCampaignData(
         if (data.Prisoners.IsDefault || data.Prisoners.Any(p => p is null || string.IsNullOrWhiteSpace(p.ShipId) ||
             string.IsNullOrWhiteSpace(p.DisplayName) || !Enum.IsDefined(p.Gender) || p.CapturedAt < 0 || p.CapturedAt > gameTimeMs ||
             p.Id != "prisoner:" + p.SourcePilotId || !data.EncounterResults.Any(r => r.PlayerWon && r.Binding.BattleId == p.SourceBattleId &&
-                r.Units.Any(u => u.Id == p.SourceDroneId && u.Side == "B" && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Disabled &&
+                r.Units.Any(u => u.Id == p.SourceDroneId && u.Side != r.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Disabled &&
                     u.Build is { } build && p.SourcePilotId == SimulationEngine.LootPilotIdentity(r.Binding.BattleId, u.Id, build.PilotId) &&
                     p.DisplayName == build.PilotName && p.PortraitAssetId == build.PilotPortraitAssetId && p.Gender == (build.PilotGender ?? CrewGender.Female)))) ||
             data.Prisoners.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != data.Prisoners.Length ||

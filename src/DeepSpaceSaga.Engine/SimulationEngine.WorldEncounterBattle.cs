@@ -71,7 +71,7 @@ public sealed partial class SimulationEngine
             PirateWorld = world with { Groups = world.Groups.SetItem(index, group) },
             WorldEncounter = encounter with { Phase = WorldEncounterPhases.Finished },
             EncounterResults = campaign.EncounterResults.Add(new(encounter.Binding,
-                snapshot.Outcome.Kind.ToString() == session.PlayerSide, snapshot.Outcome, snapshot.Units))
+                snapshot.Outcome.Kind.ToString() == session.PlayerSide, snapshot.Outcome, snapshot.Units, session.PlayerSide))
         };
     }
 
