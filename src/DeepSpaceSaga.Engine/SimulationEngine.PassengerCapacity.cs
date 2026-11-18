@@ -30,7 +30,7 @@ public sealed partial class SimulationEngine
             };
     }
 
-    private PassengerCapacitySnapshot? BuildPassengerCapacityProjection()
+    private PassengerCapacitySnapshot? BuildPassengerCapacityProjection(Scenario.DemoCampaignData? state = null)
     {
         if (string.IsNullOrWhiteSpace(PlayerShipObjectId))
             return null;
@@ -50,10 +50,11 @@ public sealed partial class SimulationEngine
 
         int crew = ship.Crew.IsDefault ? 0 : ship.Crew.Length;
         int passengers = ship.Passengers.IsDefault ? 0 : ship.Passengers.Length;
-        int reserved = ReservedPrisonerCabins;
-        int prisoners = GetPrisonerCount(ship.InitialMotion.ObjectId);
-        long committed = (long)crew + passengers + prisoners;
-        int free = (int)Math.Max(0, total - committed);
+        var cabins = BuildCabinReservationProjection(ship, state);
+        int reserved = cabins.ReservedCabins;
+        int prisoners = cabins.PrisonerCount;
+        long committed = (long)crew + passengers + prisoners + reserved;
+        int free = cabins.FreeCabins;
 
         string? reason = null;
         if (committed > total)
@@ -64,7 +65,7 @@ public sealed partial class SimulationEngine
         {
             // Life support: the hold must feed everyone aboard plus every free cabin for one calendar day.
             long mealsPerDay = GameCalendar.DayMs / MealIntervalMs;
-            long needed = checked(((long)crew + passengers + prisoners + free) * mealsPerDay);
+            long needed = checked((committed + free) * mealsPerDay);
             if (RationsAboard(ship) < needed)
                 reason = PassengerCapacityReasons.InsufficientFoodRations;
         }

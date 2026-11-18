@@ -5,6 +5,27 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 
 public sealed class DemoEp0036Us0009Tk0003Tests
 {
+    [Fact]
+    public void UnboardedObligationsReserveSameCabinsAcrossScreens()
+    {
+        using var engine = DemoEp0033Us0001Tk0003Tests.Demo();
+        var save = engine.CaptureSaveState();
+        var campaign = save.GameState.DemoCampaign!;
+        var jobs = campaign.StationJobs!;
+        var offer = jobs.Offers.First(o => StationJobTypes.CarriesPassengers(o.Type));
+        var obligation = new JobObligation("contract:" + offer.Id, offer.Id, offer.Type, offer.OriginStationId, offer.DestinationStationId,
+            1, 0, offer.Payout, save.GameState.GameTimeMs, save.GameState.GameTimeMs + offer.DeadlineDurationMs, StationJobStatuses.Active, offer.RiskBand);
+        engine.LoadScenario(save with { GameState = save.GameState with { DemoCampaign = campaign with
+        { StationJobs = jobs with { Obligations = jobs.Obligations.Add(obligation), Offers = jobs.Offers.Remove(offer) } } } }, true);
+        var snapshot = engine.CaptureSnapshot();
+        var cabin = snapshot.CarrierOperations!.CabinReservation!;
+        var capacity = snapshot.DemoCampaign!.Transport!.PassengerCapacity!;
+        Assert.Equal(1, cabin.ReservedCabins);
+        Assert.Equal(cabin.TotalCabins - cabin.OccupiedCabins - 1, cabin.FreeCabins);
+        Assert.Equal(cabin.FreeCabins, capacity.FreeCabins);
+        Assert.Equal(cabin.FreeCabins, snapshot.DemoCampaign.Company!.Recruitment!.FreeCabins);
+    }
+
     internal static SimulationEngine Captured()
     {
         var engine = DemoEp0036Us0007Tk0003Tests.Won();

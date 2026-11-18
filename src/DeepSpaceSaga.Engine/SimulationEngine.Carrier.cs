@@ -118,8 +118,9 @@ public partial class SimulationEngine
         return crew.ToImmutable();
     }
 
-    private CabinReservationSnapshot BuildCabinReservationProjection(SpaceObjectRuntime ship)
+    private CabinReservationSnapshot BuildCabinReservationProjection(SpaceObjectRuntime ship, DemoCampaignData? state = null)
     {
+        state ??= _demoCampaign;
         int operationalCabins = 0;
         foreach (var module in ship.Modules)
         {
@@ -131,9 +132,12 @@ public partial class SimulationEngine
             }
         }
 
-        int prisoners = GetPrisonerCount(ship.InitialMotion.ObjectId);
+        int prisoners = state.Prisoners.Count(p => p.ShipId == ship.InitialMotion.ObjectId);
         int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length) + prisoners;
-        int reserved = ReservedPrisonerCabins;
+        int reserved = ship.InitialMotion.ObjectId == PlayerShipObjectId ? checked((int)(state.StationJobs?.Obligations
+            .Where(o => o.Status == StationJobStatuses.Active && StationJobTypes.CarriesPassengers(o.Type) &&
+                !state.PassengerContracts.Any(c => c.ContractId == o.ContractId && !c.PassengerIds.IsEmpty))
+            .Sum(o => (long)o.Count) ?? 0)) : 0;
         return new CabinReservationSnapshot(
             TotalCabins: operationalCabins,
             OccupiedCabins: occupied,

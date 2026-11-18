@@ -124,3 +124,6 @@ Actual prisoners now consume shared cabins and scheduled rations; fixed reserve 
 Boundary regression scope: update EP34 passenger-capacity fixture to seven real demo crew, zero reserve, five passenger cabins and twelve actual meal consumers; retain full-capacity, damaged, missing-food and legacy-save assertions. Fixture outputs now use this task's artifact run.
 
 Boundary fixture correction: retain the explicit-time helper's returned save rather than recapturing with the unchanged test clock. The latter manufactured a gameTime older than LastTick. 32/33 passed before this fixture correction (us9-engine-repeat.log).
+
+## Owner review correction 2
+Extend scope to Prisoners.cs and StationJobs.cs: shared cabin projection counts legacy unboarded passenger obligations as reservations, without double subtraction by job acceptance. Permanent prisoner reserve remains zero. Existing capacity tests cover screen/hiring agreement. Tests pending at story boundary.

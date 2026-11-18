@@ -9,11 +9,7 @@ public sealed partial class SimulationEngine
     private int GetPrisonerCount(string shipId) => _demoCampaign.Prisoners.Count(p => p.ShipId == shipId);
     private int GetAvailablePrisonerCabins(SpaceObjectRuntime ship, DemoCampaignData state)
     {
-        long total = ship.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0)
-            .Sum(m => (long)(_registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).CabinesCount ?? 0));
-        long promised = PassengerSeatsAwaitingBoarding(state.StationJobs?.Obligations.Where(o => o.Status == StationJobStatuses.Active) ?? []);
-        return (int)Math.Max(0, total - ship.Crew.Length - (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length) -
-            state.Prisoners.Count(p => p.ShipId == ship.InitialMotion.ObjectId) - promised);
+        return BuildCabinReservationProjection(ship, state).FreeCabins;
     }
     private string? ArrestReason(DemoCampaignData state, BattleLootData loot, LootSourceData? source)
     {
