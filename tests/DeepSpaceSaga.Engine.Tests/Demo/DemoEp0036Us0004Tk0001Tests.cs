@@ -19,9 +19,20 @@ public sealed class DemoEp0036Us0004Tk0001Tests
         var closedCampaign = closed.GameState.DemoCampaign!;
         var closedLoot = closedCampaign.LootSession!;
         var scrapSource = closedLoot.Sources.First(s => s.Scrap is not null);
-        closed = closed with { GameState = closed.GameState with { DemoCampaign = closedCampaign with
-        { LootSession = closedLoot with { Sources = closedLoot.Sources.Replace(scrapSource, scrapSource with
-        { Scrap = scrapSource.Scrap! with { ItemTypeId = "obsolete.audit.sku" } }) } } } };
+        closed = closed with
+        {
+            GameState = closed.GameState with
+            {
+                DemoCampaign = closedCampaign with
+                {
+                    LootSession = closedLoot with
+                    {
+                        Sources = closedLoot.Sources.Replace(scrapSource, scrapSource with
+                        { Scrap = scrapSource.Scrap! with { ItemTypeId = "obsolete.audit.sku" } })
+                    }
+                }
+            }
+        };
         using var target = DemoEp0033Us0001Tk0003Tests.Demo();
         var definitions = DeepSpaceSaga.Engine.Content.DemoCampaignDefinitions.Load(DemoEp0033Us0001Tk0003Tests.Root());
         var loot = definitions.Loot!;
@@ -45,8 +56,11 @@ public sealed class DemoEp0036Us0004Tk0001Tests
         var campaign = save.GameState.DemoCampaign!;
         using var target = DemoEp0033Us0001Tk0003Tests.Demo();
         string before = ScenarioLoader.Serialize(target.CaptureSaveState());
-        Assert.Throws<ScenarioException>(() => target.LoadScenario(save with { GameState = save.GameState with
-        { DemoCampaign = campaign with { PirateCompositions = [] } } }, true));
+        Assert.Throws<ScenarioException>(() => target.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            { DemoCampaign = campaign with { PirateCompositions = [] } }
+        }, true));
         Assert.Equal(before, ScenarioLoader.Serialize(target.CaptureSaveState()));
     }
 
