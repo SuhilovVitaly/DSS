@@ -230,7 +230,8 @@ public sealed class DemoEp0034Us0006Tk0003Tests
             Assert.Equal(before.Offers.ToArray(), after.Offers.ToArray());
             Assert.Equal(before.Obligations.ToArray(), after.Obligations.ToArray());
             // The receipt survives: the same command is answered, not applied twice.
-            Assert.Equal(applied, loaded.ExecuteDemoCampaign(new AcceptJobOfferCommand("save-1", 0, first.Id)));
+            var replay = loaded.ExecuteDemoCampaign(new AcceptJobOfferCommand("save-1", 0, first.Id));
+            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(applied), System.Text.Json.JsonSerializer.Serialize(replay));
             Assert.Single(Board(loaded, noon).Obligations);
 
             // Corrupted board data rejects the whole Load atomically.

@@ -9,6 +9,27 @@ namespace DeepSpaceSaga.Engine.Tests.Demo;
 public sealed class DemoEp0036Us0007Tk0005Tests
 {
     [Fact]
+    public async Task OldLootReceiptDoesNotCheckpointDuringNextBattle()
+    {
+        string directory = DirectoryForTest();
+        try
+        {
+            var engine = DemoEp0036Us0007Tk0003Tests.Won();
+            await using var connection = new LocalGameSessionConnection(engine, directory);
+            var state = engine.CaptureSnapshot().DemoCampaign!;
+            var command = new FinishBattleLootCommand("old-finish", state.Revision, state.Rewards!.Loot!.BattleId, true);
+            Assert.True((await connection.ExecuteDemoCampaignAsync(command)).Applied);
+            var saved = engine.CaptureSaveState();
+            engine.LoadScenario(saved, true); // also exercises compact restored receipt hydration
+            DemoEp0032Us0001Tk0002Tests.Start(engine, "next-battle");
+            Assert.True((await connection.ExecuteDemoCampaignAsync(command)).Applied);
+            Assert.True(engine.IsTacticalBattleActive);
+            Assert.Null(typeof(LocalGameSessionConnection).GetField("_pendingLootCheckpoint", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(connection));
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Fact]
     public void SavedReceiptsDoNotDuplicateLootAndRetryDoesNotReplay()
     {
         using var engine = DemoEp0036Us0007Tk0003Tests.Won();

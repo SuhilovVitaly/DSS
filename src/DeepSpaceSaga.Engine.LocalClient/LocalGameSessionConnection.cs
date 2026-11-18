@@ -271,8 +271,9 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
                 if (_pendingLootCheckpoint is { } pending) await WriteContinuationCheckpointAsync(pending, cancellationToken).ConfigureAwait(false);
+                long before = _engine.CaptureSnapshot().DemoCampaign!.CommitSequence;
                 var response = _engine.ExecuteDemoCampaign(command);
-                if (response.Applied)
+                if (response.Applied && _engine.CaptureSnapshot().DemoCampaign!.CommitSequence != before)
                 {
                     _pendingLootCheckpoint = loot.BattleId;
                     _engine.SetEncounterStoragePending(true);

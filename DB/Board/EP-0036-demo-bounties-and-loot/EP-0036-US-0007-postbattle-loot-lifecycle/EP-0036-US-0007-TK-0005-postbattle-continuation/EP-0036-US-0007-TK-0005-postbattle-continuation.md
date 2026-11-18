@@ -110,3 +110,5 @@ Review corrections verified at US7 boundary: Engine 13/13 (us7-engine-review.log
 
 ## Owner review correction 6
 Extend scope to SimulationEngine.DemoCampaign.cs: save command receipt outcomes without derived Rewards snapshots; exact live retries stay unchanged, restored compact retries attach current Rewards and current revision without replaying effects. Existing integration tests add bounded save growth and retry coverage.
+
+Independent review follow-up: LocalGameSessionConnection checkpoints only newly committed loot commands, not historical Applied receipt replays; pending failed writes still retry first. Regression closes A, starts B, retries Finish A and checks pending state remains clear. Extend test scope to EP34 US6 SaveLoad receipt comparison by serialized value, avoiding ImmutableArray reference equality.
