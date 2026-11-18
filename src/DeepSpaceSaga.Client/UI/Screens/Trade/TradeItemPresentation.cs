@@ -1,6 +1,7 @@
 using System.Globalization;
 
 namespace DeepSpaceSaga.Client.UI.Screens.Trade;
+
 internal static class TradeItemPresentation
 {
     internal static string ItemDisplayName(string itemTypeId) => itemTypeId switch
@@ -18,7 +19,7 @@ internal static class TradeItemPresentation
         "item.fuel" => Localization.Get("Trade.ItemFuel"),
         "item.protein-mass" => Localization.Get("Trade.ItemProteinMass"),
         "item.food-rations" => Localization.Get("Trade.ItemFoodRations"),
-        _ => itemTypeId
+        _ => Localized("Trade.Item." + itemTypeId, itemTypeId)
     };
 
     /// <summary>Flavor/trade description for the item preview panel (<see cref="DrawItemPreviewPanel"/>) — same id-to-key mapping convention as <see cref="ItemDisplayName"/>, falls back to empty for any future/unknown item type.</summary>
@@ -37,8 +38,14 @@ internal static class TradeItemPresentation
         "item.fuel" => Localization.Get("Trade.DescriptionFuel"),
         "item.protein-mass" => Localization.Get("Trade.DescriptionProteinMass"),
         "item.food-rations" => Localization.Get("Trade.DescriptionFoodRations"),
-        _ => string.Empty
+        _ => Localized("Trade.Description." + itemTypeId, string.Empty)
     };
+
+    private static string Localized(string key, string fallback)
+    {
+        string value = Localization.Get(key);
+        return value == key ? fallback : value;
+    }
 
     /// <summary>Icon asset path for the item preview panel (<see cref="DrawItemPreviewPanel"/>) — same id-to-value mapping convention as <see cref="ItemDisplayName"/>/<see cref="ItemDescription"/>, one subfolder per <see cref="TradeItemCategories"/> value; null for any future/unknown item type (the panel then falls back to the bare frame).</summary>
     internal static string? ItemImagePath(string itemTypeId) => itemTypeId switch
@@ -64,7 +71,7 @@ internal static class TradeItemPresentation
         "item.energy-cells" => Localization.Get(singular ? "Trade.UnitCellSingle" : "Trade.UnitCell"),
         "item.electronics" => Localization.Get(singular ? "Trade.UnitBlockSingle" : "Trade.UnitBlock"),
         "item.ice" or "item.iron-ore" or "item.silicon" or "item.magnesium-ore" or "item.carbon-ore"
-            or "item.water" or "item.steel" or "item.protein-mass" or "item.fuel" or "item.uranium-ore"
+            or "item.water" or "item.steel" or "item.protein-mass" or "item.fuel" or "item.uranium-ore" or "item.scrap"
             => Localization.Get("Trade.UnitKg"),
         _ => Localization.Get(singular ? "Trade.UnitGenericSingle" : "Trade.UnitGeneric")
     };

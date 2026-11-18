@@ -69,3 +69,7 @@ UI не утверждает успех по одному локальному �
 Client: `KeyboardEdgeTrackerTests` (сочетание и удержание P), `DebugConsoleControllerTests` (разбор, реестр, занятость, устаревание, вывод), `DebugConsoleWindowTests` (открытие без сессии и над боем, изоляция ввода, Esc, удержание, рендер поверх стека), `ExitBattleDebugCommandTests`, `KillDroneDebugCommandTests`, `HelpDebugCommandTests`, `ListUnitsDebugCommandTests`, `TacticalBattle/DebugDestroyFlowTests`. Engine: `TacticalBattle/DebugDestroyTests`, `LocalSessionBattleTests.LocalConnectionForwardsDebugDestroy`. Contracts: `TacticalBattleContractTests.DebugDestroyRequestRoundTrips`. Native-проверка консоли на разных экранах выполняется только на подтверждённом меньшем мониторе; её статус ведётся в [Board EP-0030](../../Board/EP-0030-debug-console/Documentation.md).
 
 Источники: [DebugConsole](../../../src/DeepSpaceSaga.Client/UI/DebugConsole/), [SkiaWindow](../../../src/DeepSpaceSaga.Client/UI/SkiaWindow.cs), [KeyboardEdgeTracker](../../../src/DeepSpaceSaga.Client/UI/KeyboardEdgeTracker.cs).
+
+## Команды добычи
+
+`engineer_bonus` читает effective bonus; `engineer_bonus auto|0|10..15` задаёт process override. `loot_force rolls auto|keep|destroy` управляет будущими проверками уничтожения, `loot_force attempts auto|success|fail` — будущими попытками. `loot_state` только читает текущий ledger. Настройки не сохраняются и не изменяют уже записанные исходы/навык; UI использует exclusive gate и запрещает запись при pending/залпе. Engine валидирует значения. [Контракт](DemoRewards.md).

@@ -2,95 +2,97 @@
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0003-simple-loot
 ticket: EP-0036-US-0003-TK-0005-localized-feedback
-title: RU/EN условия, результаты и причины отказа
+title: RU/EN общего окна лута и отказов
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
-depends_on: [EP-0036-US-0003-TK-0003-engine]
+depends_on: [EP-0036-US-0003-TK-0001-contracts]
 files_touched: 3
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
-revision: 1
+revision: 3
 ---
 
-# RU/EN условия, результаты и причины отказа
+# RU/EN общего окна лута и отказов
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 
-Выбор торпед и лома после победы. Тикет 4/5 даёт проверяемый результат своего слоя. [Story и полный пользовательский результат](../EP-0036-US-0003-simple-loot.md).
+[EP-0036-US-0003-simple-loot](../EP-0036-US-0003-simple-loot.md). RU/EN общего окна лута и отказов. Груминг заменяет прежнюю агрегированную loot-модель проверяемым результатом этого тикета.
 
 ## Decisions
 
-Поручение владельца: «пройди все эпики с 32 по 41 и наполни их сторисы тикетами. Если по мере прохождения эпика ты понимаешь что не хватает какой-то стори - ты можешь смело ее добавить уже вместе с тикетами. Реализация с 32 по 41 эпик должно привести нас к состоянию первого демо». Время записи 2026-11-16T20:32:46.441Z, не доказанное время отправки. Разрешены тикеты и необходимые дополнительные истории. Human approval технических деталей/баланса не заявляется; stage approved означает автоматическую готовность workflow планирования. Исполнение и публикация требуют отдельного поручения.
+Нормативные D-36-01…28 с точными цитатами и временем записи — в [эпике](../../Documentation.md). Для этого тикета: лут конкретного объекта после победы; одна попытка демонтажа/сбора лома; целый trophy без durability/установки; cargo по массе; шансы и 50%-броски определены пользователем. Ранее разрешённая декомпозиция не означает исполнение/приёмку. Последняя запись 2026-11-17T19:19:08Z — время записи, не отправки.
 
 ## Assumptions
 
-- Используется сокращённая демо на 60–120 минут, один кластер, готовый Tetrarch; backlog полного продукта не включается.
-- Технические имена/новые API ниже — планируемые, не утверждения о текущем коде. Численные A-решения в шагах — baseline для owning плейтеста, не доказанный баланс.
-- Сначала prerequisites: EP-0036-US-0003-TK-0003-engine. При drift исходников пересмотреть allowlist в Board до расширения diff.
+- Новые имена API/файлы ниже — проект, а не существующая реализация. Реальный API проверять по prerequisite diff до исполнения.
+- Балансовые A в шагах/каталоге — стартовый плейтестовый baseline, не утверждение доказанного баланса.
+- Runtime rejects stale/duplicate identity через единый campaign pipeline; запись rejected receipt не равна выдаче добычи.
+- Все изменения ограничены EP-0036 результатом; при непредвиденном drift пересмотреть этот allowlist до расширения diff.
 
 ## Code context
 
-| File | Current state | Allowed change |
+| File | Current state / evidence | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | Существующий locale dictionary: `src/DeepSpaceSaga.Client/Data/Locale/Russian.json:1`. | Только ключи данной истории, форматные placeholders и тексты отказов. |
-| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | Существующий locale dictionary: `src/DeepSpaceSaga.Client/Data/Locale/English.json:1`. | Только ключи данной истории, форматные placeholders и тексты отказов. |
-| `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0036Us0003Tk0005Tests.cs` | Новый файл этого тикета; на момент grounding отсутствует. | Parity/reason coverage реальных словарей. |
+| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | Existing dictionary. | Только шаги данного тикета. |
+| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | Existing dictionary. | Только шаги данного тикета. |
+| `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0036Us0003Tk0005Tests.cs` | Новый parity test. | Только шаги данного тикета. |
 
-Разрешены ровно 3 файла. Не менять численные правила Engine и не переводить persistent IDs.
+Разрешены 3 implementation files, включая тесты; один layer content-data. Read-only зависимости и source grounding находятся в истории/эпике. Board-правки не расширяют production allowlist.
 
 ## Public API after the change
 
-No API change. Существующие словари Russian/English; язык в Settings — Russian или English, не новые ru/en IDs.
+No gameplay API change. Ключи модульной таблицы и общего окна, объектов, сбор ракет/ловушек/лома, состояния попытки, нехватка трюма, оставить добычу, exit warning, closed session; placeholders одинаковы.
 
 ## Implementation steps
 
-1. По контракту этой истории и API предыдущих тикетов добавить ключи для условий, стоимости/срока, доступности, pending, confirmed результата, каждого stable rejection code и empty state. Использовать одинаковые ключи/параметры в Russian.json и English.json.
-2. Дать короткие конкретные RU/EN тексты: что произошло, почему действие недоступно и какое действие возможно. Не показывать class names, IDs и implementation jargon вместо объяснения.
-3. Проверить все keys, используемые следующим UI тикетом, и отсутствие неизвестных placeholders; не менять чужие переводы. Сюжетные тексты, если есть, остаются в owning dialogue content.
-
-## Served acceptance criteria
-
-- **AC-01:** Список добычи фиксирован для результата, повторное открытие/загрузка его не перебрасывает.
-- **AC-02:** Принятое количество учитывает вместимость и не дублируется; оставление подтверждается понятным действием.
-- **AC-03:** Торпеды пригодны к существующей перезарядке, лом имеет конечного покупателя и учёт происхождения.
-- **AC-04:** Представление результата, причины отказа, учёт и сохранение проверены в применимых пользовательских путях; присутствие DTO или теста не считается доказательством приёмки.
-
-Вклад этого тикета ограничен слоем `content-data`; полный AC принимается после всей карты истории, включая реальный пользовательский путь. DTO/test scaffold сам по себе не закрывает AC.
-
-## Out of scope
-
-Полная верфь, другие носители, фракционная симуляция, пленные, тактическое отступление, сохранение внутри боя, универсальный квестовый движок и публикация. Не переписывать поставленный EP-0029, не ремонтировать несвязанные файлы и не расширять лимит пяти файлов молча.
+1. Дать краткие RU/EN тексты для всех stable loot reasons, названий кнопок и предупреждения о безвозвратно оставленном
+2. не показывать destroyed items, class names/IDs. Также добавить keys отчёта US4: награда к получению/выплачена, взято/оставлено, неудачные попытки, пленные, реальные потери, оценка не доход. Этот тикет также владеет module keys US6: название, целый/сохранность, примерная стоимость, шанс демонтажа, уже разобрано/неудача. US6 client только потребляет эти ключи.
 
 ## Invariants
 
-- `DB/Documentation/01-Requirements/EngineRequirements.md`, «Архитектура и авторитет» / «Команды, события и воспроизводимость»: Engine владеет исходами/временем/RNG/деньгами; render не мутирует мир.
-- `src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs:10`: асинхронный transport. `src/DeepSpaceSaga.Engine/SimulationEngine.SortieSettlement.cs:17`: использовать единый settlement, не создавать второй inventory.
-- `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:40`: на grounding writer Save21; переход к Save22 принадлежит EP-0032-US-0007. Последующие тикеты не назначают конкурирующие версии writer.
-- Reject/duplicate не даёт частичных денег, груза, награды, опыта или повторного звука. Pause не двигает deadlines; calendar и motion units не смешиваются.
-- Реализация gameplay-инвариантов — в owning engine ticket; клиентский/content/tooling тикет их не дублирует.
+- Engine владеет шансом/RNG, capacity, деньгами и подтверждённым результатом; UI не вычисляет новый исход.
+- Stable BattleId/ObjectId/module slot/command identity, phase и terminal attempt переживают Load. Не reroll и не дублировать cargo/postings.
+- Текущий single inventory/PlayerCredits сохраняются; новый trophy только обычный продаваемый item, не отдельный wallet.
+- Успешный salvage выдаёт исправный commodity; не вводить прочность 0–100%, ремонт или установку трофея.
+- 50%-бросок касается предметов, не пилота. Самоуничтожение не создаёт неоговорённый AoE.
+- CargoFull до попытки не тратит RNG/попытку. Generic catalog corruption отклоняется до публикации нового мира.
+
+## Out of scope
+
+Пытки/вербовка, установка трофеев, новая модульная повреждаемость/ремонт, мировые persistent вреки, произвольная фракционная симуляция, несвязанные исправления и публикация. Арест реализуется отдельно US9, инженер US8; подключать их API по prerequisites, не копировать правила.
 
 ## Tests
 
-Будущие named tests (NOT RUN):
+Будущие тесты NOT RUN:
+- `DemoEp0036Us0003Tk0005Tests.KeysExistInBothLocales`
+- `DemoEp0036Us0003Tk0005Tests.ReasonsHaveHumanText`
+- `DemoEp0036Us0003Tk0005Tests.ExitWarningHasRemainingCount`
 
-- `DemoEp0036Us0003Tk0005Tests.StoryKeysExistInBothLocales` — все ключи экрана и причины отказа имеют RU/EN значения.
-- `DemoEp0036Us0003Tk0005Tests.FormatArgumentsMatch` — placeholders и типы форматируемых значений одинаковы.
-- `DemoEp0036Us0003Tk0005Tests.NoRawReasonCodeLeaks` — known rejection code отображается объяснением, не техническим кодом.
-
-Из `D:/DeepSpaceSaga/DSS`: создать уникальный абсолютный `D:/DeepSpaceSaga/artifacts/validation/EP-0036-US-0003-TK-0005-localized-feedback/<UTC-run>/`; команда `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -c Release --filter FullyQualifiedName~DemoEp0036Us0003Tk0005Tests --results-directory <absolute-run>/results --artifacts-path <absolute-run>/build`. Запускать Start-Process с redirected stdout/stderr в run, WindowStyle Hidden, WaitForExit(300000); при timeout taskkill /PID <pid> /T /F и не объявлять PASS. Content-only: format не нужен; owning build `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj -c Release --artifacts-path <absolute-run>/build` с тем же process-tree cap. Реальную читаемость проверяет UI тикет и итоговая EP-0040-US-0005; unit parity не закрывает native/product gate.
+Запуск из D:/DeepSpaceSaga/DSS. Создать уникальный абсолютный run в D:/DeepSpaceSaga/artifacts/validation/EP-0036-US-0003-TK-0005-localized-feedback/<UTC-run>/; ограничить каждый process tree 300000 ms. Команда:
+`dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -c Release --filter FullyQualifiedName~DemoEp0036Us0003Tk0005Tests --results-directory <absolute-run>/results --artifacts-path <absolute-run>/build`.
+Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); при timeout завершить всё дерево taskkill /PID <pid> /T /F, не объявлять PASS. Owning build: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj -c Release --artifacts-path <absolute-run>/build` с тем же cap. Для C# format --verify-no-changes --include только allowlist; для content-only не требуется. Длительный corpus делить по полным IDs, не расширять лимит. Планирование эти проверки не запускало.
 
 ## Definition of Done
 
-- Все шаги выполнены только в allowlist, тесты проверяют указанные исходы и ошибки.
-- Served AC имеют evidence вклада этого слоя; story end-to-end/native/product gates не закрыты автоматически.
-- Focused checks и owning build/format проходят либо конкретное исходное падение записано как блокер; timeout не PASS.
-- Public API, units, persistence, idempotency и ограничения соблюдены; нет скрытого follow-up вне Board.
-- Evidence в `D:/DeepSpaceSaga/artifacts/validation/<ticket>/<unique-run>/`, status/решения в Board, актуальные контракты в Documentation.
-- Удалены только собственные disposable scripts/caches/results; сохранены необходимые ссылки evidence, нет мусора в корнях workspace/repo.
+- Шаги/API выполнены в разрешённых файлах и owning layer, no hidden follow-up.
+- Все named tests проходят; actual evidence и ограничения записаны в Board.
+- Пользовательский end state проверяем через authoritative snapshot/receipt либо реальный input path; unit model не заменяет native/product acceptance.
+- Save/Load/duplicate/rejection сохраняют invariants, нет второго источника inventory/денег.
+- Тесты/build/format не выдаются за успешные без выполнения; native только при отдельной разрешённой проверке на меньшем мониторе.
+- Временные результаты убраны по AGENTS; commits/push этим planning ticket не разрешены.
 
 ## Self-containment check
 
-История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution — 2026-11-17
+
+Added RU/EN shared loot window, source labels, all stable reasons, module conditions/chances/estimated-value caveat, permanent-discard warning with count and battle report labels. Added human item names for all trophy/consumable SKUs. JSON parsing/Client build/scoped format/diff PASS; locale tests authored, not run at ticket level. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us3-tk5-build.log.

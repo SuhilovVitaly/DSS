@@ -65,7 +65,7 @@ public sealed partial class SimulationEngine
     private void DeliverPassengerContracts(long gameTimeMs)
     {
         if (!StationJobsEnabled || _demoCampaign.StationJobs is not { } jobs) return;
-        if (_tacticalBattleSession is not null || _dialogue.Active is not null || _voyageState is { Phase: VoyagePhases.Docking })
+        if (CombatOrLootOpen || _dialogue.Active is not null || _voyageState is { Phase: VoyagePhases.Docking })
             return; // docking is confirmed only after its dialogue has finished
         int shipIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         if (shipIndex < 0) return;
@@ -109,7 +109,9 @@ public sealed partial class SimulationEngine
         // failures), so the autosave captures it instead of the pre-payout docking state.
         var candidate = _demoCampaign with
         {
-            StationJobs = jobs with { Obligations = obligations }, PassengerContracts = contracts, TransportFailures = failures,
+            StationJobs = jobs with { Obligations = obligations },
+            PassengerContracts = contracts,
+            TransportFailures = failures,
             Revision = checked(_demoCampaign.Revision + 1),
             CommitSequence = checked(_demoCampaign.CommitSequence + 1)
         };

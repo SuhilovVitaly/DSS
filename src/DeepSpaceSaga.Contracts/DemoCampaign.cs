@@ -5,7 +5,7 @@ public abstract record DemoCampaignCommand(string CommandId, long ExpectedRevisi
 
 public sealed record DemoCampaignResponse(string CommandId, bool Applied, string? Reason, long Revision,
     StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null, ReplacementSnapshot? Replacement = null,
-    RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null);
+    RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null, DemoRewardsSnapshot? Rewards = null);
 
 /// <summary>Absent sections indicate unavailable features, never implicit resources or entitlements.</summary>
 public sealed record DemoCampaignSnapshot(
@@ -23,14 +23,20 @@ public sealed record DemoCampaignSnapshot(
     FogOfWarSnapshot? FogOfWar = null,
     SensorContactReportBatch? PendingSensorReport = null,
     WorldEncounterSnapshot? WorldEncounter = null,
-    ThreatRoutesSnapshot? ThreatRoutes = null);
+    ThreatRoutesSnapshot? ThreatRoutes = null, DemoDebugSettings? DebugSettings = null);
 
 public sealed record DemoCompanySnapshot(CampaignRoundtripSnapshot? Roundtrip = null, PilotLossSnapshot? PilotLoss = null,
     CampaignOutcomeSnapshot? Outcome = null, StationRepairSnapshot? StationRepair = null, SupplySnapshot? Supply = null,
-    ReplacementSnapshot? Replacement = null, RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null);
+    ReplacementSnapshot? Replacement = null, RecruitmentSnapshot? Recruitment = null, CrewUpkeepSnapshot? Upkeep = null,
+    PrisonerCustodySnapshot? Prisoners = null);
 public sealed partial record DemoTransportSnapshot;
 public sealed partial record DemoEncountersSnapshot;
-public sealed record DemoRewardsSnapshot;
+public sealed partial record DemoRewardsSnapshot
+{
+    public TargetBountySnapshot? Bounties { get; init; }
+    public BountyPaymentSnapshot? BountyPayment { get; init; }
+    public LootSessionSnapshot? Loot { get; init; }
+}
 public sealed record DemoProgressionSnapshot;
 public sealed record DemoStorySnapshot;
 

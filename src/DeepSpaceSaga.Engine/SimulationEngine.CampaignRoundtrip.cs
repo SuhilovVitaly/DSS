@@ -16,6 +16,7 @@ public sealed partial class SimulationEngine
         var company = _demoCampaign.Company ?? new();
         return company with
         {
+            Prisoners = new(_demoCampaign.Prisoners),
             Supply = BuildSupplyProjection(),
             Replacement = BuildReplacementProjection(_demoCampaign),
             Recruitment = BuildRecruitmentProjection(_demoCampaign),

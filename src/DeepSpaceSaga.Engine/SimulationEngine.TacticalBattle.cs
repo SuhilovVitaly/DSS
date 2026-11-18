@@ -45,7 +45,7 @@ public sealed partial class SimulationEngine
     }
     public TacticalBattleSnapshot? GetTacticalBattleState()
     {
-        lock (_worldStateLock) return _tacticalBattleSession?.Capture();
+        lock (_worldStateLock) return _tacticalBattleSession?.Capture() ?? (LootOpen ? _demoCampaign.LootSession!.Map : null);
     }
 
     public TacticalBattleResponse StartTacticalBattle(StartTacticalBattleRequest request)
@@ -53,7 +53,7 @@ public sealed partial class SimulationEngine
         if (request is null) { lock (_worldStateLock) return RejectTactical("", TacticalBattleRejectionCode.InvalidRequest); }
         return ExecuteTactical(request.CommandId, request, () =>
         {
-            if (_tacticalBattleSession is not null) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.AlreadyActive);
+            if (CombatOrLootOpen) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.AlreadyActive);
             if (HasCapturedEncounter || _encounterStoragePending) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongPhase);
             if (_registry.TacticalBattle.Catalog is not { } catalog)
             {
@@ -151,8 +151,14 @@ public sealed partial class SimulationEngine
         if (request is null) { lock (_worldStateLock) return RejectTactical("", TacticalBattleRejectionCode.InvalidRequest); }
         return ExecuteTactical(request.CommandId, request, () =>
         {
+            if (LootOpen) return RejectTactical(request.CommandId, request.BattleId == _demoCampaign.LootSession!.BattleId
+                ? TacticalBattleRejectionCode.WrongPhase : TacticalBattleRejectionCode.WrongBattle);
             if (_tacticalBattleSession is null) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoBattle);
             if (_tacticalBattleSession.Id != request.BattleId) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongBattle);
+            if (BeginPostBattleLoot() is { } newlySettled)
+                return new TacticalBattleResponse(request.CommandId, true, TacticalBattleRejectionCode.None,
+                    TacticalBattlePhase.Over, _demoCampaign.LootSession!.Map, [])
+                { Settlement = newlySettled };
             var session = _tacticalBattleSession;
             if (HasCapturedEncounter && session.Battle.Result is null)
                 return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongPhase);
@@ -188,6 +194,8 @@ public sealed partial class SimulationEngine
                 return new(commandId, false, TacticalBattleRejectionCode.ReceiptExpired, _tacticalBattleSession?.Phase, null, []);
             }
             var response = apply();
+            if (BeginPostBattleLoot() is { } settlement)
+                response = response with { Settlement = settlement, State = _demoCampaign.LootSession!.Map };
             _tacticalIdentities.Add(commandId, identity);
             if (_tacticalResponseOrder.Count == TacticalResponseLimit)
                 _tacticalResponses.Remove(_tacticalResponseOrder.Dequeue());
@@ -222,5 +230,6 @@ public sealed partial class SimulationEngine
     }
 
     private TacticalBattleResponse RejectTactical(string commandId, TacticalBattleRejectionCode code) =>
-        _tacticalBattleSession?.Reject(commandId, code) ?? new(commandId, false, code, null, null, []);
+        _tacticalBattleSession?.Reject(commandId, code) ?? new(commandId, false, code,
+            LootOpen ? TacticalBattlePhase.Over : null, LootOpen ? _demoCampaign.LootSession!.Map : null, []);
 }

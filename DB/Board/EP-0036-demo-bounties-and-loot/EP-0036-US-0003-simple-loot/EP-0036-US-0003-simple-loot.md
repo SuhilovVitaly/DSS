@@ -1,94 +1,74 @@
 ---
-source_request: "Декомпозировать EP-0032…EP-0041 в тикеты до первого демо; добавить недостающие истории."
-current_review: complete
-approval_kind: workflow
-revision: 2
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0003-simple-loot
-title: Выбор торпед и лома после победы
+title: Пообъектный сбор расходников и металлолома
 stage: approved
-plan_status: approved
+plan_status: executed
+current_review: implementation-review
+revision: 5
+created: 2026-11-17T19:21:02Z
 priority: P0
 workstream: feature
 dependencies: [EP-0035-US-0003-world-battle]
-created: 2026-11-16T19:49:59Z
-implementation_status: not-started
+implementation_status: implemented
+planning_status: decomposed
 ---
 
-# Выбор торпед и лома после победы
+# Пообъектный сбор расходников и металлолома
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Связь с техническим заданием
 
-Одобренный план, Д6: Боевые заказы и простая добыча. [Контракт и grounding эпика](../Documentation.md), [общая дорожная карта](../../README.md#дорожная-карта-первой-демо-версии). Общая доска EP-0034 и мировые встречи EP-0035; вознаграждение за контракт отделено от добычи. Боевой settlement EP-0029 переиспользуется.
+[Эпик, точные решения и supersession](../Documentation.md). Актуальный груминг D-36-02…28 заменяет прежнюю простую пакетную добычу. Production не изменялся; stage draft сохраняет границу между готовыми planning artifacts и реализацией/приёмкой.
 
 ## User story
 
-Как игрок, я вижу найденные торпеды и продаваемый лом и забираю то, что помещается в трюм. Остальное можно явно оставить, не застревая на экране добычи.
+Как игрок, после победы я кликаю по отдельному дрону или вреку на тактической карте и забираю его добычу без подлёта. С выведенного из строя дрона я могу забрать сохранившиеся ракеты и ловушки отдельными действиями. С каждого уничтоженного дрона и самоуничтожившегося носителя я один раз пытаюсь собрать фиксированное количество металлолома. Выход с предупреждением завершает сбор; история не создаёт отдельный inventory или второй денежный баланс.
 
-## Зависимости
+## Grounding
 
-- [EP-0035-US-0003-world-battle](../../EP-0035-demo-pirate-encounters/EP-0035-US-0003-world-battle/EP-0035-US-0003-world-battle.md)
+src/DeepSpaceSaga.Engine/SimulationEngine.CargoCost.cs:22 — AddCargoCost сохраняет неизвестный basis; src/DeepSpaceSaga.Contracts/CargoStackSnapshot.cs:11 — quantity и масса через item type; src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleState.cs:64,70 — DecoyCharges/AmmoCurrent. Начальная модель общего loot offer по battleId из старых тикетов superseded.
 
-## Completion evidence
+## Acceptance criteria / Completion evidence
 
-- **AC-01.** Список добычи фиксирован для результата, повторное открытие/загрузка его не перебрасывает.
-- **AC-02.** Принятое количество учитывает вместимость и не дублируется; оставление подтверждается понятным действием.
-- **AC-03.** Торпеды пригодны к существующей перезарядке, лом имеет конечного покупателя и учёт происхождения.
-- **AC-04.** Представление результата, причины отказа, учёт и сохранение проверены в применимых пользовательских путях; присутствие DTO или теста не считается доказательством приёмки.
+- **AC-01:** Каждый уничтоженный drone wreck и selfdestruct carrier wreck предоставляет одну попытку лома: 25% без инженера, 35–40% с инженером. Выход фиксирован по типу в content; носитель даёт только лом.
+- **AC-02:** Disabled-дрон даёт реальные остатки расходников; один 50%-бросок на весь запас каждого типа решает уничтожение. Уничтоженное скрыто, оставшееся собирается отдельными кнопками; масса проверяется атомарно.
+- **AC-03:** Результаты/источники/остатки/attempt flags сохраняются и не reroll при повторе/Load. Cargo provenance и unknown basis сохраняются; scrap имеет конечного покупателя.
+- **AC-04:** Общий panel показывает выбранный объект и подтверждённые результаты; реальный map/exit/restore путь подключается US7, модули US6, пилот US9. Выход с подтверждением оставляет остаток.
 
-## Ограничения и gaps
+## Non-goals и ownership
 
-Без пленных, случайных модулей, разборки дронов и гарантированной денежной добычи с каждого врага.
+US3 владеет scrap commodity, остатками расходников, общим persisted loot ledger и shared DTO. Не владеет шансом/предметами демонтажа US6, ролью инженера US8, пленными US9 или input lifecycle US7. Прежняя пакетная случайная добыча на группу заменена правилами на каждый объект. Количество лома фиксировано в content, A baseline указан в TK2; цифры — для плейтеста.
 
-Численные настройки и продуктовые допущения не являются согласованными значениями без отдельной фиксации. Engine остаётся владельцем мира, времени, денег и исходов; Client показывает подтверждённое состояние. Прежняя граница «без тикетов» заменена текущим поручением; декомпозиция и allowlist приведены ниже.
+## Dependencies и порядок
 
-## Статус и review evidence
-
-Пользователь одобрил общий план и поручил материализацию. Детализация этой истории подготовлена агентом в рамках одобренного объёма; отдельное human approval формулировок и допущений не заявляется. Исторически story detail был draft; текущий workflow status указан в frontmatter и новой карте ниже. Это не препятствует завершению запрошенного создания документов и не разрешает реализацию.
-
-- 2026-11-16T19:49:59Z — время фиксации запроса в Board, не доказанное время отправки: «План одобряю. Оформи его в Board: создай необходимые эпики и пользовательские истории с приоритетами и зависимостями, учитывая уже сделанное в EP-0021 и EP-0029. Пока без тикетов и реализации.».
-- Проверка автора: результат демонстрируем, зависимости указаны, completion evidence наблюдаемо; тикетная декомпозиция не выполнялась. При будущей подготовке соблюдать предел пяти тикетов на историю; если детализация не помещается, сначала разделить story.
-- Implementation: NOT STARTED. Automated/runtime/native/product acceptance: NOT RUN / OPEN. Создание Markdown не закрывает эти gates.
-
-
-## Текущая декомпозиция и review log
-
-2026-11-16T20:32:46.441Z — время записи поручения: «пройди все эпики с 32 по 41 и наполни их сторисы тикетами. Если по мере прохождения эпика ты понимаешь что не хватает какой-то стори - ты можешь смело ее добавить уже вместе с тикетами. Реализация с 32 по 41 эпик должно привести нас к состоянию первого демо». Тикеты подготовлены workflow автоматически; отдельное человеческое утверждение допущений не заявляется. Implementation NOT STARTED; automated/native/audio/product gates NOT RUN / OPEN.
-
-## Входное техническое задание
-
-пройди все эпики с 32 по 41 и наполни их сторисы тикетами. Если по мере прохождения эпика ты понимаешь что не хватает какой-то стори - ты можешь смело ее добавить уже вместе с тикетами. Реализация с 32 по 41 эпик должно привести нас к состоянию первого демо Связь с сокращённым демо-контрактом и исходные критерии сохранены выше.
-
-## Acceptance criteria
-
-- **AC-01.** Список добычи фиксирован для результата, повторное открытие/загрузка его не перебрасывает.
-- **AC-02.** Принятое количество учитывает вместимость и не дублируется; оставление подтверждается понятным действием.
-- **AC-03.** Торпеды пригодны к существующей перезарядке, лом имеет конечного покупателя и учёт происхождения.
-- **AC-04.** Представление результата, причины отказа, учёт и сохранение проверены в применимых пользовательских путях; присутствие DTO или теста не считается доказательством приёмки.
-
-## Non-goals
-
-Полный продукт, новая верфь, captive/VIP механики, фракции, universal quests и публикация. Нельзя закрыть product acceptance только наличием кода.
-
-## Dependencies
-
-- [EP-0035-US-0003-world-battle](../../EP-0035-demo-pirate-encounters/EP-0035-US-0003-world-battle/EP-0035-US-0003-world-battle.md)
+Мировой бой EP-0035-US-0003 предоставляет фактические состояния. Schema US7 TK1 нужна content TK2; Engineer US8 TK2 нужен runtime TK3. US7 поздняя интеграция зависит от готовых US3 panels, поэтому не трактовать US7 целиком как prerequisite US3.
 
 ## Approved ticket map
 
-| Порядок / ID | Title | Layer | Dependencies | Served criteria |
-|---|---|---|---|---|
-| 1. [EP-0036-US-0003-TK-0001-contracts](EP-0036-US-0003-TK-0001-contracts/EP-0036-US-0003-TK-0001-contracts.md) | Контракт: Выбор торпед и лома после победы | contracts | EP-0035-US-0003-TK-0003-client | AC-01, AC-02, AC-03, AC-04 |
-| 2. [EP-0036-US-0003-TK-0002-content](EP-0036-US-0003-TK-0002-content/EP-0036-US-0003-TK-0002-content.md) | Контент: Выбор торпед и лома после победы | content-data | EP-0036-US-0003-TK-0001-contracts | AC-01, AC-02, AC-03, AC-04 |
-| 3. [EP-0036-US-0003-TK-0003-engine](EP-0036-US-0003-TK-0003-engine/EP-0036-US-0003-TK-0003-engine.md) | Правила: Выбор торпед и лома после победы | engine | EP-0036-US-0003-TK-0002-content | AC-01, AC-02, AC-03, AC-04 |
-| 4. [EP-0036-US-0003-TK-0005-localized-feedback](EP-0036-US-0003-TK-0005-localized-feedback/EP-0036-US-0003-TK-0005-localized-feedback.md) | RU/EN условия, результаты и причины отказа | content-data | EP-0036-US-0003-TK-0003-engine | AC-01, AC-02, AC-03, AC-04 |
-| 5. [EP-0036-US-0003-TK-0004-client](EP-0036-US-0003-TK-0004-client/EP-0036-US-0003-TK-0004-client.md) | Экран и причины отказа: Выбор торпед и лома после победы | client | EP-0036-US-0003-TK-0005-localized-feedback | AC-01, AC-02, AC-03, AC-04 |
+Planning map, не human approval implementation:
+| ID | Layer | Dependencies | Criteria |
+|---|---|---|---|
+| [EP-0036-US-0003-TK-0001-contracts](EP-0036-US-0003-TK-0001-contracts/EP-0036-US-0003-TK-0001-contracts.md) | contracts | none | AC-01…04, вклад owning layer |
+| [EP-0036-US-0003-TK-0002-content](EP-0036-US-0003-TK-0002-content/EP-0036-US-0003-TK-0002-content.md) | content-data | EP-0036-US-0007-TK-0001-loot-schema | AC-01…04, вклад owning layer |
+| [EP-0036-US-0003-TK-0003-engine](EP-0036-US-0003-TK-0003-engine/EP-0036-US-0003-TK-0003-engine.md) | engine | EP-0036-US-0003-TK-0002-content, EP-0036-US-0008-TK-0002-identity-and-skill | AC-01…04, вклад owning layer |
+| [EP-0036-US-0003-TK-0005-localized-feedback](EP-0036-US-0003-TK-0005-localized-feedback/EP-0036-US-0003-TK-0005-localized-feedback.md) | content-data | EP-0036-US-0003-TK-0001-contracts | AC-01…04, вклад owning layer |
+| [EP-0036-US-0003-TK-0004-client](EP-0036-US-0003-TK-0004-client/EP-0036-US-0003-TK-0004-client.md) | client | EP-0036-US-0003-TK-0005-localized-feedback, EP-0036-US-0003-TK-0003-engine | AC-01…04, вклад owning layer |
 
-## Invariants
+## Decisions и Review log
 
-Engine authority; stable IDs; один receipt/side effect; calendar deadlines; validated Load до замены сессии; отсутствие неявного starter grant. Конкретные ограничения и исключения зафиксированы в тикетах.
+Точные ответы пользователя с UTC временем записи хранятся в эпике D-36-01…28; не копировать несовместимые ранние A как активное правило. 2026-11-17T19:21:02Z — переработка карты после согласования intact trophy, fixed scrap yield, carrier scrap, common cabin pool и sale-only. Прежние US3 restrictions «без модулей/пленных» заменены распределением по US6/US9. Файлы/ID существующих US3 tickets сохранены; новые US6/7 IDs добавлены без переиспользования.
 
 ## Gaps and backlog
 
-Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
+- Балансовые content A требуют плейтеста, не блокируют создание документов.
+- Новая generic durability/ремонт отдельных trophies и установка трофеев вне текущего scope.
+- Native/input/звук/product acceptance OPEN, новые named tests только запланированы.
+- Нельзя закрывать общий эпик без engineer US8, custody US9 и интеграционного US4/документационного US5.
+- Перед исполнением проверить drift исходников и завершение prerequisite tickets; расширение allowlist только явной Board правкой.
 
+Planning DECOMPOSED / DRAFT; implementation NOT STARTED; automated/native/product NOT RUN.

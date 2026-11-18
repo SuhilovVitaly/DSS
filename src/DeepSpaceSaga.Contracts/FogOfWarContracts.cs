@@ -1,5 +1,8 @@
 namespace DeepSpaceSaga.Contracts;
 
+public sealed record SetLootDebugRequest(string CommandId, long ExpectedRevision, int? EngineerBonusPp = null,
+    string DestructionRolls = "auto", string Attempts = "auto") : DemoCampaignCommand(CommandId, ExpectedRevision);
+
 public sealed record SetFogOfWarRequest(string CommandId, long ExpectedRevision, bool Enabled)
     : DemoCampaignCommand(CommandId, ExpectedRevision);
 

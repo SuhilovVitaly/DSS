@@ -17,7 +17,7 @@ public sealed partial class SimulationEngine
         ArgumentNullException.ThrowIfNull(command);
         lock (_worldStateLock)
         {
-            if (_tacticalBattleSession is not null) RejectDialogueCommandDuringTacticalBattle(command);
+            if (CombatOrLootOpen) RejectDialogueCommandDuringTacticalBattle(command);
             else _pendingDialogueCommands.Enqueue(command);
         }
     }
@@ -152,7 +152,7 @@ public sealed partial class SimulationEngine
 
     private string? ApplyDialogueCommand(DialogueCommand command, long time)
     {
-        if (_tacticalBattleSession is not null) return TacticalBattleActiveReason;
+        if (CombatOrLootOpen) return TacticalBattleActiveReason;
         if (command.Action == DialogueAction.Start)
         {
             if (command.DialogueDefinitionId is not { } id || !_registry.Dialogues.Contains(id)) return "unknown_dialogue";

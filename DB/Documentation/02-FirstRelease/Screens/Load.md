@@ -11,3 +11,7 @@
 См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
 
 Источники: [LoadScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Load/LoadScreen.cs).
+
+## Возврат на карту добычи
+
+RecoverBattleFlowAsync в реальном Load/Continue пути принимает Open loot независимо от PendingBattle и показывает frozen Over state без BeginEncounterBattle. Closed loot возвращает мировую карту. Некорректная загрузка не заменяет прежнюю сессию. [Контракт](../../04-Engineering/DemoRewards.md).

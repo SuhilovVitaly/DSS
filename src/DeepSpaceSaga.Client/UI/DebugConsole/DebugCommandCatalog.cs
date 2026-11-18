@@ -9,6 +9,9 @@ internal static class DebugCommandCatalog
         registry.Register(new HelpDebugCommand());
         registry.Register(new PirateSquadChanceDebugCommand());
         registry.Register(new FogOfWarDebugCommand());
+        registry.Register(new EngineerBonusDebugCommand());
+        registry.Register(new LootForceDebugCommand());
+        registry.Register(new LootStateDebugCommand());
         registry.Register(new ExitBattleDebugCommand());
         registry.Register(new KillDroneDebugCommand());
         registry.Register(new ListUnitsDebugCommand());

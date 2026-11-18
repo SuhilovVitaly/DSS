@@ -93,7 +93,7 @@ public partial class SimulationEngine
         return slots.ToImmutable();
     }
 
-    private const int ReservedPrisonerCabins = 2;
+    private const int ReservedPrisonerCabins = 0;
 
     private ImmutableArray<CrewMemberSnapshot> BuildCrewProjection(SpaceObjectRuntime ship)
     {
@@ -112,13 +112,15 @@ public partial class SimulationEngine
                 Accuracy: member.AccuracySkill,
                 Maneuver: member.ManeuverabilitySkill,
                 Initiative: member.Initiative,
-                SensorRangeBonusPercent: member.SensorRangeBonusPercent));
+                SensorRangeBonusPercent: member.SensorRangeBonusPercent,
+                SalvageBonusPercentagePoints: member.SalvageBonusPercentagePoints));
         }
         return crew.ToImmutable();
     }
 
-    private CabinReservationSnapshot BuildCabinReservationProjection(SpaceObjectRuntime ship)
+    private CabinReservationSnapshot BuildCabinReservationProjection(SpaceObjectRuntime ship, DemoCampaignData? state = null)
     {
+        state ??= _demoCampaign;
         int operationalCabins = 0;
         foreach (var module in ship.Modules)
         {
@@ -130,14 +132,18 @@ public partial class SimulationEngine
             }
         }
 
-        int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length);
-        int reserved = ReservedPrisonerCabins;
+        int prisoners = state.Prisoners.Count(p => p.ShipId == ship.InitialMotion.ObjectId);
+        int occupied = (ship.Crew.IsDefaultOrEmpty ? 0 : ship.Crew.Length) + (ship.Passengers.IsDefault ? 0 : ship.Passengers.Length) + prisoners;
+        int reserved = ship.InitialMotion.ObjectId == PlayerShipObjectId ? checked((int)(state.StationJobs?.Obligations
+            .Where(o => o.Status == StationJobStatuses.Active && StationJobTypes.CarriesPassengers(o.Type) &&
+                !state.PassengerContracts.Any(c => c.ContractId == o.ContractId && !c.PassengerIds.IsEmpty))
+            .Sum(o => (long)o.Count) ?? 0)) : 0;
         return new CabinReservationSnapshot(
             TotalCabins: operationalCabins,
             OccupiedCabins: occupied,
             ReservedCabins: reserved,
             FreeCabins: Math.Max(0, operationalCabins - occupied - reserved),
-            PrisonerCount: 0);
+            PrisonerCount: prisoners);
     }
 
     private static CrewGender ParseCrewGender(string? value) =>

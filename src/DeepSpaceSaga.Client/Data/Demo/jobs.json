@@ -1,5 +1,9 @@
 {
   "schemaVersion": 1,
+  "bounties": [
+    { "id": "bounty:pirate:01", "issuerStationId": "SPC-0002", "targetGroupId": "pirate:01", "rewardTokens": 1500 },
+    { "id": "bounty:pirate:02", "issuerStationId": "SPC-0006", "targetGroupId": "pirate:02", "rewardTokens": 2000 }
+  ],
   "limits": {
     "offers": 6,
     "publicationGameTimeMs": 86400000,

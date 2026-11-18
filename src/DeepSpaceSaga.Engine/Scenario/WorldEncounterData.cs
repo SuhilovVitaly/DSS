@@ -5,14 +5,14 @@ namespace DeepSpaceSaga.Engine.Scenario;
 
 public sealed record WorldEncounterData(WorldBattleBinding Binding, long Seed, string Phase);
 public sealed record WorldEncounterResultData(WorldBattleBinding Binding, bool PlayerWon,
-    TacticalOutcomeSnapshot Outcome, ImmutableArray<TacticalUnitSnapshot> Units);
+    TacticalOutcomeSnapshot Outcome, ImmutableArray<TacticalUnitSnapshot> Units, string PlayerSide = "A");
 
 public sealed partial record DemoCampaignData
 {
     private static void ValidateEncounterHistory(DemoCampaignData data)
     {
         if (data.EncounterResults.IsDefault || data.EncounterResults.Length > 4 || data.EncounterResults.Any(r => r is null || r.Binding is null ||
-            r.Outcome is null || !Enum.IsDefined(r.Outcome.Kind) || r.PlayerWon != (r.Outcome.Kind == TacticalBattleOutcomeCode.A) ||
+            r.Outcome is null || !Enum.IsDefined(r.Outcome.Kind) || r.PlayerSide is not ("A" or "B") || r.PlayerWon != (r.Outcome.Kind.ToString() == r.PlayerSide) ||
             r.Binding.BattleId != "battle:" + r.Binding.GroupId || r.Binding.EncounterId != "encounter:" + r.Binding.GroupId ||
             r.Units.IsDefaultOrEmpty || r.Units.Any(u => u is null || string.IsNullOrWhiteSpace(u.Id) || u.Hull < 0 || u.Hull > u.MaxHull ||
                 !Enum.IsDefined(u.Kind) || !Enum.IsDefined(u.State) || u.Side is not ("A" or "B")) ||
@@ -32,10 +32,10 @@ public sealed partial record DemoCampaignData
             var result = data.EncounterResults.SingleOrDefault(r => r.Binding.GroupId == group.GroupId);
             if (group.Retired != (result is not null)) throw new ScenarioException("Retirement must match encounter result.");
             if (result is null) continue;
-            var enemies = result.Units.Where(u => u.Side == "B").ToArray();
+            var enemies = result.Units.Where(u => u.Side != result.PlayerSide).ToArray();
             if (!enemies.Where(u => u.Kind == TacticalUnitKind.Carrier).Select(u => u.Id).Order(StringComparer.Ordinal)
                 .SequenceEqual(group.Members.Select(m => m.CarrierId).Order(StringComparer.Ordinal)) ||
-                result.Units.Count(u => u.Side == "A" && u.Kind == TacticalUnitKind.Carrier) != 1)
+                result.Units.Count(u => u.Side == result.PlayerSide && u.Kind == TacticalUnitKind.Carrier) != 1)
                 throw new ScenarioException("Encounter carrier result identity mismatch.");
             var compositions = data.PirateCompositions.Where(c => c.GroupId == group.GroupId).ToArray();
             if (!enemies.Where(u => u.Kind == TacticalUnitKind.Drone).Select(u => u.Id).Order(StringComparer.Ordinal)

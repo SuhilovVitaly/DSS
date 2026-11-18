@@ -14,7 +14,7 @@ public sealed partial class SimulationEngine
     /// (their remaining ammo is lost with the magazine, never cargo), and a zero carrier hull
     /// marks the world ship destroyed.
     /// </summary>
-    internal SortieSettlementSnapshot CommitSortieOutcome(TacticalBattleSession session, SortieExitKind exitKind)
+    internal SortieSettlementSnapshot CommitSortieOutcome(TacticalBattleSession session, SortieExitKind exitKind, BattleLootData? loot = null)
     {
         lock (_worldStateLock)
         {
@@ -60,7 +60,9 @@ public sealed partial class SimulationEngine
                 updated.Add(owned);
 
             var pilotLosses = PreparePilotLosses(shipId, session.Id, wing, lostIds.ToArray());
-            var campaign = PrepareEncounterSettlement(pilotLosses.Campaign, session);
+            var campaign = PrepareEncounterSettlement(pilotLosses.Campaign, session, loot?.Map);
+            if (loot is not null) campaign = campaign with { LootSession = loot };
+            ValidateDemoCampaignSections(campaign);
             long campaignRevision = checked(_demoCampaign.Revision + 1);
             long commitSequence = checked(_demoCampaign.CommitSequence + 1);
             _ownedWing[shipId] = updated.ToImmutable();

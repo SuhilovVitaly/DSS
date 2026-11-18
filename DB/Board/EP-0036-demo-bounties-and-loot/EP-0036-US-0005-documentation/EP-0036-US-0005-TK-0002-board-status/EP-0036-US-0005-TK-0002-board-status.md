@@ -5,17 +5,22 @@ ticket: EP-0036-US-0005-TK-0002-board-status
 title: Board, реестр и состояние демо
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
 depends_on: [EP-0036-US-0005-TK-0001-current-contracts]
 files_touched: 3
 serves: [AC-01, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
-revision: 1
+revision: 2
 ---
 
 # Board, реестр и состояние демо
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 
@@ -77,9 +82,9 @@ No API change.
 
 ## Definition of Done
 
-- Все шаги выполнены только в allowlist, тесты проверяют указанные исходы и ошибки.
+- Все документационные шаги выполнены только в allowlist; ссылки и фактические утверждения проверены по owning sources.
 - Served AC имеют evidence вклада этого слоя; story end-to-end/native/product gates не закрыты автоматически.
-- Focused checks и owning build/format проходят либо конкретное исходное падение записано как блокер; timeout не PASS.
+- Для documentation-only изменения проходят проверки локальных ссылок, ID/зависимостей, согласованности с owning sources и git diff --check; build/test/format игры не требуются.
 - Public API, units, persistence, idempotency и ограничения соблюдены; нет скрытого follow-up вне Board.
 - Evidence в `D:/DeepSpaceSaga/artifacts/validation/<ticket>/<unique-run>/`, status/решения в Board, актуальные контракты в Documentation.
 - Удалены только собственные disposable scripts/caches/results; сохранены необходимые ссылки evidence, нет мусора в корнях workspace/repo.
@@ -87,3 +92,12 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution scope and evidence
+
+Draft allowlist expanded to all canonical EP36 status cards, Tickets/AcceptanceCoverage/DocumentationImpact/ExecutionStatus and tools/graphify/rebuild.py plus graph guides. Board: 12 stories, 48 tickets, zero missing links/dependencies or ticket cycles (board-validation.json). Graph rebuild includes EP36, excludes evolving publication ledgers to avoid circular hashes. Final thematic test plan is recorded in ExecutionStatus before execution; native/game NOT RUN. Shared DemoPlan owner edits remain unstaged; only execution paragraph was committed with manual-save regression correction.
+
+Final evidence: all 48 ticket SHAs published, final thematic checks and independent review complete (FinalValidation.md). Graph has 33869 nodes/86013 edges, 2396 verified input hashes; one known parser warning disclosed. Native/product remains NOT RUN/OPEN. Cleanup and final remote HEAD verification are recorded by the final receipt.
+
+## Owner-review publication receipt (2026-11-18)
+Scope: ExecutionStatus.md, Tickets.md, FinalValidation.md and this card. Current disposition in ReviewCorrections.md; updated contract docs committed as 7b2319a6. Engine96/96,Client25/25,atomic replay5/5; scoped format passes; 52 changed-document links resolve. Independent reviewer closed all actionable findings. Final graph verification and cleanup below are recorded in FinalValidation.md. Owner native/product gate remains open.

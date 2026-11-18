@@ -36,7 +36,8 @@ public static class DebugTuningReasonCodes
 }
 
 /// <summary>Process-scoped demo debug values. Never campaign save data; squad chance affects only New Game.</summary>
-public sealed record DemoDebugSettings(bool FogOfWar = true, int PirateSquadChancePercent = 10);
+public sealed record DemoDebugSettings(bool FogOfWar = true, int PirateSquadChancePercent = 10,
+    int? EngineerBonusPp = null, string DestructionRolls = "auto", string LootAttempts = "auto");
 
 public static class DemoDebugCommandTypes
 {

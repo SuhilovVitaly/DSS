@@ -12,3 +12,7 @@ PNG не должно менять уже сохранённый конкрет�
 Композиция производится в памяти, отдельные готовые диалоговые PNG не создаются.
 
 Источники: [DialoguePortraitComposer.cs](../../../src/DeepSpaceSaga.Client/UI/Portraits/DialoguePortraitComposer.cs), [PortraitAssetRepository.cs](../../../src/DeepSpaceSaga.Client/Portraits/PortraitAssetRepository.cs).
+
+## Портрет арестованного
+
+PrisonerPortraits выбирает exact PortraitAssetId из подготовленного kneeling assembled-portraits.json и существующий outfit identity. Подготовлены четыре женских лица и семь outfit-вариантов, с v3 proportions/v4 neck repair. Неподдерживаемое лицо/пол/повреждённый asset использует тот же исходный портрет или нейтральную карточку; подстановка чужого лица запрещена. Uniform fit сохраняет колени и руки. Decode/assignment кешируются до смены identity, bitmap освобождается при закрытии. Это отдельный workflow, обычная стоящая сборка не меняется.

@@ -59,3 +59,7 @@ Known system, Cluster и Station local меняют только вид. Station
 Перетаскивание панорамирует, Follow следует за игроком, выбор и наведение независимы. Повторный выбор перекрытия перебирает кандидатов. Ctrl+клик на свободной карте отправляет приказ орбиты. Прогноз NPC строится [по наблюдениям](../04-Engineering/NpcObservedTrajectories.md). [Панель двигателей](../04-Engineering/DebugTuningPanel.md) перехватывает мышь в своей области.
 
 [F8](../02-FirstRelease/Screens/TacticalBattleSetup.md) открывает отдельный экран с собственной камерой; бой не меняет положение камеры мира. Стиль элементов — [STYLE](TacticalButtons/STYLE.md), реализация — [GameSessionScreen.MapView](../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs).
+
+## Область боевого заказа
+
+Tracking bounty проецирует SearchArea(region center/radius) текущей мировой камерой как синий круг с target/reward. Скрытые координаты пиратов не используются. Маркер исчезает при отмене или недоступности цели; hit testing не меняется.

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Engine.Content;
@@ -18,10 +19,14 @@ public sealed partial class SimulationEngine
         _demoDefinitions = definitions;
     }
 
-    public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command)
+    public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command) => ExecuteDemoCampaign(command, out _);
+
+    /// <summary>Reports a new application atomically, so transport never checkpoints a receipt replay.</summary>
+    public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command, out bool newlyApplied)
     {
         lock (_worldStateLock)
         {
+            newlyApplied = false;
             if (command is null || string.IsNullOrWhiteSpace(command.CommandId))
                 return new(command?.CommandId ?? "", false, DemoCampaignReasons.InvalidIdentity, _demoCampaign.Revision);
 
@@ -30,7 +35,8 @@ public sealed partial class SimulationEngine
             string hash = Convert.ToHexString(SHA256.HashData(bytes));
             var previous = _demoCampaign.Receipts.FirstOrDefault(r => r.Response.CommandId == command.CommandId);
             if (previous is not null)
-                return previous.PayloadHash == hash ? previous.Response
+                return previous.PayloadHash == hash ? previous.Response.Rewards is not null ? previous.Response
+                    : previous.Response with { Rewards = BuildDemoRewardsProjection(), Revision = _demoCampaign.Revision }
                     : new(command.CommandId, false, DemoCampaignReasons.IdentityConflict, _demoCampaign.Revision);
             if (_demoCampaign.CommittedCommandHashes.TryGetValue(command.CommandId, out string? committedHash))
                 return new(command.CommandId, false, committedHash == hash ? DemoCampaignReasons.AlreadyApplied : DemoCampaignReasons.IdentityConflict, _demoCampaign.Revision);
@@ -40,9 +46,10 @@ public sealed partial class SimulationEngine
             bool handled = false;
             Action? commit = null;
             if (command.ExpectedRevision != _demoCampaign.Revision) reason = DemoCampaignReasons.StaleRevision;
-            else if (_tacticalBattleSession is not null) reason = DemoCampaignReasons.BattleActive;
+            else if (_tacticalBattleSession is not null && command is not SetLootDebugRequest) reason = DemoCampaignReasons.BattleActive;
+            else if (LootOpen && command is not (ILootCampaignCommand or SetLootDebugRequest)) reason = DemoCampaignReasons.BattleActive;
             else if (_encounterStoragePending) reason = "encounter_checkpoint_pending";
-            else if (HasCapturedEncounter && command is not (BeginEncounterBattleCommand or DismissSensorContactReportRequest or SetFogOfWarRequest))
+            else if (HasCapturedEncounter && command is not (BeginEncounterBattleCommand or DismissSensorContactReportRequest or SetFogOfWarRequest or SetLootDebugRequest))
                 reason = "encounter_captured";
             else if (_objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
                 reason = DemoCampaignReasons.CarrierDestroyed;
@@ -70,12 +77,16 @@ public sealed partial class SimulationEngine
             ValidateDemoCampaignSections(candidate, Math.Max(_clock.GameTimeMs, candidate.LastTickGameTimeMs));
             if (applied) commit?.Invoke();
             _demoCampaign = candidate;
+            response = response with { Rewards = BuildDemoRewardsProjection() };
+            _demoCampaign = candidate with { Receipts = candidate.Receipts.SetItem(candidate.Receipts.Length - 1, new(hash, sequence, response)) };
+            newlyApplied = applied;
             return response;
         }
     }
 
     private void TickDemoCampaign(long gameTimeMs)
     {
+        if (LootOpen) return;
         ObservePirateGroups(gameTimeMs);
         PublishCapturedEncounter();
         OpenPendingSensorReport(_processedSimulationTimeMs);
@@ -93,11 +104,15 @@ public sealed partial class SimulationEngine
 
     private DemoCampaignSnapshot BuildDemoCampaignProjection() => new(
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
-        BuildDemoTransportProjection(), BuildPirateGroupsProjection(), _demoCampaign.Rewards,
+        BuildDemoTransportProjection(), BuildPirateGroupsProjection(), BuildDemoRewardsProjection(),
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
-        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes());
+        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes(), DemoDebugSettings);
 
-    private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign;
+    private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign with
+    {
+        // Rewards are a derived view of the one authoritative ledger, not receipt history.
+        Receipts = _demoCampaign.Receipts.Select(r => r with { Response = r.Response with { Rewards = null } }).ToImmutableArray()
+    };
 
     // Central dispatch owns ordering. Feature helpers prepare candidates and deferred commits;
     // unsupported or rejected commands never mutate gameplay state.
@@ -107,6 +122,27 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case SetLootDebugRequest debug:
+                if (debug.EngineerBonusPp is not (null or 0 or >= 10 and <= 15) ||
+                    debug.DestructionRolls is not ("auto" or "keep" or "destroy") || debug.Attempts is not ("auto" or "success" or "fail"))
+                    reason = DebugTuningReasonCodes.ValueOutOfRange;
+                else commit = () => SetLootDebug(debug);
+                break;
+            case ArrestPilotCommand arrest:
+                PrepareArrestPilot(arrest, ref candidate, ref reason);
+                break;
+            case FinishBattleLootCommand finish:
+                PrepareFinishBattleLoot(finish, ref candidate, ref reason, ref commit);
+                break;
+            case ILootCampaignCommand:
+                PrepareBattleLootCommand(command, ref candidate, ref reason, ref commit);
+                break;
+            case ClaimBountyCommand claim:
+                PrepareBountyPayment(claim, ref candidate, ref reason, ref commit);
+                break;
+            case AcceptBountyCommand or CancelBountyCommand:
+                PrepareTargetBounty(command, ref candidate, ref reason);
+                break;
             case SelectDemoRouteCommand route:
                 PrepareThreatRoute(route, ref reason, ref commit);
                 break;

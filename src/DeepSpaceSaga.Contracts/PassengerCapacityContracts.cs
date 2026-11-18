@@ -12,7 +12,8 @@ public sealed record PassengerCapacitySnapshot(
     int PassengerCabins,
     int ReservedCabins,
     int FreeCabins,
-    string? LifeSupportReason = null);
+    string? LifeSupportReason = null,
+    int PrisonerCabins = 0);
 
 /// <summary>Transport section of the demo campaign projection; further parts are added by later stories.</summary>
 public sealed partial record DemoTransportSnapshot

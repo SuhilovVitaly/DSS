@@ -10,7 +10,7 @@ public sealed partial class SimulationEngine
 
     private void OpenPendingSensorReport(long time)
     {
-        if (_demoCampaign.PendingSensorReport is not { } batch || _tacticalBattleSession is not null) return;
+        if (_demoCampaign.PendingSensorReport is not { } batch || CombatOrLootOpen) return;
         if (_dialogue.Active is not null)
         {
             _dialogue.ResumeSpeed = SimulationSpeed.Speed0;
@@ -29,8 +29,12 @@ public sealed partial class SimulationEngine
     private void AcknowledgeSensorReport()
     {
         if (_demoCampaign.PendingSensorReport is null) return;
-        _demoCampaign = _demoCampaign with { PendingSensorReport = null,
-            Revision = checked(_demoCampaign.Revision + 1), CommitSequence = checked(_demoCampaign.CommitSequence + 1) };
+        _demoCampaign = _demoCampaign with
+        {
+            PendingSensorReport = null,
+            Revision = checked(_demoCampaign.Revision + 1),
+            CommitSequence = checked(_demoCampaign.CommitSequence + 1)
+        };
     }
 
     private static void ValidateSensorDialogueSave(DemoCampaignData campaign, ScenarioFile scenario)

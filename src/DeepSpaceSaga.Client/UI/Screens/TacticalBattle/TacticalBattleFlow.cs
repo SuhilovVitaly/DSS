@@ -34,6 +34,8 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public bool IsTutorial { get; init; }
     public WorldEncounterSnapshot? CampaignEncounter { get; init; }
     public bool IsCampaign => CampaignEncounter is not null;
+    internal bool ConfirmLootDiscard { get; set; }
+    private FinishBattleLootCommand? _pendingLootFinish;
     internal bool AdoptRecoveredEncounter(TacticalBattleSnapshot state)
     {
         if (CampaignEncounter?.Binding.BattleId != state.BattleId) return false;
@@ -108,6 +110,22 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {
+        var loot = Session.DemoCampaign?.Rewards?.Loot;
+        if (_pendingLootFinish is not null || loot is { Phase: LootPhases.Open } && loot.BattleId == State?.BattleId)
+        {
+            if (Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;
+            try
+            {
+                _pendingLootFinish ??= new FinishBattleLootCommand(NewIdentity("loot-finish"),
+                    Session.DemoCampaign!.Revision, loot!.BattleId, ConfirmLootDiscard);
+                var response = await Session.ExecuteDemoCampaignAsync(_pendingLootFinish);
+                if (response.Reason != DemoCampaignReasons.Unavailable) _pendingLootFinish = null;
+                if (response.Applied) return Forget();
+                Volatile.Write(ref _error, Localization.Get("loot." + (response.Reason == DemoCampaignReasons.Unavailable ? "loot_unavailable" : response.Reason)));
+                return false;
+            }
+            finally { Volatile.Write(ref _pending, 0); }
+        }
         if (IsCampaign && !CheckpointPending && State?.Phase != TacticalBattlePhase.Over) return false;
         // A mapped Unavailable after the engine committed means the engine no longer has a battle
         // but the continuation checkpoint was not written. Retry only that pending BattleId: the
@@ -162,6 +180,12 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
         try
         {
             var response = await send();
+            // Storage may fail after the winning command has already committed. Recover the
+            // frozen map, but preserve Unavailable so durability is still retried separately.
+            if (response.Code == TacticalBattleRejectionCode.Unavailable &&
+                await Session.GetTacticalBattleStateAsync() is { Phase: TacticalBattlePhase.Over } frozen &&
+                frozen.BattleId == State?.BattleId)
+                response = response with { State = frozen };
             var previous = Volatile.Read(ref _observed);
             if (response.Accepted && exiting)
             {

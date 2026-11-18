@@ -5,17 +5,22 @@ ticket: EP-0036-US-0005-TK-0001-current-contracts
 title: Актуальные механики и технические контракты
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: tooling
 matching_test_project: tools/DeepSpaceSaga.Performance.Tests
-depends_on: [EP-0036-US-0001-TK-0003-client, EP-0036-US-0002-TK-0003-client, EP-0036-US-0003-TK-0004-client, EP-0036-US-0004-TK-0002-reward-report]
+depends_on: [EP-0036-US-0001-TK-0003-client, EP-0036-US-0002-TK-0003-client, EP-0036-US-0004-TK-0002-reward-report, EP-0036-US-0004-TK-0003-restored-loot-route, EP-0036-US-0008-TK-0005-crew-ui, EP-0036-US-0009-TK-0005-custody-ui, EP-0036-US-0006-TK-0005-trade-names, EP-0036-US-0010-TK-0002-postbattle-presentation, EP-0036-US-0010-TK-0004-jettison-ui, EP-0036-US-0011-TK-0002-starmap-area, EP-0036-US-0012-TK-0002-console-commands, EP-0036-US-0009-TK-0006-prisoner-portrait]
 files_touched: 3
 serves: [AC-01, AC-02, AC-04]
 created: 2026-11-16T20:32:46.441Z
-revision: 1
+revision: 2
 ---
 
 # Актуальные механики и технические контракты
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 
@@ -77,9 +82,9 @@ No API change.
 
 ## Definition of Done
 
-- Все шаги выполнены только в allowlist, тесты проверяют указанные исходы и ошибки.
+- Все документационные шаги выполнены только в allowlist; ссылки и фактические утверждения проверены по owning sources.
 - Served AC имеют evidence вклада этого слоя; story end-to-end/native/product gates не закрыты автоматически.
-- Focused checks и owning build/format проходят либо конкретное исходное падение записано как блокер; timeout не PASS.
+- Для documentation-only изменения проходят проверки локальных ссылок, ID/зависимостей, согласованности с owning sources и git diff --check; build/test/format игры не требуются.
 - Public API, units, persistence, idempotency и ограничения соблюдены; нет скрытого follow-up вне Board.
 - Evidence в `D:/DeepSpaceSaga/artifacts/validation/<ticket>/<unique-run>/`, status/решения в Board, актуальные контракты в Documentation.
 - Удалены только собственные disposable scripts/caches/results; сохранены необходимые ссылки evidence, нет мусора в корнях workspace/repo.
@@ -87,3 +92,12 @@ No API change.
 ## Self-containment check
 
 Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+Груминг 2026-11-17T19:24:04Z : документация включает current bounty postfact entitlement, sale-only modules, per-wreck scrap, postbattle frozen restore, engineer и common cabin/rations custody. Generic durability/установка и interactions prisoners вне демо; не описывать их как реализованные.
+Execution scope expansion: current contracts require replacing stale six-crew/two-reserve and combat-only reward descriptions across requirements, DemoCampaign/SaveFormat/TacticalBattle, CrewAndHabitation, transport/services, cargo/money/trade/catalog, relevant screens, debug and portrait guidance; Documentation README and root README navigation. DocumentationImpact.md records each owning document. This authorized final documentation story replaces the draft three-file allowlist.
+
+## Completion evidence
+31 current Markdown documents updated; exact inventory in DocumentationImpact.md. All relative links in changed current docs resolve (documentation-links.json). Independent review corrected offer capacity formula and passenger-only ration gate; discovered missing manual loot hotkeys and cabin prisoner summary were fixed in owning US4/US9 tickets. Native/product acceptance remains OPEN.
+
+## Owner review documentation (2026-11-18)
+Scope: DemoRewards.md, SaveFormat.md, DemoBountiesAndLoot.md. Describe closed audit compatibility, compact receipts/current hydrated projection, persisted PlayerSide default A, required loot content and shared promised-cabin reservations. Engine thematic verification PASS 96/96; Client pending. Review details and commit mapping in ReviewCorrections.md.

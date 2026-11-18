@@ -4,6 +4,11 @@ using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
+public sealed record BountyOrderData(string Id, string IssuerStationId, string TargetGroupId,
+    long RewardTokens, bool Tracking, string? PaidPostingId = null);
+public sealed record BountyPaymentData(string BountyId, string IssuerStationId, string TargetGroupId,
+    string BattleId, long RewardTokens, string PostingId, long PaidAtGameTimeMs);
+
 /// <summary>Campaign metadata only. Resources remain in the existing authoritative world.</summary>
 public sealed partial record DemoCampaignData(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,
@@ -19,6 +24,12 @@ public sealed partial record DemoCampaignData(
 {
     [JsonPropertyName("catalogFingerprint")]
     public string? CatalogFingerprint { get; init; }
+
+    public string? BountyCatalogFingerprint { get; init; }
+    public ImmutableArray<BountyOrderData> BountyOrders { get; init; } = [];
+    public ImmutableArray<BountyPaymentData> BountyPayments { get; init; } = [];
+    public BattleLootData? LootSession { get; init; }
+    public ImmutableArray<PrisonerSnapshot> Prisoners { get; init; } = [];
 
     [JsonPropertyName("pilotMemorial")]
     public ImmutableArray<PilotMemorialEntry> PilotMemorial { get; init; } = [];
@@ -65,7 +76,35 @@ public sealed partial record DemoCampaignData(
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
+        BattleLootData.Validate(data.LootSession);
+        if (data.BountyOrders.IsDefault || data.BountyOrders.Any(b => b is null ||
+            string.IsNullOrWhiteSpace(b.Id) || string.IsNullOrWhiteSpace(b.IssuerStationId) ||
+            string.IsNullOrWhiteSpace(b.TargetGroupId) || b.RewardTokens <= 0 ||
+            b.PaidPostingId is not null && string.IsNullOrWhiteSpace(b.PaidPostingId)) ||
+            data.BountyOrders.Select(b => b.Id).Distinct(StringComparer.Ordinal).Count() != data.BountyOrders.Length ||
+            data.BountyOrders.Select(b => b.TargetGroupId).Distinct(StringComparer.Ordinal).Count() != data.BountyOrders.Length ||
+            data.BountyCatalogFingerprint is { } bountyHash && (bountyHash.Length != 64 || !bountyHash.All(Uri.IsHexDigit)) ||
+            !data.BountyOrders.IsEmpty && data.BountyCatalogFingerprint is null)
+            throw new ScenarioException("Invalid saved bounty orders.");
         ValidateEncounterHistory(data);
+        if (data.Prisoners.IsDefault || data.Prisoners.Any(p => p is null || string.IsNullOrWhiteSpace(p.ShipId) ||
+            string.IsNullOrWhiteSpace(p.DisplayName) || !Enum.IsDefined(p.Gender) || p.CapturedAt < 0 || p.CapturedAt > gameTimeMs ||
+            p.Id != "prisoner:" + p.SourcePilotId || !data.EncounterResults.Any(r => r.PlayerWon && r.Binding.BattleId == p.SourceBattleId &&
+                r.Units.Any(u => u.Id == p.SourceDroneId && u.Side != r.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Disabled &&
+                    u.Build is { } build && p.SourcePilotId == SimulationEngine.LootPilotIdentity(r.Binding.BattleId, u.Id, build.PilotId) &&
+                    p.DisplayName == build.PilotName && p.PortraitAssetId == build.PilotPortraitAssetId && p.Gender == (build.PilotGender ?? CrewGender.Female)))) ||
+            data.Prisoners.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != data.Prisoners.Length ||
+            data.Prisoners.Select(p => (p.SourceBattleId, p.SourceDroneId)).Distinct().Count() != data.Prisoners.Length)
+            throw new ScenarioException("Invalid prisoner custody provenance.");
+        if (data.BountyPayments.IsDefault || data.BountyPayments.Any(p => p is null ||
+            p.PostingId != "bounty:" + p.BountyId || p.RewardTokens <= 0 || p.PaidAtGameTimeMs < 0 || p.PaidAtGameTimeMs > gameTimeMs ||
+            !data.BountyOrders.Any(b => b.Id == p.BountyId && b.PaidPostingId == p.PostingId &&
+                b.IssuerStationId == p.IssuerStationId && b.TargetGroupId == p.TargetGroupId && b.RewardTokens == p.RewardTokens) ||
+            !data.EncounterResults.Any(r => r.PlayerWon && r.Binding.GroupId == p.TargetGroupId && r.Binding.BattleId == p.BattleId)) ||
+            data.BountyPayments.Select(p => p.BountyId).Distinct(StringComparer.Ordinal).Count() != data.BountyPayments.Length ||
+            data.BountyPayments.Select(p => p.PostingId).Distinct(StringComparer.Ordinal).Count() != data.BountyPayments.Length ||
+            data.BountyOrders.Any(b => b.PaidPostingId is not null && !data.BountyPayments.Any(p => p.BountyId == b.Id && p.PostingId == b.PaidPostingId)))
+            throw new ScenarioException("Invalid bounty payment provenance.");
         if (data.WorldEncounter is { } encounter && (encounter.Binding is null || encounter.Seed < 0 ||
             encounter.Phase is not (WorldEncounterPhases.Captured or WorldEncounterPhases.PendingBattle or WorldEncounterPhases.Finished) ||
             encounter.Binding.EncounterId != "encounter:" + encounter.Binding.GroupId ||

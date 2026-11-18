@@ -28,6 +28,23 @@ internal static class CarrierCatalogCompatibility
             GameDataRegistry.EconomicCatalogFingerprint(previous));
     }
 
+    internal static IEnumerable<CatalogCompatibilityData> AcceptedPredecessors(GameDataRegistry registry)
+    {
+        yield return Previous(registry);
+        var scrapOnly = Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition)
+            .Where(i => !LootCatalogCompatibility.Removed(i.TypeId, true));
+        yield return new(registry.CatalogVersion, EconomyTimeData.CurrentRulesVersion,
+            GameDataRegistry.EconomicCatalogFingerprint(scrapOnly));
+        foreach (bool beforeCarrier in new[] { false, true })
+        {
+            var items = Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition)
+                .Where(i => !LootCatalogCompatibility.AddedSkus.Contains(i.TypeId) &&
+                    (!beforeCarrier || !AddedItemSkus.Contains(i.TypeId)));
+            yield return new(registry.CatalogVersion, EconomyTimeData.CurrentRulesVersion,
+                GameDataRegistry.EconomicCatalogFingerprint(items));
+        }
+    }
+
     /// <summary>
     /// True when the saved identity is either the current catalog or the allowlisted previous one.
     /// A mismatch in catalog/rules version always rejects; a fingerprint that is neither the current
@@ -41,6 +58,6 @@ internal static class CarrierCatalogCompatibility
         if (saved.CatalogVersion != registry.CatalogVersion ||
             saved.RulesVersion != EconomyTimeData.CurrentRulesVersion)
             return false;
-        return string.Equals(saved.Fingerprint, Previous(registry).Fingerprint, StringComparison.Ordinal);
+        return AcceptedPredecessors(registry).Any(previous => saved == previous);
     }
 }

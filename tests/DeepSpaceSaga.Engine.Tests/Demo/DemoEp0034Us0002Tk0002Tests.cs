@@ -178,12 +178,12 @@ public sealed class DemoEp0034Us0002Tk0002Tests
         Assert.Equal([id + ":pax-1", id + ":pax-2", id + ":pax-3"], contract.PassengerIds.ToArray());
         Assert.Equal(contract.PassengerIds.ToArray(), PassengersAboard(engine, 0));
         Assert.Equal(3, Contracts(after).PassengersAboard);
-        Assert.Equal(new PassengerCapacitySnapshot(12, 6, 3, 2, 1, null), Capacity(after));
-        Assert.Equal((9, 1), (after.CarrierOperations!.CabinReservation!.OccupiedCabins, after.CarrierOperations.CabinReservation.FreeCabins));
+        Assert.Equal(new PassengerCapacitySnapshot(12, 7, 3, 0, 2, null), Capacity(after));
+        Assert.Equal((10, 2), (after.CarrierOperations!.CabinReservation!.OccupiedCabins, after.CarrierOperations.CabinReservation.FreeCabins));
         Assert.Equal(credits, after.PlayerCredits);
-        // Boarded passengers are not counted twice: the remaining free cabin still takes a one-person offer.
+        // Boarded passengers are not counted twice: the remaining two cabins still take a two-person offer.
         Assert.All(Board(after).Offers.Where(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type)),
-            o => Assert.Equal(o.Count > 1 ? PassengerCapacityReasons.NoFreeCabins : null, StationJobReasons.AcceptBlocker(Board(after), o.Id)));
+            o => Assert.Equal(o.Count > 2 ? PassengerCapacityReasons.NoFreeCabins : null, StationJobReasons.AcceptBlocker(Board(after), o.Id)));
 
         // Real flight to the destination: delivery disembarks exactly these people and pays once with a ledger posting.
         flight.FlyTo(offer.DestinationStationId);
@@ -227,7 +227,7 @@ public sealed class DemoEp0034Us0002Tk0002Tests
             var start = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
             var offer = Board(start).Offers.Single(o => o.Id == FirstOffer);
 
-            // Life support: the twin without passengers eats 6 rations per meal, the carrier with passengers 9.
+            // Life support: the twin without passengers eats 7 rations per meal, the carrier with passengers 10.
             using var twin = NewDocked();
             var accepted = engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-1", 0, FirstOffer));
             Assert.True(accepted.Applied);
@@ -265,7 +265,7 @@ public sealed class DemoEp0034Us0002Tk0002Tests
             long withPassengers = RationsAboard(start) - RationsAboard(engine.CaptureSnapshotForTests(meal, SimulationSpeed.Speed0, meal / Ratio));
             var twinStart = twin.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
             long crewOnly = RationsAboard(twinStart) - RationsAboard(twin.CaptureSnapshotForTests(meal, SimulationSpeed.Speed0, meal / Ratio));
-            Assert.Equal((6L, 9L), (crewOnly, withPassengers));
+            Assert.Equal((7L, 10L), (crewOnly, withPassengers));
 
             // Arriving at the destination after the deadline pays nothing. Since US-0003 the contract has expired
             // (Failed, penalty in TransportFailures) and its passengers leave at this confirmed docking without payout.

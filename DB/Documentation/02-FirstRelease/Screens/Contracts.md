@@ -47,3 +47,7 @@ Hire обслуживает экипаж отдельно. Перед вылет
 см. также [каталог экранов](ScreenCatalog.md).
 
 Источники: [ContractsScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Contracts/ContractsScreen.cs), [StationJobsPresentation.cs](../../../../src/DeepSpaceSaga.Client/UI/Demo/StationJobsPresentation.cs), [TransportFailurePresentation.cs](../../../../src/DeepSpaceSaga.Client/UI/Demo/TransportFailurePresentation.cs), [PassengerContractsPresentation.cs](../../../../src/DeepSpaceSaga.Client/UI/Demo/PassengerContractsPresentation.cs), [CargoContractsPresentation.cs](../../../../src/DeepSpaceSaga.Client/UI/Demo/CargoContractsPresentation.cs).
+
+## Боевые заказы и итог
+
+Отдельная вкладка показывает target/issuer/reward/search region, tracking, due/paid и возможность получить выплату у заказчика. Вкладка «Итог боя» показывает последний settlement и только соответствующую добычу; открытие/прокрутка не отправляют команды. Неизвестные затраты и прибыль остаются неизвестными. [Правила](../Mechanics/DemoBountiesAndLoot.md).

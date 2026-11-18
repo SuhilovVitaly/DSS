@@ -12,7 +12,7 @@
     <None Remove="Images/Persons/W4/**" />
     <None Remove="Images/Persons/M4/**" />
     <None Remove="Images/Persons/ModularCrew/**" />
-    <Content Include="Images/Persons/ModularCrew/**/*.png;Images/Persons/ModularCrew/composition-pack.json"
+    <Content Include="Images/Persons/ModularCrew/**/*.png;Images/Persons/ModularCrew/composition-pack.json;Images/Persons/ModularCrew/kneeling/**/*.json"
              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="Data/UI/modular-portraits.json" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Images/Persons/M4/**/*.png;Images/Persons/M4/**/*.json" Exclude="Images/Persons/M4/Sources/**;Images/Persons/M4/Generated/**">

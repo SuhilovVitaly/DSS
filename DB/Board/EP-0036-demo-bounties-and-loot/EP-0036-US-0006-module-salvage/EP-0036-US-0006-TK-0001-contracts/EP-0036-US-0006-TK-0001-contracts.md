@@ -1,0 +1,98 @@
+---
+epic: EP-0036-demo-bounties-and-loot
+story: EP-0036-US-0006-module-salvage
+ticket: EP-0036-US-0006-TK-0001-contracts
+title: Контракт экземпляров трофейных модулей
+stage: approved
+approval_kind: workflow
+implementation_status: implemented
+layer: contracts
+matching_test_project: tests/DeepSpaceSaga.Contracts.Tests
+depends_on: [EP-0036-US-0003-TK-0001-contracts]
+files_touched: 2
+serves: [AC-01, AC-02, AC-03, AC-04]
+created: 2026-11-17T19:19:08Z
+revision: 1
+---
+
+# Контракт экземпляров трофейных модулей
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
+
+## Why
+
+[EP-0036-US-0006-module-salvage](../EP-0036-US-0006-module-salvage.md). Контракт экземпляров трофейных модулей. Груминг заменяет прежнюю агрегированную loot-модель проверяемым результатом этого тикета.
+
+## Decisions
+
+Нормативные D-36-01…28 с точными цитатами и временем записи — в [эпике](../../Documentation.md). Для этого тикета: лут конкретного объекта после победы; одна попытка демонтажа/сбора лома; целый trophy без durability/установки; cargo по массе; шансы и 50%-броски определены пользователем. Ранее разрешённая декомпозиция не означает исполнение/приёмку. Последняя запись 2026-11-17T19:19:08Z — время записи, не отправки.
+
+## Assumptions
+
+- Новые имена API/файлы ниже — проект, а не существующая реализация. Реальный API проверять по prerequisite diff до исполнения.
+- Балансовые A в шагах/каталоге — стартовый плейтестовый baseline, не утверждение доказанного баланса.
+- Runtime rejects stale/duplicate identity через единый campaign pipeline; запись rejected receipt не равна выдаче добычи.
+- Все изменения ограничены EP-0036 результатом; при непредвиденном drift пересмотреть этот allowlist до расширения diff.
+
+## Code context
+
+| File | Current state / evidence | Allowed change |
+|---|---|---|
+| `src/DeepSpaceSaga.Contracts/BattleLootContracts.cs` | Создаётся US3 TK1, расширяемые module rows. | Только шаги данного тикета. |
+| `tests/DeepSpaceSaga.Contracts.Tests/Demo/DemoEp0036Us0006Tk0001Tests.cs` | Новый test. | Только шаги данного тикета. |
+
+Разрешены 2 implementation files, включая тесты; один layer contracts. Read-only зависимости и source grounding находятся в истории/эпике. Board-правки не расширяют production allowlist.
+
+## Public API after the change
+
+Использовать ModuleLootSnapshot, уже созданный US3 TK1; не дублировать запись. Его схема: ModuleLootSnapshot(InstanceId,Category,CatalogId,ItemTypeId,DisplayName,ConditionLabel,EstimatedValueTokens,ChanceBasisPoints,State,CanAttempt,Reason); DismantleModuleCommand(CommandId,ExpectedRevision,BattleId,ObjectId,ModuleInstanceId). State Available/Failed/Collected; уничтоженные до показа отсутствуют. ConditionLabel=Intact при выдаче; отдельной trophy durability нет.
+
+## Implementation steps
+
+1. Привязать InstanceId к battle+drone+category+slot (два одинаковых двигателя различны). Схема содержит оценку, не обязательную рыночную котировку
+2. шансы integer basis points точно представляют23.75/26.25. Не добавлять команды установки/ремонта
+3. новый commodity исключительно продажа.
+
+## Invariants
+
+- Engine владеет шансом/RNG, capacity, деньгами и подтверждённым результатом; UI не вычисляет новый исход.
+- Stable BattleId/ObjectId/module slot/command identity, phase и terminal attempt переживают Load. Не reroll и не дублировать cargo/postings.
+- Текущий single inventory/PlayerCredits сохраняются; новый trophy только обычный продаваемый item, не отдельный wallet.
+- Успешный salvage выдаёт исправный commodity; не вводить прочность 0–100%, ремонт или установку трофея.
+- 50%-бросок касается предметов, не пилота. Самоуничтожение не создаёт неоговорённый AoE.
+- CargoFull до попытки не тратит RNG/попытку. Generic catalog corruption отклоняется до публикации нового мира.
+
+## Out of scope
+
+Пытки/вербовка, установка трофеев, новая модульная повреждаемость/ремонт, мировые persistent вреки, произвольная фракционная симуляция, несвязанные исправления и публикация. Арест реализуется отдельно US9, инженер US8; подключать их API по prerequisites, не копировать правила.
+
+## Tests
+
+Будущие тесты NOT RUN:
+- `DemoEp0036Us0006Tk0001Tests.DuplicateTypeDifferentSlot_PreservesIdentity`
+- `DemoEp0036Us0006Tk0001Tests.ChanceBasisPoints_Roundtrip`
+- `DemoEp0036Us0006Tk0001Tests.CommandCannotOverrideItemOrChance`
+
+Запуск из D:/DeepSpaceSaga/DSS. Создать уникальный абсолютный run в D:/DeepSpaceSaga/artifacts/validation/EP-0036-US-0006-TK-0001-contracts/<UTC-run>/; ограничить каждый process tree 300000 ms. Команда:
+`dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj -c Release --filter FullyQualifiedName~DemoEp0036Us0006Tk0001Tests --results-directory <absolute-run>/results --artifacts-path <absolute-run>/build`.
+Start-Process -WindowStyle Hidden с stdout/stderr в run, WaitForExit(300000); при timeout завершить всё дерево taskkill /PID <pid> /T /F, не объявлять PASS. Owning build: `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj -c Release --artifacts-path <absolute-run>/build` с тем же cap. Для C# format --verify-no-changes --include только allowlist; для content-only не требуется. Длительный corpus делить по полным IDs, не расширять лимит. Планирование эти проверки не запускало.
+
+## Definition of Done
+
+- Шаги/API выполнены в разрешённых файлах и owning layer, no hidden follow-up.
+- Все named tests проходят; actual evidence и ограничения записаны в Board.
+- Пользовательский end state проверяем через authoritative snapshot/receipt либо реальный input path; unit model не заменяет native/product acceptance.
+- Save/Load/duplicate/rejection сохраняют invariants, нет второго источника inventory/денег.
+- Тесты/build/format не выдаются за успешные без выполнения; native только при отдельной разрешённой проверке на меньшем мониторе.
+- Временные результаты убраны по AGENTS; commits/push этим planning ticket не разрешены.
+
+## Self-containment check
+
+Входные API, owning файлы, шаги, tests и ограничения перечислены; prerequisite создатели новых файлов указаны. Общие интеграционные границы распределены US3 (loot ledger), US6 (module salvage), US7 (lifecycle), US8 (engineer), US9 (custody). Не исполнять scaffold без prerequisite; draft означает ожидаемую сверку составленного плана, не отсутствующую игровую реализацию.
+
+## Execution — 2026-11-17
+
+Added identity-only AttemptModuleSalvageCommand; shared module rows retain independent instance IDs and integer basis-point chances. No installation/repair commands. Contracts build/scoped format/diff PASS. Tests NOT RUN until US6 completion. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/us6-tk1-build.log.

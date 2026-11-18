@@ -28,9 +28,13 @@ public sealed record DemoJobDeadlines(int OrdinaryPermille, int UrgentPermille, 
 public sealed record DemoJobRisk(string RiskProfileId, string Band, int Permille);
 public sealed record DemoJobRoleFilter(string Role, int PassengerWeight, int UrgentPassengerWeight, int CargoWeight);
 public sealed record DemoJobFirstOffer(string Type, int Count);
+public sealed record DemoBountyDefinition(string Id, string IssuerStationId, string TargetGroupId, long RewardTokens);
 public sealed record DemoJobsDefinition(int SchemaVersion, DemoJobLimits Limits, DemoJobRates Rates, DemoJobDeadlines Deadlines,
     ImmutableArray<DemoJobRisk> Risk, ImmutableArray<string> CargoItemTypeIds, ImmutableArray<DemoJobRoleFilter> RoleFilters,
-    DemoJobFirstOffer FirstOffer, DemoJobPenalties? Penalties = null);
+    DemoJobFirstOffer FirstOffer, DemoJobPenalties? Penalties = null)
+{
+    public ImmutableArray<DemoBountyDefinition> Bounties { get; init; } = [];
+}
 // EP-0034 US-0003: cancellation/expiry penalty as permille of the promised payout (absent = 250, i.e. 25%).
 public sealed record DemoJobPenalties(int CancelPermille, int ExpiryPermille);
 public sealed record DemoRegion(double X, double Y, double Radius);
@@ -50,6 +54,12 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
         (saved == "DD3D6B26BC6E7EE55064EAE4735CED0335328C42F4886C442B9E91FF5A6899B3" || saved == "4D897CEA83F2EBF04BD11DC0AA5FEB9CF0049BDE58A5965ACB332DBA5F29FA8B");
 
     public string? LegacyClusterFingerprint { get; init; }
+    public DemoLootDefinitions? Loot { get; init; }
+
+    // Optional reward catalogs have their own identity. Existing Save22 cluster hashes remain valid.
+    public string? BountyFingerprint => Jobs is { Bounties.IsDefaultOrEmpty: false } jobs
+        ? Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(
+            jobs.Bounties.OrderBy(b => b.Id, StringComparer.Ordinal), Options))) : null;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -86,7 +96,10 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
             var definitions = new DemoCampaignDefinitions(cluster,
                 cluster is null ? null : Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(cluster, Options))),
                 services, jobs, encounters, progression)
-            { LegacyClusterFingerprint = fingerprint.Length == 0 ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint.ToString()))) };
+            {
+                LegacyClusterFingerprint = fingerprint.Length == 0 ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint.ToString()))),
+                Loot = Read<DemoLootDefinitions>("loot")
+            };
             definitions.Validate();
             if (services?.Recruitment is { } recruitment && recruitment.Portraits.Any(p => !File.Exists(Path.Combine(contentRoot, p))))
                 throw new ScenarioException("Demo recruitment portrait does not exist.");
@@ -100,6 +113,7 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
 
     internal void ValidateReferences(GameDataRegistry registry)
     {
+        Validate();
         var catalog = registry.TacticalBattle.Catalog;
         if (Services is { } services)
         {
@@ -116,10 +130,13 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
                     registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(itemTypeId)) is not { UnitMassKg: > 0, StorageKind: ItemStorageKind.Cargo })
                     throw new ScenarioException("Unknown demo job cargo: " + itemTypeId);
         Encounters?.ValidateReferences(registry);
+        Loot?.ValidateReferences(registry, Encounters);
     }
 
     private void Validate()
     {
+        if (Encounters is not null && Loot is null)
+            throw new ScenarioException("Demo encounters require Data/Demo/loot.json.");
         static void Require(bool valid, string section)
         {
             if (!valid) throw new ScenarioException("Invalid demo " + section + ".");
@@ -140,6 +157,14 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
         }
         if (Jobs is { } j)
         {
+            Require(!j.Bounties.IsDefault && j.Bounties.All(b => b is not null &&
+                !string.IsNullOrWhiteSpace(b.Id) && b.RewardTokens > 0 &&
+                Cluster is not null && Cluster.StationIds.Contains(b.IssuerStationId, StringComparer.Ordinal) &&
+                Encounters is not null && Enumerable.Range(1, Encounters.GroupCount)
+                    .Any(i => b.TargetGroupId == $"pirate:{i:D2}")) &&
+                j.Bounties.Select(b => b.Id).Distinct(StringComparer.Ordinal).Count() == j.Bounties.Length &&
+                j.Bounties.Select(b => b.TargetGroupId).Distinct(StringComparer.Ordinal).Count() == j.Bounties.Length,
+                "bounties");
             Require(j.SchemaVersion == 1 && j.Limits is { Offers: > 0 and <= 12, PublicationGameTimeMs: > 0, PassengerMax: > 0, CargoTonnesMin: > 0 } &&
                 j.Limits.ExpiryGameTimeMs >= j.Limits.PublicationGameTimeMs && j.Limits.CargoTonnesMax >= j.Limits.CargoTonnesMin &&
                 j.Rates is { Base: >= 0, PerPassenger: >= 0, PerCargoTonne: >= 0, PerDistanceKm: >= 0, UrgencyPermille: >= 1000 } &&

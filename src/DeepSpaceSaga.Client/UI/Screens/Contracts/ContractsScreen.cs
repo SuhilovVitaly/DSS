@@ -73,6 +73,15 @@ public sealed class ContractsScreen : IScreen
     private readonly Func<DemoCampaignSnapshot?>? _campaign;
     private readonly Func<DemoCampaignCommand, ValueTask<DemoCampaignResponse>>? _execute;
     private readonly object _jobsGate = new();
+    private bool _showBounties;
+    private bool _showReport;
+    private SKRect _reportTab;
+    private float _reportScroll;
+    private SKRect _bountyTab;
+    private readonly List<(SKRect Rect, string BountyId)> _bountyButtons = [];
+    private readonly List<(SKRect Rect, string BountyId)> _claimButtons = [];
+    internal IReadOnlyList<TargetBountyRow> BountyRows => TargetBountyPresentation.Build(
+        Campaign?.Rewards?.Bounties, Campaign?.Transport?.StationJobs?.DockedStationId, StationName);
     private readonly List<(SKRect Rect, string OfferId)> _acceptButtons = [];
     private string? _pendingCommandId;
     private string? _jobsFeedback;
@@ -282,6 +291,61 @@ public sealed class ContractsScreen : IScreen
     private string StationName(string stationId) =>
         _buffer?.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == stationId)?.DisplayName is { Length: > 0 } name ? name : stationId;
 
+    internal Task? TryToggleBounty(string bountyId)
+    {
+        var campaign = Campaign;
+        var row = BountyRows.FirstOrDefault(r => r.Order.BountyId == bountyId);
+        if (_execute is null || campaign is null || row?.CanToggle != true) return null;
+        DemoCampaignCommand command;
+        lock (_jobsGate)
+        {
+            if (_pendingCommandId is not null) return null;
+            string id = "bounty-track-" + Guid.NewGuid().ToString("N");
+            command = row.Order.Tracking ? new CancelBountyCommand(id, campaign.Revision, bountyId)
+                : new AcceptBountyCommand(id, campaign.Revision, bountyId);
+            _pendingCommandId = id;
+            _jobsFeedback = Localization.Get("bounty.pending");
+            _jobsFeedbackIsError = false;
+        }
+        return CompleteBountyAsync(command);
+    }
+
+    private async Task CompleteBountyAsync(DemoCampaignCommand command)
+    {
+        DemoCampaignResponse response;
+        try { response = await _execute!(command).ConfigureAwait(false); }
+        catch (Exception) { response = new(command.CommandId, false, DemoCampaignReasons.Unavailable, command.ExpectedRevision); }
+        lock (_jobsGate)
+        {
+            if (_pendingCommandId != command.CommandId) return;
+            _pendingCommandId = null;
+            _jobsFeedbackIsError = !response.Applied;
+            _jobsFeedback = Localization.Get(response.Applied
+                ? command is ClaimBountyCommand ? "bounty.payment_confirmed" : "bounty.confirmed" : "bounty.failed");
+            if (!response.Applied && response.Reason is { } reason)
+                _jobsFeedback += " " + (reason.StartsWith("bounty_", StringComparison.Ordinal)
+                    ? Localization.Get("bounty." + reason) : StationJobsPresentation.Reason(reason));
+        }
+    }
+
+    internal BountyPaymentView? PaymentView(string bountyId) => BountyPaymentPresentation.Build(Campaign?.Rewards?.BountyPayment, bountyId);
+
+    internal Task? TryClaimBounty(string bountyId)
+    {
+        var campaign = Campaign;
+        if (_execute is null || campaign is null || PaymentView(bountyId)?.CanClaim != true) return null;
+        ClaimBountyCommand command;
+        lock (_jobsGate)
+        {
+            if (_pendingCommandId is not null) return null;
+            command = new("bounty-claim-" + Guid.NewGuid().ToString("N"), campaign.Revision, bountyId);
+            _pendingCommandId = command.CommandId;
+            _jobsFeedback = Localization.Get("bounty.pending");
+            _jobsFeedbackIsError = false;
+        }
+        return CompleteBountyAsync(command);
+    }
+
     public void OnActivated()
     {
         _isStationNameHovered = false;
@@ -312,6 +376,28 @@ public sealed class ContractsScreen : IScreen
 
         if (IsStationNameHit(x, y))
             return ScreenEvent.NavigateToStation;
+
+        if (_reportTab.Contains(x, y))
+        {
+            _showReport = !_showReport;
+            _reportScroll = 0;
+            _acceptButtons.Clear(); _cancelButtons.Clear(); _bountyButtons.Clear(); _claimButtons.Clear();
+            return ScreenEvent.None;
+        }
+        if (_bountyTab.Contains(x, y))
+        {
+            _showReport = false;
+            _showBounties = !_showBounties;
+            _acceptButtons.Clear();
+            _cancelButtons.Clear();
+            _bountyButtons.Clear();
+            _claimButtons.Clear();
+            return ScreenEvent.None;
+        }
+        foreach (var (rect, bountyId) in _bountyButtons)
+            if (rect.Contains(x, y)) { _ = TryToggleBounty(bountyId); return ScreenEvent.None; }
+        foreach (var (rect, bountyId) in _claimButtons)
+            if (rect.Contains(x, y)) { _ = TryClaimBounty(bountyId); return ScreenEvent.None; }
 
         foreach (var (rect, offerId) in _acceptButtons)
             if (rect.Contains(x, y))
@@ -369,7 +455,11 @@ public sealed class ContractsScreen : IScreen
         return _isStationNameHovered || _isExitButtonHovered || _hoveredAcceptIndex >= 0 || _hoveredCancelIndex >= 0;
     }
 
-    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        if (_showReport) _reportScroll = Math.Max(0, _reportScroll + delta * .4f);
+        return ScreenEvent.None;
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -392,7 +482,27 @@ public sealed class ContractsScreen : IScreen
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
             fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs, missingRations: snapshot?.MissingRations ?? 0);
 
-        DrawJobs(canvas, pl, pt);
+        _bountyTab = new(pl + ContractsLayout.PanelWidth - 270, pt + ContractsLayout.BodyStartY,
+            pl + ContractsLayout.PanelWidth - 40, pt + ContractsLayout.BodyStartY + 28);
+        TabletopStyle.Button(canvas, _bountyTab, ButtonState.Normal, primary: false);
+        JobsButtonPaint.Color = TabletopStyle.Ink;
+        TabletopStyle.Label(canvas, _bountyTab, Localization.Get(_showBounties ? "Demo.Jobs.Title" : "bounty.title"), JobsButtonPaint);
+        _reportTab = new(_bountyTab.Left - 250, _bountyTab.Top, _bountyTab.Left - 12, _bountyTab.Bottom);
+        TabletopStyle.Button(canvas, _reportTab, ButtonState.Normal, primary: false);
+        TabletopStyle.Label(canvas, _reportTab, Localization.Get("reward_report.title"), JobsButtonPaint);
+        if (_showReport)
+        {
+            var clip = new SKRect(pl + JobsLeftMargin, pt + ContractsLayout.BodyStartY + 44,
+                pl + ContractsLayout.PanelWidth - JobsLeftMargin, pt + ContractsLayout.PanelHeight - 40);
+            var lines = RewardReportPresentation.Lines(Campaign);
+            _reportScroll = Math.Clamp(_reportScroll, 0, Math.Max(0, lines.Length * 26 - clip.Height));
+            canvas.Save(); canvas.ClipRect(clip);
+            float y = clip.Top - _reportScroll;
+            foreach (string line in lines) { Text(canvas, line, clip.Left, y, clip.Width, JobsTextPaint); y += 26; }
+            canvas.Restore();
+        }
+        else if (_showBounties) DrawBounties(canvas, pl, pt);
+        else DrawJobs(canvas, pl, pt);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.
@@ -401,6 +511,52 @@ public sealed class ContractsScreen : IScreen
             isCrewHovered: IsCrewTooltipVisible,
             isTokensHovered: IsTokensTooltipVisible,
             isFuelHovered: IsFuelTooltipVisible);
+    }
+
+    private void DrawBounties(SKCanvas canvas, float pl, float pt)
+    {
+        _acceptButtons.Clear();
+        _cancelButtons.Clear();
+        _bountyButtons.Clear();
+        _claimButtons.Clear();
+        float left = pl + JobsLeftMargin;
+        float width = ContractsLayout.PanelWidth - 2 * JobsLeftMargin;
+        float y = pt + ContractsLayout.BodyStartY;
+        Text(canvas, Localization.Get("bounty.title"), left, y, width - 250, JobsHeadingPaint);
+        y += 42;
+        Text(canvas, Localization.Get("bounty.cancellation_free"), left, y, width, JobsDimPaint);
+        y += 30;
+        foreach (var row in BountyRows)
+        {
+            var card = new SKRect(left, y, left + width, y + 174);
+            TabletopStyle.Field(canvas, card);
+            float textWidth = width - 220;
+            Text(canvas, row.Headline, left + 12, y + 8, textWidth, JobsTextPaint);
+            Text(canvas, row.Terms, left + 12, y + 32, textWidth, JobsDimPaint);
+            Text(canvas, row.Status, left + 12, y + 56, textWidth, JobsTextPaint);
+            Text(canvas, row.PaymentLocation, left + 12, y + 80, textWidth, JobsDimPaint);
+            if (row.Order.SearchRegion is { } region)
+                Text(canvas, Localization.Get("bounty." + region), left + 12, y + 104, textWidth, JobsDimPaint);
+            var button = new SKRect(card.Right - 200, y + 20, card.Right - 12, y + 56);
+            var state = row.CanToggle && !IsAcceptPending ? ButtonState.Normal : ButtonState.Disabled;
+            TabletopStyle.Button(canvas, button, state, primary: false);
+            JobsButtonPaint.Color = TabletopStyle.ButtonInk(state, primary: false);
+            TabletopStyle.Label(canvas, button, row.ToggleLabel, JobsButtonPaint);
+            _bountyButtons.Add((button, row.Order.BountyId));
+            if (PaymentView(row.Order.BountyId) is { } payment)
+            {
+                Text(canvas, payment.Amount + (payment.Reason is null ? "" : " · " + payment.Reason), left + 12, y + 130, textWidth, JobsDimPaint);
+                var claim = new SKRect(card.Right - 200, y + 76, card.Right - 12, y + 112);
+                var claimState = payment.CanClaim && !IsAcceptPending ? ButtonState.Normal : ButtonState.Disabled;
+                TabletopStyle.Button(canvas, claim, claimState, primary: true);
+                JobsButtonPaint.Color = TabletopStyle.ButtonInk(claimState, primary: true);
+                TabletopStyle.Label(canvas, claim, Localization.Get("bounty.claim"), JobsButtonPaint);
+                _claimButtons.Add((claim, row.Order.BountyId));
+            }
+            y += 188;
+        }
+        if (JobsFeedback is { } feedback)
+            Text(canvas, feedback, left, pt + ContractsLayout.PanelHeight - 44, width, JobsTextPaint);
     }
 
     /// <summary>Board of the docked station on the left, the journal on the right, the last result at the bottom.</summary>
@@ -454,7 +610,7 @@ public sealed class ContractsScreen : IScreen
         float journalLeft = pl + JournalLeft;
         float journalWidth = ContractsLayout.PanelWidth - JournalLeft - JobsLeftMargin;
         float jy = pt + ContractsLayout.BodyStartY;
-        Text(canvas, view.JournalTitle, journalLeft, jy, journalWidth, JobsHeadingPaint);
+        Text(canvas, view.JournalTitle, journalLeft, jy, journalWidth - 240, JobsHeadingPaint);
         jy += 30;
         if (view.JournalEmpty is { } none)
             Text(canvas, none, journalLeft, jy, journalWidth, JobsDimPaint);

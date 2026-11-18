@@ -7,8 +7,8 @@ using DeepSpaceSaga.Engine.Scenario;
 namespace DeepSpaceSaga.Client.Tests.Demo;
 
 /// <summary>
-/// EP-0034-US-0001-TK-0002: the demo New Game references its own derived starter manifest with the same
-/// crew and wing identities plus one more four-cabin living quarters (6 crew + 2 reserved + 4 passengers).
+/// EP-0034-US-0001-TK-0002: the demo New Game references its own derived starter manifest with the original
+/// crew/wing identities plus an engineer and one four-cabin living quarters (7 crew, 5 free, no reserve).
 /// Shared starter content and other scenarios are unchanged. Reads the shipped content copied to the test
 /// output and loads it through the production loader/engine.
 /// </summary>
@@ -31,13 +31,15 @@ public sealed class DemoEp0034Us0001Tk0002Tests
         var shared = StarterCarrierManifest.Load(SharedManifestPath);
         Assert.Equal(shared.ShipClassId, demo.ShipClassId);
         Assert.Equal(shared.HullLayout!.Cells.Select(c => (c.X, c.Y)), demo.HullLayout!.Cells.Select(c => (c.X, c.Y)));
-        // Same starting team and wing identities; nothing is renamed or gifted.
-        Assert.Equal(shared.Crew!.Select(c => c.CrewId), demo.Crew!.Select(c => c.CrewId));
+        // Original identities remain; EP36 adds exactly the dedicated demo engineer.
+        Assert.Equal(shared.Crew!.Select(c => c.CrewId), demo.Crew!.Where(c => c.CrewId != "CHR-PLAYER-ENGINEER").Select(c => c.CrewId));
+        Assert.Single(demo.Crew!, c => c.CrewId == "CHR-PLAYER-ENGINEER");
         Assert.Equal(shared.CarrierState!.OwnedDrones!.Select(d => (d.DroneId, d.CrewId)),
             demo.CarrierState!.OwnedDrones!.Select(d => (d.DroneId, d.CrewId)));
+        // Legacy manifest field remains accepted; runtime ignores this old empty-cabin reserve.
         Assert.Equal(shared.CarrierState.ReservedCabins, demo.CarrierState.ReservedCabins);
 
-        // The only difference is one additional living quarters module.
+        // The only installed module difference remains one additional living quarters.
         var added = demo.Modules!.Select(m => m.ModuleId).Except(shared.Modules!.Select(m => m.ModuleId)).ToArray();
         Assert.Equal(["MOD-PLAYER-LIVING-QUARTERS-03"], added);
         Assert.Equal(shared.Modules!.Count + 1, demo.Modules!.Count);
@@ -59,10 +61,10 @@ public sealed class DemoEp0034Us0001Tk0002Tests
         var snapshot = engine.CaptureSnapshot();
         var cabins = snapshot.CarrierOperations!.CabinReservation!;
         Assert.Equal(12, cabins.TotalCabins);
-        Assert.Equal(6, cabins.OccupiedCabins);
-        Assert.Equal(2, cabins.ReservedCabins);
-        Assert.Equal(4, cabins.FreeCabins);
-        Assert.Equal(6, snapshot.CarrierOperations.Crew.Length);
+        Assert.Equal(7, cabins.OccupiedCabins);
+        Assert.Equal(0, cabins.ReservedCabins);
+        Assert.Equal(5, cabins.FreeCabins);
+        Assert.Equal(7, snapshot.CarrierOperations.Crew.Length);
 
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
         var living = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("living.quarters.mk1.four-cabins"));
@@ -70,7 +72,7 @@ public sealed class DemoEp0034Us0001Tk0002Tests
         Assert.Equal(2000, living.MassKg);
         Assert.Equal(0, living.PowerConsumptionW);
 
-        // Life support: the hold feeds the full complement (crew + reserve + passengers) for at least one day.
+        // Life support: the hold feeds the full complement (crew + passengers/prisoners) for at least one day.
 
         long rations = snapshot.InstalledModules.SelectMany(m => m.Cargo).Where(c => c.ItemTypeId == "item.food-rations").Sum(c => c.Quantity);
         Assert.True(rations >= 2L * cabins.TotalCabins, $"rations {rations} cannot feed {cabins.TotalCabins} people for a day");
@@ -79,7 +81,7 @@ public sealed class DemoEp0034Us0001Tk0002Tests
     [Fact]
     public void LegacyScenario_DoesNotReceiveDemoGrant()
     {
-        // Shared starter keeps exactly two living quarters (8 cabins = 6 crew + 2 reserved).
+        // Shared starter keeps exactly two living quarters (8 cabins = 6 crew + 2 free; no demo engineer).
         var shared = StarterCarrierManifest.Load(SharedManifestPath);
         Assert.DoesNotContain(shared.Modules!, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-03");
 
@@ -93,7 +95,8 @@ public sealed class DemoEp0034Us0001Tk0002Tests
             engine.SetSpeed(SimulationSpeed.Speed0);
             var cabins = engine.CaptureSnapshot().CarrierOperations!.CabinReservation!;
             Assert.Equal(8, cabins.TotalCabins);
-            Assert.Equal(0, cabins.FreeCabins);
+            Assert.Equal(2, cabins.FreeCabins);
+            Assert.DoesNotContain(engine.CaptureSnapshot().CarrierOperations!.Crew, c => c.Role == CrewRole.Engineer);
         }
     }
 }

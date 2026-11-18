@@ -29,8 +29,8 @@ public sealed class DemoEp0034Us0001Tk0004Tests
     }
 
     [Theory]
-    [InlineData("English", "Cabins 12: crew 6, passengers 0, reserve 2, free 4", "Free cabins: 4.")]
-    [InlineData("Russian", "Кают 12: экипаж 6, пассажиры 0, резерв 2, свободно 4", "Свободных кают: 4.")]
+    [InlineData("English", "Cabins 12: crew 7, passengers 0, prisoners 0, reserve 0, free 5", "Free cabins: 5.")]
+    [InlineData("Russian", "Каюты 12: экипаж 7, пассажиры 0, пленные 0, резерв 0, свободно 5", "Свободных кают: 5.")]
     public void ConfirmedSnapshot_RendersOutcome(string language, string summary, string ready)
     {
         using var locale = Localization.UseLocaleForTests(language);
@@ -46,7 +46,7 @@ public sealed class DemoEp0034Us0001Tk0004Tests
         Assert.Equal(Localization.Get("Demo.Passengers.Title"), lines[0]);
         Assert.Equal(summary, lines[1]);
         Assert.StartsWith(ready, lines[2]);
-        Assert.Equal(6, snapshot.CarrierOperations!.Crew.Length);
+        Assert.Equal(7, snapshot.CarrierOperations!.Crew.Length);
     }
 
     [Theory]

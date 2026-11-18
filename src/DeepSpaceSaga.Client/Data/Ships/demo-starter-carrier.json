@@ -160,6 +160,13 @@
       "initiative": 0
     },
     {
+      "crewId": "CHR-PLAYER-ENGINEER",
+      "displayName": "Alex Morgan",
+      "gender": "Male",
+      "portraitAssetId": "Images/Persons/M4/Portraits/CHR-20260915-105947-6DC202.png",
+      "role": "Engineer"
+    },
+    {
       "crewId": "CHR-PLAYER-DEFENSE",
       "displayName": "Irina Volskaya",
       "sensorRangeBonusPercent": 10,

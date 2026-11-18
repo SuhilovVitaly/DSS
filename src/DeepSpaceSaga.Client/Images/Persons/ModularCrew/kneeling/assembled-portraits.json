@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "pose": "kneeling-hips-right-hands-behind-back",
+  "canvas": [
+    1024,
+    1536
+  ],
+  "faceEyeChinPx": 68,
+  "calibration": "kneeling-v3-proportions-neck-repaired",
+  "portraits": {
+    "CHR-20261117-011947-JFG71U": {
+      "portraitAssetId": "Images/Persons/W4/Portraits/CHR-20261117-011947-JFG71U.png",
+      "outfits": {
+        "pilot": "assembled/CHR-20261117-011947-JFG71U/pilot.png",
+        "engineer": "assembled/CHR-20261117-011947-JFG71U/engineer.png",
+        "medic": "assembled/CHR-20261117-011947-JFG71U/medic.png",
+        "security": "assembled/CHR-20261117-011947-JFG71U/security.png",
+        "explorer": "assembled/CHR-20261117-011947-JFG71U/explorer.png",
+        "eva": "assembled/CHR-20261117-011947-JFG71U/eva.png",
+        "shorts": "assembled/CHR-20261117-011947-JFG71U/shorts.png"
+      }
+    },
+    "CHR-20261117-011947-SFGMKX": {
+      "portraitAssetId": "Images/Persons/W4/Portraits/CHR-20261117-011947-SFGMKX.png",
+      "outfits": {
+        "pilot": "assembled/CHR-20261117-011947-SFGMKX/pilot.png",
+        "engineer": "assembled/CHR-20261117-011947-SFGMKX/engineer.png",
+        "medic": "assembled/CHR-20261117-011947-SFGMKX/medic.png",
+        "security": "assembled/CHR-20261117-011947-SFGMKX/security.png",
+        "explorer": "assembled/CHR-20261117-011947-SFGMKX/explorer.png",
+        "eva": "assembled/CHR-20261117-011947-SFGMKX/eva.png",
+        "shorts": "assembled/CHR-20261117-011947-SFGMKX/shorts.png"
+      }
+    },
+    "CHR-20261117-012116-KBE86V": {
+      "portraitAssetId": "Images/Persons/W4/Portraits/CHR-20261117-012116-KBE86V.png",
+      "outfits": {
+        "pilot": "assembled/CHR-20261117-012116-KBE86V/pilot.png",
+        "engineer": "assembled/CHR-20261117-012116-KBE86V/engineer.png",
+        "medic": "assembled/CHR-20261117-012116-KBE86V/medic.png",
+        "security": "assembled/CHR-20261117-012116-KBE86V/security.png",
+        "explorer": "assembled/CHR-20261117-012116-KBE86V/explorer.png",
+        "eva": "assembled/CHR-20261117-012116-KBE86V/eva.png",
+        "shorts": "assembled/CHR-20261117-012116-KBE86V/shorts.png"
+      }
+    },
+    "CHR-20261117-012116-D8IV97": {
+      "portraitAssetId": "Images/Persons/W4/Portraits/CHR-20261117-012116-D8IV97.png",
+      "outfits": {
+        "pilot": "assembled/CHR-20261117-012116-D8IV97/pilot.png",
+        "engineer": "assembled/CHR-20261117-012116-D8IV97/engineer.png",
+        "medic": "assembled/CHR-20261117-012116-D8IV97/medic.png",
+        "security": "assembled/CHR-20261117-012116-D8IV97/security.png",
+        "explorer": "assembled/CHR-20261117-012116-D8IV97/explorer.png",
+        "eva": "assembled/CHR-20261117-012116-D8IV97/eva.png",
+        "shorts": "assembled/CHR-20261117-012116-D8IV97/shorts.png"
+      }
+    }
+  }
+}

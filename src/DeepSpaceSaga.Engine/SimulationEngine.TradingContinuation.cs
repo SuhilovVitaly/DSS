@@ -25,6 +25,16 @@ public sealed partial class SimulationEngine
             bool catalogMatch =
                 string.Equals(saved, BuildTradingConfigurationFingerprint(source.GameState, _registry.CatalogCompatibility), StringComparison.Ordinal) ||
                 string.Equals(saved, BuildTradingConfigurationFingerprint(source.GameState, CarrierCatalogCompatibility.Previous(_registry)), StringComparison.Ordinal);
+            // ResolveMarketProfiles already validated every captured profile against its exact
+            // current/structural predecessor. Preserve those validated identities here while
+            // still requiring the current event catalog and a recognized economic catalog.
+            if (!catalogMatch && source.GameState.CatalogCompatibility is { } prior &&
+                CarrierCatalogCompatibility.Accepts(_registry, prior))
+                catalogMatch = saved == TradingEconomySaveMigration.ConfigurationFingerprint(source.GameState with
+                {
+                    MarketEventCatalogFingerprint = _registry.StationMarketEvents.Count > 0
+                        ? _registry.StationMarketEventCatalogFingerprint : null
+                });
             bool selfConsistent = string.Equals(saved, TradingEconomySaveMigration.ConfigurationFingerprint(source.GameState), StringComparison.Ordinal);
             if (!catalogMatch || !selfConsistent)
                 throw new ScenarioException("Incompatible trading configuration fingerprint (catalog/profile/events/map rules). Save was not modified.");

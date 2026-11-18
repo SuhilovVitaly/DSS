@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "scrapItemTypeId": "item.scrap",
+  "droneScrapQuantityByFrame": {
+    "light": 20,
+    "heavy": 60
+  },
+  "carrierScrapQuantityByLayout": {
+    "carrier.standard": 250
+  },
+  "consumableItems": [
+    {
+      "category": "ammo",
+      "catalogId": "torpedo.t1",
+      "itemTypeId": "item.drone-torpedo.t1"
+    },
+    {
+      "catalogId": "decoy.t1",
+      "category": "decoy",
+      "itemTypeId": "item.decoy-charge.t1"
+    }
+  ],
+  "moduleItems": [
+    {
+      "catalogId": "gun.sword.t1",
+      "category": "weapon",
+      "itemTypeId": "item.trophy.weapon.gun.sword.t1"
+    },
+    {
+      "catalogId": "gun.spear.t1",
+      "category": "weapon",
+      "itemTypeId": "item.trophy.weapon.gun.spear.t1"
+    },
+    {
+      "catalogId": "plate.medium",
+      "category": "armor",
+      "itemTypeId": "item.trophy.armor.plate.medium"
+    },
+    {
+      "catalogId": "drive.standard",
+      "category": "engine",
+      "itemTypeId": "item.trophy.engine.drive.standard"
+    },
+    {
+      "catalogId": "shield.t1",
+      "category": "shield",
+      "itemTypeId": "item.trophy.shield.shield.t1"
+    },
+    {
+      "catalogId": "decoy.t1",
+      "category": "decoy",
+      "itemTypeId": "item.trophy.decoy.decoy.t1"
+    }
+  ]
+}

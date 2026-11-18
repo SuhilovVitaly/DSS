@@ -78,3 +78,7 @@ settlement группа retired, остальные группы не меняю
 [pilot loss](../../../src/DeepSpaceSaga.Engine/SimulationEngine.PilotLoss.cs),
 [LocalClient autosave](../../../src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.Autosave.cs),
 [client autosave](../../../src/DeepSpaceSaga.Client/GameSessionHandle.Autosave.cs).
+
+## Послебоевая кампания
+
+Rewards содержит независимые bounty/payment/loot projections, Company — отдельный custody roster. Победа фиксирует sortie до открытия loot, мир остаётся на паузе. Open loot разрешает сохранение; Continue восстанавливает frozen карту без replay. Каждая loot-команда требует durable continuation до Applied. [Полный контракт](DemoRewards.md).

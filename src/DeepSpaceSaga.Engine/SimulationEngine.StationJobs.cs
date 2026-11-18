@@ -56,7 +56,7 @@ public sealed partial class SimulationEngine
         // Feasibility uses the carrier design (cabins for passengers, total hold), never a momentary free count:
         // the actual free space is checked again on acceptance.
         var capacity = BuildPassengerCapacityProjection();
-        int passengerCabins = capacity is null ? 0 : Math.Max(0, capacity.TotalCabins - capacity.CrewCabins - capacity.ReservedCabins);
+        int passengerCabins = capacity is null ? 0 : Math.Max(0, capacity.TotalCabins - capacity.CrewCabins - capacity.PrisonerCabins);
         int maxPassengers = Math.Min(jobs.Limits.PassengerMax, passengerCabins);
         int maxTonnes = (int)Math.Min(jobs.Limits.CargoTonnesMax, CarrierHoldCapacityKg(ship) / 1000);
         double speedKmS = GetMaxSpeedKmS(ship) ?? map.Rules.ReferenceSpeedMps / 1000;
@@ -221,11 +221,10 @@ public sealed partial class SimulationEngine
         var active = state.Obligations.Where(o => o.Status == StationJobStatuses.Active).ToArray();
         if (StationJobTypes.CarriesPassengers(offer.Type))
         {
-            var capacity = BuildPassengerCapacityProjection();
+            var capacity = BuildPassengerCapacityProjection(_demoCampaign with { StationJobs = state });
             string? blocker = PassengerCapacityReasons.BoardingBlocker(capacity);
             if (blocker is not null && blocker != PassengerCapacityReasons.NoFreeCabins) return blocker;
-            long committed = PassengerSeatsAwaitingBoarding(active); // boarded passengers already occupy cabins (US-0002)
-            return capacity!.FreeCabins - committed < offer.Count ? PassengerCapacityReasons.NoFreeCabins : null;
+            return capacity!.FreeCabins < offer.Count ? PassengerCapacityReasons.NoFreeCabins : null;
         }
         if (offer.Type == StationJobTypes.Cargo)
         {

@@ -2,95 +2,122 @@
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0001-target-bounty
 ticket: EP-0036-US-0001-TK-0004-localized-feedback
-title: RU/EN условия, результаты и причины отказа
+title: Bounty content и RU/EN условия
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: content-data
 matching_test_project: tests/DeepSpaceSaga.Client.Tests
-depends_on: [EP-0036-US-0001-TK-0002-engine]
-files_touched: 3
+depends_on: [EP-0036-US-0001-TK-0005-bounty-schema]
+files_touched: 4
 serves: [AC-01, AC-02, AC-03, AC-04]
 created: 2026-11-16T20:32:46.441Z
-revision: 1
+revision: 3
 ---
 
-# RU/EN условия, результаты и причины отказа
+# Bounty content и RU/EN условия
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
 
-Заказ на конкретную пиратскую группу. Тикет 3/4 даёт проверяемый результат своего слоя. [Story и полный пользовательский результат](../EP-0036-US-0001-target-bounty.md).
+[История и полный пользовательский результат](../EP-0036-US-0001-target-bounty.md). Устранить зависимость выплаты от предварительного принятия, сохраняя станцию заказчика и однократность. Этот тикет выполняет только слой content-data.
 
 ## Decisions
 
-Поручение владельца: «пройди все эпики с 32 по 41 и наполни их сторисы тикетами. Если по мере прохождения эпика ты понимаешь что не хватает какой-то стори - ты можешь смело ее добавить уже вместе с тикетами. Реализация с 32 по 41 эпик должно привести нас к состоянию первого демо». Время записи 2026-11-16T20:32:46.441Z, не доказанное время отправки. Разрешены тикеты и необходимые дополнительные истории. Human approval технических деталей/баланса не заявляется; stage approved означает автоматическую готовность workflow планирования. Исполнение и публикация требуют отдельного поручения.
+- **D-36-01:** «Давай на станции заказчика. Зафиксируй это в тикетах через сабагента». Выплата только при подтверждённой стыковке со станцией заказчика; ранее записано 2026-11-17T18:59:55Z.
+- **D-36-29:** «Да, без срока и залога».
+- **D-36-30:** «Да, свободная отмена без штрафа и награды». Отмена сама по себе не выдаёт деньги.
+- **D-36-31:** «Да: станция выплатит награду за уже уничтоженную группу».
+- **D-36-32:** «За конкретную группу, на которую у этой станции есть заказ; достаточно подтверждённой победы игрока».
+- **D-36-33:** «Да, отмена только убирает заказ из активного журнала; право на однократную награду сохраняется».
+
+D-36-29…33 записаны 2026-11-17T19:19:15Z (время записи, не отправки). Предварительное принятие и непрерывное отслеживание не являются условиями выплаты.
 
 ## Assumptions
 
-- Используется сокращённая демо на 60–120 минут, один кластер, готовый Tetrarch; backlog полного продукта не включается.
-- Технические имена/новые API ниже — планируемые, не утверждения о текущем коде. Численные A-решения в шагах — baseline для owning плейтеста, не доказанный баланс.
-- Сначала prerequisites: EP-0036-US-0001-TK-0002-engine. При drift исходников пересмотреть allowlist в Board до расширения diff.
+- **A-B01:** один persistent BountyId на конкретную группу в каталоге кампании, один issuer; дубликаты TargetGroupId запрещены при загрузке. Ключ выплаты — BountyId в сохранённой кампании, не CommandId/ContractId/визит/acceptance attempt. Повторное принятие меняет только Tracking.
+- **A-B02:** определения BountyId, issuer, target и обещанная сумма материализуются однократно в campaign state и не перегенерируются при открытии доски, отмене или календарной публикации перевозок. Новое сохранение без bounty section получает определения из совместимого каталога, включая сопоставление с уже сохранёнными победами; несовместимый каталог не публикуется.
+- **A-B03:** сумма — целые неотрицательные Tokens, конфигурация требует положительную награду. Нет deadline/deposit/cancellation fee; временные поля перевозок не переиспользуются с фиктивным бесконечным сроком.
+- **A-B04:** состояние отслеживания отдельно от eligibility и Paid. Погибшая цель без подтверждённой победы игрока отображается недоступной, не создаёт невыполнимый активный заказ. Клиент не определяет eligibility.
+
+Имена новых API ниже — проект. Workflow approval разрешает подготовку тикета, не является human approval кода/баланса или поручением реализовать.
 
 ## Code context
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | Существующий locale dictionary: `src/DeepSpaceSaga.Client/Data/Locale/Russian.json:1`. | Только ключи данной истории, форматные placeholders и тексты отказов. |
-| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | Существующий locale dictionary: `src/DeepSpaceSaga.Client/Data/Locale/English.json:1`. | Только ключи данной истории, форматные placeholders и тексты отказов. |
-| `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0036Us0001Tk0004Tests.cs` | Новый файл этого тикета; на момент grounding отсутствует. | Parity/reason coverage реальных словарей. |
+| `src/DeepSpaceSaga.Client/Data/Demo/jobs.json` | существует :1 schemaVersion1, bounty settings отсутствуют | Добавить Bounties по схеме TK0005, не менять перевозки. |
+| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | существует, :1 JSON | Только bounty keys RU; placeholders/reasons parity. |
+| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | существует, :1 JSON | Только bounty keys EN; placeholders/reasons parity. |
+| `tests/DeepSpaceSaga.Client.Tests/Demo/DemoEp0036Us0001Tk0004Tests.cs` | новый файл этого тикета | Named tests ниже; реальный owning API, не копия бизнес-логики. |
 
-Разрешены ровно 3 файла. Не менять численные правила Engine и не переводить persistent IDs.
+Разрешены только эти 4 implementation files; Board status/evidence обновляются отдельно. Общий read-only grounding — в story; внешние prerequisites читаются только в canonical Board.
 
 ## Public API after the change
 
-No API change. Существующие словари Russian/English; язык в Settings — Russian или English, не новые ru/en IDs.
+No gameplay API change. JSON bounties: [{id,issuerStationId,targetGroupId,rewardTokens}]; RU/EN keys: bounty.track, untrack, no_deadline, no_deposit, cancellation_free, claim_at_issuer, victory_confirmed, unavailable, already_paid.
 
 ## Implementation steps
 
-1. По контракту этой истории и API предыдущих тикетов добавить ключи для условий, стоимости/срока, доступности, pending, confirmed результата, каждого stable rejection code и empty state. Использовать одинаковые ключи/параметры в Russian.json и English.json.
-2. Дать короткие конкретные RU/EN тексты: что произошло, почему действие недоступно и какое действие возможно. Не показывать class names, IDs и implementation jargon вместо объяснения.
-3. Проверить все keys, используемые следующим UI тикетом, и отсутствие неизвестных placeholders; не менять чужие переводы. Сюжетные тексты, если есть, остаются в owning dialogue content.
+1. A-B05 (баланс для будущего плейтеста, не пользовательский D): два заказа bounty:pirate:01 от SPC-0002 за 1500 Tokens и bounty:pirate:02 от SPC-0006 за 2000 Tokens. Targets существуют при groupCount4; никаких новых VIP/групп. Заморозить при материализации в state.
+2. Тексты объясняют отсутствие срока/залога, свободную отмену отслеживания, возможность оплаты после победы без принятия и только у issuer; cancelled не означает lost_reward.
+3. Проверить content через реальный loader/reference validation и parity/placeholders в обоих словарях. Остальные jobs/locale keys не переписывать.
 
 ## Served acceptance criteria
 
-- **AC-01:** У цели устойчивый идентификатор, место/район поиска и понятное условие выполнения.
-- **AC-02:** Исчезновение или уничтожение цели до принятия не выдаёт невыполнимый заказ.
-- **AC-03:** Отмена и выполнение не создают вторую активную копию контракта.
-- **AC-04:** Представление результата, причины отказа, учёт и сохранение проверены в применимых пользовательских путях; присутствие DTO или теста не считается доказательством приёмки.
+- **AC-01:** Доска станции показывает её конкретные bounty, цель, разрешённый район поиска, награду и место выплаты; срок/залог отсутствуют.
+- **AC-02:** Уничтоженная игроком цель до принятия доступна как требование к выплате; уничтоженная/недоступная цель без доказанной победы не выдаётся как невыполнимый активный заказ.
+- **AC-03:** Принять/отменить означает включить/выключить отслеживание одного BountyId; отмена без штрафа/выплаты и не уничтожает право на награду. Повтор не создаёт копий.
+- **AC-04:** Save/Load и повторные команды сохраняют исходные issuer/target/reward/Tracking; платёжная eligibility передаётся в US-0002, UI не обещает ретроактивную оплату за постороннюю группу.
 
-Вклад этого тикета ограничен слоем `content-data`; полный AC принимается после всей карты истории, включая реальный пользовательский путь. DTO/test scaffold сам по себе не закрывает AC.
+Вклад ограничен content-data; story AC принимается после всей dependency chain, не одним DTO или unit test.
 
 ## Out of scope
 
-Полная верфь, другие носители, фракционная симуляция, пленные, тактическое отступление, сохранение внутри боя, универсальный квестовый движок и публикация. Не переписывать поставленный EP-0029, не ремонтировать несвязанные файлы и не расширять лимит пяти файлов молча.
+Новые пиратские цели, универсальные награды за любого врага, штрафы/залог/deadline, другой issuer, лут/арест, дополнительный cash wallet, установка трофеев, реализация соседних эпиков и публикация.
 
 ## Invariants
 
-- `DB/Documentation/01-Requirements/EngineRequirements.md`, «Архитектура и авторитет» / «Команды, события и воспроизводимость»: Engine владеет исходами/временем/RNG/деньгами; render не мутирует мир.
-- `src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs:10`: асинхронный transport. `src/DeepSpaceSaga.Engine/SimulationEngine.SortieSettlement.cs:17`: использовать единый settlement, не создавать второй inventory.
-- `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:40`: на grounding writer Save21; переход к Save22 принадлежит EP-0032-US-0007. Последующие тикеты не назначают конкурирующие версии writer.
-- Reject/duplicate не даёт частичных денег, груза, награды, опыта или повторного звука. Pause не двигает deadlines; calendar и motion units не смешиваются.
-- Реализация gameplay-инвариантов — в owning engine ticket; клиентский/content/tooling тикет их не дублирует.
+- EngineRequirements: деньги и результаты принадлежат Engine; ошибочная команда не даёт частичной мутации.
+- Один BountyId в campaign — одно право выплаты; Tracking/CommandId/открытие экрана не создают новую награду.
+- Только frozen issuer/target/reward и валидированная история собственной победы; Retired/исчезновение сами по себе не evidence.
+- Нет срока, залога, платы за отмену или автоматической выплаты после победы; paid не может стать claimable после отмены.
+- Save/Load валидируется до публикации. Интеграция использует existing ExecuteDemoCampaign hash/revision/candidate; никакой конкурирующей SaveFormat версии.
 
 ## Tests
 
-Будущие named tests (NOT RUN):
+Будущие проверки, **NOT RUN**:
+- `DemoEp0036Us0001Tk0004Tests.RealBountyContent_LoadsAndReferencesExistingGroups`
+- `DemoEp0036Us0001Tk0004Tests.BountyLocaleKeys_ParityAndPlaceholders`
+- `DemoEp0036Us0001Tk0004Tests.CancellationText_DoesNotClaimRewardForfeiture`
 
-- `DemoEp0036Us0001Tk0004Tests.StoryKeysExistInBothLocales` — все ключи экрана и причины отказа имеют RU/EN значения.
-- `DemoEp0036Us0001Tk0004Tests.FormatArgumentsMatch` — placeholders и типы форматируемых значений одинаковы.
-- `DemoEp0036Us0001Tk0004Tests.NoRawReasonCodeLeaks` — known rejection code отображается объяснением, не техническим кодом.
+Из корня DSS; process-tree cap 300000 ms на каждый процесс. Named class corpus включает только перечисленные проверки этого тикета. Команда создаёт уникальный абсолютный run:
+```powershell
+$run = 'D:/DeepSpaceSaga/artifacts/validation/EP-0036-US-0001-TK-0004-localized-feedback/' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
+New-Item -ItemType Directory -Force -Path $run | Out-Null
+$p = Start-Process dotnet -ArgumentList @('test','tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj','-c','Release','--filter','FullyQualifiedName~DemoEp0036Us0001Tk0004Tests','--results-directory',($run + '/results'),'--artifacts-path',($run + '/build')) -PassThru -WindowStyle Hidden -RedirectStandardOutput ($run + '/test.log') -RedirectStandardError ($run + '/test.err')
+if (-not $p.WaitForExit(300000)) { taskkill /PID $p.Id /T /F; throw 'test process-tree timeout' }
+if ($p.ExitCode -ne 0) { throw 'focused tests failed' }
+```
 
-Из `D:/DeepSpaceSaga/DSS`: создать уникальный абсолютный `D:/DeepSpaceSaga/artifacts/validation/EP-0036-US-0001-TK-0004-localized-feedback/<UTC-run>/`; команда `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -c Release --filter FullyQualifiedName~DemoEp0036Us0001Tk0004Tests --results-directory <absolute-run>/results --artifacts-path <absolute-run>/build`. Запускать Start-Process с redirected stdout/stderr в run, WindowStyle Hidden, WaitForExit(300000); при timeout taskkill /PID <pid> /T /F и не объявлять PASS. Content-only: format не нужен; owning build `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj -c Release --artifacts-path <absolute-run>/build` с тем же process-tree cap. Реальную читаемость проверяет UI тикет и итоговая EP-0040-US-0005; unit parity не закрывает native/product gate.
+Owning build: `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj -c Release --artifacts-path <absolute-run>/build`; выполнить под таким же capped wrapper, без unbounded process. Для content-data достаточно loader/parity tests; для code layer `dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-changes --include src/DeepSpaceSaga.Client/Data/Demo/jobs.json src/DeepSpaceSaga.Client/Data/Locale/Russian.json src/DeepSpaceSaga.Client/Data/Locale/English.json` под тем же cap. Native/game не запускать ради planning; будущий UI evidence отдельно от automated.
 
 ## Definition of Done
 
-- Все шаги выполнены только в allowlist, тесты проверяют указанные исходы и ошибки.
-- Served AC имеют evidence вклада этого слоя; story end-to-end/native/product gates не закрыты автоматически.
-- Focused checks и owning build/format проходят либо конкретное исходное падение записано как блокер; timeout не PASS.
-- Public API, units, persistence, idempotency и ограничения соблюдены; нет скрытого follow-up вне Board.
-- Evidence в `D:/DeepSpaceSaga/artifacts/validation/<ticket>/<unique-run>/`, status/решения в Board, актуальные контракты в Documentation.
-- Удалены только собственные disposable scripts/caches/results; сохранены необходимые ссылки evidence, нет мусора в корнях workspace/repo.
+- Шаги выполнены в allowlist после dependencies; named tests и owning checks PASS либо конкретный исходный blocker записан.
+- AC coverage и негативные cases подтверждены, false/duplicate/Load не дублируют деньги.
+- Новые DTO и сохранение согласованы с prerequisite schemas; нет скрытого изменения баланса или доверия клиентским исходам.
+- Board отражает фактические результаты; планирование не обозначено реализацией/приёмкой.
+- Validation outputs только в указанном artifacts run; disposable файлы убраны, чужие изменения сохранены.
 
 ## Self-containment check
 
-История, контрактные причины и следующий экран доступны по карте этой story. Allowlist состоит из двух существующих словарей и одного теста; игровые правила и frontend wiring принадлежат соседним тикетам. Новые ключи согласовать с их объявленным API, а не с догадкой о скрытом состоянии.
+Описаны authority, identity, отсутствие acceptance prerequisite, frozen definitions, schema, dependencies, allowlist, шаги и named tests. Открытого продуктового вопроса по этому результату нет; численный content baseline — A-B05 для плейтеста, не обещание доказанного баланса.
+
+## Execution — 2026-11-17
+
+Added the two planned A-B05 bounty definitions and matching RU/EN keys, without changing transport terms. JSON parsing, scoped whitespace and diff checks PASS. Added real loader/group reference and locale parity tests; NOT RUN until US1 completion. Numerical rewards remain playtest assumptions, not accepted balance.

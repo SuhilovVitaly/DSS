@@ -55,7 +55,7 @@ Board — единственное место эпиков, историй и т
 | [EP-0033](EP-0033-demo-company-services/Documentation.md) Обслуживание и восстановление компании | approved | 26 | Реализован; приёмка OPEN | 6 историй, 26 тикетов; EP-0034 passenger integration и product gates OPEN; [ExecutionStatus](EP-0033-demo-company-services/ExecutionStatus.md) |
 | [EP-0034](EP-0034-demo-transport-contracts/Documentation.md) Контракты пассажирских и грузовых перевозок | approved | 38 (ветка `feature/ep-0034-demo-transport-contracts`) | Реализован; приёмка OPEN | 7 историй, 27 тикетов (включая исправляющий US-0006-TK-0006); [ExecutionStatus](EP-0034-demo-transport-contracts/ExecutionStatus.md): story-тесты PASS, полный прогон — запись оркестратора, native/product OPEN; [перевозки](../Documentation/04-Engineering/DemoTransportContracts.md) |
 | [EP-0035](EP-0035-demo-pirate-encounters/Documentation.md) Пиратские встречи и избегание перехвата | approved | 0 | Не начат | Демо: 17 историй, 66 тикетов; аудит грумминга: сенсоры/fog/эскадры/recovery/integration; [DemoPlan](EP-0031-board-and-demo-scope/DemoPlan.md) |
-| [EP-0036](EP-0036-demo-bounties-and-loot/Documentation.md) Боевые заказы и простая добыча | approved | 0 | Не начат | Демо: 5 историй, 17 тикетов; workflow ready; [DemoPlan](EP-0031-board-and-demo-scope/DemoPlan.md) |
+| [EP-0036](EP-0036-demo-bounties-and-loot/Documentation.md) Боевые заказы и пообъектная добыча | approved | 48 | Реализован; приёмка OPEN | 12 историй, 48 тикетов; [ExecutionStatus](EP-0036-demo-bounties-and-loot/ExecutionStatus.md), [Tickets](EP-0036-demo-bounties-and-loot/Tickets.md); native/product — владелец |
 | [EP-0037](EP-0037-demo-voyage-economy/Documentation.md) Экономика рейса и первое улучшение | approved | 0 | Не начат | Демо: 5 историй, 14 тикетов; workflow ready; [DemoPlan](EP-0031-board-and-demo-scope/DemoPlan.md) |
 | [EP-0038](EP-0038-demo-pilot-progression/Documentation.md) Ограниченное развитие пилотов | approved | 0 | Не начат | Демо: 4 историй, 15 тикетов; workflow ready; [DemoPlan](EP-0031-board-and-demo-scope/DemoPlan.md) |
 | [EP-0039](EP-0039-demo-cluster-story/Documentation.md) Сюжет кластера и финал демо | approved | 0 | Не начат | Демо: 6 историй, 27 тикетов; workflow ready; [DemoPlan](EP-0031-board-and-demo-scope/DemoPlan.md) |
@@ -74,7 +74,7 @@ Board — единственное место эпиков, историй и т
 | Д3 | [EP-0033](EP-0033-demo-company-services/Documentation.md) — Обслуживание и восстановление компании | P0 | 6 | EP-0032, EP-0034 |
 | Д4 | [EP-0034](EP-0034-demo-transport-contracts/Documentation.md) — Контракты пассажирских и грузовых перевозок | P0 | 7 | EP-0032 |
 | Д5 | [EP-0035](EP-0035-demo-pirate-encounters/Documentation.md) — Пиратские встречи и избегание перехвата | P0 | 17 | EP-0032, EP-0033, EP-0034 |
-| Д6 | [EP-0036](EP-0036-demo-bounties-and-loot/Documentation.md) — Боевые заказы и простая добыча | P0 | 5 | EP-0034, EP-0035 |
+| Д6 | [EP-0036](EP-0036-demo-bounties-and-loot/Documentation.md) — Боевые заказы и пообъектная добыча | P0 | 12 | EP-0034, EP-0035 |
 | Д7 | [EP-0037](EP-0037-demo-voyage-economy/Documentation.md) — Экономика рейса и первое улучшение | P0 | 5 | EP-0034, EP-0032, EP-0033, EP-0036 |
 | Д8 | [EP-0038](EP-0038-demo-pilot-progression/Documentation.md) — Ограниченное развитие пилотов | P1 | 4 | EP-0032, EP-0033 |
 | Д9 | [EP-0039](EP-0039-demo-cluster-story/Documentation.md) — Сюжет кластера и финал демо | P1 | 6 | EP-0034, EP-0037, EP-0035, EP-0036, EP-0032 |

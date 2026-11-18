@@ -20,6 +20,15 @@ public sealed partial class TacticalBattleScreen
     private SKPoint DesignPoint(float x, float y) => new((float)(x / (double)_viewport.S), (float)(y / (double)_viewport.S));
     private IEnumerable<SKRect> OverlayRects()
     {
+        if (ObserveLoot())
+        {
+            yield return _lootWindow!.Bounds;
+            yield return _lootWindow.LeaveBounds;
+            yield return _lootWindow.JettisonBounds;
+            yield return _lootWindow.RetryBounds;
+            yield return _logTab.Bounds;
+            yield break;
+        }
         yield return _panel;
         if (!_minimap.IsEmpty) yield return _minimap;
         if (!_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
@@ -37,6 +46,13 @@ public sealed partial class TacticalBattleScreen
     private void DrawOverlay(SKCanvas c, TacticalBattleFrame f)
     {
         _hoverFrame = f;
+        if (ObserveLoot())
+        {
+            TacticalBattleMapRenderer.DrawLootSources(c, f.View, _lootWindow!.Presentation.State!, _lootWindow.Presentation.Selected?.ObjectId);
+            _lootWindow.Draw(c, _viewport.Wd, 720, Flow.Pending, Flow.Error);
+            if (!_lootWindow.ConfirmDiscard) _logTab.Draw(c, f, new(16, 195, Math.Min(370, _viewport.Wd - 540), 645));
+            return;
+        }
         _minimapProjection = TacticalBattleMinimap.Draw(c, f, _minimap);
         _phasePanel.Tutorial = Flow.IsTutorial;
         _phasePanel.Campaign = Flow.IsCampaign;

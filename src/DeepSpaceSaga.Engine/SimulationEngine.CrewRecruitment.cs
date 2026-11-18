@@ -18,7 +18,7 @@ public sealed partial class SimulationEngine
         var pilots = ship.Crew.Where(c => string.Equals(c.Role, "Pilot", StringComparison.OrdinalIgnoreCase))
             .Select(c => new PilotAssignment(c.Id, c.DisplayName, wing.FirstOrDefault(d => !d.Destroyed && d.CrewId == c.Id)?.DroneId)).ToImmutableArray();
         var drones = wing.Where(d => !d.Destroyed && IsHangarReady(d.HangarModuleId)).Select(d => d.DroneId).ToImmutableArray();
-        int free = BuildCabinReservationProjection(ship).FreeCabins;
+        int free = GetAvailablePrisonerCabins(ship, state);
         if (!ship.IsDocked || ship.DockedStationObjectId is not { } station || !_demoDefinitions.Services.StationIds.Contains(station))
             return new([], pilots, drones, free, CompanyServiceReasons.NotDocked);
         long bucket = _clock.GameTimeMs / recruitment.RefreshGameTimeMs;

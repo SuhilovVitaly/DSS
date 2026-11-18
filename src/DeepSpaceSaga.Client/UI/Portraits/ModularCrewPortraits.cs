@@ -25,6 +25,16 @@ internal static class ModularCrewPortraits
 
     internal static SKBitmap? Pilot(string root, string pilotId) => Assigned(root, "pilots", pilotId);
 
+    internal static string? AssignedOutfit(string root, string portraitPath)
+    {
+        try
+        {
+            var assignments = Read<Dictionary<string, Dictionary<string, Assignment>>>(Path.Combine(root, "Data", "UI", "modular-portraits.json"));
+            return assignments.TryGetValue("dialogue", out var entries) && entries.TryGetValue(Path.GetFileName(portraitPath), out var value) ? value.Outfit : null;
+        }
+        catch (Exception ex) when (IsAssetError(ex)) { return null; }
+    }
+
     private static SKBitmap? Assigned(string root, string surface, string key)
     {
         try
@@ -138,16 +148,16 @@ internal static class ModularCrewPortraits
             int top = (int)Math.Clamp(MathF.Floor(transform.Ty), 0, BodyHeight);
             int bottom = (int)Math.Clamp(MathF.Ceiling(transform.Ty + transform.Scale * BodyWidth), 0, BodyHeight);
             for (int y = top; y < bottom; y++)
-            for (int x = left; x < right; x++)
-            {
-                int light = 255 - shadow.GetPixel(x, y).Red;
-                if (light == 255)
-                    continue;
-                var pixel = placed.GetPixel(x, y);
-                if (pixel.Alpha != 0)
-                    placed.SetPixel(x, y, new SKColor(Darken(pixel.Red, light), Darken(pixel.Green, light),
-                        Darken(pixel.Blue, light), pixel.Alpha));
-            }
+                for (int x = left; x < right; x++)
+                {
+                    int light = 255 - shadow.GetPixel(x, y).Red;
+                    if (light == 255)
+                        continue;
+                    var pixel = placed.GetPixel(x, y);
+                    if (pixel.Alpha != 0)
+                        placed.SetPixel(x, y, new SKColor(Darken(pixel.Red, light), Darken(pixel.Green, light),
+                            Darken(pixel.Blue, light), pixel.Alpha));
+                }
             return placed;
         }
         catch

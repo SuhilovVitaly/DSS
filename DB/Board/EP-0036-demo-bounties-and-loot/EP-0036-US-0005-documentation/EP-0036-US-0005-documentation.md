@@ -2,20 +2,25 @@
 source_request: "Декомпозировать EP-0032…EP-0041 в тикеты до первого демо; добавить недостающие истории."
 current_review: complete
 approval_kind: workflow
-revision: 2
+revision: 3
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0005-documentation
 title: Документация проекта по итогам эпика
 stage: approved
-plan_status: approved
+plan_status: executed
 priority: P0
 workstream: feature
-dependencies: [EP-0036-US-0001-target-bounty, EP-0036-US-0002-bounty-payment, EP-0036-US-0003-simple-loot, EP-0036-US-0004-reward-continuation]
+dependencies: [EP-0036-US-0001-target-bounty, EP-0036-US-0002-bounty-payment, EP-0036-US-0003-simple-loot, EP-0036-US-0004-reward-continuation, EP-0036-US-0006-module-salvage, EP-0036-US-0007-postbattle-loot-lifecycle, EP-0036-US-0008-ship-engineer, EP-0036-US-0009-prisoner-custody, EP-0036-US-0010-postbattle-clarity, EP-0036-US-0011-bounty-map-area, EP-0036-US-0012-loot-debug-commands]
 created: 2026-11-16T20:02:53Z
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Документация проекта по итогам эпика
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Связь с техническим заданием
 
@@ -31,6 +36,13 @@ implementation_status: not-started
 - [EP-0036-US-0002-bounty-payment](../EP-0036-US-0002-bounty-payment/EP-0036-US-0002-bounty-payment.md)
 - [EP-0036-US-0003-simple-loot](../EP-0036-US-0003-simple-loot/EP-0036-US-0003-simple-loot.md)
 - [EP-0036-US-0004-reward-continuation](../EP-0036-US-0004-reward-continuation/EP-0036-US-0004-reward-continuation.md)
+- [EP-0036-US-0006-module-salvage](../EP-0036-US-0006-module-salvage/EP-0036-US-0006-module-salvage.md)
+- [EP-0036-US-0007-postbattle-loot-lifecycle](../EP-0036-US-0007-postbattle-loot-lifecycle/EP-0036-US-0007-postbattle-loot-lifecycle.md)
+- [EP-0036-US-0008-ship-engineer](../EP-0036-US-0008-ship-engineer/EP-0036-US-0008-ship-engineer.md)
+- [EP-0036-US-0009-prisoner-custody](../EP-0036-US-0009-prisoner-custody/EP-0036-US-0009-prisoner-custody.md)
+- [EP-0036-US-0010-postbattle-clarity](../EP-0036-US-0010-postbattle-clarity/EP-0036-US-0010-postbattle-clarity.md)
+- [EP-0036-US-0011-bounty-map-area](../EP-0036-US-0011-bounty-map-area/EP-0036-US-0011-bounty-map-area.md)
+- [EP-0036-US-0012-loot-debug-commands](../EP-0036-US-0012-loot-debug-commands/EP-0036-US-0012-loot-debug-commands.md)
 
 ## Completion evidence
 
@@ -78,6 +90,13 @@ implementation_status: not-started
 - [EP-0036-US-0002-bounty-payment](../EP-0036-US-0002-bounty-payment/EP-0036-US-0002-bounty-payment.md)
 - [EP-0036-US-0003-simple-loot](../EP-0036-US-0003-simple-loot/EP-0036-US-0003-simple-loot.md)
 - [EP-0036-US-0004-reward-continuation](../EP-0036-US-0004-reward-continuation/EP-0036-US-0004-reward-continuation.md)
+- [EP-0036-US-0006-module-salvage](../EP-0036-US-0006-module-salvage/EP-0036-US-0006-module-salvage.md)
+- [EP-0036-US-0007-postbattle-loot-lifecycle](../EP-0036-US-0007-postbattle-loot-lifecycle/EP-0036-US-0007-postbattle-loot-lifecycle.md)
+- [EP-0036-US-0008-ship-engineer](../EP-0036-US-0008-ship-engineer/EP-0036-US-0008-ship-engineer.md)
+- [EP-0036-US-0009-prisoner-custody](../EP-0036-US-0009-prisoner-custody/EP-0036-US-0009-prisoner-custody.md)
+- [EP-0036-US-0010-postbattle-clarity](../EP-0036-US-0010-postbattle-clarity/EP-0036-US-0010-postbattle-clarity.md)
+- [EP-0036-US-0011-bounty-map-area](../EP-0036-US-0011-bounty-map-area/EP-0036-US-0011-bounty-map-area.md)
+- [EP-0036-US-0012-loot-debug-commands](../EP-0036-US-0012-loot-debug-commands/EP-0036-US-0012-loot-debug-commands.md)
 
 ## Approved ticket map
 
@@ -94,3 +113,13 @@ Engine authority; stable IDs; один receipt/side effect; calendar deadlines; 
 
 Баланс, художественное качество, реальная производительность, независимый игрок и выпускное решение не установлены планированием. Прежние вопросы о checkpoint, wage, deadline, loot и XP уточнены A-assumptions в соответствующих тикетах, не human decisions. Если allowlist не выдерживает фактический diff, сначала уточнить Board.
 
+
+## Дополнение зависимостей груминга — 2026-11-17T19:03:26Z
+
+[EP-0036-US-0006-module-salvage](../EP-0036-US-0006-module-salvage/EP-0036-US-0006-module-salvage.md) — обязательный дополнительный prerequisite итоговой документации. [Устарело 2026-11-17T19:41:16Z: US6 декомпозирована, ticket-level dependencies TK0001 дополнены реальными ID.] Не завершать US-0005 по одной старой карте до готовности всех функциональных историй.
+
+Текущий состав после груминга: 9 историй/38 тикетов. US5 последняя, включая US7 lifecycle, US8 engineer и US9 custody. Числа прежних этапов в истории не являются текущими. Время записи 2026-11-17T19:24:04Z.
+
+## Сверка декомпозиции — 2026-11-17T19:41:16Z
+
+Добавлены US6 TK5, US10 (4 тикета), US11 (2), US12 (2); состав 12 историй / 47 тикетов. TK0001 дополнительно зависит от их финальных тикетов. Документация должна описать D-36-34…37: пленные до конца демо без высадки, выброс груза в окне лута, район bounty на карте, debug-команды лута (раздел EP-0030 консоли).

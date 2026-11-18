@@ -47,6 +47,13 @@ internal sealed partial class TacticalBattle
     public TacticalBattleResult? CheckVictory()
     {
         if (Result is not null) return Result;
+        foreach (var carrier in Carriers.Where(c => c.Side == SelfDestructEnemySide && c.IsActive))
+        {
+            var wing = Drones.Where(d => d.OriginCarrierId == carrier.Id && d.Side == carrier.Side).ToArray();
+            if (wing.Length == 0 || wing.Any(d => d.Status == TacticalDroneStatus.Air)) continue;
+            carrier.Hull = 0;
+            SelfDestructedCarrierIds.Add(carrier.Id);
+        }
         var reasons = ImmutableArray.CreateBuilder<TacticalOutcomeReason>();
         var defeated = new List<string>();
         foreach (string side in TacticalBattleConstants.SideOrder)

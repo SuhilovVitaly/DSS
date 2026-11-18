@@ -7,6 +7,9 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    private BountySearchArea? BountyArea(string groupId) => _demoDefinitions.Encounters is { } definition &&
+        _demoCampaign.PirateWorld?.Groups.Any(g => g.GroupId == groupId) == true
+        ? new(definition.Region.X, definition.Region.Y, definition.Region.Radius + definition.Pursuit.PatrolRadius * Math.Sqrt(2)) : null;
     private static DemoDebugSettings _processDemoDebugSettings = new();
     private static readonly object DemoDebugSettingsGate = new();
     private static DemoDebugSettings DemoDebugSettings => Volatile.Read(ref _processDemoDebugSettings);

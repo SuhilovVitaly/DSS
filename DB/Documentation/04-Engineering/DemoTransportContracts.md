@@ -35,14 +35,13 @@ null-вердиктом Engine (`StationJobReasons.AcceptBlocker`,
 
 Демо New Game использует [demo-starter-carrier.json](../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json):
 общий starter-manifest и дополнительный жилой модуль каталога на свободной клетке
-корпуса (шесть членов экипажа, два резервных места, четыре свободные каюты).
+корпуса (семь членов экипажа, включая инженера, пять свободных кают).
 Loader отвергает manifest с повтором ID модуля, выходом за корпус или наложением.
 Общий [starter-carrier.json](../../../src/DeepSpaceSaga.Client/Data/Ships/starter-carrier.json),
 Tutorial/Default и старые сохранения дополнительных кают не получают.
 
-`PassengerCapacitySnapshot` (Total/Crew/Passenger/Reserved/FreeCabins) вычисляется
-на каждом snapshot из исправных Living quarters, живого экипажа, людей на борту и
-резерва; он не сохраняется. `LifeSupportReason`: `cabins_overcommitted` или
+`PassengerCapacitySnapshot` (Total/Crew/Passenger/Reserved/FreeCabins, PrisonerCabins) вычисляется
+на каждом snapshot из исправных Living quarters, живого экипажа, пассажиров и пленных; фиксированный Reserved равен нулю; он не сохраняется. `LifeSupportReason`: `cabins_overcommitted` или
 `insufficient_food_rations` — пайков в трюме меньше, чем нужно на календарные
 сутки всем людям на борту и каждой свободной каюте. Свободных кают не бывает меньше
 нуля. Посаженные пассажиры занимают каюты и в резервировании кают носителя.
@@ -56,11 +55,11 @@ Tutorial/Default и старые сохранения дополнительны
 named RNG stream `station-jobs/v1:{station}:{bucket}:{slot}` от master seed, поэтому
 одинаковый seed даёт одинаковые доски, а повторные snapshots и открытие экрана
 ничего не перегенерируют. Типы `passenger`, `urgent_passenger`, `cargo` выбираются
-весами `roleFilters`; `bounty` зарезервирован для EP-0036 и не публикуется.
+весами `roleFilters`; `bounty` не входит в генератор транспортных предложений: боевые заказы доступны отдельной вкладкой Contracts и имеют собственный ledger.
 Назначение — прямой сосед графа кластера с известным `risk`. Первая публикация
 гарантирует на стартовой станции обычный пассажирский заказ (`firstOffer`) на
 кратчайший маршрут. Число пассажиров и тонн ограничено проектом носителя
-(каюты без экипажа и резерва; общий трюм), а не моментально свободным местом.
+(каюты без экипажа и пленных; фактические пассажиры учитываются при принятии; общий трюм), а не моментально свободным местом.
 
 `JobOffer` хранит замороженные условия: ID `jobs:{station}:{bucket}:{slot}`,
 маршрут, число/массу, товар груза, целые км маршрута, риск, выплату,

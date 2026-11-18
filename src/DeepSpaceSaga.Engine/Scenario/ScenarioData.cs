@@ -373,7 +373,8 @@ public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("portraitAssetId")] string? PortraitAssetId = null,
     [property: JsonPropertyName("role")] string? Role = null,
     [property: JsonPropertyName("initiative")] int Initiative = 0,
-    [property: JsonPropertyName("sensorRangeBonusPercent")] int SensorRangeBonusPercent = 0);
+    [property: JsonPropertyName("sensorRangeBonusPercent")] int SensorRangeBonusPercent = 0,
+    [property: JsonPropertyName("salvageBonusPercentagePoints")] int? SalvageBonusPercentagePoints = null);
 
 /// <summary>
 /// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative
@@ -619,7 +620,7 @@ public sealed record CargoStackData(
 internal static class CargoAcquisitionSources
 {
     internal const string LegacyUnknown = "legacy-unknown";
-    internal static bool IsKnown(string source) => source is "bootstrap" or "purchased" or "produced" or "mined" or "dialogue-grant";
+    internal static bool IsKnown(string source) => source is "bootstrap" or "purchased" or "produced" or "mined" or "dialogue-grant" or "salvaged";
 }
 
 /// <summary>One tradeable item's stock on a station (see StationInventoryItemRuntime).</summary>

@@ -35,7 +35,7 @@ public sealed partial class SimulationEngine
     /// <summary>Station of a confirmed docking (dialogue finished, no battle, not mid-docking), or null.</summary>
     private string? ConfirmedDockStation()
     {
-        if (_tacticalBattleSession is not null || _dialogue.Active is not null || _voyageState is { Phase: VoyagePhases.Docking })
+        if (CombatOrLootOpen || _dialogue.Active is not null || _voyageState is { Phase: VoyagePhases.Docking })
             return null;
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         return ship is null || ship.IsDestroyed || !ship.IsDocked ? null : ship.DockedStationObjectId;
@@ -211,7 +211,7 @@ public sealed partial class SimulationEngine
         long now = StationJobsNow;
         var jobs = _demoCampaign.StationJobs ?? EmptyStationJobs;
         var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
-        string? blocker = _tacticalBattleSession is not null ? DemoCampaignReasons.BattleActive
+        string? blocker = CombatOrLootOpen ? DemoCampaignReasons.BattleActive
             : ship is null ? DemoCampaignReasons.Unavailable
             : ship.IsDestroyed ? DemoCampaignReasons.CarrierDestroyed
             : null;

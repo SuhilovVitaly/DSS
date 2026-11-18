@@ -103,6 +103,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     internal TacticalBattleFrame? CaptureFrame(int width, int height)
     {
+        if (Flow.State is { Phase: TacticalBattlePhase.Over } frozen &&
+            Volatile.Read(ref _presentation)?.Accepted.Revision < frozen.Revision &&
+            Flow.Session.DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == frozen.BattleId)
+            ShowConfirmedState();
         if (Volatile.Read(ref _presentation) is not { } presentation || width < 2 || height < 1) return null;
         long now = ClockMilliseconds();
         bool moving = presentation.Animation?.IsActive(now) == true;
@@ -150,6 +154,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override void OnDeactivated()
     {
+        _lootWindow?.Dispose();
         _interactiveField?.Dispose();
         _interactiveField = null;
         _paintedClouds?.Dispose();
@@ -198,6 +203,20 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
+        if (ObserveLoot())
+        {
+            if (CanUseLootSave && !repeat && modifiers == KeyModifiers.None && key is Key.F5 or Key.F9)
+                return key == Key.F5 ? ScreenEvent.QuickSave : ScreenEvent.QuickLoad;
+            if (BlockWorldKey(key, modifiers) || repeat || Flow.Pending) return ScreenEvent.None;
+            if (key == Key.Escape)
+            {
+                if (_lootWindow!.ConfirmDiscard) { _lootWindow.CancelExit(); return ScreenEvent.None; }
+                return RequestLootExit();
+            }
+            if (key is Key.Enter or Key.KeypadEnter && _lootWindow!.ConfirmDiscard && !_lootWindow.Presentation.Pending)
+            { Flow.ConfirmLootDiscard = true; return ScreenEvent.CloseTacticalBattle; }
+            return ScreenEvent.None;
+        }
         if (_skin.Metric("ui.pilot-column", "slim", 0) == 1 && key == Key.Space && modifiers == KeyModifiers.None && !repeat &&
             !ConfirmExit && !TurnBusy && SalvoInFlight)
         {
@@ -333,6 +352,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        if (ObserveLoot()) return LootClick(DesignPoint(x, y), button);
         if (ConfirmExit) return base.OnMouseDown(x, y, button);
         var p = DesignPoint(x, y);
         if (Tutorial?.OnMouseDown(p, button) == true) return ScreenEvent.None;
@@ -389,6 +409,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         var p = DesignPoint(x, y);
+        if (ObserveLoot())
+        {
+            if (!_lootWindow!.ConfirmDiscard && _logTab.OnMouseWheel(p.X, p.Y, delta)) return ScreenEvent.None;
+            if (!_lootWindow!.Scroll(p, delta) && !_lootWindow.ConfirmDiscard) _camera.Zoom(p.X, p.Y, delta);
+            return ScreenEvent.None;
+        }
         if (!ConfirmExit && Tutorial?.OnMouseWheel(p, delta) == true) return ScreenEvent.None;
         if (!ConfirmExit && _logTab.OnMouseWheel(p.X, p.Y, delta)) return ScreenEvent.None;
         if (!ConfirmExit && !TurnBusy && !HasSalvoPresentation && _pilotColumn.ScrollTargets(SelectedPlanningDrone, p, delta))

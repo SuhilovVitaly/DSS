@@ -30,3 +30,7 @@ Ship показывает состояние носителя, постоянн�
 Наличие plans/иконки не является реализацией. Диалог используется общим экраном.
 
 Источники: [SkiaWindow.cs](../../../../src/DeepSpaceSaga.Client/UI/SkiaWindow.cs), [IScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/IScreen.cs).
+
+## Послебоевая навигация
+
+TacticalBattle переходит в frozen loot после победы; Continue возвращает туда же. Contracts содержит боевые заказы и итог последнего боя, Ship — отдельный roster пленных. [Описание](../Mechanics/DemoBountiesAndLoot.md).

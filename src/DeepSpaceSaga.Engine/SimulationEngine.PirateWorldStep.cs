@@ -6,7 +6,7 @@ public sealed partial class SimulationEngine
 {
     private SimulationClockState? _piratePauseClock;
     private bool PirateWorldMustRemainPaused => _demoCampaign.PirateWorld is not null &&
-        (_demoCampaign.PendingSensorReport is not null || HasCapturedEncounter || _tacticalBattleSession is not null || _encounterStoragePending);
+        (_demoCampaign.PendingSensorReport is not null || HasCapturedEncounter || CombatOrLootOpen || _encounterStoragePending);
 
     private bool PreparePirateWorldStep()
     {

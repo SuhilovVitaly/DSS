@@ -1319,6 +1319,8 @@ public sealed partial class GameSessionScreen : IScreen
             RenderStageCompleted?.Invoke("marker_geometry");
             _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera, buffered?.Snapshot.SolarSystemMap);
             if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)) AiMapPresentation.DrawSelectedPointLabel(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
+            DeepSpaceSaga.Client.UI.Demo.BountySearchAreaPresentation.Draw(canvas,
+                buffered?.Snapshot.DemoCampaign?.Rewards?.Bounties, _camera, width, height);
             DeepSpaceSaga.Client.UI.Demo.PirateGroupsPresentation.Draw(canvas,
                 buffered?.Snapshot.DemoCampaign?.Encounters, _camera, width, height);
             RenderStageCompleted?.Invoke("label_plaques");

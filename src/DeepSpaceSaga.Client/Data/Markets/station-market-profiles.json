@@ -74,6 +74,14 @@
         "item.electronics"
       ],
       "demandItemTypeIds": [
+        "item.trophy.weapon.gun.sword.t1",
+        "item.trophy.weapon.gun.spear.t1",
+        "item.trophy.armor.plate.medium",
+        "item.trophy.engine.drive.standard",
+        "item.trophy.shield.shield.t1",
+        "item.trophy.decoy.decoy.t1",
+        "item.decoy-charge.t1",
+        "item.scrap",
         "item.iron-ore",
         "item.magnesium-ore",
         "item.carbon-ore",
@@ -82,6 +90,14 @@
         "item.food-rations"
       ],
       "initialInventory": [
+        { "itemTypeId": "item.trophy.weapon.gun.sword.t1", "quantity": 0 },
+        { "itemTypeId": "item.trophy.weapon.gun.spear.t1", "quantity": 0 },
+        { "itemTypeId": "item.trophy.armor.plate.medium", "quantity": 0 },
+        { "itemTypeId": "item.trophy.engine.drive.standard", "quantity": 0 },
+        { "itemTypeId": "item.trophy.shield.shield.t1", "quantity": 0 },
+        { "itemTypeId": "item.trophy.decoy.decoy.t1", "quantity": 0 },
+        { "itemTypeId": "item.decoy-charge.t1", "quantity": 0 },
+        { "itemTypeId": "item.scrap", "quantity": 0 },
         { "itemTypeId": "item.drone-torpedo.t1", "quantity": 24 },
         { "itemTypeId": "item.steel", "quantity": 132 },
         { "itemTypeId": "item.energy-cells", "quantity": 132 },
@@ -111,8 +127,25 @@
           { "itemTypeId": "item.energy-cells", "quantity": 12 },
           { "itemTypeId": "item.electronics", "quantity": 4 }
         ],
-        "hourlyConsumption": [],
+        "hourlyConsumption": [
+          { "itemTypeId": "item.scrap", "quantity": 10 },
+          { "itemTypeId": "item.trophy.weapon.gun.sword.t1", "quantity": 1 },
+          { "itemTypeId": "item.trophy.weapon.gun.spear.t1", "quantity": 1 },
+          { "itemTypeId": "item.trophy.armor.plate.medium", "quantity": 1 },
+          { "itemTypeId": "item.trophy.engine.drive.standard", "quantity": 1 },
+          { "itemTypeId": "item.trophy.shield.shield.t1", "quantity": 1 },
+          { "itemTypeId": "item.trophy.decoy.decoy.t1", "quantity": 1 },
+          { "itemTypeId": "item.decoy-charge.t1", "quantity": 1 }
+        ],
         "stockTargets": [
+          { "itemTypeId": "item.trophy.weapon.gun.sword.t1", "targetStock": 50 },
+          { "itemTypeId": "item.trophy.weapon.gun.spear.t1", "targetStock": 50 },
+          { "itemTypeId": "item.trophy.armor.plate.medium", "targetStock": 50 },
+          { "itemTypeId": "item.trophy.engine.drive.standard", "targetStock": 50 },
+          { "itemTypeId": "item.trophy.shield.shield.t1", "targetStock": 50 },
+          { "itemTypeId": "item.trophy.decoy.decoy.t1", "targetStock": 50 },
+          { "itemTypeId": "item.decoy-charge.t1", "targetStock": 50 },
+          { "itemTypeId": "item.scrap", "targetStock": 5000 },
           { "itemTypeId": "item.drone-torpedo.t1", "targetStock": 24 },
           { "itemTypeId": "item.iron-ore", "targetStock": 132 },
           { "itemTypeId": "item.magnesium-ore", "targetStock": 132 },

@@ -171,7 +171,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         lock (_worldStateLock)
         {
-            if (_tacticalBattleSession is not null && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
+            if (CombatOrLootOpen && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
             if (_encounterStoragePending && speed != SimulationSpeed.Speed0) return "encounter_checkpoint_pending";
             if (HasCapturedEncounter && speed != SimulationSpeed.Speed0) return "encounter_captured";
             if (_demoCampaign.PendingSensorReport is not null && speed != SimulationSpeed.Speed0) return "sensor_report_pending";
@@ -398,7 +398,7 @@ public sealed partial class SimulationEngine : IDisposable
                 ? ResolveMarketEventsForLoad(obj, gs.GameTimeMs, gs.MarketEventCatalogFingerprint, isSave || scenario.SaveFormatVersion > 0)
                 : ImmutableArray<StationEventRuntime>.Empty;
             var crew = isShip
-                ? ResolveShipCrew(obj)
+                ? ResolveShipCrew(obj, resolvedMasterSeed)
                 : ImmutableArray<CrewMemberRuntime>.Empty;
             var stationCrew = isStation
                 ? ResolveStationCrew(obj, resolvedMasterSeed)
@@ -506,6 +506,8 @@ public sealed partial class SimulationEngine : IDisposable
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
         ValidateCarrierStateForLoad(gs, runtimeObjects);
         var restoredDemoCampaign = DemoCampaignData.Validate(gs.DemoCampaign, gs.GameTimeMs);
+        if (restoredDemoCampaign.Prisoners.Any(p => p.ShipId != gs.PlayerShipObjectId))
+            throw new ScenarioException("Prisoner custody must belong to the player carrier.");
         ValidatePilotLossForLoad(restoredDemoCampaign, gs);
         ValidatePassengerContractsForLoad(restoredDemoCampaign, gs); // EP-0034 US-0002
         ValidateTransportFailuresForLoad(restoredDemoCampaign, gs); // EP-0034 US-0003
@@ -515,6 +517,10 @@ public sealed partial class SimulationEngine : IDisposable
             restoredDemoCampaign = restoredDemoCampaign with { CatalogFingerprint = _demoDefinitions.Fingerprint };
         DemoCampaignData.Validate(restoredDemoCampaign, gs.GameTimeMs);
         restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
+        restoredDemoCampaign = PrepareBountiesForLoad(restoredDemoCampaign);
+        ValidateBattleLootForLoad(restoredDemoCampaign);
+        if (restoredDemoCampaign.LootSession?.Phase == LootPhases.Open && gs.DialogueState?.ActiveDialogue is not null)
+            throw new ScenarioException("Open loot cannot overlap an active dialogue.");
         ValidateSensorDialogueSave(restoredDemoCampaign, scenario with { GameState = gs });
         if (restoredDemoCampaign.WorldEncounter is { Phase: WorldEncounterPhases.PendingBattle } &&
             (restoredDemoCampaign.PendingSensorReport is not null || gs.DialogueState?.ActiveDialogue is not null ||
@@ -583,6 +589,8 @@ public sealed partial class SimulationEngine : IDisposable
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
             RestorePendingEncounterBattle();
+            SetTacticalBattleCommandBlock(CombatOrLootOpen);
+            if (LootOpen) _clock.Reset(gs.GameTimeMs, SimulationSpeed.Speed0, gs.MotionTimeMs, gs.MotionQuarterRemainder);
         }
     }
 
@@ -1365,7 +1373,8 @@ public sealed partial class SimulationEngine : IDisposable
     {
         return new ShipCrewMemberData(member.Id, member.DisplayName,
             member.AccuracySkill, member.ManeuverabilitySkill,
-            member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent);
+            member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent,
+            member.SalvageBonusPercentagePoints);
     }
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
@@ -1702,7 +1711,8 @@ public sealed partial class SimulationEngine : IDisposable
             var profile = _registry.StationMarketProfiles.GetDefinition(
                 _registry.StationMarketProfiles.GetIndex(profileId));
             if (obj.MarketProfileFingerprint is { } fingerprint &&
-                !string.Equals(fingerprint, profile.Fingerprint, StringComparison.Ordinal))
+                !string.Equals(fingerprint, profile.Fingerprint, StringComparison.Ordinal) &&
+                !LootCatalogCompatibility.IsPrevious(profile, fingerprint))
                 throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', marketProfileFingerprint does not match. Save was not modified.");
 
             if (loadingSave)
@@ -1718,7 +1728,8 @@ public sealed partial class SimulationEngine : IDisposable
 
                 var savedItemIds = obj.Inventory.Select(entry => entry.ItemTypeId).ToHashSet(StringComparer.Ordinal);
                 foreach (string expectedItemId in profile.InitialInventory.Select(stock => stock.ItemTypeId).Append("item.fuel"))
-                    if (!savedItemIds.Contains(expectedItemId))
+                    if (!savedItemIds.Contains(expectedItemId) &&
+                        !LootCatalogCompatibility.CanAddMissingStock(profile, obj.MarketProfileFingerprint, expectedItemId))
                         throw new ScenarioException($"Station '{obj.ObjectId}', market profile '{profileId}', inventory is missing '{expectedItemId}'. Save was not modified.");
             }
 
@@ -1991,8 +2002,9 @@ public sealed partial class SimulationEngine : IDisposable
     /// list (the common case for every object except the player ship, and for every
     /// scenario/save predating this field).
     /// </summary>
-    private ImmutableArray<CrewMemberRuntime> ResolveShipCrew(SpaceObjectData obj)
+    private ImmutableArray<CrewMemberRuntime> ResolveShipCrew(SpaceObjectData obj, ulong resolvedMasterSeed)
     {
+        ValidateEngineerCrew(obj);
         if (obj.Crew is not { Count: > 0 })
             return ImmutableArray<CrewMemberRuntime>.Empty;
 
@@ -2011,7 +2023,8 @@ public sealed partial class SimulationEngine : IDisposable
 
             crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName,
                 member.AccuracySkill, member.ManeuverabilitySkill,
-                member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent));
+                member.Gender, member.PortraitAssetId, member.Role, member.Initiative, member.SensorRangeBonusPercent,
+                ResolveEngineerBonus(resolvedMasterSeed, obj.ObjectId, member)));
         }
 
         return crew.ToImmutable();
@@ -2320,7 +2333,7 @@ public sealed partial class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
-            if (_tacticalBattleSession is not null || HasCapturedEncounter || _encounterStoragePending)
+            if (CombatOrLootOpen || HasCapturedEncounter || _encounterStoragePending)
             {
                 RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, TacticalBattleActiveReason);
                 continue;
@@ -4124,7 +4137,7 @@ internal sealed record SpaceObjectRuntime(
 internal sealed record CrewMemberRuntime(string Id, string DisplayName,
     int AccuracySkill = 0, int ManeuverabilitySkill = 0,
     string? Gender = null, string? PortraitAssetId = null, string? Role = null, int Initiative = 0,
-    int SensorRangeBonusPercent = 0);
+    int SensorRangeBonusPercent = 0, int SalvageBonusPercentagePoints = 0);
 
 /// <summary>One named crew member displayed on a station (see <see cref="StationCrewMemberData"/>).</summary>
 internal sealed record StationCrewMemberRuntime(string Id, string Role, string DisplayName, string PortraitImage);

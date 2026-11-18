@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 2,
+  "id": "shorts",
+  "pose": "kneeling-hips-right-hands-behind-back",
+  "canvas": [
+    1024,
+    1536
+  ],
+  "neck_center_x": 522.5,
+  "head_chin_y": 913.7,
+  "face_eye_chin_px": 68,
+  "socket_ellipse": null,
+  "standing_chin_y": 462,
+  "chin_vertical_offset_from_standing_px": 451.70000000000005,
+  "example_portrait": "../../../W4/Portraits/CHR-20261117-011947-JFG71U.png",
+  "example_head_transform": {
+    "scale": 0.9520270459718427,
+    "tx": 411.1128356212944,
+    "ty": 736.6229694492373
+  },
+  "layer_order": [
+    "body-back.png",
+    "keyed head clipped to socket",
+    "collar-front.png"
+  ],
+  "neck_clip": {
+    "mode": "skin-feather",
+    "neck_clip_from_y": 918,
+    "neck_half_width": 27.88,
+    "neck_edge_feather": 2,
+    "body_top_fade": [
+      923.5,
+      929.24
+    ],
+    "fade_start_y": 929.24,
+    "fade_end_y": 941.54,
+    "upper_neck_taper": {
+      "start_y": 901.7,
+      "start_half_width": 46,
+      "end_y": 918,
+      "end_half_width": 27.88,
+      "edge_feather_px": 1.5,
+      "note": "This example mask was visually checked below jaw sides; derive anew for another portrait and never trim facial anatomy."
+    }
+  },
+  "proportions": {
+    "calibration": "kneeling-v3-20261117",
+    "body_scale_relative_to_v2": 0.82,
+    "face_eye_chin_px": 68,
+    "face_anatomical_width_px": 90.44256936732506,
+    "outer_shoulder_envelope_width_px": 227.4,
+    "outer_shoulder_to_face_width": 2.514302740299577,
+    "socket_to_ground_px": 586.3,
+    "eye_chin_to_socket_ground": 0.11598157939621355
+  },
+  "previous_asset_transform": {
+    "scale": 0.82,
+    "tx": 94.05000000000003,
+    "ty": 273.24000000000007
+  }
+}

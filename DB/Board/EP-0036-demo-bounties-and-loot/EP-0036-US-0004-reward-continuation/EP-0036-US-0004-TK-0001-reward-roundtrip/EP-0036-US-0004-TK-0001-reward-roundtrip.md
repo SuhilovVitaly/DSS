@@ -2,108 +2,86 @@
 epic: EP-0036-demo-bounties-and-loot
 story: EP-0036-US-0004-reward-continuation
 ticket: EP-0036-US-0004-TK-0001-reward-roundtrip
-title: Единственность добычи и выплат после Load
+title: Интеграция сохранения наград и послебоевой добычи
 stage: approved
 approval_kind: workflow
-implementation_status: not-started
+implementation_status: implemented
 layer: engine
 matching_test_project: tests/DeepSpaceSaga.Engine.Tests
-depends_on: [EP-0036-US-0002-TK-0003-client, EP-0036-US-0003-TK-0004-client, EP-0035-US-0004-TK-0002-encounter-ui]
+depends_on: [EP-0036-US-0007-TK-0005-postbattle-continuation, EP-0036-US-0009-TK-0003-capacity-and-rations, EP-0036-US-0002-TK-0002-engine]
 files_touched: 4
 serves: [AC-01, AC-02, AC-03, AC-04]
-created: 2026-11-16T20:32:46.441Z
-revision: 1
+created: 2026-11-17T19:22:37Z
+revision: 3
 ---
 
-# Единственность добычи и выплат после Load
+# Интеграция сохранения наград и послебоевой добычи
+
+## Current execution status
+
+Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](../../ExecutionStatus.md). Native/game execution NOT RUN — owner only.
+
 
 ## Why
-
-Прозрачный итог боя в кампании. Тикет 1/2 даёт проверяемый результат своего слоя. [Story и полный пользовательский результат](../EP-0036-US-0004-reward-continuation.md).
+[Story](../EP-0036-US-0004-reward-continuation.md): замкнуть реальный postbattle save/load/report путь, не выдавать DTO за продолжение игры.
 
 ## Decisions
-
-Поручение владельца: «пройди все эпики с 32 по 41 и наполни их сторисы тикетами. Если по мере прохождения эпика ты понимаешь что не хватает какой-то стори - ты можешь смело ее добавить уже вместе с тикетами. Реализация с 32 по 41 эпик должно привести нас к состоянию первого демо». Время записи 2026-11-16T20:32:46.441Z, не доказанное время отправки. Разрешены тикеты и необходимые дополнительные истории. Human approval технических деталей/баланса не заявляется; stage approved означает автоматическую готовность workflow планирования. Исполнение и публикация требуют отдельного поручения.
+D-36-14…28 эпика задают целые sale-only trophies, тактическую карту после победы, exit discard и однократные rewards. Точные цитаты в [эпике](../../Documentation.md).
 
 ## Assumptions
-
-- Используется сокращённая демо на 60–120 минут, один кластер, готовый Tetrarch; backlog полного продукта не включается.
-- Технические имена/новые API ниже — планируемые, не утверждения о текущем коде. Численные A-решения в шагах — baseline для owning плейтеста, не доказанный баланс.
-- Сначала prerequisites: EP-0036-US-0002-TK-0003-client, EP-0036-US-0003-TK-0004-client, EP-0035-US-0004-TK-0002-encounter-ui. При drift исходников пересмотреть allowlist в Board до расширения diff.
+Новые API ниже — проект. Фактические prerequisite implementations проверяются перед исполнением; исправлять только owning files, без скрытого расширения.
 
 ## Code context
-
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Engine/SimulationEngine.BountyPayment.cs` | Планируемый файл; создаётся в `EP-0036-US-0002-TK-0002-engine`, не текущая реализация. | Только изменения, перечисленные в Implementation steps; прочие функции сохраняются. |
-| `src/DeepSpaceSaga.Engine/SimulationEngine.BattleLoot.cs` | Планируемый файл; создаётся в `EP-0036-US-0003-TK-0003-engine`, не текущая реализация. | Только изменения, перечисленные в Implementation steps; прочие функции сохраняются. |
-| `src/DeepSpaceSaga.Engine/Scenario/DemoCampaignData.cs` | Планируемый файл; создаётся в `EP-0032-US-0007-TK-0002-campaign-state`, не текущая реализация. | Только изменения, перечисленные в Implementation steps; прочие функции сохраняются. |
-| `tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0036Us0004Tk0001Tests.cs` | Новый файл этого тикета; на момент grounding отсутствует. | Именованные проверки этого тикета; не менять production из тестов. |
-
-Разрешены только эти 4 implementation/documentation files. Board evidence/status этого тикета обновляются отдельно как каноническая история исполнения; не дают разрешения править произвольный production. Read-only архитектурные источники: `DB/Documentation/00-Process/CLAUDE.md`, `DB/Documentation/01-Requirements/EngineRequirements.md` и [общая карта](../../../EP-0041-demo-validation-and-release/TicketPlan.md).
+| `tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0036Us0004Tk0001Tests.cs` | Новый integration corpus. | Только описанная интеграция. |
+| `src/DeepSpaceSaga.Engine/Scenario/BattleLootData.cs` | US3 TK3: frozen geometry/attempts/remaining. | Только описанная интеграция. |
+| `src/DeepSpaceSaga.Engine/Scenario/DemoCampaignData.cs` | Validate:69; persisted rewards/prisoners. | Только описанная интеграция. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.BattleLootLifecycle.cs` | US7 TK3 owns phase restoration. | Только описанная интеграция. |
 
 ## Public API after the change
-
-No API change.
+No new public API; интеграция данных US3/6/7/9 и bounty entitlement.
 
 ## Implementation steps
-
-1. Прогнать принятие bounty → бой → частично взятую добычу → сохранение → остаток/отказ → Claim → повтор Load/Claim.
-2. Проверить сохранённые loot roll, received quantities, Paid/Unclaimed, provenance и финансовые postings. Неоплаченный bounty не включается в cash; неизвестная себестоимость остаётся unknown.
-3. Добавить negative cases escape/defeat/wrong group, malformed duplicate receipts и переполненный трюм. Исправления только в этих owning files.
-
-## Served acceptance criteria
-
-- **AC-01:** Сквозной заказ проходит принятие → бой → добычу → выплату → загрузку без двойного дохода.
-- **AC-02:** Неполученная выплата не считается наличными; неизвестная стоимость не показывается как ноль.
-- **AC-03:** Поражение и уход не выдают награду за уничтожение цели.
-- **AC-04:** Представление результата, причины отказа, учёт и сохранение проверены в применимых пользовательских путях; присутствие DTO или теста не считается доказательством приёмки.
-
-Вклад этого тикета ограничен слоем `engine`; полный AC принимается после всей карты истории, включая реальный пользовательский путь. DTO/test scaffold сам по себе не закрывает AC.
+Проверить сценарий confirmed victory→commit losses→loot map→частичный collect/module attempt/arrest→save→load→остаток→exit confirm→станция заказчика→claim bounty. Проверить frozen poses/ObjectIds/пилот identity/attempt terminal и отсутствие повторного боя/RNG/bounty payment. Bounty хранить как отдельный posting, не PassengerPayout и не новую копию PlayerCredits. Добавить malformed duplicate IDs, negative remaining, captured pilot reused, unknown cargo basis и invalid phase rejection до замены мира. Исправления только allowed owning persistence/lifecycle files; расширение других feature rules требует их tickets.
 
 ## Out of scope
-
-Полная верфь, другие носители, фракционная симуляция, пленные, тактическое отступление, сохранение внутри боя, универсальный квестовый движок и публикация. Не переписывать поставленный EP-0029, не ремонтировать несвязанные файлы и не расширять лимит пяти файлов молча.
+Новые gameplay rules, generic durability, установка трофеев, пытки/вербовка и изменения чужого inventory/экономики.
 
 ## Invariants
-
-- `DB/Documentation/01-Requirements/EngineRequirements.md`, «Архитектура и авторитет» / «Команды, события и воспроизводимость»: Engine владеет исходами/временем/RNG/деньгами; render не мутирует мир.
-- `src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs:10`: асинхронный transport. `src/DeepSpaceSaga.Engine/SimulationEngine.SortieSettlement.cs:17`: использовать единый settlement, не создавать второй inventory.
-- `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:40`: на grounding writer Save21; переход к Save22 принадлежит EP-0032-US-0007. Последующие тикеты не назначают конкурирующие версии writer.
-- Reject/duplicate не даёт частичных денег, груза, награды, опыта или повторного звука. Pause не двигает deadlines; calendar и motion units не смешиваются.
-- Реализация gameplay-инвариантов — в owning engine ticket; клиентский/content/tooling тикет их не дублирует.
+Committed sortie/entitlement/attempt не применяются дважды. Frozen loot не становится prebattle replay. Неоплаченная награда и оценка trophies не cash. Входные malformed данные отклоняются до публикации. Client не производит RNG/деньги.
 
 ## Tests
+Будущие NOT RUN:
+- `DemoEp0036Us0004Tk0001Tests.LootOpenRoundtrip_PreservesSourcesAndAttempts`
+- `DemoEp0036Us0004Tk0001Tests.ArrestThenLoad_DoesNotDuplicatePerson`
+- `DemoEp0036Us0004Tk0001Tests.BountyPaidOnceAfterLootLoad`
+- `DemoEp0036Us0004Tk0001Tests.MalformedLootRejectedBeforePublish`
 
-Будущие тесты (ещё не реализованы/не запущены):
-
-- `DemoEp0036Us0004Tk0001Tests.PartialLoot_LoadDoesNotReroll` — проверяет шаг 1 и соответствующие AC; fixture использует реальные typed receipts/state, не копию алгоритма в тесте.
-- `DemoEp0036Us0004Tk0001Tests.UnclaimedBounty_IsNotCash` — проверяет шаг 2 и соответствующие AC; fixture использует реальные typed receipts/state, не копию алгоритма в тесте.
-- `DemoEp0036Us0004Tk0001Tests.EscapeOrDefeat_DoesNotReward` — проверяет шаг 3 и соответствующие AC; fixture использует реальные typed receipts/state, не копию алгоритма в тесте.
-
-Запуск из `D:/DeepSpaceSaga/DSS`; создать уникальный run, ограничить **каждый process tree 300000 ms**, не продолжать после timeout/failure. Пример PowerShell для именованного test corpus:
-
-```powershell
-$run = 'D:/DeepSpaceSaga/artifacts/validation/EP-0036-US-0004-TK-0001-reward-roundtrip/' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
-New-Item -ItemType Directory -Force -Path $run | Out-Null
-$p = Start-Process dotnet -ArgumentList @('test','tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj','-c','Release','--filter','FullyQualifiedName~DemoEp0036Us0004Tk0001Tests','--results-directory',($run + '/results'),'--artifacts-path',($run + '/build')) -PassThru -WindowStyle Hidden -RedirectStandardOutput ($run + '/test.log') -RedirectStandardError ($run + '/test.err')
-if (-not $p.WaitForExit(300000)) { taskkill /PID $p.Id /T /F; throw 'test process-tree timeout' }
-if ($p.ExitCode -ne 0) { throw 'focused tests failed' }
-```
-
-Owning build: `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj -c Release --artifacts-path <absolute-run>/build`. Format: `dotnet format src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --verify-no-changes --include src/DeepSpaceSaga.Engine/SimulationEngine.BountyPayment.cs src/DeepSpaceSaga.Engine/SimulationEngine.BattleLoot.cs src/DeepSpaceSaga.Engine/Scenario/DemoCampaignData.cs tests/DeepSpaceSaga.Engine.Tests/Demo/DemoEp0036Us0004Tk0001Tests.cs`; тот же timeout wrapper и абсолютные stdout/stderr. Не запускать format для content-only. Длительный corpus делить по указанным полным IDs, не увеличивать cap. Native/manual сценарий: AC-01: Сквозной заказ проходит принятие → бой → добычу → выплату → загрузку без двойного дохода. AC-02: Неполученная выплата не считается наличными; неизвестная стоимость не показывается как ноль. AC-03: Поражение и уход не выдают награду за уничтожение цели. AC-04: Представление результата, причины отказа, учёт и сохранение проверены в применимых пользовательских путях; присутствие DTO или теста не считается доказательством приёмки.
-
-Native запуск — только после проверки display layout, на меньшем мониторе с isolated profile/explicit index и `DSS_VALIDATION_SMALL_MONITOR=1`; иначе NOT RUN. Автотест не закрывает native, слуховую, независимую или продуктовую приёмку.
+Из корня D:/DeepSpaceSaga/DSS создать уникальный абсолютный D:/DeepSpaceSaga/artifacts/validation/EP-0036-US-0004-TK-0001-reward-roundtrip/<UTC-run>/.
+`dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj -c Release --filter FullyQualifiedName~DemoEp0036Us0004Tk0001Tests --results-directory <absolute-run>/results --artifacts-path <absolute-run>/build`.
+Каждый process tree cap300000ms: Start-Process -WindowStyle Hidden с перенаправленными stdout/stderr в run, WaitForExit(300000), taskkill /PID <pid> /T /F при timeout. Owning build `dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj -c Release --artifacts-path <absolute-run>/build`; format --verify-no-changes --include только C# allowlist, тот же cap. Полную suite не подменять этой проверкой.
 
 ## Definition of Done
-
-- Все шаги выполнены только в allowlist, тесты проверяют указанные исходы и ошибки.
-- Served AC имеют evidence вклада этого слоя; story end-to-end/native/product gates не закрыты автоматически.
-- Focused checks и owning build/format проходят либо конкретное исходное падение записано как блокер; timeout не PASS.
-- Public API, units, persistence, idempotency и ограничения соблюдены; нет скрытого follow-up вне Board.
-- Evidence в `D:/DeepSpaceSaga/artifacts/validation/<ticket>/<unique-run>/`, status/решения в Board, актуальные контракты в Documentation.
-- Удалены только собственные disposable scripts/caches/results; сохранены необходимые ссылки evidence, нет мусора в корнях workspace/repo.
+- Реальный путь и named tests проверяют заявленные AC в allowed files.
+- Пройден owning build/format либо конкретная исходная ошибка честно отмечена.
+- UI route проверен через реальные callbacks; native/product acceptance отдельно OPEN до исполнения.
+- Evidence/cleanup по AGENTS, без commit/push разрешения.
 
 ## Self-containment check
+Входы принадлежат указанным prerequisite tickets, owning files/API/negative cases перечислены. При необходимости изменить иной слой сначала исправить Board allowlist.
 
-Prerequisites, allowlist, новые схемы/команды, concrete steps, критерии и named tests перечислены здесь. Для новых файлов указан создатель; их наличие до исполнения dependency не предполагается. Чтение источников допустимо для проверки drift, но новый продуктовый выбор или расширение files требует явной правки Board.
+
+## Execution
+Implemented real command integration through accepted bounty, confirmed victory, partial collection/module/arrest, JSON roundtrip, remainder and issuer payment with duplicate rejection. Malformed phase/negative quantity/duplicate source rejected atomically. Existing US9 provenance and US2 defeat tests remain in story regression. Tests scheduled at complete US4 boundary; native NOT RUN.
+
+Review correction: pre-publication Load gate now requires Open loot to match the finished current encounter, with no pending sensor report/active dialogue. Owning SimulationEngine.cs validation is added to allowlist. Regression covers closed A + valid checkpoint B, rejects reopened A atomically.
+
+## Owner review corrections (2026-11-18)
+Scope: findings 1 and 5. Closed loot keeps structural/frozen provenance validation without current loot balance identity; Open remains strict. Missing composition/layout references must reject with ScenarioException. Owning lifecycle and existing integration tests; validation pending at story boundary.
+
+Independent review follow-up: BattleLoot.cs added to scope. Closed session projects no actionable objects; full frozen audit remains persisted. This prevents closed content-independent audit from dereferencing obsolete SKUs. Test unknown closed SKU snapshot versus strict Open rejection. US4 initial tests PASS 5/5 (20261118-corrections/us4).
+
+Final correction supersedes prior no-objects approach: preserve closed report objects/outcomes, resolve optional display metadata safely (unknown historical SKU uses identity and zero unavailable mass/value); no actions enabled. ModuleSalvage.cs included for safe closed display lookup. This retains Contracts reward report history.
+
+Review correction tests: scoped whitespace formatted; behavior unchanged.
