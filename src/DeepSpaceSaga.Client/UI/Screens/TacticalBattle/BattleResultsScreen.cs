@@ -51,15 +51,15 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
         T(canvas, Localization.Get("TacticalBattle.Results"), panel.Left + 20, panel.Top + 42, 26, Text, true);
         if (Report is { } report) DrawSummary(canvas, report, panel);
         _exitBounds = new(panel.Right - 220, panel.Bottom - 65, panel.Right - 20, panel.Bottom - 20);
-        Contents = new(panel.Left + 20, panel.Top + 148, panel.Right - 20, _exitBounds.Top - 36);
-        DrawSources(canvas);
-        MenuStyle.DrawButton(canvas, _exitBounds, Localization.Get("TacticalBattle.ToMap"),
+        Contents = new(panel.Left + 20, panel.Top + 148, panel.Right - 20, _exitBounds.Top - 53);
+        if (ConfirmDiscard) DrawLeaveWarning(canvas);
+        else DrawSources(canvas);
+        MenuStyle.DrawButton(canvas, _exitBounds, ConfirmDiscard ? ResultsText("Leave") : Localization.Get("TacticalBattle.ToMap"),
             ExitBlocked ? ButtonState.Disabled : ButtonState.Normal);
-        DrawLootFooter(canvas);
-        if (ConfirmDiscard)
-            T(canvas, Localization.Get("loot.loot_confirm_discard_required"), panel.Left + 20, _exitBounds.MidY, 18, Text);
+        DrawCapacity(canvas);
+        if (!ConfirmDiscard) DrawLootFooter(canvas);
         if (Flow.Error.Length > 0)
-            T(canvas, Flow.Error, panel.Left + 20, _exitBounds.Top - 10, 18, Red);
+            T(canvas, Flow.Error, panel.Left + 20, _exitBounds.Top - 35, 16, Red);
     }
 
     private static void DrawSummary(SKCanvas canvas, Summary report, SKRect panel)
@@ -95,6 +95,7 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
         if (!ConfirmDiscard && CurrentLoot is { HasUnclaimed: true })
         {
             ConfirmDiscard = true;
+            _warningScroll = 0;
             return ScreenEvent.None;
         }
         _acknowledgeRequested = true;
@@ -111,6 +112,11 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
     public override ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
         if (button != MouseButton.Left) return ScreenEvent.None;
+        if (ConfirmDiscard && StayBounds.Contains(x, y) && !Flow.Pending)
+        {
+            ConfirmDiscard = false;
+            return ScreenEvent.None;
+        }
         if (_exitBounds.Contains(x, y)) return RequestExit();
         if (!ConfirmDiscard && !ClickLootAction(x, y) && Contents.Contains(x, y)) ToggleSource(x, y);
         return ScreenEvent.None;
@@ -118,7 +124,9 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
     public override bool OnMouseMove(float x, float y) => _exitBounds.Contains(x, y) || Contents.Contains(x, y);
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
-        if (!ConfirmDiscard && Contents.Contains(x, y) && float.IsFinite(delta))
+        if (!Contents.Contains(x, y) || !float.IsFinite(delta)) return ScreenEvent.None;
+        if (ConfirmDiscard) _warningScroll = Math.Clamp(_warningScroll + delta, 0, _warningMaxScroll);
+        else
         {
             float offset = Math.Clamp(_scroll + delta, 0, _maxScroll);
             if (offset != _scroll)
@@ -134,6 +142,6 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
     {
         if (Flow.Pending || repeat || modifiers != KeyModifiers.None) return ScreenEvent.None;
         if (key == Key.Escape) ConfirmDiscard = false;
-        return key is Key.Enter or Key.KeypadEnter ? RequestExit() : ScreenEvent.None;
+        return !ConfirmDiscard && key is Key.Enter or Key.KeypadEnter ? RequestExit() : ScreenEvent.None;
     }
 }

@@ -77,3 +77,8 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0001-TK-0002-mandatory-route](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0002-mandatory-route/EP-0042-US-0001-TK-0002-mandatory-route.md), [EP-0042-US-0004-TK-0003-bulk-action](../../EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0003-bulk-action/EP-0042-US-0004-TK-0003-bulk-action.md), [EP-0042-US-0005-TK-0002-capacity-exit-rule](../../EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0002-capacity-exit-rule/EP-0042-US-0005-TK-0002-capacity-exit-rule.md). Точный allowlist и owning test project указаны выше.
+
+## Исполнение
+
+- Футер показывает ёмкость живого носителя из Engine. Перед закрытием выводится прокручиваемый список несобранного, включая живых пилотов. Уйти после предупреждения можно явной кнопкой. Остаться сохраняет состояние.
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли.

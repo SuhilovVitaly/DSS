@@ -115,7 +115,7 @@ internal sealed partial class BattleResultsScreen
                 ? ButtonState.Disabled : ButtonState.Normal);
         }
         if (_lootPresentation.LastReason is { } reason and not (BattleLootReasons.OperationNotDue or DemoCampaignReasons.StaleRevision))
-            T(canvas, Localization.Get("loot." + reason), Contents.Left, ExitBounds.Top - 12, 14, Red);
+            T(canvas, Localization.Get("loot." + reason), Contents.Left, ExitBounds.Top - 35, 14, Red);
     }
 
     private bool ClickLootAction(float x, float y)
