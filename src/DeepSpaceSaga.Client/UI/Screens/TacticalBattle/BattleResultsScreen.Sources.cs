@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 internal sealed partial class BattleResultsScreen
 {
     private const float CardHeight = 56;
-    private const float DetailsHeight = 48;
+    private const float RowHeight = 58;
     private readonly HashSet<string> _expandedSources = new(StringComparer.Ordinal);
     private readonly List<(string Id, SKRect Bounds)> _sourceHits = [];
     private float _scroll;
@@ -20,17 +20,21 @@ internal sealed partial class BattleResultsScreen
     {
         get
         {
-            var loot = Flow.Session.DemoCampaign?.Rewards?.Loot;
-            return loot is { Phase: LootPhases.Open } && loot.BattleId == _terminalBattle?.BattleId && Report?.CanLoot == true
-                ? loot : null;
+            var campaign = Flow.Session.DemoCampaign;
+            var loot = campaign?.Rewards?.Loot;
+            _lootPresentation.Observe(loot, campaign?.Revision ?? 0);
+            return _lootPresentation.State is { } current && current.BattleId == _terminalBattle?.BattleId && Report?.CanLoot == true
+                ? current : null;
         }
     }
 
     private void DrawSources(SKCanvas canvas)
     {
         _sourceHits.Clear();
+        _rowHits.Clear();
         if (CurrentLoot is not { } loot || Contents.IsEmpty) return;
-        float height = loot.Objects.Sum(source => CardHeight + (IsExpanded(source.ObjectId) ? DetailsHeight : 0));
+        var sources = loot.Objects.Select(source => (Source: source, Rows: IsExpanded(source.ObjectId) ? LootRows(source) : null)).ToArray();
+        float height = sources.Sum(source => CardHeight + (source.Rows is { } rows ? Math.Max(1, rows.Count) * RowHeight : 0));
         _maxScroll = Math.Max(0, height - Contents.Height);
         _scroll = Math.Clamp(_scroll, 0, _maxScroll);
         float y = Contents.Top - _scroll;
@@ -38,21 +42,28 @@ internal sealed partial class BattleResultsScreen
         try
         {
             canvas.ClipRect(Contents);
-            foreach (var source in loot.Objects)
+            foreach (var (source, rows) in sources)
             {
-                bool expanded = IsExpanded(source.ObjectId);
                 var card = new SKRect(Contents.Left, y, Math.Min(Contents.Left + 350, Contents.Right), y + CardHeight - 5);
                 var visible = SKRect.Intersect(card, Contents);
                 if (!visible.IsEmpty)
                 {
                     _sourceHits.Add((source.ObjectId, visible));
-                    DrawSourceCard(canvas, source, card, expanded);
+                    DrawSourceCard(canvas, source, card, rows is not null);
                 }
                 y += CardHeight;
-                if (!expanded) continue;
-                var details = new SKRect(Contents.Left, y, Contents.Right, y + DetailsHeight - 5);
-                DrawSourceDetails(canvas, source, details);
-                y += DetailsHeight;
+                if (rows is null) continue;
+                if (rows.Count == 0)
+                {
+                    T(canvas, ResultsText("EmptySource"), Contents.Left + 16, y + 22, 16, Muted);
+                    y += RowHeight;
+                }
+                foreach (var row in rows)
+                {
+                    var rect = new SKRect(Contents.Left, y, Contents.Right, y + RowHeight - 4);
+                    if (!SKRect.Intersect(rect, Contents).IsEmpty) DrawLootRow(canvas, source.ObjectId, row, rect);
+                    y += RowHeight;
+                }
             }
         }
         finally { canvas.Restore(); }
@@ -69,20 +80,14 @@ internal sealed partial class BattleResultsScreen
         T(canvas, kind, card.Left + 34, card.Top + 40, FitSize(kind, 13, card.Width - 46), Muted);
     }
 
-    private static void DrawSourceDetails(SKCanvas canvas, LootObjectSnapshot source, SKRect details)
-    {
-        Round(canvas, details, Panel, BoxEdge);
-        string label = string.Format(Localization.Get("BattleResults.Quantity"),
-            source.Modules.Length + source.Consumables.Length + (source.Scrap is null ? 0 : 1) + (source.Pilot is null ? 0 : 1));
-        T(canvas, label, details.Left + 16, details.MidY + 5, 16, Text);
-    }
-
     private void ToggleSource(float x, float y)
     {
         foreach (var hit in _sourceHits)
         {
             if (!hit.Bounds.Contains(x, y)) continue;
             if (!_expandedSources.Add(hit.Id)) _expandedSources.Remove(hit.Id);
+            _sourceHits.Clear();
+            _rowHits.Clear();
             break;
         }
     }

@@ -181,9 +181,14 @@ public sealed partial class SimulationEngine
     {
         string? reason = !open ? BattleLootReasons.LootClosed : scrap.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
             !canFit(scrap.ItemTypeId, scrap.Quantity) ? BattleLootReasons.CargoFull : null;
-        long mass = LootItemDefinition(scrap.ItemTypeId)?.UnitMassKg ?? 0;
+        var item = LootItemDefinition(scrap.ItemTypeId);
+        long mass = item?.UnitMassKg ?? 0;
+        long? value = item?.BasePriceCredits;
         return new(scrap.ItemTypeId, scrap.Quantity, scrap.ChanceBasisPoints, scrap.State, reason is null, reason,
-            mass > 0 && scrap.Quantity <= long.MaxValue / mass ? scrap.Quantity * mass : 0);
+            mass > 0 && scrap.Quantity <= long.MaxValue / mass ? scrap.Quantity * mass : 0)
+        {
+            EstimatedValueTokens = value is > 0 && scrap.Quantity <= long.MaxValue / value ? scrap.Quantity * value : null
+        };
     }
 
     // Closed audit identities may outlive their content; quantities and outcomes remain visible.

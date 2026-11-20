@@ -77,3 +77,12 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0002-TK-0002-source-accordion](../../EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0002-source-accordion/EP-0042-US-0002-TK-0002-source-accordion.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+Фактический список находится в `BattleResultsScreen.Sources.cs`. Изменения добавляют строки и кнопки в этот список и футер повтора записи. Для лома Engine передаёт базовую оценку из существующего каталога, когда она определена и помещается в long. Добавлены соответствующие поля проекций в Contracts и Engine.
+
+## Исполнение
+
+- Строки строятся из авторитетного ledger и заполняют ширину списка. Кнопки передают ID строки и источника через существующие команды. Повтор при сбое записи использует исходную identity.
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли после исправления формы assert. Тематические тесты запланированы на границу истории.

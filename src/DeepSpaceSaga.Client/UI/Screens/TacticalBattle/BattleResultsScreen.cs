@@ -42,7 +42,8 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
         Contents = new(panel.Left + 20, panel.Top + 148, panel.Right - 20, _exitBounds.Top - 36);
         DrawSources(canvas);
         MenuStyle.DrawButton(canvas, _exitBounds, Localization.Get("TacticalBattle.ToMap"),
-            Flow.Pending ? ButtonState.Disabled : ButtonState.Normal);
+            LootInputBlocked ? ButtonState.Disabled : ButtonState.Normal);
+        DrawLootFooter(canvas);
         if (ConfirmDiscard)
             T(canvas, Localization.Get("loot.loot_confirm_discard_required"), panel.Left + 20, _exitBounds.MidY, 18, Text);
         if (Flow.Error.Length > 0)
@@ -78,8 +79,8 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
 
     private ScreenEvent RequestExit()
     {
-        if (Flow.Pending) return ScreenEvent.None;
-        if (!ConfirmDiscard && Flow.Session.DemoCampaign?.Rewards?.Loot is { HasUnclaimed: true } loot && loot.BattleId == Flow.State?.BattleId)
+        if (LootInputBlocked) return ScreenEvent.None;
+        if (!ConfirmDiscard && CurrentLoot is { HasUnclaimed: true })
         {
             ConfirmDiscard = true;
             return ScreenEvent.None;
@@ -99,14 +100,22 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
     {
         if (button != MouseButton.Left) return ScreenEvent.None;
         if (_exitBounds.Contains(x, y)) return RequestExit();
-        if (!ConfirmDiscard && Contents.Contains(x, y)) ToggleSource(x, y);
+        if (!ConfirmDiscard && !ClickLootAction(x, y) && Contents.Contains(x, y)) ToggleSource(x, y);
         return ScreenEvent.None;
     }
     public override bool OnMouseMove(float x, float y) => _exitBounds.Contains(x, y) || Contents.Contains(x, y);
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         if (!ConfirmDiscard && Contents.Contains(x, y) && float.IsFinite(delta))
-            _scroll = Math.Clamp(_scroll + delta, 0, _maxScroll);
+        {
+            float offset = Math.Clamp(_scroll + delta, 0, _maxScroll);
+            if (offset != _scroll)
+            {
+                _scroll = offset;
+                _sourceHits.Clear();
+                _rowHits.Clear();
+            }
+        }
         return ScreenEvent.None;
     }
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)

@@ -32,7 +32,10 @@ public sealed record LootConsumableSnapshot(string ItemTypeId, long Remaining, b
 {
     public long? OriginalQuantity { get; init; }
 }
-public sealed record ScrapLootSnapshot(string ItemTypeId, long Quantity, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0);
+public sealed record ScrapLootSnapshot(string ItemTypeId, long Quantity, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0)
+{
+    public long? EstimatedValueTokens { get; init; }
+}
 public sealed record ModuleLootSnapshot(string InstanceId, string Category, string CatalogId, string ItemTypeId,
     string DisplayName, string ConditionLabel, long EstimatedValueTokens, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0);
 public sealed record LootPilotSnapshot(string SourcePilotId, string DisplayName, string? PortraitAssetId, bool Alive,
