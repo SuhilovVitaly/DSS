@@ -24,9 +24,9 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0004-TK-0001-bulk-order](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0001-bulk-order/EP-0042-US-0004-TK-0001-bulk-order.md) | Опубликован, US-0004 PASS | 07e439fcb2cfeb025f71fba67b1b0f3649dd5c0d |
 | [EP-0042-US-0004-TK-0002-cargo-completion](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0002-cargo-completion/EP-0042-US-0004-TK-0002-cargo-completion.md) | Опубликован, US-0004 PASS | f5b55ea4b979d705a33d1c093d90de0e919131fa |
 | [EP-0042-US-0004-TK-0003-bulk-action](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0003-bulk-action/EP-0042-US-0004-TK-0003-bulk-action.md) | Опубликован, US-0004 PASS | 4ce7f1d539cb819446bd8d1f391d1b1aa40cb1ce |
-| [EP-0042-US-0005-TK-0001-capacity-contract](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0001-capacity-contract/EP-0042-US-0005-TK-0001-capacity-contract.md) | Ожидает | — |
-| [EP-0042-US-0005-TK-0002-capacity-exit-rule](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0002-capacity-exit-rule/EP-0042-US-0005-TK-0002-capacity-exit-rule.md) | Ожидает | — |
-| [EP-0042-US-0005-TK-0003-footer-confirmation](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0003-footer-confirmation/EP-0042-US-0005-TK-0003-footer-confirmation.md) | Ожидает | — |
+| [EP-0042-US-0005-TK-0001-capacity-contract](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0001-capacity-contract/EP-0042-US-0005-TK-0001-capacity-contract.md) | Опубликован, US-0005 PASS | 2673c11a90d99c4559c4bcfcef703ac203edc5a3 |
+| [EP-0042-US-0005-TK-0002-capacity-exit-rule](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0002-capacity-exit-rule/EP-0042-US-0005-TK-0002-capacity-exit-rule.md) | Опубликован, US-0005 PASS | 9342adac3a599b41f2d10d0b2ead4d4841cd3cf2 |
+| [EP-0042-US-0005-TK-0003-footer-confirmation](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0003-footer-confirmation/EP-0042-US-0005-TK-0003-footer-confirmation.md) | Опубликован, US-0005 PASS | a1c3424e2f85cf5c5253812979c6e6173ea94d65 |
 | [EP-0042-US-0006-TK-0001-save-ledger](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0001-save-ledger/EP-0042-US-0006-TK-0001-save-ledger.md) | Ожидает | — |
 | [EP-0042-US-0006-TK-0002-checkpoint-transport](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0002-checkpoint-transport/EP-0042-US-0006-TK-0002-checkpoint-transport.md) | Ожидает | — |
 | [EP-0042-US-0006-TK-0003-load-routing](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0003-load-routing/EP-0042-US-0006-TK-0003-load-routing.md) | Ожидает | — |
@@ -72,3 +72,8 @@ Headless Engine 2/2 и Client 1/1 прошли по фильтру EP0042Us0004.
 ## План проверок US-0005
 
 Contracts, Engine и Client Tests: `EP0042Us0005`. Явный ноль и legacy payload, общий пул кают, однократный арест, отклонение выброса, предупреждение и отдельное подтверждение.
+
+## Результат US-0005
+
+Headless Contracts 1/1, Engine 1/1 и Client 1/1 прошли. Self-review сверил общий пул кают и исходящие события Stay/Leave. Проверены отказ выброса, сохранение окна при отмене и закрытие без повторной выдачи.
+[Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-132226-789-us0005>).
