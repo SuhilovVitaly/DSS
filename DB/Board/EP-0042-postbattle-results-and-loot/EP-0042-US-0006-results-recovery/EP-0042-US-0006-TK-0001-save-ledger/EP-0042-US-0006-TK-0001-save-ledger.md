@@ -77,3 +77,12 @@ dotnet format src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0005-TK-0002-capacity-exit-rule](../../EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0002-capacity-exit-rule/EP-0042-US-0005-TK-0002-capacity-exit-rule.md), [EP-0042-US-0001-TK-0005-outcome-lifecycle](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0005-outcome-lifecycle/EP-0042-US-0001-TK-0005-outcome-lifecycle.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+Save22 получает опциональную стадию, BattleId и расход торпед. Для победы с лутом карта берётся из существующего ledger, для остальных исходов сохраняется одна замороженная карта. Проверки сопоставляют собственный итог с settlement и историю встречи с итогом. Добавлены `BattleResultsData.cs`, файлы восстановления боя и pending encounter, чтобы сохранить режим подтверждения на обоих маршрутах.
+
+## Исполнение
+
+- Save22 сохраняет только подтверждённый исход и стадию. Войны и таймеры не сериализуются как активное выполнение. Проверены обязательные привязки к собственному settlement, ledger и истории встречи.
+- Сборка Engine Tests, scoped whitespace format и `git diff --check` прошли. Legacy и roundtrip назначены на границу US-0006.

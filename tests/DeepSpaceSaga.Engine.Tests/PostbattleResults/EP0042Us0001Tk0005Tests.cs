@@ -48,7 +48,7 @@ public sealed class EP0042Us0001Tk0005Tests
         Assert.Single(engine.CaptureSaveState().GameState.DemoCampaign!.EncounterResults);
     }
 
-    private static SimulationEngine BeginEncounter()
+    internal static SimulationEngine BeginEncounter()
     {
         var engine = DemoEp0033Us0001Tk0003Tests.Demo();
         engine.LoadScenario(Ep0035Us3Tk2Tests.CapturedScenario(engine), true);

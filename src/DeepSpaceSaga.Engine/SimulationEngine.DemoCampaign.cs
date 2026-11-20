@@ -117,6 +117,7 @@ public sealed partial class SimulationEngine
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign with
     {
+        BattleResults = CaptureFrozenBattleResults(),
         // Rewards are a derived view of the one authoritative ledger, not receipt history.
         Receipts = _demoCampaign.Receipts.Select(r => r with { Response = r.Response with { Rewards = null } }).ToImmutableArray()
     };

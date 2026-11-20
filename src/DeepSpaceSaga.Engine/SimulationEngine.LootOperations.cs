@@ -9,6 +9,11 @@ public sealed partial class SimulationEngine
     private sealed record PendingLootOperation(string Id, LootRowKey Row, long DueAtMs, int DurationMs, int Order);
     private readonly Dictionary<LootRowKey, PendingLootOperation> _lootOperations = [];
     internal Func<long> LootClockMilliseconds { get; set; } = () => Environment.TickCount64;
+    public bool HasActiveLootOperations { get { lock (_worldStateLock) return _lootOperations.Count != 0; } }
+    private void ThrowIfLootOperationsActive()
+    {
+        if (_lootOperations.Count != 0) throw new InvalidOperationException(BattleLootReasons.OperationsRunning);
+    }
 
     private BattleLootData? GetTimedLoot(string battleId) =>
         _frozenBattleResults is { Results: { Stage: BattleResultsStage.Open, CanLoot: true } results } &&

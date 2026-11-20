@@ -29,6 +29,8 @@ public sealed partial record DemoCampaignData(
     public ImmutableArray<BountyOrderData> BountyOrders { get; init; } = [];
     public ImmutableArray<BountyPaymentData> BountyPayments { get; init; } = [];
     public BattleLootData? LootSession { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public BattleResultsData? BattleResults { get; init; }
     public ImmutableArray<PrisonerSnapshot> Prisoners { get; init; } = [];
 
     [JsonPropertyName("pilotMemorial")]

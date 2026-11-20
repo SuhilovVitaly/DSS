@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 
@@ -21,6 +22,53 @@ public sealed partial class SimulationEngine
         {
             Capacity = new(PlayerFreeHoldKg(ship), GetAvailablePrisonerCabins(ship, _demoCampaign))
         };
+    }
+
+    private BattleResultsData? CaptureFrozenBattleResults() => BattleResultsPending && _frozenBattleResults is { } frozen
+        ? new(frozen.Results.BattleId, frozen.Results.Stage, frozen.Results.CanLoot ? null : frozen.Map, frozen.Results.ConsumedTorpedoes)
+        : null;
+
+    private static FrozenBattleResults? ValidateFrozenBattleResults(DemoCampaignData campaign, GameStateData state, SimulationSpeed speed)
+    {
+        if (campaign.BattleResults is not { } saved) return null;
+        var loot = campaign.LootSession is { Phase: LootPhases.Open } open ? open : null;
+        bool canLoot = saved.Map is null;
+        var map = saved.Map ?? loot?.Map;
+        if (map is null || string.IsNullOrWhiteSpace(saved.BattleId) || map.BattleId != saved.BattleId ||
+            saved.Stage is not (BattleResultsStage.AwaitingOpen or BattleResultsStage.Open) || speed != SimulationSpeed.Speed0 ||
+            canLoot != (loot is not null) || campaign.WorldEncounter is { Phase: not WorldEncounterPhases.Finished } ||
+            campaign.PendingSensorReport is not null || state.DialogueState?.ActiveDialogue is not null ||
+            map.Phase != TacticalBattlePhase.Over || map.PlayerSide is not ("A" or "B") ||
+            map.Outcome is not { } outcome || !Enum.IsDefined(outcome.Kind) || outcome.Statistics is null ||
+            outcome.Turns < 0 || outcome.Reasons.IsDefault || outcome.Losses.IsDefault ||
+            outcome.Losses.Any(loss => loss is null || loss.Count < 0 || loss.Side is not ("A" or "B")) ||
+            map.Units.IsDefaultOrEmpty || map.Units.Any(unit => unit is null || string.IsNullOrWhiteSpace(unit.Id) ||
+                unit.Side is not ("A" or "B") || unit.Hull < 0 || unit.Hull > unit.MaxHull ||
+                !Enum.IsDefined(unit.Kind) || !Enum.IsDefined(unit.State)) ||
+            map.Units.Select(unit => unit.Id).Distinct(StringComparer.Ordinal).Count() != map.Units.Length)
+            throw new ScenarioException("Invalid frozen battle results.");
+
+        if (canLoot)
+            map = map with { SourceShipId = state.PlayerShipObjectId };
+        if (map.SourceShipId is { } shipId)
+        {
+            var ship = state.SpaceObjects.FirstOrDefault(obj => obj.ObjectId == shipId);
+            var carrier = map.Units.FirstOrDefault(unit => unit.Side == map.PlayerSide && unit.Kind == TacticalUnitKind.Carrier);
+            if (shipId != state.PlayerShipObjectId || ship?.CarrierState?.LastSettlement is not { } settlement ||
+                settlement.BattleId != saved.BattleId || carrier is null || settlement.ShipDestroyed != (carrier.Hull == 0) ||
+                settlement.ConsumedTorpedoes != saved.ConsumedTorpedoes)
+                throw new ScenarioException("Frozen results do not match the committed sortie.");
+        }
+        else if (canLoot || saved.ConsumedTorpedoes is not null)
+            throw new ScenarioException("Frozen results have no owning carrier.");
+
+        var encounter = campaign.EncounterResults.FirstOrDefault(result => result.Binding.BattleId == saved.BattleId);
+        if (encounter is not null && (encounter.PlayerSide != map.PlayerSide || encounter.PlayerWon != canLoot ||
+            JsonSerializer.Serialize(encounter.Outcome) != JsonSerializer.Serialize(outcome) ||
+            JsonSerializer.Serialize(encounter.Units) != JsonSerializer.Serialize(map.Units)))
+            throw new ScenarioException("Frozen results do not match the encounter history.");
+
+        return CreateFrozenResults(map, canLoot, saved.Stage, saved.ConsumedTorpedoes);
     }
 
     private SortieSettlementSnapshot? FreezeBattleResults()
@@ -63,7 +111,11 @@ public sealed partial class SimulationEngine
     {
         var frozen = _frozenBattleResults;
         if (frozen?.Results.BattleId != command.BattleId && FrozenBattleMap is { } legacy && LootOpen)
-            frozen = CreateFrozenResults(legacy, canLoot: true, BattleResultsStage.AwaitingOpen);
+        {
+            int? torpedoes = PlayerShipObjectId is { } shipId && _carrierSettlement.TryGetValue(shipId, out var receipt) &&
+                receipt.BattleId == legacy.BattleId ? receipt.ConsumedTorpedoes : null;
+            frozen = CreateFrozenResults(legacy with { SourceShipId = PlayerShipObjectId }, canLoot: true, BattleResultsStage.AwaitingOpen, torpedoes);
+        }
         if (frozen?.Results.BattleId != command.BattleId || frozen is null)
         { reason = BattleLootReasons.WrongBattle; return; }
         if (frozen.Results.Stage != BattleResultsStage.AwaitingOpen)

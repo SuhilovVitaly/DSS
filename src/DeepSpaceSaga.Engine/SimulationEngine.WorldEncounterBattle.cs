@@ -28,7 +28,14 @@ public sealed partial class SimulationEngine
                 GameState = save.GameState with
                 {
                     CurrentSpeed = SimulationSpeed.Speed0.ToString(),
-                    DemoCampaign = _demoCampaign with { WorldEncounter = encounter with { Phase = WorldEncounterPhases.PendingBattle } }
+                    DemoCampaign = save.GameState.DemoCampaign! with
+                    {
+                        WorldEncounter = encounter with
+                        {
+                            Phase = WorldEncounterPhases.PendingBattle,
+                            RequireBattleResults = command.RequireBattleResults
+                        }
+                    }
                 }
             };
         }
@@ -40,12 +47,17 @@ public sealed partial class SimulationEngine
         var candidate = _demoCampaign with { WorldEncounter = encounter with { Phase = WorldEncounterPhases.Captured } };
         string? reason = null;
         Action? commit = null;
-        PrepareEncounterBattle(new("restore:" + encounter.Binding.BattleId, candidate.Revision, encounter.Binding.EncounterId),
+        PrepareEncounterBattle(new BeginEncounterBattleCommand("restore:" + encounter.Binding.BattleId, candidate.Revision, encounter.Binding.EncounterId)
+        {
+            RequireBattleResults = encounter.RequireBattleResults ?? true
+        },
             ref candidate, ref reason, ref commit);
         if (reason is not null || commit is null) throw new ScenarioException("Cannot restart pending encounter: " + reason);
         commit();
         _demoCampaign = candidate;
         _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, _processedSimulationTimeMs, _clock.Capture().MotionQuarterRemainder);
+        if (_requireBattleResults && _tacticalBattleSession?.Phase == TacticalBattlePhase.Over)
+            FreezeBattleResults();
     }
 
     private static DemoCampaignData PrepareEncounterSettlement(DemoCampaignData campaign, TacticalBattleSession session, TacticalBattleSnapshot? frozen = null)
@@ -123,7 +135,10 @@ public sealed partial class SimulationEngine
         // No deployable drones is a real defeat, not a refusal that lets a captured ship escape.
         var session = TacticalBattleSession.Create(battle, encounter.Binding.BattleId, "A");
         battle.CheckVictory();
-        candidate = candidate with { WorldEncounter = encounter with { Phase = WorldEncounterPhases.PendingBattle } };
+        candidate = candidate with
+        {
+            WorldEncounter = encounter with { Phase = WorldEncounterPhases.PendingBattle, RequireBattleResults = command.RequireBattleResults }
+        };
         commit = () =>
         {
             _tacticalBattleSession = session;
