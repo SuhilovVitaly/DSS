@@ -71,3 +71,8 @@ dotnet format src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj --verif
 ## Self-containment check
 
 Зависимости: нет новых тикетов перед этой задачей. Точный allowlist и owning test project указаны выше.
+
+## Исполнение
+
+- Добавлены ключи строк, команды запуска, проверки срока и подбора готового трофея. Снимки передают длительность и остаток времени, старые payload сохраняют пустой список операций.
+- Сборка Contracts Tests, scoped whitespace format и `git diff --check` прошли.
