@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
@@ -8,13 +9,13 @@ internal sealed partial class BattleResultsScreen
 {
     private const float CardHeight = 56;
     private const float RowHeight = 58;
-    private readonly HashSet<string> _expandedSources = new(StringComparer.Ordinal);
+    private ImmutableHashSet<string> _expandedSources = ImmutableHashSet.Create<string>(StringComparer.Ordinal);
     private readonly List<(string Id, SKRect Bounds)> _sourceHits = [];
     private float _scroll;
     private float _maxScroll;
 
     internal IReadOnlyList<(string Id, SKRect Bounds)> SourceHits => _sourceHits;
-    internal bool IsExpanded(string objectId) => _expandedSources.Contains(objectId);
+    internal bool IsExpanded(string objectId) => Volatile.Read(ref _expandedSources).Contains(objectId);
 
     private LootSessionSnapshot? CurrentLoot
     {
@@ -86,7 +87,7 @@ internal sealed partial class BattleResultsScreen
         foreach (var hit in _sourceHits)
         {
             if (!hit.Bounds.Contains(x, y)) continue;
-            if (!_expandedSources.Add(hit.Id)) _expandedSources.Remove(hit.Id);
+            ImmutableInterlocked.Update(ref _expandedSources, set => set.Contains(hit.Id) ? set.Remove(hit.Id) : set.Add(hit.Id));
             _sourceHits.Clear();
             _rowHits.Clear();
             break;

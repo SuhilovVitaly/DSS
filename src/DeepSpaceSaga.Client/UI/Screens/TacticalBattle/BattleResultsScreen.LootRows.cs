@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Demo;
@@ -12,6 +13,8 @@ internal sealed partial class BattleResultsScreen
 {
     private readonly List<(SKRect Bounds, string ObjectId, LootRow Row)> _rowHits = [];
     private SKRect _retryBounds;
+    private SKRect _collectAllBounds;
+    internal SKRect CollectAllBounds => _collectAllBounds;
     private bool LootInputBlocked => Flow.Pending || _lootPresentation.Pending || _lootPresentation.RetryCommand is not null;
     private bool ExitBlocked => LootInputBlocked || CurrentLoot?.Operations.IsEmpty == false;
     internal IReadOnlyList<(SKRect Bounds, string ObjectId, LootRow Row)> LootActionHits => _rowHits;
@@ -19,20 +22,23 @@ internal sealed partial class BattleResultsScreen
 
     internal enum RowKind { Consumable, Scrap, Module, Pilot }
     internal sealed record LootRow(string Id, RowKind Kind, string Name, string Category, long? Quantity,
-        long? Value, long? Mass, int? Chance, string? State, bool Enabled, string? Reason);
+        long? Value, long? Mass, int? Chance, string? State, bool Enabled, string? Reason, long? OriginalQuantity = null);
 
     internal static List<LootRow> LootRows(LootObjectSnapshot source)
     {
         var rows = new List<LootRow>();
         foreach (var item in source.Consumables)
             rows.Add(new(item.ItemTypeId, RowKind.Consumable, ItemName(item.ItemTypeId), "consumable", item.Remaining,
-                null, item.UnitMassKg, null, item.Remaining == 0 ? LootAttemptStates.Collected : null, item.CanCollect, item.Reason));
+                null, item.UnitMassKg, null, item.Remaining == 0 ? LootAttemptStates.Collected : null, item.CanCollect,
+                item.Reason, item.OriginalQuantity));
         if (source.Scrap is { } scrap)
             rows.Add(new(scrap.ItemTypeId, RowKind.Scrap, ItemName(scrap.ItemTypeId), "scrap", scrap.Quantity, scrap.EstimatedValueTokens,
-                scrap.RequiredMassKg, scrap.ChanceBasisPoints, scrap.State, scrap.CanAttempt, scrap.Reason));
+                scrap.RequiredMassKg, scrap.ChanceBasisPoints, scrap.State, scrap.CanClaimExtracted || scrap.CanAttempt ||
+                scrap.State == LootAttemptStates.NotAttempted && scrap.Reason == BattleLootReasons.CargoFull, scrap.Reason));
         foreach (var item in source.Modules)
             rows.Add(new(item.InstanceId, RowKind.Module, TradeItemPresentation.ItemDisplayName(item.ItemTypeId), item.Category, null,
-                item.EstimatedValueTokens, item.RequiredMassKg, item.ChanceBasisPoints, item.State, item.CanAttempt, item.Reason));
+                item.EstimatedValueTokens, item.RequiredMassKg, item.ChanceBasisPoints, item.State, item.CanClaimExtracted || item.CanAttempt ||
+                item.State == LootAttemptStates.NotAttempted && item.Reason == BattleLootReasons.CargoFull, item.Reason));
         if (source.Pilot is { Alive: true } pilot)
             rows.Add(new(pilot.SourcePilotId, RowKind.Pilot, pilot.DisplayName, "pilot", null,
                 null, null, null, pilot.Captured ? "Captured" : null, !pilot.Captured && pilot.CaptureReason is null, pilot.CaptureReason));
@@ -63,14 +69,20 @@ internal sealed partial class BattleResultsScreen
         var details = new List<string>(4);
         if (row.Quantity is { } quantity) details.Add(ResultsText("Quantity", quantity));
         if (row.Value is { } value) details.Add(ResultsText("Price", value));
-        if (row.Chance is { } chance) details.Add(ResultsText("Chance", ModuleSalvagePresentation.ChanceText(chance, CultureInfo.CurrentCulture)));
+        bool extracted = row.State == LootAttemptStates.ExtractedWaiting;
+        if (!extracted && row.Chance is { } chance)
+            details.Add(ResultsText("Chance", ModuleSalvagePresentation.ChanceText(chance, CultureInfo.CurrentCulture)));
         if (row.Mass is { } mass) details.Add(ResultsText("Mass", mass));
+        if (extracted) details.Add(ResultsText("Recovered"));
+        if (row.Kind == RowKind.Consumable && row.OriginalQuantity is { } original && row.Quantity is > 0 && row.Quantity < original)
+            details.Add(ResultsText("Partial", original - row.Quantity.Value, original));
         string caption = string.Join("   ·   ", details);
         T(canvas, caption, icon.Right + 12, rect.Top + 42, FitSize(caption, 13, labelWidth), Muted);
 
         var key = MaterialRow(objectId, row);
         var operation = key is null ? null : loot.Operations.FirstOrDefault(op => op.Row == key);
         string label = operation is not null ? ResultsText("Working") :
+            extracted ? ResultsText("Collect") :
             row.State is { } state and not LootAttemptStates.NotAttempted ? ResultsText(state) :
             row.Kind switch { RowKind.Pilot => ResultsText("Arrest"), RowKind.Consumable => ResultsText("Collect"), _ => ResultsText("Dismantle") };
         bool enabled = row.Enabled && !LootInputBlocked && operation is null;
@@ -89,6 +101,13 @@ internal sealed partial class BattleResultsScreen
     private void DrawLootFooter(SKCanvas canvas)
     {
         _retryBounds = default;
+        _collectAllBounds = default;
+        if (CurrentLoot is { } loot)
+        {
+            _collectAllBounds = new(Contents.Left, ExitBounds.Top, Contents.Left + 200, ExitBounds.Bottom);
+            MenuStyle.DrawButton(canvas, _collectAllBounds, ResultsText("CollectAll"),
+                CanCollectAll(loot) ? ButtonState.Normal : ButtonState.Disabled);
+        }
         if (_lootPresentation.RetryCommand is not null)
         {
             _retryBounds = new(ExitBounds.Left - 220, ExitBounds.Top, ExitBounds.Left - 10, ExitBounds.Bottom);
@@ -103,7 +122,13 @@ internal sealed partial class BattleResultsScreen
     {
         if (_retryBounds.Contains(x, y) && !Flow.Pending && !_lootPresentation.Pending)
         {
-            LastLootAction = _lootPresentation.RetryAsync();
+            LastLootAction = _lootPresentation.RetryCommand is StartLootOperationsCommand { Row: null }
+                ? CollectAllAsync(retry: true) : _lootPresentation.RetryAsync();
+            return true;
+        }
+        if (_collectAllBounds.Contains(x, y) && CurrentLoot is { } loot && CanCollectAll(loot))
+        {
+            LastLootAction = CollectAllAsync();
             return true;
         }
         if (LootInputBlocked || !Contents.Contains(x, y)) return false;
@@ -126,6 +151,24 @@ internal sealed partial class BattleResultsScreen
 
     private Task<bool> SubmitLootRow(string objectId, LootRow row) => _lootPresentation.SubmitAsync(
         (id, revision, battle, _) => MaterialRow(objectId, row) is { } key
-            ? new StartLootOperationsCommand(id, revision, battle, key)
+            ? row.State == LootAttemptStates.ExtractedWaiting ? new ClaimExtractedLootCommand(id, revision, battle, key)
+                : new StartLootOperationsCommand(id, revision, battle, key)
             : new ArrestPilotCommand(id, revision, battle, objectId), needsSource: false);
+
+    private bool CanCollectAll(LootSessionSnapshot loot)
+    {
+        if (LootInputBlocked) return false;
+        var running = loot.Operations.Select(op => op.Row).ToHashSet();
+        return loot.Objects.Any(source => LootRows(source).Any(row => row.State is null or LootAttemptStates.NotAttempted &&
+            MaterialRow(source.ObjectId, row) is { } key && !running.Contains(key)));
+    }
+
+    private async Task<bool> CollectAllAsync(bool retry = false)
+    {
+        bool applied = retry ? await _lootPresentation.RetryAsync() : await _lootPresentation.SubmitAsync(
+            (id, revision, battle, _) => new StartLootOperationsCommand(id, revision, battle), needsSource: false);
+        if (applied && CurrentLoot is { } loot)
+            ImmutableInterlocked.Update(ref _expandedSources, set => set.Union(loot.Operations.Select(op => op.Row.ObjectId)));
+        return applied;
+    }
 }

@@ -77,3 +77,8 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0003-TK-0003-row-progress](../../EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0003-row-progress/EP-0042-US-0003-TK-0003-row-progress.md), [EP-0042-US-0004-TK-0002-cargo-completion](../../EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0002-cargo-completion/EP-0042-US-0004-TK-0002-cargo-completion.md). Точный allowlist и owning test project указаны выше.
+
+## Исполнение
+
+- Bulk повтор при ошибке использует прежнюю identity и после принятия раскрывает карточки операций. Готовый трофей подбирается отдельной командой. Частичная пачка показывает собранное количество.
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли. Тематические тесты следуют на границе истории.
