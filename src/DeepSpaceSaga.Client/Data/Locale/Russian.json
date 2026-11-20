@@ -273,6 +273,7 @@
   "BattleResults.Chance": "Шанс {0}%",
   "BattleResults.Dismantle": "Демонтировать",
   "BattleResults.Collect": "Забрать",
+  "BattleResults.CollectOne": "Забрать 1",
   "BattleResults.Arrest": "Арестовать",
   "BattleResults.CollectAll": "Забрать всё",
   "BattleResults.Collected": "Собрано",

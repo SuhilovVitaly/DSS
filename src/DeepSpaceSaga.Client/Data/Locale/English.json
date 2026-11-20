@@ -273,6 +273,7 @@
   "BattleResults.Chance": "Success {0}%",
   "BattleResults.Dismantle": "Dismantle",
   "BattleResults.Collect": "Collect",
+  "BattleResults.CollectOne": "Collect 1",
   "BattleResults.Arrest": "Arrest",
   "BattleResults.CollectAll": "Collect all",
   "BattleResults.Collected": "Collected",

@@ -29,7 +29,11 @@ public sealed record LootRowKey(string ObjectId, LootRowKind Kind, string EntryI
 
 /// <summary>A null Row requests all eligible material rows. Pilot arrest is a separate command.</summary>
 public sealed record StartLootOperationsCommand(string CommandId, long ExpectedRevision, string BattleId, LootRowKey? Row = null)
-    : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
+    : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? RequestedQuantity { get; init; }
+}
 public sealed record AdvanceLootOperationsCommand(string CommandId, long ExpectedRevision, string BattleId)
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
 public sealed record ClaimExtractedLootCommand(string CommandId, long ExpectedRevision, string BattleId, LootRowKey Row)

@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private sealed record PendingLootOperation(string Id, LootRowKey Row, long DueAtMs, int DurationMs, int Order);
+    private sealed record PendingLootOperation(string Id, LootRowKey Row, long DueAtMs, int DurationMs, int Order, long? RequestedQuantity);
     private readonly Dictionary<LootRowKey, PendingLootOperation> _lootOperations = [];
     internal Func<long> LootClockMilliseconds { get; set; } = () => Environment.TickCount64;
     public bool HasActiveLootOperations { get { lock (_worldStateLock) return _lootOperations.Count != 0; } }
@@ -44,6 +44,9 @@ public sealed partial class SimulationEngine
     private void PrepareStartLootOperations(StartLootOperationsCommand command, ref string? reason, ref Action? commit)
     {
         if (GetTimedLoot(command.BattleId) is not { } loot) { reason = BattleLootReasons.WrongBattle; return; }
+        if (command.RequestedQuantity is { } requested && (command.Row is not { Kind: LootRowKind.Consumable } target ||
+            requested <= 0 || requested > RemainingConsumables(loot, target)))
+        { reason = BattleLootReasons.InvalidQuantity; return; }
         if (command.Row is { } selected && _lootOperations.ContainsKey(selected))
         { reason = BattleLootReasons.OperationsRunning; return; }
         long start = LootClockMilliseconds();
@@ -52,7 +55,8 @@ public sealed partial class SimulationEngine
             .Select(entry =>
             {
                 int duration = LootDuration(entry.Row.Kind);
-                return new PendingLootOperation(command.CommandId + "/" + entry.Order, entry.Row, checked(start + duration), duration, entry.Order);
+                return new PendingLootOperation(command.CommandId + "/" + entry.Order, entry.Row, checked(start + duration),
+                    duration, entry.Order, command.RequestedQuantity);
             }).ToArray();
         if (operations.Length == 0) { reason = BattleLootReasons.InvalidTarget; return; }
         commit = () =>
@@ -72,8 +76,7 @@ public sealed partial class SimulationEngine
         DemoCampaignCommand action = row.Kind switch
         {
             LootRowKind.Consumable => new CollectLootConsumablesCommand(operation.Id, command.ExpectedRevision, command.BattleId,
-                row.ObjectId, row.EntryId, loot.Sources.Single(source => source.ObjectId == row.ObjectId)
-                    .Consumables.Single(item => item.ItemTypeId == row.EntryId).Remaining),
+                row.ObjectId, row.EntryId, Math.Min(operation.RequestedQuantity ?? long.MaxValue, RemainingConsumables(loot, row))),
             LootRowKind.Scrap => new AttemptScrapCommand(operation.Id, command.ExpectedRevision, command.BattleId, row.ObjectId),
             LootRowKind.Module => new AttemptModuleSalvageCommand(operation.Id, command.ExpectedRevision, command.BattleId, row.ObjectId, row.EntryId),
             _ => throw new ArgumentOutOfRangeException(nameof(command))
@@ -88,6 +91,10 @@ public sealed partial class SimulationEngine
             _lootOperations.Remove(row);
         };
     }
+
+    private static long RemainingConsumables(BattleLootData loot, LootRowKey row) =>
+        loot.Sources.FirstOrDefault(source => source.ObjectId == row.ObjectId)?.Consumables
+            .FirstOrDefault(item => item.ItemTypeId == row.EntryId && !item.Destroyed)?.Remaining ?? 0;
 
     private ImmutableArray<LootOperationSnapshot> ProjectLootOperations()
     {

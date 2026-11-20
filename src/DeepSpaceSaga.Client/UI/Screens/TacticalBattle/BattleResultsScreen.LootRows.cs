@@ -11,14 +11,14 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed partial class BattleResultsScreen
 {
-    private readonly List<(SKRect Bounds, string ObjectId, LootRow Row)> _rowHits = [];
+    private readonly List<(SKRect Bounds, string ObjectId, LootRow Row, long? Quantity)> _rowHits = [];
     private SKRect _retryBounds;
     private SKRect _collectAllBounds;
     internal SKRect CollectAllBounds => _collectAllBounds;
     private bool HasLootActivity => Flow.Pending || _lootPresentation.Pending || _lootPresentation.RetryCommand is not null;
     private bool LootInputBlocked => HasLootActivity || SaveLoadInProgress;
     private bool ExitBlocked => LootInputBlocked || CurrentLoot?.Operations.IsEmpty == false;
-    internal IReadOnlyList<(SKRect Bounds, string ObjectId, LootRow Row)> LootActionHits => _rowHits;
+    internal IReadOnlyList<(SKRect Bounds, string ObjectId, LootRow Row, long? Quantity)> LootActionHits => _rowHits;
     internal Task<bool>? LastLootAction { get; private set; }
 
     internal enum RowKind { Consumable, Scrap, Module, Pilot }
@@ -63,9 +63,13 @@ internal sealed partial class BattleResultsScreen
         Round(canvas, icon, Box, BoxEdge);
         var tone = row.Category switch { "weapon" => Yellow, "shield" => Cyan, "armor" => Purple, "pilot" => Green, _ => Muted };
         Diamond(canvas, new(icon.MidX, icon.MidY), 7, tone);
-        float buttonWidth = Math.Min(188, rect.Width * .3f);
+        float buttonWidth = Math.Min(188, rect.Width * .24f);
         var button = new SKRect(rect.Right - buttonWidth - 30, rect.Top + 8, rect.Right - 30, rect.Bottom - 8);
-        float labelWidth = Math.Max(4, button.Left - icon.Right - 24);
+        var key = MaterialRow(objectId, row);
+        var operation = key is null ? null : loot.Operations.FirstOrDefault(op => op.Row == key);
+        bool selectQuantity = row.Kind == RowKind.Consumable && row.Quantity > 1 && operation is null;
+        var one = new SKRect(button.Left - buttonWidth - 8, button.Top, button.Left - 8, button.Bottom);
+        float labelWidth = Math.Max(4, (selectQuantity ? one.Left : button.Left) - icon.Right - 24);
         T(canvas, row.Name, icon.Right + 12, rect.Top + 22, FitSize(row.Name, 16, labelWidth), Text, true);
         var details = new List<string>(4);
         if (row.Quantity is { } quantity) details.Add(ResultsText("Quantity", quantity));
@@ -80,8 +84,6 @@ internal sealed partial class BattleResultsScreen
         string caption = string.Join("   ·   ", details);
         T(canvas, caption, icon.Right + 12, rect.Top + 42, FitSize(caption, 13, labelWidth), Muted);
 
-        var key = MaterialRow(objectId, row);
-        var operation = key is null ? null : loot.Operations.FirstOrDefault(op => op.Row == key);
         string label = operation is not null ? ResultsText("Working") :
             extracted ? ResultsText("Collect") :
             row.State is { } state and not LootAttemptStates.NotAttempted ? ResultsText(state) :
@@ -96,7 +98,13 @@ internal sealed partial class BattleResultsScreen
             if (!fill.IsEmpty) Round(canvas, fill, Yellow, radius: 1);
         }
         var hit = SKRect.Intersect(button, Contents);
-        if (enabled && !hit.IsEmpty) _rowHits.Add((hit, objectId, row));
+        if (enabled && !hit.IsEmpty) _rowHits.Add((hit, objectId, row, null));
+        if (selectQuantity)
+        {
+            Button(canvas, one, ResultsText("CollectOne"), pending: !enabled);
+            var oneHit = SKRect.Intersect(one, Contents);
+            if (enabled && !oneHit.IsEmpty) _rowHits.Add((oneHit, objectId, row, 1));
+        }
     }
 
     private void DrawLootFooter(SKCanvas canvas)
@@ -136,7 +144,7 @@ internal sealed partial class BattleResultsScreen
         foreach (var hit in _rowHits)
         {
             if (!hit.Bounds.Contains(x, y)) continue;
-            LastLootAction = SubmitLootRow(hit.ObjectId, hit.Row);
+            LastLootAction = SubmitLootRow(hit.ObjectId, hit.Row, hit.Quantity);
             return true;
         }
         return false;
@@ -150,10 +158,10 @@ internal sealed partial class BattleResultsScreen
         _ => null
     };
 
-    private Task<bool> SubmitLootRow(string objectId, LootRow row) => _lootPresentation.SubmitAsync(
+    private Task<bool> SubmitLootRow(string objectId, LootRow row, long? quantity) => _lootPresentation.SubmitAsync(
         (id, revision, battle, _) => MaterialRow(objectId, row) is { } key
             ? row.State == LootAttemptStates.ExtractedWaiting ? new ClaimExtractedLootCommand(id, revision, battle, key)
-                : new StartLootOperationsCommand(id, revision, battle, key)
+                : new StartLootOperationsCommand(id, revision, battle, key) { RequestedQuantity = quantity }
             : new ArrestPilotCommand(id, revision, battle, objectId), needsSource: false);
 
     private bool CanCollectAll(LootSessionSnapshot loot)
