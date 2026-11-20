@@ -75,3 +75,8 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0002-TK-0001-station-frame](../../EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0001-station-frame/EP-0042-US-0002-TK-0001-station-frame.md). Точный allowlist и owning test project указаны выше.
+
+## Исполнение
+
+- Именованные карточки строятся в порядке замороженного ledger. Раскрытие сдвигает последующие карточки, прокрутка и hit-test ограничены областью списка.
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли.

@@ -7,7 +7,7 @@ using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
-internal sealed class BattleResultsScreen(TacticalBattleFlow flow, float uiScale)
+internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float uiScale)
     : TacticalBattleModalScreen(flow, isSetup: false, uiScale)
 {
     private SKRect _exitBounds;
@@ -40,6 +40,7 @@ internal sealed class BattleResultsScreen(TacticalBattleFlow flow, float uiScale
         if (Report is { } report) DrawSummary(canvas, report, panel);
         _exitBounds = new(panel.Right - 220, panel.Bottom - 65, panel.Right - 20, panel.Bottom - 20);
         Contents = new(panel.Left + 20, panel.Top + 148, panel.Right - 20, _exitBounds.Top - 36);
+        DrawSources(canvas);
         MenuStyle.DrawButton(canvas, _exitBounds, Localization.Get("TacticalBattle.ToMap"),
             Flow.Pending ? ButtonState.Disabled : ButtonState.Normal);
         if (ConfirmDiscard)
@@ -94,10 +95,20 @@ internal sealed class BattleResultsScreen(TacticalBattleFlow flow, float uiScale
         return requested;
     }
 
-    public override ScreenEvent OnMouseDown(float x, float y, MouseButton button) =>
-        button == MouseButton.Left && _exitBounds.Contains(x, y) ? RequestExit() : ScreenEvent.None;
-    public override bool OnMouseMove(float x, float y) => _exitBounds.Contains(x, y);
-    public override ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    public override ScreenEvent OnMouseDown(float x, float y, MouseButton button)
+    {
+        if (button != MouseButton.Left) return ScreenEvent.None;
+        if (_exitBounds.Contains(x, y)) return RequestExit();
+        if (!ConfirmDiscard && Contents.Contains(x, y)) ToggleSource(x, y);
+        return ScreenEvent.None;
+    }
+    public override bool OnMouseMove(float x, float y) => _exitBounds.Contains(x, y) || Contents.Contains(x, y);
+    public override ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        if (!ConfirmDiscard && Contents.Contains(x, y) && float.IsFinite(delta))
+            _scroll = Math.Clamp(_scroll + delta, 0, _maxScroll);
+        return ScreenEvent.None;
+    }
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
         if (Flow.Pending || repeat || modifiers != KeyModifiers.None) return ScreenEvent.None;
