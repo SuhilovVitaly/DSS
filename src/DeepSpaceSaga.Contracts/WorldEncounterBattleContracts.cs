@@ -19,7 +19,10 @@ public sealed record BattleResultsSnapshot(string BattleId, BattleResultsStage S
     TacticalOutcomeSnapshot Outcome, bool CanLoot, bool? PlayerCarrierDestroyed)
 {
     public int? ConsumedTorpedoes { get; init; }
+    public BattleResultsCapacitySnapshot? Capacity { get; init; }
 }
+
+public sealed record BattleResultsCapacitySnapshot(long FreeCargoKg, int FreePrisonerCabins);
 
 public static class WorldEncounterPhases
 {

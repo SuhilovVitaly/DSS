@@ -35,6 +35,7 @@ public sealed record LootSessionSnapshot(string BattleId, string Phase, Immutabl
 {
     public ImmutableArray<LootCargoSnapshot> Cargo { get; init; } = [];
     public long FreeCargoKg { get; init; }
+    public int? FreePrisonerCabins { get; init; }
     public ImmutableArray<LootOperationSnapshot> Operations { get; init; } = [];
 }
 public sealed record LootCargoSnapshot(string ItemTypeId, long Quantity, long UnitMassKg, long QuantityStep);

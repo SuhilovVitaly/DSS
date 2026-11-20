@@ -71,3 +71,8 @@ dotnet format src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj --verif
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0003-TK-0001-operation-contract](../../EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0001-operation-contract/EP-0042-US-0003-TK-0001-operation-contract.md). Точный allowlist и owning test project указаны выше.
+
+## Исполнение
+
+- Контракт отличает явный ноль доступных кают от отсутствующего поля старого снимка. Для исходов без лута предусмотрена опциональная пара показателей собственного носителя.
+- Сборка Contracts Tests, scoped whitespace format и `git diff --check` прошли.
