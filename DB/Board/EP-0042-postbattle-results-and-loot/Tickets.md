@@ -13,10 +13,10 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0001-TK-0003-summary-shell](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0003-summary-shell/EP-0042-US-0001-TK-0003-summary-shell.md) | Опубликован, US-0001 PASS | 1f758f9c60a28415fc5799bdc598c84f7bea4e0f |
 | [EP-0042-US-0001-TK-0004-results-contract](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0004-results-contract/EP-0042-US-0001-TK-0004-results-contract.md) | Опубликован, US-0001 PASS | 224e1341e730d6b4d5a553af5417054953cf429e |
 | [EP-0042-US-0001-TK-0005-outcome-lifecycle](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0005-outcome-lifecycle/EP-0042-US-0001-TK-0005-outcome-lifecycle.md) | Опубликован, US-0001 PASS | 39d839bf3e01ca0000a56ad00e8dc0bcfd30f818 |
-| [EP-0042-US-0002-TK-0001-station-frame](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0001-station-frame/EP-0042-US-0002-TK-0001-station-frame.md) | Ожидает | — |
-| [EP-0042-US-0002-TK-0002-source-accordion](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0002-source-accordion/EP-0042-US-0002-TK-0002-source-accordion.md) | Ожидает | — |
-| [EP-0042-US-0002-TK-0003-loot-rows](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0003-loot-rows/EP-0042-US-0002-TK-0003-loot-rows.md) | Ожидает | — |
-| [EP-0042-US-0002-TK-0004-results-localization](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0004-results-localization/EP-0042-US-0002-TK-0004-results-localization.md) | Ожидает | — |
+| [EP-0042-US-0002-TK-0001-station-frame](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0001-station-frame/EP-0042-US-0002-TK-0001-station-frame.md) | Опубликован, US-0002 PASS | 2ad8f868580894a78b81b3532975f03129a20d30 |
+| [EP-0042-US-0002-TK-0002-source-accordion](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0002-source-accordion/EP-0042-US-0002-TK-0002-source-accordion.md) | Опубликован, US-0002 PASS | da3d1ae69b4066b58fb5ab9959b450f5555ab525 |
+| [EP-0042-US-0002-TK-0003-loot-rows](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0003-loot-rows/EP-0042-US-0002-TK-0003-loot-rows.md) | Опубликован, US-0002 PASS | 36c37aa6e9d0d7009427947e5fbe421cfd79b2e0 |
+| [EP-0042-US-0002-TK-0004-results-localization](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0004-results-localization/EP-0042-US-0002-TK-0004-results-localization.md) | Опубликован, US-0002 PASS | 4975bc3192fe93f6e1d4a0bec6f458950e41dc4a |
 | [EP-0042-US-0003-TK-0001-operation-contract](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0001-operation-contract/EP-0042-US-0003-TK-0001-operation-contract.md) | Ожидает | — |
 | [EP-0042-US-0003-TK-0002-single-engine](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0002-single-engine/EP-0042-US-0003-TK-0002-single-engine.md) | Ожидает | — |
 | [EP-0042-US-0003-TK-0003-row-progress](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0003-row-progress/EP-0042-US-0003-TK-0003-row-progress.md) | Ожидает | — |
@@ -44,3 +44,8 @@ Headless Contracts 4/4, Engine 3/3, Client 8/8 прошли по фильтра�
 ## План проверок US-0002
 
 Client Tests: `EP0042Us0002` — две локали, геометрия станции, независимое раскрытие, обрезка hit-test, исходные поля модулей и строки пилотов. Проверки используют raster canvas и headless-сессию.
+
+## Результат US-0002
+
+Headless Client Tests 5/5 прошли по фильтру EP0042Us0002. Self-review сверил геометрию, границы ввода и связь строк с авторитетными командами.
+[Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-125936-418-us0002>).
