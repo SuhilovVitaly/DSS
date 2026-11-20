@@ -113,7 +113,7 @@ public sealed partial class SimulationEngine
         BuildDemoTransportProjection(), BuildPirateGroupsProjection(), BuildDemoRewardsProjection(),
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
         BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes(), DemoDebugSettings)
-    { BattleResults = _frozenBattleResults?.Results };
+    { BattleResults = BuildBattleResultsProjection() };
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign with
     {

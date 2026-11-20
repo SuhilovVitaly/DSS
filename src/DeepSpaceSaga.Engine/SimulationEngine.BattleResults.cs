@@ -12,6 +12,17 @@ public sealed partial class SimulationEngine
     private TacticalBattleSnapshot? FrozenBattleMap => BattleResultsPending ? _frozenBattleResults!.Map
         : LootOpen ? _demoCampaign.LootSession!.Map : null;
 
+    private BattleResultsSnapshot? BuildBattleResultsProjection()
+    {
+        if (_frozenBattleResults is not { } frozen) return null;
+        if (!BattleResultsPending || !frozen.Results.CanLoot && frozen.Map.SourceShipId is null) return frozen.Results;
+        var ship = _objects.FirstOrDefault(obj => obj.InitialMotion.ObjectId == PlayerShipObjectId && !obj.IsDestroyed);
+        return ship is null ? frozen.Results : frozen.Results with
+        {
+            Capacity = new(PlayerFreeHoldKg(ship), GetAvailablePrisonerCabins(ship, _demoCampaign))
+        };
+    }
+
     private SortieSettlementSnapshot? FreezeBattleResults()
     {
         var session = _tacticalBattleSession!;
@@ -67,8 +78,6 @@ public sealed partial class SimulationEngine
         { reason = BattleLootReasons.WrongBattle; return; }
         if (frozen.Results.Stage != BattleResultsStage.Open)
         { reason = BattleLootReasons.LootClosed; return; }
-        if (_lootOperations.Count != 0)
-        { reason = BattleLootReasons.OperationsRunning; return; }
         if (frozen.Results.CanLoot)
         {
             PrepareFinishBattleLoot(new(command.CommandId, command.ExpectedRevision, command.BattleId, command.ConfirmDiscard),

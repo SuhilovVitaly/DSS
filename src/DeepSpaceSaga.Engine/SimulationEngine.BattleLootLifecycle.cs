@@ -29,6 +29,7 @@ public sealed partial class SimulationEngine
         if (candidate.LootSession is not { } loot || loot.BattleId != command.BattleId)
         { reason = BattleLootReasons.WrongBattle; return; }
         if (loot.Phase != LootPhases.Open) { reason = BattleLootReasons.LootClosed; return; }
+        if (_lootOperations.Count != 0) { reason = BattleLootReasons.OperationsRunning; return; }
         if (!command.ConfirmDiscard && BuildBattleLootProjection()!.HasUnclaimed)
         { reason = BattleLootReasons.ConfirmDiscardRequired; return; }
         // Keep frozen remaining quantities and outcomes as the discarded audit; Closed makes

@@ -198,7 +198,12 @@ public sealed partial class SimulationEngine
         return new(loot.BattleId, loot.Phase, objects, open && objects.Any(s =>
             s.Consumables.Any(c => c.Remaining > 0) || IsUnclaimedAttempt(s.Scrap?.State) ||
             s.Modules.Any(m => IsUnclaimedAttempt(m.State)) || s.Pilot is { Alive: true, Captured: false }))
-        { Cargo = BuildLootCargo(), FreeCargoKg = freeMass, Operations = ProjectLootOperations() };
+        {
+            Cargo = BuildLootCargo(),
+            FreeCargoKg = freeMass,
+            FreePrisonerCabins = ship is null ? null : freeCabins,
+            Operations = ProjectLootOperations()
+        };
     }
 
     private static bool IsUnclaimedAttempt(string? state) =>

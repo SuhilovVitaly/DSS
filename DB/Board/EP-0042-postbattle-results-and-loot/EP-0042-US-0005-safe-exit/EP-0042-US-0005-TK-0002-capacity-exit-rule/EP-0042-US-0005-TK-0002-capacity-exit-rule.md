@@ -77,3 +77,12 @@ dotnet format src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0004-TK-0002-cargo-completion](../../EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0002-cargo-completion/EP-0042-US-0004-TK-0002-cargo-completion.md), [EP-0042-US-0005-TK-0001-capacity-contract](../../EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0001-capacity-contract/EP-0042-US-0005-TK-0001-capacity-contract.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+`SimulationEngine.BattleResults.cs` публикует пару показателей и для живого собственного носителя после исходов без права на лут. Отдельный справочник кают не вводится. Gate операций перенесён в общий Engine-переход закрытия ledger.
+
+## Исполнение
+
+- Счётчик использует общие исправные каюты, пассажирские резервы и реальных пленных. Закрытие ledger требует окончания операций и подтверждения при остатках. Управляемое окно не принимает команду выброса.
+- Повторная сборка Engine Tests, scoped whitespace format и `git diff --check` прошли.
