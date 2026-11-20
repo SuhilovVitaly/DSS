@@ -47,11 +47,14 @@ public sealed partial class SimulationEngine
             Action? commit = null;
             if (command.ExpectedRevision != _demoCampaign.Revision) reason = DemoCampaignReasons.StaleRevision;
             else if (_tacticalBattleSession is not null && command is not SetLootDebugRequest) reason = DemoCampaignReasons.BattleActive;
-            else if (LootOpen && command is not (ILootCampaignCommand or SetLootDebugRequest)) reason = DemoCampaignReasons.BattleActive;
+            else if (BattleResultsPending && !IsBattleResultsCommandAllowed(command)) reason = DemoCampaignReasons.BattleActive;
+            else if (LootOpen && command is not (ILootCampaignCommand or OpenBattleResultsCommand or AcknowledgeBattleResultsCommand or SetLootDebugRequest))
+                reason = DemoCampaignReasons.BattleActive;
             else if (_encounterStoragePending) reason = "encounter_checkpoint_pending";
             else if (HasCapturedEncounter && command is not (BeginEncounterBattleCommand or DismissSensorContactReportRequest or SetFogOfWarRequest or SetLootDebugRequest))
                 reason = "encounter_captured";
-            else if (_objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
+            else if (command is not (OpenBattleResultsCommand or AcknowledgeBattleResultsCommand) &&
+                _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
                 reason = DemoCampaignReasons.CarrierDestroyed;
             else
                 PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason, ref commit);
@@ -77,8 +80,11 @@ public sealed partial class SimulationEngine
             ValidateDemoCampaignSections(candidate, Math.Max(_clock.GameTimeMs, candidate.LastTickGameTimeMs));
             if (applied) commit?.Invoke();
             _demoCampaign = candidate;
-            response = response with { Rewards = BuildDemoRewardsProjection() };
-            _demoCampaign = candidate with { Receipts = candidate.Receipts.SetItem(candidate.Receipts.Length - 1, new(hash, sequence, response)) };
+            if (applied && command is BeginEncounterBattleCommand { RequireBattleResults: true } &&
+                _tacticalBattleSession?.Phase == TacticalBattlePhase.Over)
+                FreezeBattleResults();
+            response = response with { Rewards = BuildDemoRewardsProjection(), Revision = _demoCampaign.Revision };
+            _demoCampaign = _demoCampaign with { Receipts = _demoCampaign.Receipts.SetItem(_demoCampaign.Receipts.Length - 1, new(hash, sequence, response)) };
             newlyApplied = applied;
             return response;
         }
@@ -86,7 +92,7 @@ public sealed partial class SimulationEngine
 
     private void TickDemoCampaign(long gameTimeMs)
     {
-        if (LootOpen) return;
+        if (LootOpen || BattleResultsPending) return;
         ObservePirateGroups(gameTimeMs);
         PublishCapturedEncounter();
         OpenPendingSensorReport(_processedSimulationTimeMs);
@@ -106,7 +112,8 @@ public sealed partial class SimulationEngine
         _demoCampaign.Revision, _demoCampaign.CommitSequence, BuildDemoCompanyProjection(),
         BuildDemoTransportProjection(), BuildPirateGroupsProjection(), BuildDemoRewardsProjection(),
         _demoCampaign.Progression, _demoCampaign.Story, BuildDemoStartProjection(), BuildPlayerSensorProjection(),
-        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes(), DemoDebugSettings);
+        BuildSensorOperatorProjection(), new(DemoDebugSettings.FogOfWar), _demoCampaign.PendingSensorReport, BuildWorldEncounterProjection(), BuildThreatRoutes(), DemoDebugSettings)
+    { BattleResults = _frozenBattleResults?.Results };
 
     private DemoCampaignData CaptureDemoCampaignState() => _demoCampaign with
     {
@@ -122,6 +129,12 @@ public sealed partial class SimulationEngine
         handled = true;
         switch (command)
         {
+            case OpenBattleResultsCommand open:
+                PrepareOpenBattleResults(open, ref reason, ref commit);
+                break;
+            case AcknowledgeBattleResultsCommand acknowledge:
+                PrepareAcknowledgeBattleResults(acknowledge, ref candidate, ref reason, ref commit);
+                break;
             case SetLootDebugRequest debug:
                 if (debug.EngineerBonusPp is not (null or 0 or >= 10 and <= 15) ||
                     debug.DestructionRolls is not ("auto" or "keep" or "destroy") || debug.Attempts is not ("auto" or "success" or "fail"))

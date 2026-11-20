@@ -566,6 +566,8 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.AddRange(runtimeObjects);
             RestoreCarrierState(gs);
             _demoCampaign = restoredDemoCampaign;
+            _frozenBattleResults = null;
+            _requireBattleResults = false;
             InitializeCrewUpkeep(gs.GameTimeMs);
             _appliedMotionTimeMs = gs.MotionTimeMs;
             _processedWorldTimeMs = gs.GameTimeMs;

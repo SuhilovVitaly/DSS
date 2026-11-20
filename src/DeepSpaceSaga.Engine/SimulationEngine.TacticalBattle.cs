@@ -17,6 +17,7 @@ public sealed partial class SimulationEngine
     }
     private TacticalBattleSession? _tacticalBattleSession;
     private string? _tacticalBattleSourceShipId;
+    private bool _requireBattleResults;
     // ReceiveCommand's view of the battle, guarded by _commandGate so sending a world command never
     // waits for _worldStateLock. Written only together with _tacticalBattleSession (world lock held).
     private bool _tacticalBattleCommandBlock;
@@ -45,7 +46,7 @@ public sealed partial class SimulationEngine
     }
     public TacticalBattleSnapshot? GetTacticalBattleState()
     {
-        lock (_worldStateLock) return _tacticalBattleSession?.Capture() ?? (LootOpen ? _demoCampaign.LootSession!.Map : null);
+        lock (_worldStateLock) return _tacticalBattleSession?.Capture() ?? FrozenBattleMap;
     }
 
     public TacticalBattleResponse StartTacticalBattle(StartTacticalBattleRequest request)
@@ -68,6 +69,7 @@ public sealed partial class SimulationEngine
             var session = TacticalBattleSession.TryCreate(catalog, request, out var code);
             if (session is null) return RejectTactical(request.CommandId, code);
             _tacticalBattleSession = session;
+            _requireBattleResults = request.RequireBattleResults;
             SetTacticalBattleCommandBlock(true);
             return session.Initial(request.CommandId);
         });
@@ -121,6 +123,7 @@ public sealed partial class SimulationEngine
         var session = TacticalBattleSession.Create(battle, request.CommandId, playerSide);
         _tacticalBattleSession = session;
         _tacticalBattleSourceShipId = sourceShipId;
+        _requireBattleResults = request.RequireBattleResults;
         SetTacticalBattleCommandBlock(true);
         return session.Initial(request.CommandId);
     }
@@ -151,6 +154,8 @@ public sealed partial class SimulationEngine
         if (request is null) { lock (_worldStateLock) return RejectTactical("", TacticalBattleRejectionCode.InvalidRequest); }
         return ExecuteTactical(request.CommandId, request, () =>
         {
+            if (BattleResultsPending || _requireBattleResults && _tacticalBattleSession?.Phase == TacticalBattlePhase.Over)
+                return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongPhase);
             if (LootOpen) return RejectTactical(request.CommandId, request.BattleId == _demoCampaign.LootSession!.BattleId
                 ? TacticalBattleRejectionCode.WrongPhase : TacticalBattleRejectionCode.WrongBattle);
             if (_tacticalBattleSession is null) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.NoBattle);
@@ -173,6 +178,7 @@ public sealed partial class SimulationEngine
             var response = session.Exit(request.CommandId) with { Settlement = settlement };
             _tacticalBattleSession = null;
             _tacticalBattleSourceShipId = null;
+            _requireBattleResults = false;
             SetTacticalBattleCommandBlock(false);
             _tacticalResponses.Clear();
             _tacticalResponseOrder.Clear();
@@ -194,8 +200,13 @@ public sealed partial class SimulationEngine
                 return new(commandId, false, TacticalBattleRejectionCode.ReceiptExpired, _tacticalBattleSession?.Phase, null, []);
             }
             var response = apply();
-            if (BeginPostBattleLoot() is { } settlement)
-                response = response with { Settlement = settlement, State = _demoCampaign.LootSession!.Map };
+            if (_requireBattleResults && _tacticalBattleSession?.Phase == TacticalBattlePhase.Over)
+            {
+                var settlement = FreezeBattleResults();
+                response = response with { Settlement = settlement, State = FrozenBattleMap };
+            }
+            else if (BeginPostBattleLoot() is { } legacySettlement)
+                response = response with { Settlement = legacySettlement, State = FrozenBattleMap };
             _tacticalIdentities.Add(commandId, identity);
             if (_tacticalResponseOrder.Count == TacticalResponseLimit)
                 _tacticalResponses.Remove(_tacticalResponseOrder.Dequeue());
@@ -231,5 +242,5 @@ public sealed partial class SimulationEngine
 
     private TacticalBattleResponse RejectTactical(string commandId, TacticalBattleRejectionCode code) =>
         _tacticalBattleSession?.Reject(commandId, code) ?? new(commandId, false, code,
-            LootOpen ? TacticalBattlePhase.Over : null, LootOpen ? _demoCampaign.LootSession!.Map : null, []);
+            FrozenBattleMap?.Phase, FrozenBattleMap, []);
 }

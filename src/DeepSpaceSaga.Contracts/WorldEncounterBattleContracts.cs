@@ -1,10 +1,16 @@
+using System.Text.Json.Serialization;
+
 namespace DeepSpaceSaga.Contracts;
 
 public sealed record WorldBattleBinding(string BattleId, string EncounterId, string GroupId);
 public sealed record WorldEncounterSnapshot(WorldBattleBinding Binding, string Phase, bool CanContinue,
     string? UnavailableReason = null);
 public sealed record BeginEncounterBattleCommand(string CommandId, long ExpectedRevision, string EncounterId)
-    : DemoCampaignCommand(CommandId, ExpectedRevision);
+    : DemoCampaignCommand(CommandId, ExpectedRevision)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool RequireBattleResults { get; init; }
+}
 
 public enum BattleResultsStage { AwaitingOpen, Open, Acknowledged }
 

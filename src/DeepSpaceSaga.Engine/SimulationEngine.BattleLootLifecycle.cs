@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Engine;
 public sealed partial class SimulationEngine
 {
     private bool LootOpen => _demoCampaign.LootSession?.Phase == LootPhases.Open;
-    private bool CombatOrLootOpen => _tacticalBattleSession is not null || LootOpen;
+    private bool CombatOrLootOpen => _tacticalBattleSession is not null || LootOpen || BattleResultsPending;
 
     private SortieSettlementSnapshot? BeginPostBattleLoot()
     {

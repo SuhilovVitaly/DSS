@@ -77,3 +77,12 @@ dotnet format src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0001-TK-0004-results-contract](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0004-results-contract/EP-0042-US-0001-TK-0004-results-contract.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+Текущий `ExecuteTactical` сразу замораживает выигранную встречу. Расширяем allowlist на контракты запуска и `SimulationEngine.WorldEncounterBattle.cs`, чтобы новый клиент мог включить обязательное подтверждение при старте обоих типов боя. Legacy-вызовы сохраняют прежний маршрут. Боевые действия по-прежнему возвращают settlement при завершении. Именованный тест проверяет обе ветки выдачи по реальной встрече.
+
+## Исполнение
+
+- Обязательный режим выбирается новым клиентом при старте боя. Движок замораживает исход и однократно рассчитывает потери. Выход до подтверждения отклоняется.
+- Сборка Engine Tests, scoped whitespace format и `git diff --check` прошли. Именованные тесты запланированы на завершение US-0001. Восстановление стадий из сохранения остаётся задачей US-0006.

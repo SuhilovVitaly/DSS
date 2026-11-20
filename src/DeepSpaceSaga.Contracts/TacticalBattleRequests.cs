@@ -13,6 +13,8 @@ public sealed record StartTacticalBattleRequest(string CommandId, long Seed, str
     public string? SourceShipId { get; init; }
     /// <summary>Expected carrier revision for optimistic concurrency; 0 is not a wildcard.</summary>
     public int ExpectedCarrierRevision { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool RequireBattleResults { get; init; }
 }
 public sealed record MoveTacticalBattleRequest(string CommandId, string BattleId, ulong ExpectedRevision,
     [property: JsonConverter(typeof(TacticalArrayJsonConverter<TacticalDroneOrder>))] ImmutableArray<TacticalDroneOrder> Orders = default);

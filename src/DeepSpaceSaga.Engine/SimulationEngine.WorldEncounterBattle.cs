@@ -128,6 +128,7 @@ public sealed partial class SimulationEngine
         {
             _tacticalBattleSession = session;
             _tacticalBattleSourceShipId = PlayerShipObjectId;
+            _requireBattleResults = command.RequireBattleResults;
             SetTacticalBattleCommandBlock(true);
         };
     }
