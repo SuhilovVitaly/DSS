@@ -16,7 +16,10 @@ public enum BattleResultsStage { AwaitingOpen, Open, Acknowledged }
 
 /// <summary>A confirmed terminal battle outcome, independent of loot eligibility.</summary>
 public sealed record BattleResultsSnapshot(string BattleId, BattleResultsStage Stage, string PlayerSide,
-    TacticalOutcomeSnapshot Outcome, bool CanLoot, bool? PlayerCarrierDestroyed);
+    TacticalOutcomeSnapshot Outcome, bool CanLoot, bool? PlayerCarrierDestroyed)
+{
+    public int? ConsumedTorpedoes { get; init; }
+}
 
 public static class WorldEncounterPhases
 {

@@ -267,6 +267,7 @@
   "TacticalBattle.NewBattle": "Новый бой",
   "TacticalBattle.ToMap": "На карту",
   "TacticalBattle.Results": "Результаты боя",
+  "TacticalBattle.Results.Torpedoes": "Израсходовано торпед {0}",
   "TacticalBattle.Waiting": "Ожидание ответа сессии…",
   "TacticalBattle.Loading": "Загрузка вариантов боя…",
   "TacticalBattle.Unavailable": "Тактический бой недоступен.",

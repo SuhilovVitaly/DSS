@@ -24,18 +24,23 @@ public sealed partial class SimulationEngine
             settlement = CommitSortieOutcome(session, MapSortieExitKind(result.Kind, result.Reasons));
         }
 
-        _frozenBattleResults = CreateFrozenResults(map, canLoot, BattleResultsStage.AwaitingOpen);
+        _frozenBattleResults = CreateFrozenResults(map, canLoot, BattleResultsStage.AwaitingOpen, settlement?.ConsumedTorpedoes);
         _tacticalBattleSession = null;
         _tacticalBattleSourceShipId = null;
         _requireBattleResults = false;
         return settlement;
     }
 
-    private static FrozenBattleResults CreateFrozenResults(TacticalBattleSnapshot map, bool canLoot, BattleResultsStage stage)
+    private static FrozenBattleResults CreateFrozenResults(TacticalBattleSnapshot map, bool canLoot, BattleResultsStage stage,
+        int? consumedTorpedoes = null)
     {
         var carrier = map.Units.FirstOrDefault(unit => unit.Kind == TacticalUnitKind.Carrier && unit.Side == map.PlayerSide);
-        return new(map, new(map.BattleId, stage, map.PlayerSide, map.Outcome!, canLoot,
-            carrier is null ? null : carrier.Hull <= 0));
+        var results = new BattleResultsSnapshot(map.BattleId, stage, map.PlayerSide, map.Outcome!, canLoot,
+            carrier is null ? null : carrier.Hull <= 0)
+        {
+            ConsumedTorpedoes = consumedTorpedoes
+        };
+        return new(map, results);
     }
 
     private bool IsBattleResultsCommandAllowed(DemoCampaignCommand command) =>

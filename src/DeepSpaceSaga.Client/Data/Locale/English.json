@@ -267,6 +267,7 @@
   "TacticalBattle.NewBattle": "New battle",
   "TacticalBattle.ToMap": "Back to map",
   "TacticalBattle.Results": "Battle Results",
+  "TacticalBattle.Results.Torpedoes": "Torpedoes expended {0}",
   "TacticalBattle.Waiting": "Waiting for the session…",
   "TacticalBattle.Loading": "Loading battle options…",
   "TacticalBattle.Unavailable": "Tactical battle is unavailable.",

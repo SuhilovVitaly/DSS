@@ -8,11 +8,11 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 
 | Тикет | Состояние | Опубликованный SHA |
 |---|---|---|
-| [EP-0042-US-0001-TK-0001-entry-label](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0001-entry-label/EP-0042-US-0001-TK-0001-entry-label.md) | Ожидает | — |
-| [EP-0042-US-0001-TK-0002-mandatory-route](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0002-mandatory-route/EP-0042-US-0001-TK-0002-mandatory-route.md) | Ожидает | — |
+| [EP-0042-US-0001-TK-0001-entry-label](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0001-entry-label/EP-0042-US-0001-TK-0001-entry-label.md) | Опубликован, тесты на границе US-0001 | a07dc8b203f2c1defb2ddf6c9d61117237b0a5c3 |
+| [EP-0042-US-0001-TK-0002-mandatory-route](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0002-mandatory-route/EP-0042-US-0001-TK-0002-mandatory-route.md) | Опубликован, тесты на границе US-0001 | ebcf028a11565af6137b94d71268f679a0db7b8b |
 | [EP-0042-US-0001-TK-0003-summary-shell](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0003-summary-shell/EP-0042-US-0001-TK-0003-summary-shell.md) | Ожидает | — |
-| [EP-0042-US-0001-TK-0004-results-contract](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0004-results-contract/EP-0042-US-0001-TK-0004-results-contract.md) | Ожидает | — |
-| [EP-0042-US-0001-TK-0005-outcome-lifecycle](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0005-outcome-lifecycle/EP-0042-US-0001-TK-0005-outcome-lifecycle.md) | Ожидает | — |
+| [EP-0042-US-0001-TK-0004-results-contract](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0004-results-contract/EP-0042-US-0001-TK-0004-results-contract.md) | Опубликован, тесты на границе US-0001 | 224e1341e730d6b4d5a553af5417054953cf429e |
+| [EP-0042-US-0001-TK-0005-outcome-lifecycle](EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0005-outcome-lifecycle/EP-0042-US-0001-TK-0005-outcome-lifecycle.md) | Опубликован, тесты на границе US-0001 | 39d839bf3e01ca0000a56ad00e8dc0bcfd30f818 |
 | [EP-0042-US-0002-TK-0001-station-frame](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0001-station-frame/EP-0042-US-0002-TK-0001-station-frame.md) | Ожидает | — |
 | [EP-0042-US-0002-TK-0002-source-accordion](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0002-source-accordion/EP-0042-US-0002-TK-0002-source-accordion.md) | Ожидает | — |
 | [EP-0042-US-0002-TK-0003-loot-rows](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0003-loot-rows/EP-0042-US-0002-TK-0003-loot-rows.md) | Ожидает | — |
@@ -30,3 +30,9 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0006-TK-0002-checkpoint-transport](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0002-checkpoint-transport/EP-0042-US-0006-TK-0002-checkpoint-transport.md) | Ожидает | — |
 | [EP-0042-US-0006-TK-0003-load-routing](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0003-load-routing/EP-0042-US-0006-TK-0003-load-routing.md) | Ожидает | — |
 | [EP-0042-US-0007-TK-0001-docs-and-graph](EP-0042-US-0007-project-documentation/EP-0042-US-0007-TK-0001-docs-and-graph/EP-0042-US-0007-TK-0001-docs-and-graph.md) | Ожидает | — |
+
+## План проверок US-0001
+
+- Contracts Tests: `BattleResultsContract_FourOutcomesAndLegacyDefaults` — формы исхода, отсутствие секции в старом payload.
+- Engine Tests: `BattleResultsLifecycle_SettlesOnceAndNeverAwardsDefeat` и `Ep0035Us15Tk3Tests` — обязательный режим, settlement и совместимость прежнего транспорта на границе реального мира.
+- Client Tests: `PostbattleResults`, `BattleAndResultsReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed` — ввод, сводка, modal stack, поддержка Classic/Tabletop и гибель носителя без нативного окна.

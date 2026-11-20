@@ -264,7 +264,7 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (command is ILootCampaignCommand or AcknowledgeBattleResultsCommand)
+        if (command is ILootCampaignCommand or OpenBattleResultsCommand or AcknowledgeBattleResultsCommand)
         {
             await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try

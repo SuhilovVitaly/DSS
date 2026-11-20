@@ -73,3 +73,12 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0001-TK-0002-mandatory-route](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0002-mandatory-route/EP-0042-US-0001-TK-0002-mandatory-route.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+В минимальную модаль из TK-0002 добавляется сводка. Контракт и движок также передают подтверждённый расход торпед собственного вылета. LocalClient перед открытием сводки повторяет незавершённый checkpoint победного хода, если запись ранее сорвалась.
+
+## Исполнение
+
+- Сводка выводит исход, ходы, попадания, потери по сторонам и подтверждённый расход торпед. Право на добычу проверяется по совпадающему BattleId.
+- Повторная сборка Client Tests, scoped whitespace format и `git diff --check` прошли. Тематические тесты запланированы на завершение US-0001.
