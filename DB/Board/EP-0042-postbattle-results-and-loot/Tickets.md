@@ -17,10 +17,10 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0002-TK-0002-source-accordion](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0002-source-accordion/EP-0042-US-0002-TK-0002-source-accordion.md) | Опубликован, US-0002 PASS | da3d1ae69b4066b58fb5ab9959b450f5555ab525 |
 | [EP-0042-US-0002-TK-0003-loot-rows](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0003-loot-rows/EP-0042-US-0002-TK-0003-loot-rows.md) | Опубликован, US-0002 PASS | 36c37aa6e9d0d7009427947e5fbe421cfd79b2e0 |
 | [EP-0042-US-0002-TK-0004-results-localization](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0004-results-localization/EP-0042-US-0002-TK-0004-results-localization.md) | Опубликован, US-0002 PASS | 4975bc3192fe93f6e1d4a0bec6f458950e41dc4a |
-| [EP-0042-US-0003-TK-0001-operation-contract](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0001-operation-contract/EP-0042-US-0003-TK-0001-operation-contract.md) | Ожидает | — |
-| [EP-0042-US-0003-TK-0002-single-engine](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0002-single-engine/EP-0042-US-0003-TK-0002-single-engine.md) | Ожидает | — |
-| [EP-0042-US-0003-TK-0003-row-progress](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0003-row-progress/EP-0042-US-0003-TK-0003-row-progress.md) | Ожидает | — |
-| [EP-0042-US-0003-TK-0004-open-revision](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0004-open-revision/EP-0042-US-0003-TK-0004-open-revision.md) | Ожидает | — |
+| [EP-0042-US-0003-TK-0001-operation-contract](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0001-operation-contract/EP-0042-US-0003-TK-0001-operation-contract.md) | Опубликован, US-0003 PASS | 0e07ddf8a36ceab127df768afe241ab31dc639f2 |
+| [EP-0042-US-0003-TK-0002-single-engine](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0002-single-engine/EP-0042-US-0003-TK-0002-single-engine.md) | Опубликован, US-0003 PASS | 233f0164de1ec4210819ee98563cb01f094cd234 |
+| [EP-0042-US-0003-TK-0003-row-progress](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0003-row-progress/EP-0042-US-0003-TK-0003-row-progress.md) | Опубликован, US-0003 PASS | 8d680b7b469708e441777dc1a81c01796ba7db3e |
+| [EP-0042-US-0003-TK-0004-open-revision](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0004-open-revision/EP-0042-US-0003-TK-0004-open-revision.md) | Опубликован, US-0003 PASS | 4ad742b9cf009acc6d3396e35f3eb84ff49e8f06 |
 | [EP-0042-US-0004-TK-0001-bulk-order](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0001-bulk-order/EP-0042-US-0004-TK-0001-bulk-order.md) | Ожидает | — |
 | [EP-0042-US-0004-TK-0002-cargo-completion](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0002-cargo-completion/EP-0042-US-0004-TK-0002-cargo-completion.md) | Ожидает | — |
 | [EP-0042-US-0004-TK-0003-bulk-action](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0003-bulk-action/EP-0042-US-0004-TK-0003-bulk-action.md) | Ожидает | — |
@@ -54,3 +54,8 @@ Headless Client Tests 5/5 прошли по фильтру EP0042Us0002. Self-re
 ## План проверок US-0003
 
 Contracts, Engine и Client Tests: фильтр `EP0042Us0003` в каждом проекте. Проверяются совместимость DTO, сроки и однократный RNG, неподвижность мира, запуск из строки и завершение при свёрнутой карточке.
+
+## Результат US-0003
+
+Contracts 1/1 и Engine 3/3 прошли в первом прогоне: D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-130609-766-us0003. Client выявил гонку первой команды, исправленную в TK-0004. Повтор Client 1/1 прошёл. Сроки, порядок источников и завершение при свёрнутой карточке проверены без игрового окна.
+[Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-130858-993-us0003-rerun>).
