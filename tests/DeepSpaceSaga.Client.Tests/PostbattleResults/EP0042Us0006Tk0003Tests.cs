@@ -56,6 +56,8 @@ public sealed class EP0042Us0006Tk0003Tests
 
             using var bitmap = new SKBitmap(1280, 720);
             using var canvas = new SKCanvas(bitmap);
+            Assert.Equal(BattleResultsScreen.LootStep.Pilots, results.CurrentStep);
+            Assert.Equal(ScreenEvent.None, results.OnKeyDown(Key.Enter));
             results.Render(canvas, bitmap.Width, bitmap.Height);
             results.OnMouseDown(results.CollectAllBounds.MidX, results.CollectAllBounds.MidY, MouseButton.Left);
             Assert.True(await results.LastLootAction!);

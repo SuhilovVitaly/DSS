@@ -75,13 +75,17 @@ public sealed class DemoEp0034Us0006Tk0002Tests
         engine.SetSpeed(SimulationSpeed.Speed0);
         var snapshot = engine.CaptureSnapshot();
         int free = snapshot.DemoCampaign!.Transport!.PassengerCapacity!.FreeCabins;
-        Assert.True(jobs.Limits.PassengerMax <= free, $"passengerMax {jobs.Limits.PassengerMax} > free cabins {free}");
+        Assert.Equal(1, free);
+        var board = snapshot.DemoCampaign.Transport.StationJobs!;
+        Assert.All(board.Offers.Where(offer => StationJobTypes.CarriesPassengers(offer.Type)), offer => Assert.Equal(1, offer.Count));
         long hold = snapshot.InstalledModules.Sum(m => m.CargoCapacityKg ?? 0);
         Assert.True(jobs.Limits.CargoTonnesMax * 1000L <= hold, $"cargo {jobs.Limits.CargoTonnesMax} t > hold {hold} kg");
 
-        // The guaranteed first order at the start station is an ordinary passenger job for at most 4 people.
+        // The first published order fits the one available cabin.
         Assert.Equal(StationJobTypes.Passenger, jobs.FirstOffer.Type);
-        Assert.InRange(jobs.FirstOffer.Count, 1, Math.Min(4, free));
+        var first = board.Offers.Single(offer => offer.Id == "jobs:SPC-0002:0:0");
+        Assert.Equal(StationJobTypes.Passenger, first.Type);
+        Assert.Equal(1, first.Count);
     }
 
     [Fact]

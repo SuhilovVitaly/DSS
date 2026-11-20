@@ -23,6 +23,7 @@ revision: 1
 - [EP-maintenance-US-0025-TK-0001-enemy-side-request](EP-maintenance-US-0025-TK-0001-enemy-side-request/EP-maintenance-US-0025-TK-0001-enemy-side-request.md) (contracts)
 - [EP-maintenance-US-0025-TK-0002-resolve-enemy-side](EP-maintenance-US-0025-TK-0002-resolve-enemy-side/EP-maintenance-US-0025-TK-0002-resolve-enemy-side.md) (engine)
 - [EP-maintenance-US-0025-TK-0003-console-command](EP-maintenance-US-0025-TK-0003-console-command/EP-maintenance-US-0025-TK-0003-console-command.md) (client)
+- [EP-maintenance-US-0025-TK-0004-debug-sortie-prisoner](EP-maintenance-US-0025-TK-0004-debug-sortie-prisoner/EP-maintenance-US-0025-TK-0004-debug-sortie-prisoner.md) (engine)
 
 ## Проверки
 

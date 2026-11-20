@@ -59,6 +59,13 @@ public sealed class DemoEp0034Us0005Tk0001Tests
             ship["dockedStationObjectId"] = station;
             ship["firstPortFeeGameTimeMs"] = 0;
             ship["nextPortFeeDueGameTimeMs"] = GameCalendar.DayMs;
+            // Fit a third living quarters for the two passenger groups in this voyage fixture.
+            var modules = ship["modules"]!.AsArray();
+            var quarters = modules.Single(m => (string?)m!["moduleId"] == "MOD-PLAYER-LIVING-QUARTERS-01")!.DeepClone();
+            quarters["moduleId"] = "MOD-PLAYER-LIVING-QUARTERS-03";
+            quarters["occupiedCells"] = new JsonArray(new JsonObject { ["x"] = 4, ["y"] = 1 });
+            modules.Add(quarters);
+            save["gameState"]!["demoCampaign"]!.AsObject().Remove("stationJobs");
         });
     }
 

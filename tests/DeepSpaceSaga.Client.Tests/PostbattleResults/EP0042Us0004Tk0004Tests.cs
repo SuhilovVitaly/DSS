@@ -21,6 +21,8 @@ public sealed class EP0042Us0004Tk0004Tests
         Assert.True(await flow.StartEncounterAsync());
         Assert.True(await flow.OpenResultsAsync());
         var view = new BattleResultsScreen(flow, 1);
+        view.OnKeyDown(Key.Enter);
+        Assert.Equal(BattleResultsScreen.LootStep.Components, view.CurrentStep);
         view.OnActivated();
         try
         {

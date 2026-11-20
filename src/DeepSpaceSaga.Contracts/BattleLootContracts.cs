@@ -25,14 +25,17 @@ public sealed record FinishBattleLootCommand(string CommandId, long ExpectedRevi
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
 
 public enum LootRowKind { Consumable, Scrap, Module }
+public enum LootBatchKind { Components, Scrap }
 public sealed record LootRowKey(string ObjectId, LootRowKind Kind, string EntryId);
 
-/// <summary>A null Row requests all eligible material rows. Pilot arrest is a separate command.</summary>
+/// <summary>A null Row requests all eligible material rows in the optional batch. Pilot arrest is a separate command.</summary>
 public sealed record StartLootOperationsCommand(string CommandId, long ExpectedRevision, string BattleId, LootRowKey? Row = null)
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? RequestedQuantity { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LootBatchKind? Batch { get; init; }
 }
 public sealed record AdvanceLootOperationsCommand(string CommandId, long ExpectedRevision, string BattleId)
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;

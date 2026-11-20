@@ -44,6 +44,8 @@ public sealed partial class SimulationEngine
     private void PrepareStartLootOperations(StartLootOperationsCommand command, ref string? reason, ref Action? commit)
     {
         if (GetTimedLoot(command.BattleId) is not { } loot) { reason = BattleLootReasons.WrongBattle; return; }
+        if (command.Batch is { } batch && (command.Row is not null || !Enum.IsDefined(batch)))
+        { reason = BattleLootReasons.InvalidTarget; return; }
         if (command.RequestedQuantity is { } requested && (command.Row is not { Kind: LootRowKind.Consumable } target ||
             requested <= 0 || requested > RemainingConsumables(loot, target)))
         { reason = BattleLootReasons.InvalidQuantity; return; }
@@ -51,7 +53,14 @@ public sealed partial class SimulationEngine
         { reason = BattleLootReasons.OperationsRunning; return; }
         long start = LootClockMilliseconds();
         var operations = EnumerateLootRows(loot).Select((entry, index) => (entry.Row, entry.Available, Order: index))
-            .Where(entry => entry.Available && (command.Row is null || entry.Row == command.Row) && !_lootOperations.ContainsKey(entry.Row))
+            .Where(entry => entry.Available && (command.Row is null || entry.Row == command.Row) &&
+                !_lootOperations.ContainsKey(entry.Row))
+            .Where(entry => command.Batch switch
+            {
+                LootBatchKind.Components => entry.Row.Kind is LootRowKind.Module or LootRowKind.Consumable,
+                LootBatchKind.Scrap => entry.Row.Kind == LootRowKind.Scrap,
+                _ => true
+            })
             .Select(entry =>
             {
                 int duration = LootDuration(entry.Row.Kind);

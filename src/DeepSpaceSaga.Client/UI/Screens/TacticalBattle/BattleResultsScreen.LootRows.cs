@@ -87,6 +87,7 @@ internal sealed partial class BattleResultsScreen
         string label = operation is not null ? ResultsText("Working") :
             extracted ? ResultsText("Collect") :
             row.State is { } state and not LootAttemptStates.NotAttempted ? ResultsText(state) :
+            row.Kind == RowKind.Pilot && row.Reason == PrisonerCustodyReasons.NoCabin ? ResultsText("NoCabins") :
             row.Kind switch { RowKind.Pilot => ResultsText("Arrest"), RowKind.Consumable => ResultsText("Collect"), _ => ResultsText("Dismantle") };
         bool enabled = row.Enabled && !LootInputBlocked && operation is null;
         Button(canvas, button, label, pending: !enabled);
@@ -111,7 +112,7 @@ internal sealed partial class BattleResultsScreen
     {
         _retryBounds = default;
         _collectAllBounds = default;
-        if (CurrentLoot is { } loot)
+        if (CurrentLoot is { } loot && CurrentStep is LootStep.Components or LootStep.Scrap)
         {
             _collectAllBounds = new(Contents.Left, ExitBounds.Top, Contents.Left + 200, ExitBounds.Bottom);
             MenuStyle.DrawButton(canvas, _collectAllBounds, ResultsText("CollectAll"),
@@ -144,6 +145,12 @@ internal sealed partial class BattleResultsScreen
         foreach (var hit in _rowHits)
         {
             if (!hit.Bounds.Contains(x, y)) continue;
+            if (hit.Row.Kind == RowKind.Pilot &&
+                (CurrentLoot is not { FreePrisonerCabins: > 0 } currentLoot ||
+                    !currentLoot.Objects.Any(source => source.ObjectId == hit.ObjectId &&
+                        source.Pilot is { Alive: true, Captured: false, CaptureReason: null } pilot &&
+                        pilot.SourcePilotId == hit.Row.Id)))
+                return true;
             LastLootAction = SubmitLootRow(hit.ObjectId, hit.Row, hit.Quantity);
             return true;
         }
@@ -164,18 +171,31 @@ internal sealed partial class BattleResultsScreen
                 : new StartLootOperationsCommand(id, revision, battle, key) { RequestedQuantity = quantity }
             : new ArrestPilotCommand(id, revision, battle, objectId), needsSource: false);
 
+    private static bool IsOnStep(LootRow row, LootStep? step) => step switch
+    {
+        LootStep.Pilots => row.Kind == RowKind.Pilot,
+        LootStep.Components => row.Kind is RowKind.Module or RowKind.Consumable,
+        LootStep.Scrap => row.Kind == RowKind.Scrap,
+        _ => false
+    };
+
     private bool CanCollectAll(LootSessionSnapshot loot)
     {
         if (LootInputBlocked) return false;
         var running = loot.Operations.Select(op => op.Row).ToHashSet();
-        return loot.Objects.Any(source => LootRows(source).Any(row => row.State is null or LootAttemptStates.NotAttempted &&
+        var step = CurrentStep;
+        return loot.Objects.Any(source => LootRows(source).Any(row => IsOnStep(row, step) &&
+            (row.State is null or LootAttemptStates.NotAttempted) &&
             MaterialRow(source.ObjectId, row) is { } key && !running.Contains(key)));
     }
 
     private async Task<bool> CollectAllAsync(bool retry = false)
     {
         bool applied = retry ? await _lootPresentation.RetryAsync() : await _lootPresentation.SubmitAsync(
-            (id, revision, battle, _) => new StartLootOperationsCommand(id, revision, battle), needsSource: false);
+            (id, revision, battle, _) => new StartLootOperationsCommand(id, revision, battle)
+            {
+                Batch = CurrentStep == LootStep.Scrap ? LootBatchKind.Scrap : LootBatchKind.Components
+            }, needsSource: false);
         if (applied && CurrentLoot is { } loot)
             ImmutableInterlocked.Update(ref _expandedSources, set => set.Union(loot.Operations.Select(op => op.Row.ObjectId)));
         return applied;

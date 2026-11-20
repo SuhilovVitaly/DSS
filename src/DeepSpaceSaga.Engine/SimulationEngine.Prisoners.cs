@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 
@@ -27,9 +28,18 @@ public sealed partial class SimulationEngine
         var source = loot.Sources.FirstOrDefault(s => s.ObjectId == command.DroneId);
         reason = ArrestReason(candidate, loot, source);
         if (reason is not null) return;
+        var debugSources = candidate.DebugSortiePrisonerSources;
+        if (loot.DebugSortie && !debugSources.Any(entry => entry.BattleId == loot.BattleId))
+        {
+            var map = loot.Map;
+            debugSources = debugSources.Add(new(loot.BattleId, PlayerShipObjectId!, map.PlayerSide,
+                map.Units.Where(unit => unit.Side != map.PlayerSide && unit.Kind == TacticalUnitKind.Drone &&
+                    unit.State == TacticalUnitState.Disabled).ToImmutableArray()));
+        }
         var pilot = source!.Pilot!;
         candidate = candidate with
         {
+            DebugSortiePrisonerSources = debugSources,
             Prisoners = candidate.Prisoners.Add(new("prisoner:" + pilot.SourcePilotId,
             PlayerShipObjectId!, loot.BattleId, source.ObjectId, pilot.SourcePilotId, pilot.DisplayName, pilot.PortraitAssetId,
             _clock.GameTimeMs, pilot.Gender))

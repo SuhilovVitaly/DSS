@@ -24,7 +24,7 @@ public sealed class DemoEp0034Us0001Tk0003Tests
 
     private static string NewRun()
     {
-        string directory = Path.Combine("D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/capacity-fixtures", Guid.NewGuid().ToString("N"));
+        string directory = Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? "D:/DeepSpaceSaga/artifacts/validation/ep-0036/20261117-execution/capacity-fixtures", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         return directory;
     }
@@ -71,18 +71,18 @@ public sealed class DemoEp0034Us0001Tk0003Tests
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Settings, DemoScenario);
         engine.SetSpeed(SimulationSpeed.Speed0);
         var capacity = Capacity(engine);
-        Assert.Equal(new PassengerCapacitySnapshot(12, 7, 0, 0, 5, null), capacity);
+        Assert.Equal(new PassengerCapacitySnapshot(8, 7, 0, 0, 1, null), capacity);
         Assert.Null(PassengerCapacityReasons.BoardingBlocker(capacity));
         // The ordinary carrier surface agrees: the free cabins are real, not a UI scale.
-        Assert.Equal(5, engine.CaptureSnapshot().CarrierOperations!.CabinReservation!.FreeCabins);
+        Assert.Equal(1, engine.CaptureSnapshot().CarrierOperations!.CabinReservation!.FreeCabins);
 
         string directory = NewRun();
         try
         {
-            // Physical first voyage with five passengers: the ship moves and the hold feeds twelve people.
-            using var voyage = DemoWithPassengers(directory, 5);
+            // Physical first voyage with one passenger: the ship moves and the hold feeds eight people.
+            using var voyage = DemoWithPassengers(directory, 1);
             voyage.SetSpeed(SimulationSpeed.Speed0);
-            Assert.Equal(new PassengerCapacitySnapshot(12, 7, 5, 0, 0, null), Capacity(voyage));
+            Assert.Equal(new PassengerCapacitySnapshot(8, 7, 1, 0, 0, null), Capacity(voyage));
             Assert.Equal(PassengerCapacityReasons.NoFreeCabins, PassengerCapacityReasons.BoardingBlocker(Capacity(voyage)));
             var before = voyage.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
             var start = before.Objects.Single(o => o.ObjectId == Ship);
@@ -90,9 +90,9 @@ public sealed class DemoEp0034Us0001Tk0003Tests
             var after = voyage.CaptureSnapshotForTests(day, SimulationSpeed.Speed0, day / 300);
             var end = after.Objects.Single(o => o.ObjectId == Ship);
             Assert.NotEqual((start.X, start.Y), (end.X, end.Y));
-            // Two meals per calendar day for 7 crew + 5 passengers.
-            Assert.Equal(RationsAboard(before) - 2 * 12, RationsAboard(after));
-            Assert.Equal(new PassengerCapacitySnapshot(12, 7, 5, 0, 0, null), after.DemoCampaign!.Transport!.PassengerCapacity);
+            // Two meals per calendar day for 7 crew + 1 passenger.
+            Assert.Equal(RationsAboard(before) - 2 * 8, RationsAboard(after));
+            Assert.Equal(new PassengerCapacitySnapshot(8, 7, 1, 0, 0, null), after.DemoCampaign!.Transport!.PassengerCapacity);
         }
         finally { Directory.Delete(directory, recursive: true); }
     }
@@ -138,7 +138,7 @@ public sealed class DemoEp0034Us0001Tk0003Tests
                 }
             });
             var starving = Capacity(hungry)!;
-            Assert.Equal(5, starving.FreeCabins);
+            Assert.Equal(1, starving.FreeCabins);
             Assert.Equal(PassengerCapacityReasons.InsufficientFoodRations, starving.LifeSupportReason);
             Assert.Equal(PassengerCapacityReasons.InsufficientFoodRations, PassengerCapacityReasons.BoardingBlocker(starving));
 
@@ -156,10 +156,10 @@ public sealed class DemoEp0034Us0001Tk0003Tests
         string directory = NewRun();
         try
         {
-            using var engine = DemoWithPassengers(directory, 2);
+            using var engine = DemoWithPassengers(directory, 1);
             engine.SetSpeed(SimulationSpeed.Speed0);
             var expected = Capacity(engine);
-            Assert.Equal(new PassengerCapacitySnapshot(12, 7, 2, 0, 3, null), expected);
+            Assert.Equal(new PassengerCapacitySnapshot(8, 7, 1, 0, 0, null), expected);
 
             // The derived capacity is not written into the save.
             var save = JsonNode.Parse(ScenarioLoader.Serialize(engine.CaptureSaveState()))!;
@@ -168,17 +168,20 @@ public sealed class DemoEp0034Us0001Tk0003Tests
             using (var restored = Reload(engine, directory))
                 Assert.Equal(expected, Capacity(restored));
 
-            // Load never re-applies the demo manifest: a save without the third quarters stays at 8 cabins.
+            // A save with the old third module retains that module on load.
             using (var older = Reload(engine, directory, s =>
                    {
                        var modules = PlayerShip(s)["modules"]!.AsArray();
-                       modules.Remove(modules.Single(m => (string?)m!["moduleId"] == "MOD-PLAYER-LIVING-QUARTERS-03"));
+                       var quarters = modules.Single(m => (string?)m!["moduleId"] == "MOD-PLAYER-LIVING-QUARTERS-01")!.DeepClone();
+                       quarters["moduleId"] = "MOD-PLAYER-LIVING-QUARTERS-03";
+                       quarters["occupiedCells"] = new JsonArray(new JsonObject { ["x"] = 4, ["y"] = 1 });
+                       modules.Add(quarters);
                    }))
             {
                 var capacity = Capacity(older)!;
-                Assert.Equal(8, capacity.TotalCabins);
-                Assert.Equal(0, capacity.FreeCabins);
-                Assert.Equal(PassengerCapacityReasons.CabinsOvercommitted, capacity.LifeSupportReason);
+                Assert.Equal(12, capacity.TotalCabins);
+                Assert.Equal(4, capacity.FreeCabins);
+                Assert.Null(capacity.LifeSupportReason);
             }
 
             // A save that smuggles a capacity into persisted state is rejected before any session exists.

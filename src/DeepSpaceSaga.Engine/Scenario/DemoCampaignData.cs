@@ -9,6 +9,10 @@ public sealed record BountyOrderData(string Id, string IssuerStationId, string T
 public sealed record BountyPaymentData(string BountyId, string IssuerStationId, string TargetGroupId,
     string BattleId, long RewardTokens, string PostingId, long PaidAtGameTimeMs);
 
+/// <summary>Frozen disabled enemy drones from a debug victory with a prisoner.</summary>
+public sealed record DebugSortiePrisonerSource(string BattleId, string ShipId, string PlayerSide,
+    ImmutableArray<TacticalUnitSnapshot> Drones);
+
 /// <summary>Campaign metadata only. Resources remain in the existing authoritative world.</summary>
 public sealed partial record DemoCampaignData(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,
@@ -32,6 +36,7 @@ public sealed partial record DemoCampaignData(
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public BattleResultsData? BattleResults { get; init; }
     public ImmutableArray<PrisonerSnapshot> Prisoners { get; init; } = [];
+    public ImmutableArray<DebugSortiePrisonerSource> DebugSortiePrisonerSources { get; init; } = [];
 
     [JsonPropertyName("pilotMemorial")]
     public ImmutableArray<PilotMemorialEntry> PilotMemorial { get; init; } = [];
@@ -75,6 +80,13 @@ public sealed partial record DemoCampaignData(
     [JsonPropertyName("cargoContracts")]
     public ImmutableArray<CargoContractData> CargoContracts { get; init; } = [];
 
+    private static bool MatchesPrisonerSource(PrisonerSnapshot prisoner, string battleId, string playerSide, TacticalUnitSnapshot unit) =>
+        unit.Id == prisoner.SourceDroneId && unit.Side != playerSide && unit.Kind == TacticalUnitKind.Drone &&
+        unit.State == TacticalUnitState.Disabled && unit.Build is { } build &&
+        prisoner.SourcePilotId == SimulationEngine.LootPilotIdentity(battleId, unit.Id, build.PilotId) &&
+        prisoner.DisplayName == build.PilotName && prisoner.PortraitAssetId == build.PilotPortraitAssetId &&
+        prisoner.Gender == (build.PilotGender ?? CrewGender.Female);
+
     internal static DemoCampaignData Validate(DemoCampaignData? data, long gameTimeMs)
     {
         data ??= new(LastTickGameTimeMs: gameTimeMs);
@@ -89,12 +101,26 @@ public sealed partial record DemoCampaignData(
             !data.BountyOrders.IsEmpty && data.BountyCatalogFingerprint is null)
             throw new ScenarioException("Invalid saved bounty orders.");
         ValidateEncounterHistory(data);
+        var debugSources = data.DebugSortiePrisonerSources;
+        if (debugSources.IsDefault || debugSources.Any(source => source is null ||
+            string.IsNullOrWhiteSpace(source.BattleId) || string.IsNullOrWhiteSpace(source.ShipId) ||
+            source.PlayerSide is not ("A" or "B") ||
+            data.EncounterResults.Any(result => result.Binding.BattleId == source.BattleId) ||
+            source.Drones.IsDefaultOrEmpty || source.Drones.Any(drone => drone is null ||
+                string.IsNullOrWhiteSpace(drone.Id) || drone.Side != (source.PlayerSide == "A" ? "B" : "A") ||
+                drone.Kind != TacticalUnitKind.Drone || drone.State != TacticalUnitState.Disabled ||
+                drone.Build is not { } build || string.IsNullOrWhiteSpace(build.PilotId)) ||
+            source.Drones.Select(drone => drone.Id).Distinct(StringComparer.Ordinal).Count() != source.Drones.Length) ||
+            debugSources.Select(source => source.BattleId).Distinct(StringComparer.Ordinal).Count() != debugSources.Length)
+            throw new ScenarioException("Invalid debug sortie prisoner provenance.");
+
         if (data.Prisoners.IsDefault || data.Prisoners.Any(p => p is null || string.IsNullOrWhiteSpace(p.ShipId) ||
             string.IsNullOrWhiteSpace(p.DisplayName) || !Enum.IsDefined(p.Gender) || p.CapturedAt < 0 || p.CapturedAt > gameTimeMs ||
-            p.Id != "prisoner:" + p.SourcePilotId || !data.EncounterResults.Any(r => r.PlayerWon && r.Binding.BattleId == p.SourceBattleId &&
-                r.Units.Any(u => u.Id == p.SourceDroneId && u.Side != r.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Disabled &&
-                    u.Build is { } build && p.SourcePilotId == SimulationEngine.LootPilotIdentity(r.Binding.BattleId, u.Id, build.PilotId) &&
-                    p.DisplayName == build.PilotName && p.PortraitAssetId == build.PilotPortraitAssetId && p.Gender == (build.PilotGender ?? CrewGender.Female)))) ||
+            p.Id != "prisoner:" + p.SourcePilotId ||
+            !(data.EncounterResults.Any(r => r.PlayerWon && r.Binding.BattleId == p.SourceBattleId &&
+                r.Units.Any(u => MatchesPrisonerSource(p, r.Binding.BattleId, r.PlayerSide, u))) ||
+            debugSources.Any(source => source.BattleId == p.SourceBattleId && source.ShipId == p.ShipId &&
+                source.Drones.Any(u => MatchesPrisonerSource(p, source.BattleId, source.PlayerSide, u))))) ||
             data.Prisoners.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != data.Prisoners.Length ||
             data.Prisoners.Select(p => (p.SourceBattleId, p.SourceDroneId)).Distinct().Count() != data.Prisoners.Length)
             throw new ScenarioException("Invalid prisoner custody provenance.");

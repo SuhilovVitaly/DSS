@@ -199,9 +199,9 @@ public sealed class DemoEp0034Us0003Tk0002Tests
         Assert.Equal(credits - penalty, afterCancel.PlayerCredits);
         Assert.Equal(StationJobStatuses.Cancelled, Assert.Single(Board(afterCancel).Obligations).Status);
         var contract = Assert.Single(Contracts(afterCancel).Contracts);
-        Assert.Equal((StationJobStatuses.Cancelled, PassengerDeliveryStates.Failed, 3), (contract.Status, contract.DeliveryState, Contracts(afterCancel).PassengersAboard));
+        Assert.Equal((StationJobStatuses.Cancelled, PassengerDeliveryStates.Failed, 1), (contract.Status, contract.DeliveryState, Contracts(afterCancel).PassengersAboard));
         Assert.Equal(contract.PassengerIds.ToArray(), PassengersAboard(engine, flight.GameTime));
-        Assert.Equal(freeBefore - 3, Capacity(afterCancel).FreeCabins);
+        Assert.Equal(freeBefore - 1, Capacity(afterCancel).FreeCabins);
         Assert.Empty(Failures(afterCancel).Terms);
         Assert.Equal(penalty, engine.VoyageFinancesForTests[^1].PassengerPenaltyCredits);
 
@@ -297,7 +297,7 @@ public sealed class DemoEp0034Us0003Tk0002Tests
             Assert.Equal(a.PlayerCredits, b.PlayerCredits);
             var pending = Assert.Single(Failures(b).Failures);
             Assert.Equal((TransportFailureReasons.Expired, deadline + 1, true), (pending.Reason, pending.FailedAtGameTimeMs, pending.DisembarkPending));
-            Assert.Equal(3, PassengersAboard(jumped, end).Length);
+            Assert.Single(PassengersAboard(jumped, end));
             Assert.Equal(a.PlayerCredits, At(stepped, end).PlayerCredits);
 
             // Debt: with too few Tokens the rest is owed, peaceful work stays open, and a later payout repays it.

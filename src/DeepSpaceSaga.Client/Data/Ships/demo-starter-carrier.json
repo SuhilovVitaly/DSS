@@ -74,16 +74,6 @@
       "cargo": []
     },
     {
-      "moduleId": "MOD-PLAYER-LIVING-QUARTERS-03",
-      "moduleTypeId": "living.quarters.mk1.four-cabins",
-      "occupiedCells": [ { "x": 4, "y": 1 } ],
-      "structurePoints": 150,
-      "powerState": "On",
-      "operationalState": "Ready",
-      "activeCycle": null,
-      "cargo": []
-    },
-    {
       "moduleId": "MOD-PLAYER-CARGO-01",
       "moduleTypeId": "module.container.basic",
       "occupiedCells": [ { "x": 4, "y": 2 } ],

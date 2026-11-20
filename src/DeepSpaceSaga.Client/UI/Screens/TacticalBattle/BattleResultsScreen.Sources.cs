@@ -35,8 +35,17 @@ internal sealed partial class BattleResultsScreen
         _sourceHits.Clear();
         _rowHits.Clear();
         if (CurrentLoot is not { } loot || Contents.IsEmpty) return;
-        var sources = loot.Objects.Select(source => (Source: source, Rows: IsExpanded(source.ObjectId) ? LootRows(source) : null)).ToArray();
-        float height = sources.Sum(source => CardHeight + (source.Rows is { } rows ? Math.Max(1, rows.Count) * RowHeight : 0));
+        var step = CurrentStep;
+        var sources = loot.Objects.Select(source => (Source: source, Rows: LootRows(source).Where(row => IsOnStep(row, step)).ToList()))
+            .Where(source => source.Rows.Count > 0)
+            .Select(source => (source.Source, Rows: IsExpanded(source.Source.ObjectId) ? source.Rows : null))
+            .ToArray();
+        if (sources.Length == 0)
+        {
+            T(canvas, ResultsText("EmptyStep"), Contents.Left + 16, Contents.Top + 22, 16, Muted);
+            return;
+        }
+        float height = sources.Sum(source => CardHeight + (source.Rows?.Count ?? 0) * RowHeight);
         _maxScroll = Math.Max(0, height - Contents.Height);
         _scroll = Math.Clamp(_scroll, 0, _maxScroll);
         float y = Contents.Top - _scroll;
@@ -55,11 +64,7 @@ internal sealed partial class BattleResultsScreen
                 }
                 y += CardHeight;
                 if (rows is null) continue;
-                if (rows.Count == 0)
-                {
-                    T(canvas, ResultsText("EmptySource"), Contents.Left + 16, y + 22, 16, Muted);
-                    y += RowHeight;
-                }
+
                 foreach (var row in rows)
                 {
                     var rect = new SKRect(Contents.Left, y, Contents.Right, y + RowHeight - 4);

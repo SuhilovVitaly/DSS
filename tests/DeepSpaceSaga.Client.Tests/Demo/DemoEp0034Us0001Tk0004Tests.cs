@@ -29,8 +29,8 @@ public sealed class DemoEp0034Us0001Tk0004Tests
     }
 
     [Theory]
-    [InlineData("English", "Cabins 12: crew 7, passengers 0, prisoners 0, reserve 0, free 5", "Free cabins: 5.")]
-    [InlineData("Russian", "Каюты 12: экипаж 7, пассажиры 0, пленные 0, резерв 0, свободно 5", "Свободных кают: 5.")]
+    [InlineData("English", "Cabins 8: crew 7, passengers 0, prisoners 0, reserve 0, free 1", "Free cabins: 1.")]
+    [InlineData("Russian", "Каюты 8: экипаж 7, пассажиры 0, пленные 0, резерв 0, свободно 1", "Свободных кают: 1.")]
     public void ConfirmedSnapshot_RendersOutcome(string language, string summary, string ready)
     {
         using var locale = Localization.UseLocaleForTests(language);

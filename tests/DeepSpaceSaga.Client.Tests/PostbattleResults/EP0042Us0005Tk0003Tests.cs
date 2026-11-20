@@ -25,15 +25,41 @@ public sealed class EP0042Us0005Tk0003Tests
         void Render() => view.Render(canvas, bitmap.Width, bitmap.Height);
         Render();
         var before = view.Capacity!;
-        var card = view.SourceHits.First(hit => handle.DemoCampaign!.Rewards!.Loot!.Objects.First(source => source.ObjectId == hit.Id)
-            .Pilot is { Alive: true, CaptureReason: null });
-        view.OnMouseDown(card.Bounds.MidX, card.Bounds.MidY, MouseButton.Left);
-        Render();
-        var arrest = view.LootActionHits.First(hit => hit.Row.Kind == BattleResultsScreen.RowKind.Pilot);
+        Assert.Equal(1, before.FreePrisonerCabins);
+        var available = view.SourceHits.Take(2).Select(hit => hit.Id).ToArray();
+        Assert.Equal(2, available.Length);
+        foreach (string id in available)
+        {
+            var card = view.SourceHits.Single(hit => hit.Id == id);
+            view.OnMouseDown(card.Bounds.MidX, card.Bounds.MidY, MouseButton.Left);
+            Render();
+        }
+        var actions = view.LootActionHits.Where(hit => hit.Row.Kind == BattleResultsScreen.RowKind.Pilot).ToArray();
+        Assert.Equal(2, actions.Length);
+        var arrest = actions[0];
         view.OnMouseDown(arrest.Bounds.MidX, arrest.Bounds.MidY, MouseButton.Left);
         Assert.True(await view.LastLootAction!);
-        Assert.Equal(before with { FreePrisonerCabins = before.FreePrisonerCabins - 1 }, view.Capacity);
+        Assert.Equal(before with { FreePrisonerCabins = 0 }, view.Capacity);
 
+        // The previous frame still contains the other pilot's clickable area.
+        var previousAction = view.LastLootAction;
+        var other = actions[1];
+        view.OnMouseDown(other.Bounds.MidX, other.Bounds.MidY, MouseButton.Left);
+        Assert.Same(previousAction, view.LastLootAction);
+        Render();
+        Assert.DoesNotContain(view.LootActionHits, hit => hit.Row.Kind == BattleResultsScreen.RowKind.Pilot);
+
+        var campaign = engine.CaptureSnapshot().DemoCampaign!;
+        var loot = campaign.Rewards!.Loot!;
+        var rejected = engine.ExecuteDemoCampaign(new ArrestPilotCommand("full", campaign.Revision, loot.BattleId, other.ObjectId));
+        Assert.Equal(PrisonerCustodyReasons.NoCabin, rejected.Reason);
+        Assert.Single(engine.CaptureSaveState().GameState.DemoCampaign!.Prisoners);
+
+        Assert.Equal(BattleResultsScreen.LootStep.Pilots, view.CurrentStep);
+        Assert.Equal(ScreenEvent.None, view.OnKeyDown(Key.Enter));
+        Assert.Equal(BattleResultsScreen.LootStep.Components, view.CurrentStep);
+        Assert.Equal(ScreenEvent.None, view.OnKeyDown(Key.Enter));
+        Assert.Equal(BattleResultsScreen.LootStep.Scrap, view.CurrentStep);
         Assert.Equal(ScreenEvent.None, view.OnKeyDown(Key.Enter));
         Render();
         Assert.True(view.ConfirmDiscard);

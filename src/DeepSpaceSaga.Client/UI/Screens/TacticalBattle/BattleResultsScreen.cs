@@ -11,6 +11,13 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float uiScale)
     : TacticalBattleModalScreen(flow, isSetup: false, uiScale)
 {
+    internal enum LootStep { Pilots, Components, Scrap }
+    private LootStep? _lootStep;
+    internal LootStep? CurrentStep => _lootStep ??= CurrentLoot is { } loot
+        ? loot.Objects.Any(source => source.Kind == "DisabledDrone" && source.Pilot is { Alive: true, Captured: false, CaptureReason: null })
+            ? LootStep.Pilots : LootStep.Components
+        : null;
+
     private SKRect _exitBounds;
     private bool _acknowledgeRequested;
     internal bool ConfirmDiscard { get; private set; }
@@ -51,10 +58,19 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
         T(canvas, Localization.Get("TacticalBattle.Results"), panel.Left + 20, panel.Top + 42, 26, Text, true);
         if (Report is { } report) DrawSummary(canvas, report, panel);
         _exitBounds = new(panel.Right - 220, panel.Bottom - 65, panel.Right - 20, panel.Bottom - 20);
-        Contents = new(panel.Left + 20, panel.Top + 148, panel.Right - 20, _exitBounds.Top - 53);
+        var step = CurrentStep;
+        if (step is { } activeStep && !ConfirmDiscard)
+            T(canvas, ResultsText("Step" + activeStep), panel.Left + 20, panel.Top + 143, 20, Text, true);
+        Contents = new(panel.Left + 20, panel.Top + (step is null || ConfirmDiscard ? 148 : 158), panel.Right - 20, _exitBounds.Top - 53);
         if (ConfirmDiscard) DrawLeaveWarning(canvas);
         else DrawSources(canvas);
-        MenuStyle.DrawButton(canvas, _exitBounds, ConfirmDiscard ? ResultsText("Leave") : Localization.Get("TacticalBattle.ToMap"),
+        string nextLabel = step switch
+        {
+            LootStep.Pilots => ResultsText("NextComponents"),
+            LootStep.Components => ResultsText("NextScrap"),
+            _ => Localization.Get("TacticalBattle.ToMap")
+        };
+        MenuStyle.DrawButton(canvas, _exitBounds, ConfirmDiscard ? ResultsText("Leave") : nextLabel,
             ExitBlocked ? ButtonState.Disabled : ButtonState.Normal);
         DrawCapacity(canvas);
         if (!ConfirmDiscard) DrawLootFooter(canvas);
@@ -92,6 +108,16 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
     private ScreenEvent RequestExit()
     {
         if (ExitBlocked) return ScreenEvent.None;
+        if (CurrentStep is { } step && step != LootStep.Scrap)
+        {
+            _lootStep = step == LootStep.Pilots ? LootStep.Components : LootStep.Scrap;
+            _expandedSources = _expandedSources.Clear();
+            _sourceHits.Clear();
+            _rowHits.Clear();
+            _retryBounds = _collectAllBounds = default;
+            _scroll = _maxScroll = 0;
+            return ScreenEvent.None;
+        }
         if (!ConfirmDiscard && CurrentLoot is { HasUnclaimed: true })
         {
             ConfirmDiscard = true;

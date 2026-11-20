@@ -7,6 +7,7 @@ using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.LocalClient;
+using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Engine.TacticalBattle;
 using Silk.NET.Input;
 using SkiaSharp;
@@ -100,7 +101,7 @@ public sealed class DemoEp0036Us0007Tk0004Tests
     }
 
     [Fact]
-    public async Task KillAllTutorialLootSurvivesSaveWithManagedResults()
+    public async Task KillAllTutorialArrestSurvivesSaveAndAllowsExit()
     {
         string settings = Path.Combine(AppContext.BaseDirectory, "Settings.json");
         string scenario = Path.Combine(AppContext.BaseDirectory, "Scenarios", "Tutorial", "scenario.json");
@@ -133,7 +134,7 @@ public sealed class DemoEp0036Us0007Tk0004Tests
         Assert.Empty(save.GameState.DemoCampaign.EncounterResults);
 
         using var loaded = SimulationEngine.CreateFromScenarioFile(settings, scenario);
-        loaded.LoadScenario(save, isSave: true);
+        loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), isSave: true);
         await using var recovered = new GameSessionHandle(new LocalGameSessionConnection(loaded));
         var recoveredFlow = await SkiaWindow.RecoverBattleFlowAsync(recovered);
         Assert.NotNull(recoveredFlow);
@@ -141,6 +142,80 @@ public sealed class DemoEp0036Us0007Tk0004Tests
         Assert.Equal(flow.State!.BattleId, recoveredFlow.State!.BattleId);
         Assert.Contains(recovered.DemoCampaign!.Rewards!.Loot!.Objects, source => source.Kind == "DisabledDrone");
         Assert.Contains(recovered.DemoCampaign.Rewards.Loot.Objects, source => source.Kind == "DestroyedDrone");
+
+        long resultsClock = 1000;
+        loaded.LootClockMilliseconds = () => Interlocked.Read(ref resultsClock);
+        var results = new BattleResultsScreen(recoveredFlow, 1);
+        using var bitmap = new SKBitmap(1600, 900);
+        using var canvas = new SKCanvas(bitmap);
+        void Render() => results.Render(canvas, bitmap.Width, bitmap.Height);
+        string droneId = recovered.DemoCampaign.Rewards.Loot.Objects.First(source => source.Pilot is { Alive: true }).ObjectId;
+        Render();
+        while (!results.SourceHits.Any(hit => hit.Id == droneId))
+        {
+            var lastVisible = results.SourceHits.Last().Id;
+            results.OnMouseWheel(results.Contents.MidX, results.Contents.MidY, -114);
+            Render();
+            Assert.NotEqual(lastVisible, results.SourceHits.Last().Id);
+        }
+        var card = results.SourceHits.Single(hit => hit.Id == droneId);
+        results.OnMouseDown(card.Bounds.MidX, card.Bounds.MidY, MouseButton.Left);
+        Render();
+        for (int scroll = 0; scroll < 12 && !results.LootActionHits.Any(hit =>
+            hit.ObjectId == droneId && hit.Row.Kind == BattleResultsScreen.RowKind.Pilot); scroll++)
+        {
+            results.OnMouseWheel(results.Contents.MidX, results.Contents.MidY, -80);
+            Render();
+        }
+        var arrest = results.LootActionHits.Single(hit => hit.ObjectId == droneId && hit.Row.Kind == BattleResultsScreen.RowKind.Pilot);
+        results.OnMouseDown(arrest.Bounds.MidX, arrest.Bounds.MidY, MouseButton.Left);
+
+        Assert.True(await results.LastLootAction!);
+        var prisoner = Assert.Single(loaded.CaptureSaveState().GameState.DemoCampaign!.Prisoners);
+        Assert.Equal(droneId, prisoner.SourceDroneId);
+        Assert.True(results.CanSaveLoad);
+        Assert.Equal(ScreenEvent.None, results.OnKeyDown(Key.Enter));
+        Assert.Equal(BattleResultsScreen.LootStep.Components, results.CurrentStep);
+        Assert.Equal(ScreenEvent.None, results.OnKeyDown(Key.Enter));
+        Assert.Equal(BattleResultsScreen.LootStep.Scrap, results.CurrentStep);
+        Render();
+        Assert.All(results.SourceHits, hit => Assert.Contains(recovered.DemoCampaign!.Rewards!.Loot!.Objects,
+            source => source.ObjectId == hit.Id && source.Scrap is not null));
+        results.OnMouseDown(results.CollectAllBounds.MidX, results.CollectAllBounds.MidY, MouseButton.Left);
+        Assert.True(await results.LastLootAction!);
+        var operations = loaded.CaptureSnapshot().DemoCampaign!.Rewards!.Loot!.Operations;
+        Assert.NotEmpty(operations);
+        Assert.All(operations, operation => Assert.Equal(LootRowKind.Scrap, operation.Row.Kind));
+        Assert.Equal(ScreenEvent.None, results.OnKeyDown(Key.Enter));
+        Assert.False(results.ConfirmDiscard);
+
+        results.OnActivated();
+        try
+        {
+            Interlocked.Add(ref resultsClock, 10000);
+            await WaitFor(() => results.CanSaveLoad);
+        }
+        finally { results.OnDeactivated(); }
+        Assert.Equal(ScreenEvent.None, results.OnKeyDown(Key.Enter));
+        Assert.True(results.ConfirmDiscard);
+        Assert.Equal(ScreenEvent.AcknowledgeBattleResults,
+            results.OnMouseDown(results.ExitBounds.MidX, results.ExitBounds.MidY, MouseButton.Left));
+        Assert.True(results.ConsumeAcknowledgeRequest());
+        Assert.True(await recoveredFlow.AcknowledgeResultsAsync(results.ConfirmDiscard));
+        Assert.Null(recoveredFlow.State);
+
+        var closed = loaded.CaptureSaveState();
+        var campaign = closed.GameState.DemoCampaign!;
+        Assert.Empty(campaign.EncounterResults);
+        Assert.Equal(LootPhases.Closed, campaign.LootSession!.Phase);
+        var withoutOldLoot = closed with { GameState = closed.GameState with { DemoCampaign = campaign with { LootSession = null } } };
+        using var reopened = SimulationEngine.CreateFromScenarioFile(settings, scenario);
+        reopened.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(withoutOldLoot), true, true), isSave: true);
+        Assert.Equal(prisoner, Assert.Single(reopened.CaptureSaveState().GameState.DemoCampaign!.Prisoners));
+
+        var wrongPilot = campaign with { Prisoners = [prisoner with { DisplayName = prisoner.DisplayName + "!" }] };
+        var corrupted = closed with { GameState = closed.GameState with { DemoCampaign = wrongPilot } };
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(corrupted), true, true));
     }
 
     private sealed class BattleConsoleHost(GameSessionHandle session, TacticalBattleScreen screen) : IDebugConsoleHost

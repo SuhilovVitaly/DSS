@@ -119,7 +119,7 @@ public sealed class DemoEp0034Us0003Tk0003Tests
         Assert.Contains(Localization.Get("Demo.TransportFailures.Outcome.cancelled"), view.Lines[0]);
         Assert.Contains(N(failure.PenaltyCredits), view.Lines[0]);
         // Docked at the start station: they leave here at once, their cabins are free (AC-03).
-        Assert.Equal(string.Format(Localization.Get("Demo.TransportFailures.Disembarked"), 3, Name(handle, Start),
+        Assert.Equal(string.Format(Localization.Get("Demo.TransportFailures.Disembarked"), 1, Name(handle, Start),
             StationJobsPresentation.Time(failure.DisembarkedAtGameTimeMs!.Value)), view.Lines[1]);
         Assert.EndsWith(Localization.Get("Demo.PassengerContracts.State.failed"), Assert.Single(screen.PassengersView.Lines));
         Assert.EndsWith(Localization.Get("Demo.Jobs.Status.cancelled"), Assert.Single(screen.JobsView.Journal));
