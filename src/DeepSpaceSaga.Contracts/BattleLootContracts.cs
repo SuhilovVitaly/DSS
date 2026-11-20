@@ -3,6 +3,11 @@ using System.Collections.Immutable;
 namespace DeepSpaceSaga.Contracts;
 
 public interface ILootCampaignCommand { string BattleId { get; } }
+public sealed record OpenBattleResultsCommand(string CommandId, long ExpectedRevision, string BattleId)
+    : DemoCampaignCommand(CommandId, ExpectedRevision);
+public sealed record AcknowledgeBattleResultsCommand(string CommandId, long ExpectedRevision, string BattleId,
+    bool ConfirmDiscard = false) : DemoCampaignCommand(CommandId, ExpectedRevision);
+
 public sealed record JettisonCargoCommand(string CommandId, long ExpectedRevision, string BattleId, string ItemTypeId, long Quantity)
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
 public sealed record CollectLootConsumablesCommand(string CommandId, long ExpectedRevision, string BattleId,

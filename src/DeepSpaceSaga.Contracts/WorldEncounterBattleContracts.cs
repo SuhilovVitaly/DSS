@@ -6,6 +6,12 @@ public sealed record WorldEncounterSnapshot(WorldBattleBinding Binding, string P
 public sealed record BeginEncounterBattleCommand(string CommandId, long ExpectedRevision, string EncounterId)
     : DemoCampaignCommand(CommandId, ExpectedRevision);
 
+public enum BattleResultsStage { AwaitingOpen, Open, Acknowledged }
+
+/// <summary>A confirmed terminal battle outcome, independent of loot eligibility.</summary>
+public sealed record BattleResultsSnapshot(string BattleId, BattleResultsStage Stage, string PlayerSide,
+    TacticalOutcomeSnapshot Outcome, bool CanLoot, bool? PlayerCarrierDestroyed);
+
 public static class WorldEncounterPhases
 {
     public const string Captured = "captured";
