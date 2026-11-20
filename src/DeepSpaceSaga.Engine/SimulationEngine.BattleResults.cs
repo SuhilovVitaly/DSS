@@ -15,7 +15,7 @@ public sealed partial class SimulationEngine
     private SortieSettlementSnapshot? FreezeBattleResults()
     {
         var session = _tacticalBattleSession!;
-        var map = session.Capture();
+        var map = session.Capture() with { SourceShipId = _tacticalBattleSourceShipId };
         var settlement = BeginPostBattleLoot();
         bool canLoot = settlement is not null;
         if (!canLoot && _tacticalBattleSourceShipId is not null)

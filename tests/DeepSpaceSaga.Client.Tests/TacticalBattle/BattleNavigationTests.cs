@@ -55,7 +55,7 @@ public sealed class BattleNavigationTests
     [Theory(Timeout = RouteTimeoutMs)]
     [InlineData("classic")]
     [InlineData(null)] // a new profile has no saved skin and opens Tabletop
-    public async Task RealBattleAndNewBattleReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed(string? savedSkinId)
+    public async Task BattleAndResultsReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed(string? savedSkinId)
     {
         await using var fixture = await Fixture.ForSkin(savedSkinId);
         var camera = Field<CameraState>(fixture.Game, "_camera");
@@ -94,15 +94,15 @@ public sealed class BattleNavigationTests
         canvas.Clear(SKColors.Magenta);
         battle.Render(canvas, 1280, 720);
         Assert.NotEqual(SKColors.Magenta, bitmap.GetPixel(0, 0));
-        var newBattle = Assert.IsType<TacticalBattleScreen>(battle).NewBattleBounds;
-        Assert.Equal(ScreenEvent.NewTacticalBattle, battle.OnMouseDown(newBattle.MidX, newBattle.MidY, MouseButton.Left));
-        await fixture.Route(ScreenEvent.NewTacticalBattle);
-        var next = Assert.IsAssignableFrom<TacticalBattleModalScreen>(fixture.Screens.Current);
-        Assert.True(next.IsSetup); Assert.NotSame(setup, next); Assert.Same(battle.Flow, next.Flow);
-        Assert.Null(fixture.Engine.GetTacticalBattleState());
+        var outcomeButton = Assert.IsType<TacticalBattleScreen>(battle).ResultsBounds;
+        await fixture.Route(battle.OnMouseDown(outcomeButton.MidX, outcomeButton.MidY, MouseButton.Left));
+        var results = Assert.IsType<BattleResultsScreen>(fixture.Screens.Current);
+        Assert.Same(battle.Flow, results.Flow);
+        Assert.NotNull(fixture.Engine.GetTacticalBattleState());
         Assert.Equal(1, fixture.Depth);
         Assert.Equal(new[] { SimulationSpeed.Speed0 }, fixture.Proxy.Speeds.ToArray());
-        await fixture.Route(next.OnKeyDown(Key.Escape));
+        await fixture.Route(results.OnKeyDown(Key.Enter));
+        Assert.Null(fixture.Engine.GetTacticalBattleState());
         Assert.Same(fixture.Game, fixture.Screens.Current);
         Assert.Equal(0, fixture.Depth);
         Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);

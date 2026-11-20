@@ -91,5 +91,6 @@ public enum ScreenEvent
     FireTacticalBattle,
     NewTacticalBattle,
     CloseTacticalBattle,
-    OpenBattleResults
+    OpenBattleResults,
+    AcknowledgeBattleResults
 }

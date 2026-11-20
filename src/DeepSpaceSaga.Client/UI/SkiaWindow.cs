@@ -1002,9 +1002,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.NewGame or ScreenEvent.ContinueCheckpoint)) return;
             if (_session?.DemoCampaign?.WorldEncounter is { Phase: not WorldEncounterPhases.Finished } && evt is
                 (ScreenEvent.MainMenu or ScreenEvent.NewGame or ScreenEvent.OpenLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.ContinueCheckpoint)) return;
+            if (_screens.Current is BattleResultsScreen && evt is not (ScreenEvent.None or ScreenEvent.AcknowledgeBattleResults)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
                 (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
-                ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle) &&
+                ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle or ScreenEvent.OpenBattleResults or ScreenEvent.AcknowledgeBattleResults) &&
                 !(evt == ScreenEvent.MainMenu && activeBattle.Flow.IsTutorial) &&
                 !(activeBattle is TacticalBattleScreen { CanUseLootSave: true } && evt is ScreenEvent.QuickSave or ScreenEvent.QuickLoad))
             {
@@ -1022,7 +1023,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                         var captured = battleSession.DemoCampaign?.WorldEncounter;
                         bool openLoot = battleSession.DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open };
                         var flow = new TacticalBattleFlow(battleSession)
-                        { CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } || openLoot ? captured : null };
+                        {
+                            RequireBattleResults = true,
+                            CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } || openLoot ? captured : null
+                        };
                         if ((captured is { Phase: WorldEncounterPhases.PendingBattle } || openLoot) && await flow.StartEncounterAsync())
                         {
                             await PushModalAsync(CreateTacticalBattleView(flow), () => ReferenceEquals(_session, battleSession));
@@ -1057,6 +1061,19 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                             ? await battle.Flow.MoveAsync(battle.BuildMoveRequest())
                             : await battle.Flow.FireAsync(battle.BuildFireRequest());
                         if (response is not null && ReferenceEquals(_screens.Current, battle)) battle.OnBattleUpdated(before, response);
+                    }
+                    break;
+                case ScreenEvent.OpenBattleResults:
+                    if (ReferenceEquals(origin, _screens.Current) && _screens.Current is TacticalBattleScreen { CanOpenBattleResults: true } ended &&
+                        await ended.Flow.OpenResultsAsync())
+                        _screens.Replace(new BattleResultsScreen(ended.Flow, ended.UiScale));
+                    break;
+                case ScreenEvent.AcknowledgeBattleResults:
+                    if (ReferenceEquals(origin, _screens.Current) && _screens.Current is BattleResultsScreen results &&
+                        results.ConsumeAcknowledgeRequest() && await results.Flow.AcknowledgeResultsAsync(results.ConfirmDiscard))
+                    {
+                        await PopModalAsync();
+                        EnsureShipDestroyedScreen();
                     }
                     break;
                 case ScreenEvent.NewTacticalBattle:
@@ -1383,7 +1400,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")),
                 tacticalBattleInputs: _tacticalInputs, maneuverInputs: _maneuverInputs);
             Localization.ApplyLanguage(Localization.ReadLanguageSetting(SettingsFilePath));
-            var flow = new TacticalBattleFlow(session) { IsTutorial = true };
+            var flow = new TacticalBattleFlow(session) { IsTutorial = true, RequireBattleResults = true };
 
             // Same order as a battle opened from the map: authoritative pause first, then the battle.
             session.ClearStationTravelPause();

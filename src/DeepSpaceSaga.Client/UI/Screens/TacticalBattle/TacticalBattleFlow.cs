@@ -37,6 +37,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public bool IsCampaign => CampaignEncounter is not null;
     internal bool ConfirmLootDiscard { get; set; }
     private FinishBattleLootCommand? _pendingLootFinish;
+    private DemoCampaignCommand? _pendingResultsCommand;
     internal bool AdoptRecoveredEncounter(TacticalBattleSnapshot state)
     {
         if (CampaignEncounter?.Binding.BattleId != state.BattleId) return false;
@@ -51,7 +52,8 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
             if (await Session.GetTacticalBattleStateAsync() is { } recovered && AdoptRecoveredEncounter(recovered)) return true;
             var current = Session.DemoCampaign;
             var response = await Session.ExecuteDemoCampaignAsync(new BeginEncounterBattleCommand(
-                NewIdentity("encounter"), current?.Revision ?? 0, CampaignEncounter.Binding.EncounterId));
+                NewIdentity("encounter"), current?.Revision ?? 0, CampaignEncounter.Binding.EncounterId)
+            { RequireBattleResults = RequireBattleResults });
             var state = await Session.GetTacticalBattleStateAsync();
             if (state is not null && state.BattleId == CampaignEncounter.Binding.BattleId)
             {
@@ -100,6 +102,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
         BattleFormat.Text(string.Join(" · ", new[] { issue.File, issue.Field, issue.Message }.Where(s => s.Length > 0)));
     public async Task<TacticalBattleResponse?> StartAsync(StartTacticalBattleRequest request)
     {
+        request = request with { RequireBattleResults = RequireBattleResults };
         var response = await Submit(() => Session.StartTacticalBattleAsync(request), starting: true);
         if (response?.Accepted == true) LastStart = request;
         return response;
@@ -111,6 +114,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {
+        if (RequireBattleResults && State?.Phase == TacticalBattlePhase.Over) return false;
         var loot = Session.DemoCampaign?.Rewards?.Loot;
         if (_pendingLootFinish is not null || loot is { Phase: LootPhases.Open } && loot.BattleId == State?.BattleId)
         {
@@ -165,6 +169,39 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
             return await Session.GetTacticalBattleStateAsync() is null && Forget();
         }
         return false;
+    }
+
+    internal Task<bool> OpenResultsAsync() => SubmitResultsAsync(open: true, confirmDiscard: false);
+    internal Task<bool> AcknowledgeResultsAsync(bool confirmDiscard) => SubmitResultsAsync(open: false, confirmDiscard);
+
+    private async Task<bool> SubmitResultsAsync(bool open, bool confirmDiscard)
+    {
+        if (State is not { Phase: TacticalBattlePhase.Over } state ||
+            Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;
+        try
+        {
+            long revision = Session.DemoCampaign?.Revision ?? 0;
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
+                _pendingResultsCommand ??= open
+                    ? new OpenBattleResultsCommand(NewIdentity("results"), revision, state.BattleId)
+                    : new AcknowledgeBattleResultsCommand(NewIdentity("results-end"), revision, state.BattleId, confirmDiscard);
+                var response = await Session.ExecuteDemoCampaignAsync(_pendingResultsCommand);
+                if (response.Reason != DemoCampaignReasons.Unavailable) _pendingResultsCommand = null;
+                if (response.Applied)
+                {
+                    Volatile.Write(ref _error, "");
+                    if (!open) { ExportMetrics(state, exited: true); Forget(); }
+                    return true;
+                }
+                if (response.Reason == DemoCampaignReasons.StaleRevision) { revision = response.Revision; continue; }
+                Volatile.Write(ref _error, response.Reason == DemoCampaignReasons.Unavailable
+                    ? BattleFormat.Localize("CheckpointRetry") : Localization.Get("loot." + response.Reason));
+                return false;
+            }
+            return false;
+        }
+        finally { Volatile.Write(ref _pending, 0); }
     }
     private void SetCheckpointError() =>
         Volatile.Write(ref _error, BattleFormat.Localize("CheckpointSaveFailed") + " " + BattleFormat.Localize("CheckpointRetry"));

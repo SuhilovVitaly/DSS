@@ -264,19 +264,27 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (command is ILootCampaignCommand loot)
+        if (command is ILootCampaignCommand or AcknowledgeBattleResultsCommand)
         {
             await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
                 if (_pendingLootCheckpoint is { } pending) await WriteContinuationCheckpointAsync(pending, cancellationToken).ConfigureAwait(false);
-                var response = _engine.ExecuteDemoCampaign(command, out bool newlyApplied);
-                if (newlyApplied)
+                string? checkpointBattleId = command switch
                 {
-                    _pendingLootCheckpoint = loot.BattleId;
+                    ILootCampaignCommand loot => loot.BattleId,
+                    AcknowledgeBattleResultsCommand acknowledge when
+                        _engine.GetTacticalBattleState()?.SourceShipId is not null ||
+                        _engine.CaptureSnapshot().DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } => acknowledge.BattleId,
+                    _ => null
+                };
+                var response = _engine.ExecuteDemoCampaign(command, out bool newlyApplied);
+                if (newlyApplied && checkpointBattleId is not null)
+                {
+                    _pendingLootCheckpoint = checkpointBattleId;
                     _engine.SetEncounterStoragePending(true);
-                    await WriteContinuationCheckpointAsync(loot.BattleId, cancellationToken).ConfigureAwait(false);
+                    await WriteContinuationCheckpointAsync(checkpointBattleId, cancellationToken).ConfigureAwait(false);
                 }
                 return response;
             }

@@ -77,3 +77,12 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0001-TK-0001-entry-label](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0001-entry-label/EP-0042-US-0001-TK-0001-entry-label.md), [EP-0042-US-0001-TK-0005-outcome-lifecycle](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0005-outcome-lifecycle/EP-0042-US-0001-TK-0005-outcome-lifecycle.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+Дочернее окно заменяет тактический экран в том же слоте modal stack. Дополнительно затронуты `IScreen.cs`, `BattleResultsScreen.cs` и LocalClient для отдельного события подтверждения и сохранения последствий собственного вылета до навигации. `SimulationEngine.BattleResults.cs` публикует SourceShipId для отличия отладочного боя от собственного вылета. Уточняются прежние headless expectations для кнопки New Battle после терминального исхода.
+
+## Исполнение
+
+- Игра открывает модаль через единственный переход в активном тактическом слоте. Подтверждение закрывает этот слот и запускает обычную маршрутизацию гибели/возврата. LocalClient использует имеющуюся durable запись для выхода из собственного боя.
+- Сборка Client Tests и `git diff --check` прошли. Scoped whitespace выявил прежнее форматирование строк 144–145 в BattleNavigationTests.cs вне изменённого блока. Именованные тесты запланированы на завершение истории.
