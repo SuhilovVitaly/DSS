@@ -2277,7 +2277,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         if (!flow.AdoptRecoveredEncounter(recovered)) throw new IOException("Recovered battle identity mismatch.");
         if (frozenLoot && results is null)
         {
-            if (!await flow.OpenResultsAsync()) throw new IOException("Could not adopt recovered loot results.");
+            if (!await flow.OpenResultsAsync(adoptLegacyCheckpoint: true)) throw new IOException("Could not adopt recovered loot results.");
             flow.RestoreResultsModal = true;
         }
         return flow;

@@ -176,10 +176,11 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
         return false;
     }
 
-    internal Task<bool> OpenResultsAsync() => SubmitResultsAsync(open: true, confirmDiscard: false);
+    internal Task<bool> OpenResultsAsync(bool adoptLegacyCheckpoint = false) =>
+        SubmitResultsAsync(open: true, confirmDiscard: false, adoptLegacyCheckpoint);
     internal Task<bool> AcknowledgeResultsAsync(bool confirmDiscard) => SubmitResultsAsync(open: false, confirmDiscard);
 
-    private async Task<bool> SubmitResultsAsync(bool open, bool confirmDiscard)
+    private async Task<bool> SubmitResultsAsync(bool open, bool confirmDiscard, bool adoptLegacyCheckpoint = false)
     {
         if (State is not { Phase: TacticalBattlePhase.Over } state ||
             Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;
@@ -189,7 +190,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
             for (int attempt = 0; attempt < 2; attempt++)
             {
                 _pendingResultsCommand ??= open
-                    ? new OpenBattleResultsCommand(NewIdentity("results"), revision, state.BattleId)
+                    ? new OpenBattleResultsCommand(NewIdentity("results"), revision, state.BattleId) { AdoptLegacyCheckpoint = adoptLegacyCheckpoint }
                     : new AcknowledgeBattleResultsCommand(NewIdentity("results-end"), revision, state.BattleId, confirmDiscard);
                 var response = await Session.ExecuteDemoCampaignAsync(_pendingResultsCommand);
                 if (response.Reason != DemoCampaignReasons.Unavailable) _pendingResultsCommand = null;

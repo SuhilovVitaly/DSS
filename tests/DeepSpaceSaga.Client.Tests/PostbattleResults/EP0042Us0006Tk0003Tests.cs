@@ -51,6 +51,7 @@ public sealed class EP0042Us0006Tk0003Tests
             Assert.False(loaded!.IsTacticalBattleActive);
             Assert.Equal(saved.GameState.DemoCampaign!.LootSession!.DrawCount,
                 loaded.CaptureSaveState().GameState.DemoCampaign!.LootSession!.DrawCount);
+            Assert.False(File.Exists(Path.Combine(directory, SaveSlotNaming.ToFileName(SaveSlotNaming.ContinuationSlotId))));
             Assert.Equal(ScreenEvent.QuickSave, results.OnKeyDown(Key.F5));
 
             using var bitmap = new SKBitmap(1280, 720);

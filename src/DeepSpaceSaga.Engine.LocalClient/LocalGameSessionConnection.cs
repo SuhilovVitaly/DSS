@@ -279,7 +279,7 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
                 string? checkpointBattleId = command switch
                 {
                     ILootCampaignCommand loot => loot.BattleId,
-                    OpenBattleResultsCommand open when IsOwnedFrozenBattle(open.BattleId) => open.BattleId,
+                    OpenBattleResultsCommand { AdoptLegacyCheckpoint: false } open when IsOwnedFrozenBattle(open.BattleId) => open.BattleId,
                     AcknowledgeBattleResultsCommand acknowledge when IsOwnedFrozenBattle(acknowledge.BattleId) => acknowledge.BattleId,
                     _ => null
                 };

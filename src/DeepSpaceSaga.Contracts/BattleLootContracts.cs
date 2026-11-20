@@ -1,10 +1,15 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Contracts;
 
 public interface ILootCampaignCommand { string BattleId { get; } }
 public sealed record OpenBattleResultsCommand(string CommandId, long ExpectedRevision, string BattleId)
-    : DemoCampaignCommand(CommandId, ExpectedRevision);
+    : DemoCampaignCommand(CommandId, ExpectedRevision)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AdoptLegacyCheckpoint { get; init; }
+}
 public sealed record AcknowledgeBattleResultsCommand(string CommandId, long ExpectedRevision, string BattleId,
     bool ConfirmDiscard = false) : DemoCampaignCommand(CommandId, ExpectedRevision);
 

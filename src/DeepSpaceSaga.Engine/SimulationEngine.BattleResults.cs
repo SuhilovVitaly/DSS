@@ -110,7 +110,10 @@ public sealed partial class SimulationEngine
     private void PrepareOpenBattleResults(OpenBattleResultsCommand command, ref string? reason, ref Action? commit)
     {
         var frozen = _frozenBattleResults;
-        if (frozen?.Results.BattleId != command.BattleId && FrozenBattleMap is { } legacy && LootOpen)
+        var legacy = frozen?.Results.BattleId != command.BattleId && LootOpen ? FrozenBattleMap : null;
+        if (command.AdoptLegacyCheckpoint && legacy?.BattleId != command.BattleId)
+        { reason = BattleLootReasons.WrongBattle; return; }
+        if (legacy is not null)
         {
             int? torpedoes = PlayerShipObjectId is { } shipId && _carrierSettlement.TryGetValue(shipId, out var receipt) &&
                 receipt.BattleId == legacy.BattleId ? receipt.ConsumedTorpedoes : null;
