@@ -73,3 +73,8 @@ dotnet format src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0003-TK-0002-single-engine](../../EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0002-single-engine/EP-0042-US-0003-TK-0002-single-engine.md). Точный allowlist и owning test project указаны выше.
+
+## Исполнение
+
+- Одна команда планирует за один старт все доступные материальные строки. Трюм на старте не резервируется. Срок и порядок ledger определяют следующую выдачу. Пилоты не входят в пачку.
+- Сборка Engine Tests, scoped whitespace format и `git diff --check` прошли.

@@ -39,13 +39,21 @@ public sealed partial class SimulationEngine
     private void PrepareStartLootOperations(StartLootOperationsCommand command, ref string? reason, ref Action? commit)
     {
         if (GetTimedLoot(command.BattleId) is not { } loot) { reason = BattleLootReasons.WrongBattle; return; }
-        if (command.Row is not { } row) { reason = BattleLootReasons.InvalidTarget; return; }
-        if (_lootOperations.ContainsKey(row)) { reason = BattleLootReasons.OperationsRunning; return; }
-        int order = EnumerateLootRows(loot).ToList().FindIndex(entry => entry.Available && entry.Row == row);
-        if (order < 0) { reason = BattleLootReasons.InvalidTarget; return; }
-        int duration = LootDuration(row.Kind);
-        var operation = new PendingLootOperation(command.CommandId, row, checked(LootClockMilliseconds() + duration), duration, order);
-        commit = () => _lootOperations.Add(row, operation);
+        if (command.Row is { } selected && _lootOperations.ContainsKey(selected))
+        { reason = BattleLootReasons.OperationsRunning; return; }
+        long start = LootClockMilliseconds();
+        var operations = EnumerateLootRows(loot).Select((entry, index) => (entry.Row, entry.Available, Order: index))
+            .Where(entry => entry.Available && (command.Row is null || entry.Row == command.Row) && !_lootOperations.ContainsKey(entry.Row))
+            .Select(entry =>
+            {
+                int duration = LootDuration(entry.Row.Kind);
+                return new PendingLootOperation(command.CommandId + "/" + entry.Order, entry.Row, checked(start + duration), duration, entry.Order);
+            }).ToArray();
+        if (operations.Length == 0) { reason = BattleLootReasons.InvalidTarget; return; }
+        commit = () =>
+        {
+            foreach (var operation in operations) _lootOperations.Add(operation.Row, operation);
+        };
     }
 
     private void PrepareAdvanceLootOperations(AdvanceLootOperationsCommand command, ref DemoCampaignData candidate,
