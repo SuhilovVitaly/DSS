@@ -27,9 +27,9 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0005-TK-0001-capacity-contract](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0001-capacity-contract/EP-0042-US-0005-TK-0001-capacity-contract.md) | Опубликован, US-0005 PASS | 2673c11a90d99c4559c4bcfcef703ac203edc5a3 |
 | [EP-0042-US-0005-TK-0002-capacity-exit-rule](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0002-capacity-exit-rule/EP-0042-US-0005-TK-0002-capacity-exit-rule.md) | Опубликован, US-0005 PASS | 9342adac3a599b41f2d10d0b2ead4d4841cd3cf2 |
 | [EP-0042-US-0005-TK-0003-footer-confirmation](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0003-footer-confirmation/EP-0042-US-0005-TK-0003-footer-confirmation.md) | Опубликован, US-0005 PASS | a1c3424e2f85cf5c5253812979c6e6173ea94d65 |
-| [EP-0042-US-0006-TK-0001-save-ledger](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0001-save-ledger/EP-0042-US-0006-TK-0001-save-ledger.md) | Ожидает | — |
-| [EP-0042-US-0006-TK-0002-checkpoint-transport](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0002-checkpoint-transport/EP-0042-US-0006-TK-0002-checkpoint-transport.md) | Ожидает | — |
-| [EP-0042-US-0006-TK-0003-load-routing](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0003-load-routing/EP-0042-US-0006-TK-0003-load-routing.md) | Ожидает | — |
+| [EP-0042-US-0006-TK-0001-save-ledger](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0001-save-ledger/EP-0042-US-0006-TK-0001-save-ledger.md) | Опубликован, US-0006 PASS | 437a66b7c49ebdf72e0316f85da30059fde70250 |
+| [EP-0042-US-0006-TK-0002-checkpoint-transport](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0002-checkpoint-transport/EP-0042-US-0006-TK-0002-checkpoint-transport.md) | Опубликован, US-0006 PASS | 29899ca707ca0bc393714da2cc57085071eedcc6 |
+| [EP-0042-US-0006-TK-0003-load-routing](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0003-load-routing/EP-0042-US-0006-TK-0003-load-routing.md) | Опубликован, US-0006 PASS | eb9ee19f0b1991073430c6ba6b79436666fb8b17 |
 | [EP-0042-US-0007-TK-0001-docs-and-graph](EP-0042-US-0007-project-documentation/EP-0042-US-0007-TK-0001-docs-and-graph/EP-0042-US-0007-TK-0001-docs-and-graph.md) | Ожидает | — |
 
 ## План проверок US-0001
@@ -82,3 +82,8 @@ Headless Contracts 1/1, Engine 1/1 и Client 1/1 прошли. Self-review св�
 
 - Engine: `EP0042Us0006` — Save22, блокировки во время операции, проверка привязки, сбой атомарной записи и повтор без второго броска.
 - Client: `EP0042Us0006` — загрузка текущего и legacy-файлов через headless диспетчер, восстановление модали без сессии боя и F5/F9 во время и после сборов.
+
+## Результат US-0006
+
+Headless Engine 3/3 и Client 2/2 прошли по фильтру EP0042Us0006. Self-review проверил сохранение стадий, привязки, сериализацию доступа к диску, F5/F9 и отмену повреждённой загрузки. Ручная проверка владельца остаётся открытой.
+[Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-133153-962-us0006>).
