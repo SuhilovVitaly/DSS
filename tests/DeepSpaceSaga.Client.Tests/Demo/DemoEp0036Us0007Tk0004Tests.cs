@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.DebugConsole;
 using DeepSpaceSaga.Client.UI.Demo;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
@@ -52,6 +53,58 @@ public sealed class DemoEp0036Us0007Tk0004Tests
     {
         var deadline = DateTime.UtcNow.AddSeconds(10);
         while (!predicate()) { Assert.True(DateTime.UtcNow < deadline, "Session projection timeout"); await Task.Delay(20); }
+    }
+
+    [Fact]
+    public async Task KillAllOpensLootFromAnActiveEncounter()
+    {
+        using var engine = Won(finish: false);
+        await using var connection = new LocalGameSessionConnection(engine);
+        await using var handle = new GameSessionHandle(connection);
+        await WaitFor(() => handle.DemoCampaign?.WorldEncounter is not null);
+        var flow = new TacticalBattleFlow(handle) { CampaignEncounter = handle.DemoCampaign!.WorldEncounter };
+        Assert.True(await flow.StartEncounterAsync(), flow.Error);
+        var screen = new TacticalBattleScreen(flow, 1);
+        var battle = engine.TacticalBattleSessionForTests!;
+        var friends = battle.Battle.Drones.Where(d => d.Side == battle.PlayerSide).ToArray();
+        var friendStates = friends.Select(d => (d.Hull, d.Status)).ToArray();
+        var enemyCarrier = Assert.Single(battle.Battle.Carriers.Where(c => c.Side != battle.PlayerSide));
+        var enemies = battle.Battle.Drones.Where(d => d.Side != battle.PlayerSide).ToArray();
+        Assert.True(enemyCarrier.IsActive);
+        Assert.NotEmpty(enemies);
+        Assert.All(enemies, d => Assert.True(d.IsActive));
+
+        var registry = DebugCommandCatalog.CreateDefault();
+        Assert.True(DebugConsoleController.TryParse("kill all", out var name, out var arguments));
+        Assert.True(registry.TryGet(name, out var command));
+        var context = new DebugCommandContext(registry, new BattleConsoleHost(handle, screen));
+        Assert.True((await command.ExecuteAsync(context, "everything", CancellationToken.None)).IsError);
+        Assert.True(enemyCarrier.IsActive);
+        var result = await command.ExecuteAsync(context, arguments, CancellationToken.None);
+
+        Assert.False(result.IsError, string.Join("; ", result.Lines));
+        Assert.False(enemyCarrier.IsActive);
+        Assert.All(enemies, d => Assert.Equal(TacticalDroneStatus.Disabled, d.Status));
+        Assert.Equal(friendStates, friends.Select(d => (d.Hull, d.Status)).ToArray());
+        await WaitFor(() => handle.DemoCampaign?.Rewards?.Loot?.Phase == LootPhases.Open);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        Assert.Equal(TacticalBattlePhase.Over, frame.Battle.Phase);
+        var source = handle.DemoCampaign!.Rewards!.Loot!.Objects.First(s => s.Kind == "DisabledDrone");
+        var point = frame.View.Project(source.X, source.Y);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(point.X, point.Y, MouseButton.Left));
+        Assert.Equal(source.ObjectId, screen.LootWindow!.Presentation.Selected!.ObjectId);
+        Assert.True(Assert.Single(engine.CaptureSaveState().GameState.DemoCampaign!.EncounterResults).PlayerWon);
+    }
+
+    private sealed class BattleConsoleHost(GameSessionHandle session, TacticalBattleScreen screen) : IDebugConsoleHost
+    {
+        public GameSessionHandle Session => session;
+        public TacticalBattleScreen ActiveBattle => screen;
+        public bool IsTransitionBusy => false;
+        public Task<DebugCommandResult> RunExclusiveAsync(Func<CancellationToken, Task<DebugCommandResult>> operation,
+            CancellationToken cancellationToken) => operation(cancellationToken);
+        public Task<DebugCommandResult> ExitTutorialBattleAsync(GameSessionHandle? expectedSession,
+            CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     [Fact]

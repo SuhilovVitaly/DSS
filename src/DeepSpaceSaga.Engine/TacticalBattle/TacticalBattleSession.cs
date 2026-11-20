@@ -157,6 +157,9 @@ internal sealed class TacticalBattleSession
             : Phase == TacticalBattlePhase.Over ? TacticalBattleRejectionCode.WrongPhase
             : TacticalBattleRejectionCode.None;
         if (error != TacticalBattleRejectionCode.None) return Reject(request.CommandId, error);
+        if (request.AllEnemies)
+            return request.UnitId == "" ? DebugDestroyEnemyCarriers(request.CommandId)
+                : Reject(request.CommandId, TacticalBattleRejectionCode.InvalidRequest);
         var drone = Battle.Drones.FirstOrDefault(d => string.Equals(d.Id, request.UnitId, StringComparison.Ordinal));
         if (drone is null || drone.Status == TacticalDroneStatus.Destroyed)
             return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidTarget);
@@ -172,6 +175,30 @@ internal sealed class TacticalBattleSession
         AddSelfDestructs(phase);
         Revision++;
         return Accepted(request.CommandId, events);
+    }
+
+    private TacticalBattleResponse DebugDestroyEnemyCarriers(string commandId)
+    {
+        int events = _log.Count;
+        var phase = Phase;
+        var enemySide = Battle.EnemySide(PlayerSide);
+        var activeDrones = Battle.Drones.Where(d => d.Side == enemySide && d.IsActive).ToArray();
+        foreach (var carrier in Battle.Carriers.Where(c => c.Side == enemySide && c.IsActive))
+        {
+            carrier.Hull = 0;
+            Battle.Statistics.FirstLoss ??= carrier.Side;
+            Add(TacticalBattleLogKind.Destroyed, phase, target: carrier.Id, unit: Describe(carrier));
+        }
+
+        // Loss of command disables the surviving drones and lets the ordinary victory path open loot.
+        if (Battle.CheckVictory() is not null)
+        {
+            foreach (var drone in activeDrones)
+                Add(TacticalBattleLogKind.Disabled, phase, target: drone.Id, unit: Describe(drone));
+            AddOutcome(phase);
+        }
+        Revision++;
+        return Accepted(commandId, events);
     }
 
     private void ResolveFire(IReadOnlyList<(string DroneId, TacticalFirePlan Plan)> targets)
