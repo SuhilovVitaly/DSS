@@ -22,7 +22,7 @@ public sealed record DemoLootDefinitions(int SchemaVersion, string ScrapItemType
         ConsumableItems = ConsumableItems.IsDefault ? null : ConsumableItems.OrderBy(m => m.Category, StringComparer.Ordinal).ThenBy(m => m.CatalogId, StringComparer.Ordinal)
     })));
 
-    internal void ValidateReferences(GameDataRegistry registry, DemoEncountersDefinition? encounters)
+    internal void ValidateReferences(GameDataRegistry registry, DemoEncountersDefinition? encounters, bool allowStandalone = false)
     {
         void Require(bool valid) { if (!valid) throw new ScenarioException("Invalid demo loot catalog or mapping."); }
         Require(SchemaVersion == 1 && DroneScrapQuantityByFrame is not null && CarrierScrapQuantityByLayout is not null);
@@ -37,10 +37,12 @@ public sealed record DemoLootDefinitions(int SchemaVersion, string ScrapItemType
         Require(Item(ScrapItemTypeId).UnitMassKg == 1);
         Require(DroneScrapQuantityByFrame!.All(p => p.Value > 0 && catalog.Frames.Contains(p.Key)) &&
             CarrierScrapQuantityByLayout!.All(p => p.Value > 0 && catalog.Layouts.Contains(p.Key)));
-        if (encounters is null) throw new ScenarioException("Loot requires encounter definitions.");
-        foreach (var layoutId in encounters.DroneLayouts)
+        if (encounters is null && !allowStandalone) throw new ScenarioException("Loot requires encounter definitions.");
+        var encounterLayouts = encounters?.DroneLayouts ?? [];
+        foreach (var layoutId in encounterLayouts)
             Require(DroneScrapQuantityByFrame!.ContainsKey(catalog.Layouts[layoutId].Class));
-        foreach (var profile in encounters.Profiles) Require(CarrierScrapQuantityByLayout!.ContainsKey(profile.CarrierLayoutId));
+        if (encounters is not null)
+            foreach (var profile in encounters.Profiles) Require(CarrierScrapQuantityByLayout!.ContainsKey(profile.CarrierLayoutId));
         double ModuleMass(LootItemMapping m) => m.Category switch
         {
             "weapon" when catalog.Weapons.Contains(m.CatalogId) => catalog.Weapons[m.CatalogId].MassKg,
@@ -57,7 +59,7 @@ public sealed record DemoLootDefinitions(int SchemaVersion, string ScrapItemType
                 modules.Select(m => (m.Category, m.CatalogId)).Distinct().Count() == modules.Length);
             foreach (var m in modules) Require(Item(m.ItemTypeId).UnitMassKg == ModuleMass(m));
             void Mapped(string category, string? id) { if (id is not null) Require(modules.Any(m => m.Category == category && m.CatalogId == id)); }
-            foreach (var id in encounters.DroneLayouts)
+            foreach (var id in encounterLayouts)
             {
                 var layout = catalog.Layouts[id];
                 Mapped("weapon", layout.Weapon); Mapped("armor", layout.Armor);
@@ -73,7 +75,7 @@ public sealed record DemoLootDefinitions(int SchemaVersion, string ScrapItemType
             Item(m.ItemTypeId);
             Require(m.Category == "ammo" && m.CatalogId == "torpedo.t1" || m.Category == "decoy" && catalog.Decoys.Contains(m.CatalogId));
         }
-        foreach (var id in encounters.DroneLayouts)
+        foreach (var id in encounterLayouts)
         {
             var layout = catalog.Layouts[id];
             if (catalog.Frames[layout.Class].AmmoCapacity > 0)

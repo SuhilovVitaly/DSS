@@ -200,12 +200,13 @@ public sealed partial class SimulationEngine
                 return new(commandId, false, TacticalBattleRejectionCode.ReceiptExpired, _tacticalBattleSession?.Phase, null, []);
             }
             var response = apply();
+            bool debugVictory = response.Accepted && request is DebugDestroyTacticalUnitRequest { AllEnemies: true };
             if (_requireBattleResults && _tacticalBattleSession?.Phase == TacticalBattlePhase.Over)
             {
-                var settlement = FreezeBattleResults();
+                var settlement = FreezeBattleResults(debugVictory);
                 response = response with { Settlement = settlement, State = FrozenBattleMap };
             }
-            else if (BeginPostBattleLoot() is { } legacySettlement)
+            else if (BeginPostBattleLoot(debugVictory) is { } legacySettlement)
                 response = response with { Settlement = legacySettlement, State = FrozenBattleMap };
             _tacticalIdentities.Add(commandId, identity);
             if (_tacticalResponseOrder.Count == TacticalResponseLimit)

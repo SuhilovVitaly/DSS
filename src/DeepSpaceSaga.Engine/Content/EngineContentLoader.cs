@@ -26,6 +26,8 @@ public static class EngineContentLoader
         engine.ConfigureStationResourceFields(fields);
         if (loaded.DefaultScenario.Metadata.ScenarioId == "demo" || loaded.DefaultScenario.GameState.DemoCampaign?.CatalogFingerprint is not null)
             ConfigureCampaignContent(engine, settingsPath);
+        else if (loaded.DefaultScenario.Metadata.ScenarioId == "tutorial")
+            ConfigureTutorialLoot(engine, settingsPath);
         var settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
         engine.LoadScenario(loaded.DefaultScenario, generation: GenerationForScenario(settingsPath, settings.DefaultScenario));
         return engine;
@@ -46,6 +48,8 @@ public static class EngineContentLoader
         engine.ConfigureStationResourceFields(fields);
         if (saveScenario.Metadata.ScenarioId == "demo" || saveScenario.GameState.DemoCampaign?.CatalogFingerprint is not null)
             ConfigureCampaignContent(engine, settingsPath);
+        else if (saveScenario.Metadata.ScenarioId == "tutorial" || saveScenario.GameState.DemoCampaign?.LootSession?.DebugSortie == true)
+            ConfigureTutorialLoot(engine, settingsPath);
         engine.LoadScenario(saveScenario, isSave: true);
         return engine;
     }
@@ -66,12 +70,20 @@ public static class EngineContentLoader
         engine.ConfigureStationResourceFields(fields);
         if (scenario.Metadata.ScenarioId == "demo" || scenario.GameState.DemoCampaign?.CatalogFingerprint is not null)
             ConfigureCampaignContent(engine, settingsPath);
+        else if (scenario.Metadata.ScenarioId == "tutorial")
+            ConfigureTutorialLoot(engine, settingsPath);
         engine.LoadScenario(scenario, generation: GenerationForScenario(settingsPath, scenarioPath));
         return engine;
     }
 
     private static void ConfigureCampaignContent(SimulationEngine engine, string settingsPath) =>
         engine.ConfigureDemoCampaign(DemoCampaignDefinitions.Load(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!));
+
+    private static void ConfigureTutorialLoot(SimulationEngine engine, string settingsPath)
+    {
+        string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
+        engine.ConfigureTutorialLoot(DemoCampaignDefinitions.LoadLoot(root));
+    }
 
     private static SolarSystemGenerationConfig? GenerationForScenario(string settingsPath, string scenarioPath)
     {

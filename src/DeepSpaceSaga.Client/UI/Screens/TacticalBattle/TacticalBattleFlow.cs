@@ -49,6 +49,14 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
         Volatile.Write(ref _observed, new(state, state));
         return true;
     }
+    internal bool AdoptRecoveredLoot(TacticalBattleSnapshot state)
+    {
+        if (state.Phase != TacticalBattlePhase.Over ||
+            Session.DemoCampaign?.Rewards?.Loot is not { Phase: LootPhases.Open } loot || loot.BattleId != state.BattleId)
+            return false;
+        Volatile.Write(ref _observed, new(state, state));
+        return true;
+    }
     public async Task<bool> StartEncounterAsync()
     {
         if (CampaignEncounter is null || Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return false;

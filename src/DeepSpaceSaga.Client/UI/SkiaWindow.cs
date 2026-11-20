@@ -1019,7 +1019,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             switch (evt)
             {
                 case ScreenEvent.OpenTacticalBattle:
-                    if (_session is { } battleSession && _screens.Count == 1 && _screens.Current is GameSessionScreen)
+                    if (_session is { } battleSession && _screens.Count == 1 && _screens.Current is GameSessionScreen gameScreen)
                     {
                         Localization.ApplyLanguage(Localization.ReadLanguageSetting(SettingsFilePath));
                         var captured = battleSession.DemoCampaign?.WorldEncounter;
@@ -1027,9 +1027,16 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                         var flow = new TacticalBattleFlow(battleSession)
                         {
                             RequireBattleResults = true,
-                            CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } || openLoot ? captured : null
+                            CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } ? captured : null
                         };
-                        if ((captured is { Phase: WorldEncounterPhases.PendingBattle } || openLoot) && await flow.StartEncounterAsync())
+                        if (openLoot && await RecoverBattleFlowAsync(battleSession) is { } recoveredFlow)
+                        {
+                            await PushModalAsync(recoveredFlow.RestoreResultsModal
+                                ? new BattleResultsScreen(recoveredFlow, gameScreen.UiScale)
+                                : CreateTacticalBattleView(recoveredFlow), () => ReferenceEquals(_session, battleSession));
+                            break;
+                        }
+                        if (captured is { Phase: WorldEncounterPhases.PendingBattle } && await flow.StartEncounterAsync())
                         {
                             await PushModalAsync(CreateTacticalBattleView(flow), () => ReferenceEquals(_session, battleSession));
                             break;
@@ -2274,7 +2281,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             RequireBattleResults = results is not null || frozenLoot || encounter?.RequireBattleResults != false,
             RestoreResultsModal = results?.Stage == BattleResultsStage.Open
         };
-        if (!flow.AdoptRecoveredEncounter(recovered)) throw new IOException("Recovered battle identity mismatch.");
+        bool adopted = frozenLoot && results is null ? flow.AdoptRecoveredLoot(recovered) : flow.AdoptRecoveredEncounter(recovered);
+        if (!adopted) throw new IOException("Recovered battle identity mismatch.");
         if (frozenLoot && results is null)
         {
             if (!await flow.OpenResultsAsync(adoptLegacyCheckpoint: true)) throw new IOException("Could not adopt recovered loot results.");

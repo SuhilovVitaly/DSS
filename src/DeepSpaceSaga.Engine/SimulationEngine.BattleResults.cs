@@ -71,11 +71,11 @@ public sealed partial class SimulationEngine
         return CreateFrozenResults(map, canLoot, saved.Stage, saved.ConsumedTorpedoes);
     }
 
-    private SortieSettlementSnapshot? FreezeBattleResults()
+    private SortieSettlementSnapshot? FreezeBattleResults(bool debugVictory = false)
     {
         var session = _tacticalBattleSession!;
         var map = session.Capture() with { SourceShipId = _tacticalBattleSourceShipId };
-        var settlement = BeginPostBattleLoot();
+        var settlement = BeginPostBattleLoot(debugVictory);
         bool canLoot = settlement is not null;
         if (!canLoot && _tacticalBattleSourceShipId is not null)
         {
