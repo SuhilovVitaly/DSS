@@ -96,11 +96,12 @@ public sealed partial class SimulationEngine
     }
 
     internal void PrepareBattleLootCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
-        ref string? reason, ref Action? commit)
+        ref string? reason, ref Action? commit, bool completingOperation = false)
     {
         if (command is not ILootCampaignCommand lootCommand || candidate.LootSession is not { } loot || loot.BattleId != lootCommand.BattleId)
         { reason = BattleLootReasons.WrongBattle; return; }
         if (loot.Phase != LootPhases.Open) { reason = BattleLootReasons.LootClosed; return; }
+        if (!completingOperation && _lootOperations.Count != 0) { reason = BattleLootReasons.OperationsRunning; return; }
         if (command is JettisonCargoCommand jettison) { PrepareJettisonCargo(jettison, ref candidate, ref reason, ref commit); return; }
         string? objectId = command switch
         {
@@ -174,7 +175,7 @@ public sealed partial class SimulationEngine
         return new(loot.BattleId, loot.Phase, objects, open && objects.Any(s =>
             s.Consumables.Any(c => c.Remaining > 0) || s.Scrap?.State == LootAttemptStates.NotAttempted ||
             s.Modules.Any(m => m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }))
-        { Cargo = BuildLootCargo(), FreeCargoKg = freeMass };
+        { Cargo = BuildLootCargo(), FreeCargoKg = freeMass, Operations = ProjectLootOperations() };
     }
 
     private ScrapLootSnapshot ProjectScrap(LootScrapData scrap, bool open, Func<string, long, bool> canFit)

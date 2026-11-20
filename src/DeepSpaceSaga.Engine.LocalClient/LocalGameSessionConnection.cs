@@ -280,7 +280,8 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
                     _ => null
                 };
                 var response = _engine.ExecuteDemoCampaign(command, out bool newlyApplied);
-                if (newlyApplied && checkpointBattleId is not null)
+                if (newlyApplied && checkpointBattleId is not null && command is not StartLootOperationsCommand &&
+                    response.Rewards?.Loot?.Operations.IsEmpty != false)
                 {
                     _pendingLootCheckpoint = checkpointBattleId;
                     _engine.SetEncounterStoragePending(true);

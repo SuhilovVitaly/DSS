@@ -147,6 +147,12 @@ public sealed partial class SimulationEngine
             case FinishBattleLootCommand finish:
                 PrepareFinishBattleLoot(finish, ref candidate, ref reason, ref commit);
                 break;
+            case StartLootOperationsCommand start:
+                PrepareStartLootOperations(start, ref reason, ref commit);
+                break;
+            case AdvanceLootOperationsCommand advance:
+                PrepareAdvanceLootOperations(advance, ref candidate, ref reason, ref commit);
+                break;
             case ILootCampaignCommand:
                 PrepareBattleLootCommand(command, ref candidate, ref reason, ref commit);
                 break;

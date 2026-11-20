@@ -568,6 +568,7 @@ public sealed partial class SimulationEngine : IDisposable
             _demoCampaign = restoredDemoCampaign;
             _frozenBattleResults = null;
             _requireBattleResults = false;
+            _lootOperations.Clear();
             InitializeCrewUpkeep(gs.GameTimeMs);
             _appliedMotionTimeMs = gs.MotionTimeMs;
             _processedWorldTimeMs = gs.GameTimeMs;

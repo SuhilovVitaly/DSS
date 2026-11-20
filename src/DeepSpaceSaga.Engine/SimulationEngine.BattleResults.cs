@@ -67,6 +67,8 @@ public sealed partial class SimulationEngine
         { reason = BattleLootReasons.WrongBattle; return; }
         if (frozen.Results.Stage != BattleResultsStage.Open)
         { reason = BattleLootReasons.LootClosed; return; }
+        if (_lootOperations.Count != 0)
+        { reason = BattleLootReasons.OperationsRunning; return; }
         if (frozen.Results.CanLoot)
         {
             PrepareFinishBattleLoot(new(command.CommandId, command.ExpectedRevision, command.BattleId, command.ConfirmDiscard),
