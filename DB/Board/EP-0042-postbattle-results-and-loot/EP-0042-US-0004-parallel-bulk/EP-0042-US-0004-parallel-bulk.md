@@ -54,3 +54,5 @@ revision: 1
 
 Headless Engine 2/2 и Client 1/1 прошли по фильтру EP0042Us0004. Self-review сверил порядок списка с индексами ledger, границы вместимости и одну выдачу на готовый трофей.
 Нативная и продуктовая приёмка ожидают владельца.
+
+[TK-0004](EP-0042-US-0004-TK-0004-manual-quantity/EP-0042-US-0004-TK-0004-manual-quantity.md) восстановил ручной сбор одной единицы. После review Engine 8/8 и Client 18/18 подтвердили затронутые маршруты. [Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-135249-045-manual-quantity-rerun>).

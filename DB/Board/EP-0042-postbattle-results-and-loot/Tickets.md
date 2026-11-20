@@ -24,6 +24,7 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0004-TK-0001-bulk-order](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0001-bulk-order/EP-0042-US-0004-TK-0001-bulk-order.md) | Опубликован, US-0004 PASS | 07e439fcb2cfeb025f71fba67b1b0f3649dd5c0d |
 | [EP-0042-US-0004-TK-0002-cargo-completion](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0002-cargo-completion/EP-0042-US-0004-TK-0002-cargo-completion.md) | Опубликован, US-0004 PASS | f5b55ea4b979d705a33d1c093d90de0e919131fa |
 | [EP-0042-US-0004-TK-0003-bulk-action](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0003-bulk-action/EP-0042-US-0004-TK-0003-bulk-action.md) | Опубликован, US-0004 PASS | 4ce7f1d539cb819446bd8d1f391d1b1aa40cb1ce |
+| [EP-0042-US-0004-TK-0004-manual-quantity](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0004-manual-quantity/EP-0042-US-0004-TK-0004-manual-quantity.md) | Опубликован, проверка повторена | ce0c841c64e3cc0500dae4285f309d03179d7abc |
 | [EP-0042-US-0005-TK-0001-capacity-contract](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0001-capacity-contract/EP-0042-US-0005-TK-0001-capacity-contract.md) | Опубликован, US-0005 PASS | 2673c11a90d99c4559c4bcfcef703ac203edc5a3 |
 | [EP-0042-US-0005-TK-0002-capacity-exit-rule](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0002-capacity-exit-rule/EP-0042-US-0005-TK-0002-capacity-exit-rule.md) | Опубликован, US-0005 PASS | 9342adac3a599b41f2d10d0b2ead4d4841cd3cf2 |
 | [EP-0042-US-0005-TK-0003-footer-confirmation](EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0003-footer-confirmation/EP-0042-US-0005-TK-0003-footer-confirmation.md) | Опубликован, US-0005 PASS | a1c3424e2f85cf5c5253812979c6e6173ea94d65 |
@@ -32,7 +33,7 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0006-TK-0003-load-routing](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0003-load-routing/EP-0042-US-0006-TK-0003-load-routing.md) | Опубликован, US-0006 PASS | eb9ee19f0b1991073430c6ba6b79436666fb8b17 |
 | [EP-0042-US-0006-TK-0004-close-retry-gate](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0004-close-retry-gate/EP-0042-US-0006-TK-0004-close-retry-gate.md) | Опубликован, US-0006 PASS | 0b71fd0ccc7bdd2cedcb29100b1872a303592117 |
 | [EP-0042-US-0006-TK-0005-legacy-load-preserves-continuation](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0005-legacy-load-preserves-continuation/EP-0042-US-0006-TK-0005-legacy-load-preserves-continuation.md) | Опубликован, US-0006 PASS | d722921bc5efcce788e635f76884de478570bc8a |
-| [EP-0042-US-0007-TK-0001-docs-and-graph](EP-0042-US-0007-project-documentation/EP-0042-US-0007-TK-0001-docs-and-graph/EP-0042-US-0007-TK-0001-docs-and-graph.md) | Ожидает | — |
+| [EP-0042-US-0007-TK-0001-docs-and-graph](EP-0042-US-0007-project-documentation/EP-0042-US-0007-TK-0001-docs-and-graph/EP-0042-US-0007-TK-0001-docs-and-graph.md) | Опубликован | 5f922578d135c40fdc01564a293188e6fb513aad |
 
 ## План проверок US-0001
 
@@ -99,3 +100,5 @@ Headless Engine 3/3 и Client 2/2 прошли по фильтру EP0042Us0006.
 Дополнительная проверка US-0006 после TK-0004 прошла 3/3 в Client. [Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-134020-450-us0006-rerun>).
 
 Повтор US-0006 после TK-0005 прошёл в Engine 3/3 и Client 3/3. [Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-134316-826-us0006-legacy-rerun>).
+
+[Итоговая проверка и независимый review](FinalValidation.md).
