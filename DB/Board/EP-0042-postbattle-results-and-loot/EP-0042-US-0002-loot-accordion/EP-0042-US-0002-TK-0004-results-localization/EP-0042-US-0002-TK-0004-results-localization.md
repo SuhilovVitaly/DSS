@@ -70,3 +70,8 @@ dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore
 ## Self-containment check
 
 Зависимостей на реализацию нет. В перечне только два каталога строк и один тест.
+
+## Исполнение
+
+- Добавлены согласованные строки двух локалей. Итоговые реплики обучения направляют в «Результаты боя».
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли. Проверка каталогов запланирована на завершение US-0002.
