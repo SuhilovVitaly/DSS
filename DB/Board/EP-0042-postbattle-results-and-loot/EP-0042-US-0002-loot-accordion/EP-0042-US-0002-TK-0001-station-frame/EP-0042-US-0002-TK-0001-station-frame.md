@@ -73,3 +73,8 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0001-TK-0003-summary-shell](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0003-summary-shell/EP-0042-US-0001-TK-0003-summary-shell.md). Точный allowlist и owning test project указаны выше.
+
+## Исполнение
+
+- Рамка результатов использует размеры, центрирование и стиль окна станции. Список ограничен видимой областью. Футер остаётся за пределами списка и видим на малом viewport.
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли.
