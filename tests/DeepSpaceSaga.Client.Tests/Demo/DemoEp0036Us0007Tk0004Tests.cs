@@ -84,7 +84,9 @@ public sealed class DemoEp0036Us0007Tk0004Tests
 
         Assert.False(result.IsError, string.Join("; ", result.Lines));
         Assert.False(enemyCarrier.IsActive);
-        Assert.All(enemies, d => Assert.Equal(TacticalDroneStatus.Disabled, d.Status));
+        Assert.All(enemies, d => Assert.False(d.IsActive));
+        Assert.Contains(enemies, d => d.Status == TacticalDroneStatus.Destroyed);
+        Assert.Contains(enemies, d => d.Status == TacticalDroneStatus.Disabled);
         Assert.Equal(friendStates, friends.Select(d => (d.Hull, d.Status)).ToArray());
         await WaitFor(() => handle.DemoCampaign?.Rewards?.Loot?.Phase == LootPhases.Open);
         var frame = screen.CaptureFrame(1280, 720)!;

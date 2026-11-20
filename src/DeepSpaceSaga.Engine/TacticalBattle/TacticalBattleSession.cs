@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Rng;
 using DeepSpaceSaga.Engine.TacticalBattle.Ai;
 using DeepSpaceSaga.Engine.TacticalBattle.Content;
 
@@ -158,31 +159,41 @@ internal sealed class TacticalBattleSession
             : TacticalBattleRejectionCode.None;
         if (error != TacticalBattleRejectionCode.None) return Reject(request.CommandId, error);
         if (request.AllEnemies)
-            return request.UnitId == "" ? DebugDestroyEnemyCarriers(request.CommandId)
+            return request.UnitId == "" ? DebugResolveEnemySide(request.CommandId)
                 : Reject(request.CommandId, TacticalBattleRejectionCode.InvalidRequest);
         var drone = Battle.Drones.FirstOrDefault(d => string.Equals(d.Id, request.UnitId, StringComparison.Ordinal));
         if (drone is null || drone.Status == TacticalDroneStatus.Destroyed)
             return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidTarget);
         int events = _log.Count;
         var phase = Phase;
-        bool wasActive = drone.IsActive;
-        drone.Hull = 0;
-        drone.Status = TacticalDroneStatus.Destroyed;
-        drone.Speed = 0;
-        if (wasActive) Battle.Statistics.FirstLoss ??= drone.Side;
-        Add(TacticalBattleLogKind.Destroyed, phase, target: drone.Id, unit: Describe(drone));
+        DebugDestroyDrone(drone, phase);
         if (Battle.CheckVictory() is not null) AddOutcome(phase);
         AddSelfDestructs(phase);
         Revision++;
         return Accepted(request.CommandId, events);
     }
 
-    private TacticalBattleResponse DebugDestroyEnemyCarriers(string commandId)
+    private void DebugDestroyDrone(TacticalDrone drone, TacticalBattlePhase phase)
+    {
+        if (drone.IsActive) Battle.Statistics.FirstLoss ??= drone.Side;
+        drone.Hull = 0;
+        drone.Status = TacticalDroneStatus.Destroyed;
+        drone.Speed = 0;
+        Add(TacticalBattleLogKind.Destroyed, phase, target: drone.Id, unit: Describe(drone));
+    }
+
+    private TacticalBattleResponse DebugResolveEnemySide(string commandId)
     {
         int events = _log.Count;
         var phase = Phase;
         var enemySide = Battle.EnemySide(PlayerSide);
-        var activeDrones = Battle.Drones.Where(d => d.Side == enemySide && d.IsActive).ToArray();
+        var activeDrones = Battle.Drones.Where(d => d.Side == enemySide && d.IsActive).OrderBy(d => d.Id, StringComparer.Ordinal).ToArray();
+        var random = RngStreamNames.CreateDeterministicRandom(RngStreamSeedDerivation.DeriveStreamSeed(
+            unchecked((ulong)Battle.Seed), "debug-kill-all/v1/" + Id));
+        random.Shuffle(activeDrones.AsSpan());
+        // Keep both kinds of loot available when at least two active enemies remain.
+        int destroyed = activeDrones.Length < 2 ? random.Next(activeDrones.Length + 1) : random.Next(1, activeDrones.Length);
+        foreach (var drone in activeDrones.Take(destroyed)) DebugDestroyDrone(drone, phase);
         foreach (var carrier in Battle.Carriers.Where(c => c.Side == enemySide && c.IsActive))
         {
             carrier.Hull = 0;
@@ -193,7 +204,7 @@ internal sealed class TacticalBattleSession
         // Loss of command disables the surviving drones and lets the ordinary victory path open loot.
         if (Battle.CheckVictory() is not null)
         {
-            foreach (var drone in activeDrones)
+            foreach (var drone in activeDrones.Skip(destroyed))
                 Add(TacticalBattleLogKind.Disabled, phase, target: drone.Id, unit: Describe(drone));
             AddOutcome(phase);
         }

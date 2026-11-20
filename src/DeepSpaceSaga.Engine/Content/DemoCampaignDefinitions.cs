@@ -67,6 +67,14 @@ public sealed record DemoCampaignDefinitions(DemoClusterDefinition? Cluster, str
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
     };
 
+    internal static DemoLootDefinitions? LoadLoot(string contentRoot)
+    {
+        string path = Path.Combine(contentRoot, "Data", "Demo", "loot.json");
+        return File.Exists(path)
+            ? JsonSerializer.Deserialize<DemoLootDefinitions>(File.ReadAllBytes(path), Options) ?? throw new ScenarioException("Missing loot definition.")
+            : null;
+    }
+
     public static DemoCampaignDefinitions Load(string contentRoot)
     {
         string path = Path.Combine(contentRoot, "Data", "Demo", "cluster.json");

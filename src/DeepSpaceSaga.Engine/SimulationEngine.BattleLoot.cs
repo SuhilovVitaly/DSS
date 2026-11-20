@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Rng;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Engine.TacticalBattle;
@@ -11,7 +12,11 @@ public sealed partial class SimulationEngine
     private static int LootRoll(ulong seed, long draw) => RngStreamNames.CreateDeterministicRandom(
         RngStreamSeedDerivation.DeriveStreamSeed(seed, "battle-loot/v1/draw/" + draw.ToString(System.Globalization.CultureInfo.InvariantCulture))).Next(10000);
 
-    internal BattleLootData InitializeBattleLoot(TacticalBattleSession session)
+    private static long DroneLootScrapQuantity(DemoLootDefinitions definitions, string frameId, bool debugSortie) =>
+        debugSortie && !definitions.DroneScrapQuantityByFrame.ContainsKey(frameId)
+            ? definitions.DroneScrapQuantityByFrame["light"] : definitions.DroneScrapQuantityByFrame[frameId];
+
+    internal BattleLootData InitializeBattleLoot(TacticalBattleSession session, bool debugSortie = false)
     {
         var definitions = _demoDefinitions.Loot ?? throw new ScenarioException("Missing loot content.");
         ulong seed = RngStreamSeedDerivation.DeriveStreamSeed(unchecked((ulong)session.Battle.Seed), "battle-loot/v1/" + session.Id);
@@ -19,15 +24,19 @@ public sealed partial class SimulationEngine
         int chance = 2500 + (int)Math.Round(GetAssignedEngineerBonusFraction() * 10000);
         var sources = ImmutableArray.CreateBuilder<LootSourceData>();
         var frozen = session.Capture();
+        if (debugSortie) frozen = frozen with { SourceShipId = _tacticalBattleSourceShipId };
+        var scenarioEnemy = debugSortie ? session.Battle.Catalog.Scenarios[session.Battle.ScenarioId].Sides
+            .Single(s => s.Id != session.PlayerSide) : null;
         foreach (var drone in session.Battle.Drones.Where(d => d.Side != session.PlayerSide).OrderBy(d => d.Id, StringComparer.Ordinal))
         {
             if (drone.Status == TacticalDroneStatus.Air) continue;
-            string layoutId = _demoCampaign.PirateCompositions.SelectMany(c => c.Drones).FirstOrDefault(d => d.DroneId == drone.Id)?.LayoutId
-                ?? session.Battle.Catalog.Layouts.Entries.First(p => p.Value == drone.Layout).Id;
+            string layoutId = scenarioEnemy is not null ? scenarioEnemy.Drones.Single(d => d.Id == drone.Id).Layout
+                : _demoCampaign.PirateCompositions.SelectMany(c => c.Drones).FirstOrDefault(d => d.DroneId == drone.Id)?.LayoutId
+                    ?? session.Battle.Catalog.Layouts.Entries.First(p => p.Value == drone.Layout).Id;
             if (drone.Status == TacticalDroneStatus.Destroyed)
             {
                 sources.Add(new(drone.Id, "DestroyedDrone", layoutId, drone.Pose.X, drone.Pose.Y, drone.Pose.Course, null, [],
-                    new(definitions.ScrapItemTypeId, definitions.DroneScrapQuantityByFrame[drone.Frame.Id], chance), []));
+                    new(definitions.ScrapItemTypeId, DroneLootScrapQuantity(definitions, drone.Frame.Id, debugSortie), chance), []));
                 continue;
             }
             var consumables = ImmutableArray.CreateBuilder<LootConsumableData>();
@@ -44,17 +53,18 @@ public sealed partial class SimulationEngine
             var pilot = new LootPilotSnapshot(LootPilotIdentity(session.Id, drone.Id, build.PilotId), build.PilotName, build.PilotPortraitAssetId,
                 true, null, Gender: build.PilotGender ?? CrewGender.Female);
             sources.Add(new(drone.Id, "DisabledDrone", layoutId, drone.Pose.X, drone.Pose.Y, drone.Pose.Course,
-                pilot, consumables.ToImmutable(), null, InitializeLootModules(session.Id, drone, seed, ref draws, chance)));
+                pilot, consumables.ToImmutable(), null, InitializeLootModules(session.Id, drone, seed, ref draws, chance, debugSortie)));
         }
         foreach (var carrier in session.Battle.Carriers.Where(c => c.Side != session.PlayerSide && !c.IsActive).OrderBy(c => c.Id, StringComparer.Ordinal))
         {
             var composition = _demoCampaign.PirateCompositions.SingleOrDefault(c => c.CarrierId == carrier.Id);
-            string layout = composition is not null ? _demoDefinitions.Encounters!.Profiles.Single(p => p.SignatureTypeId == composition.SignatureTypeId).CarrierLayoutId
-                : "carrier.standard";
+            string layout = scenarioEnemy is not null ? scenarioEnemy.CarrierGroup.Single(c => c.Id == carrier.Id).Layout
+                : composition is not null ? _demoDefinitions.Encounters!.Profiles.Single(p => p.SignatureTypeId == composition.SignatureTypeId).CarrierLayoutId
+                    : "carrier.standard";
             sources.Add(new(carrier.Id, session.Battle.SelfDestructedCarrierIds.Contains(carrier.Id) ? "SelfDestructCarrier" : "Carrier", layout, carrier.Pose.X, carrier.Pose.Y, carrier.Pose.Course, null, [],
                 new(definitions.ScrapItemTypeId, definitions.CarrierScrapQuantityByLayout[layout], chance), []));
         }
-        return new(session.Id, LootPhases.Open, definitions.Fingerprint, seed, draws, frozen, sources.ToImmutable());
+        return new(session.Id, LootPhases.Open, definitions.Fingerprint, seed, draws, frozen, sources.ToImmutable()) { DebugSortie = debugSortie };
     }
 
     private bool TryPrepareLootCargo(string itemId, long quantity, out Action? commit)

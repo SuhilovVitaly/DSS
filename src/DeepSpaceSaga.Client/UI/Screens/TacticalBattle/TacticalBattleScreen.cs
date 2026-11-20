@@ -190,7 +190,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context,
                 _pilotColumn.VisiblePanels, _minimap);
             DrawOverlay(canvas, frame);
-            if (Tutorial is { } tutorial)
+            if (Tutorial is { } tutorial && !ObserveLoot())
             {
                 tutorial.Observe(TutorialObservation.From(frame, _phasePanel.Phase, ClockMilliseconds(),
                     interacting: frame.AimingMovement || _camera.Panning || _pilotColumn.SliderActive, busy: frame.Pending || ConfirmExit));

@@ -1023,7 +1023,8 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                         bool openLoot = battleSession.DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open };
                         var flow = new TacticalBattleFlow(battleSession)
                         { CampaignEncounter = captured is { Phase: not WorldEncounterPhases.Finished } || openLoot ? captured : null };
-                        if ((captured is { Phase: WorldEncounterPhases.PendingBattle } || openLoot) && await flow.StartEncounterAsync())
+                        if ((openLoot && await battleSession.GetTacticalBattleStateAsync() is { } frozen && flow.AdoptRecoveredLoot(frozen)) ||
+                            (captured is { Phase: WorldEncounterPhases.PendingBattle } && await flow.StartEncounterAsync()))
                         {
                             await PushModalAsync(CreateTacticalBattleView(flow), () => ReferenceEquals(_session, battleSession));
                             break;
@@ -2229,10 +2230,12 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         var encounter = campaign.WorldEncounter;
         bool frozenLoot = campaign.Rewards?.Loot is { Phase: LootPhases.Open } loot &&
             loot.BattleId == recovered.BattleId && recovered.Phase == TacticalBattlePhase.Over;
-        if (encounter is null || encounter.Phase != WorldEncounterPhases.PendingBattle && !frozenLoot)
+        if (!frozenLoot && encounter?.Phase != WorldEncounterPhases.PendingBattle)
             throw new IOException("Recovered battle has no pending encounter or frozen loot.");
-        var flow = new TacticalBattleFlow(session) { CampaignEncounter = encounter };
-        if (!flow.AdoptRecoveredEncounter(recovered)) throw new IOException("Recovered battle identity mismatch.");
+        var flow = new TacticalBattleFlow(session)
+        { CampaignEncounter = encounter?.Binding.BattleId == recovered.BattleId ? encounter : null };
+        if (!(frozenLoot ? flow.AdoptRecoveredLoot(recovered) : flow.AdoptRecoveredEncounter(recovered)))
+            throw new IOException("Recovered battle identity mismatch.");
         return flow;
     }
 

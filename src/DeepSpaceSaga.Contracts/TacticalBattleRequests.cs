@@ -23,7 +23,7 @@ public sealed record ExitTacticalBattleRequest(string CommandId, string BattleId
 /// <summary>Debug-console force destroy; authoritative, idempotent by CommandId, no RNG/ammo/turn effects.</summary>
 public sealed record DebugDestroyTacticalUnitRequest(string CommandId, string BattleId, ulong ExpectedRevision, string UnitId)
 {
-    /// <summary>Destroy enemy carriers and disable their surviving side. UnitId must be empty in this mode.</summary>
+    /// <summary>Destroy enemy carriers and randomly destroy or disable active enemy drones. UnitId must be empty in this mode.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool AllEnemies { get; init; }
 }

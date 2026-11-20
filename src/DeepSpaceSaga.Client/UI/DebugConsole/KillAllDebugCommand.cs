@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Client.UI.DebugConsole;
 internal sealed class KillAllDebugCommand : IDebugCommand
 {
     public DebugCommandDescriptor Descriptor { get; } =
-        new("kill", "kill all", "Уничтожить вражеские носители и отключить их дроны", "текущий бой");
+        new("kill", "kill all", "Уничтожить вражеские носители и случайно уничтожить или отключить их дроны", "текущий бой");
 
     public Task<DebugCommandResult> ExecuteAsync(DebugCommandContext context, string arguments, CancellationToken cancellationToken)
     {

@@ -10,14 +10,19 @@ public sealed partial class SimulationEngine
     internal static int ModuleSalvageChance(int baseChanceBasisPoints, string category) =>
         checked(baseChanceBasisPoints * (category == "weapon" ? 95 : category == "engine" ? 105 : 100) / 100);
 
-    private ImmutableArray<LootModuleData> InitializeLootModules(string battleId, TacticalDrone drone, ulong seed, ref long draws, int baseChance)
+    private ImmutableArray<LootModuleData> InitializeLootModules(string battleId, TacticalDrone drone, ulong seed, ref long draws, int baseChance, bool debugSortie)
     {
         var definitions = _demoDefinitions.Loot!.ModuleItems ?? throw new ScenarioException("Missing demo module loot mappings.");
         var modules = ImmutableArray.CreateBuilder<LootModuleData>();
         long cursor = draws;
         void Add(string category, string catalogId, int slot)
         {
-            var map = definitions.Single(m => m.Category == category && m.CatalogId == catalogId);
+            var map = definitions.SingleOrDefault(m => m.Category == category && m.CatalogId == catalogId);
+            if (map is null)
+            {
+                if (debugSortie) return;
+                throw new ScenarioException($"Missing demo loot mapping for {category}/{catalogId}.");
+            }
             bool destroyed = LootDestroyed(LootRoll(seed, cursor++));
             modules.Add(new(battleId + "/" + drone.Id + "/" + category + "/" + slot, category, catalogId, map.ItemTypeId,
                 destroyed, ModuleSalvageChance(baseChance, category)));

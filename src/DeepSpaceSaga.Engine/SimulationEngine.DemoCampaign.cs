@@ -19,6 +19,12 @@ public sealed partial class SimulationEngine
         _demoDefinitions = definitions;
     }
 
+    internal void ConfigureTutorialLoot(DemoLootDefinitions? loot)
+    {
+        loot?.ValidateReferences(_registry, null, allowStandalone: true);
+        _demoDefinitions = _demoDefinitions with { Loot = loot };
+    }
+
     public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command) => ExecuteDemoCampaign(command, out _);
 
     /// <summary>Reports a new application atomically, so transport never checkpoints a receipt replay.</summary>

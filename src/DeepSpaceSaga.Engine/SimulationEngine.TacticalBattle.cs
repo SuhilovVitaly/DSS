@@ -194,7 +194,8 @@ public sealed partial class SimulationEngine
                 return new(commandId, false, TacticalBattleRejectionCode.ReceiptExpired, _tacticalBattleSession?.Phase, null, []);
             }
             var response = apply();
-            if (BeginPostBattleLoot() is { } settlement)
+            bool debugVictory = response.Accepted && request is DebugDestroyTacticalUnitRequest { AllEnemies: true };
+            if (BeginPostBattleLoot(debugVictory) is { } settlement)
                 response = response with { Settlement = settlement, State = _demoCampaign.LootSession!.Map };
             _tacticalIdentities.Add(commandId, identity);
             if (_tacticalResponseOrder.Count == TacticalResponseLimit)
