@@ -12,10 +12,9 @@ internal sealed partial class BattleResultsScreen
 {
     private readonly List<(SKRect Bounds, string ObjectId, LootRow Row)> _rowHits = [];
     private SKRect _retryBounds;
-    private BattleLootPresentation? _presentation;
-    private BattleLootPresentation _lootPresentation => _presentation ??=
-        new(command => Flow.Session.ExecuteDemoCampaignAsync(command).AsTask());
     private bool LootInputBlocked => Flow.Pending || _lootPresentation.Pending || _lootPresentation.RetryCommand is not null;
+    private bool ExitBlocked => LootInputBlocked || CurrentLoot?.Operations.IsEmpty == false;
+    internal IReadOnlyList<(SKRect Bounds, string ObjectId, LootRow Row)> LootActionHits => _rowHits;
     internal Task<bool>? LastLootAction { get; private set; }
 
     internal enum RowKind { Consumable, Scrap, Module, Pilot }
@@ -50,7 +49,7 @@ internal sealed partial class BattleResultsScreen
     private static string ResultsText(string key, params object[] args) => string.Format(
         CultureInfo.CurrentCulture, Localization.Get("BattleResults." + key), args);
 
-    private void DrawLootRow(SKCanvas canvas, string objectId, LootRow row, SKRect rect)
+    private void DrawLootRow(SKCanvas canvas, string objectId, LootRow row, SKRect rect, LootSessionSnapshot loot)
     {
         Round(canvas, rect, Panel, BoxEdge);
         var icon = new SKRect(rect.Left + 10, rect.Top + 10, rect.Left + 42, rect.Bottom - 10);
@@ -58,7 +57,7 @@ internal sealed partial class BattleResultsScreen
         var tone = row.Category switch { "weapon" => Yellow, "shield" => Cyan, "armor" => Purple, "pilot" => Green, _ => Muted };
         Diamond(canvas, new(icon.MidX, icon.MidY), 7, tone);
         float buttonWidth = Math.Min(188, rect.Width * .3f);
-        var button = new SKRect(rect.Right - buttonWidth - 12, rect.Top + 8, rect.Right - 12, rect.Bottom - 8);
+        var button = new SKRect(rect.Right - buttonWidth - 30, rect.Top + 8, rect.Right - 30, rect.Bottom - 8);
         float labelWidth = Math.Max(4, button.Left - icon.Right - 24);
         T(canvas, row.Name, icon.Right + 12, rect.Top + 22, FitSize(row.Name, 16, labelWidth), Text, true);
         var details = new List<string>(4);
@@ -69,10 +68,20 @@ internal sealed partial class BattleResultsScreen
         string caption = string.Join("   ·   ", details);
         T(canvas, caption, icon.Right + 12, rect.Top + 42, FitSize(caption, 13, labelWidth), Muted);
 
-        string label = row.State is { } state and not LootAttemptStates.NotAttempted ? ResultsText(state) :
+        var key = MaterialRow(objectId, row);
+        var operation = key is null ? null : loot.Operations.FirstOrDefault(op => op.Row == key);
+        string label = operation is not null ? ResultsText("Working") :
+            row.State is { } state and not LootAttemptStates.NotAttempted ? ResultsText(state) :
             row.Kind switch { RowKind.Pilot => ResultsText("Arrest"), RowKind.Consumable => ResultsText("Collect"), _ => ResultsText("Dismantle") };
-        bool enabled = row.Enabled && !LootInputBlocked;
+        bool enabled = row.Enabled && !LootInputBlocked && operation is null;
         Button(canvas, button, label, pending: !enabled);
+        if (operation is not null)
+        {
+            var track = new SKRect(button.Right + 5, button.Top, button.Right + 14, button.Bottom);
+            Round(canvas, track, Box, BoxEdge);
+            var fill = ProgressFill(track, Progress(operation));
+            if (!fill.IsEmpty) Round(canvas, fill, Yellow, radius: 1);
+        }
         var hit = SKRect.Intersect(button, Contents);
         if (enabled && !hit.IsEmpty) _rowHits.Add((hit, objectId, row));
     }
@@ -86,7 +95,7 @@ internal sealed partial class BattleResultsScreen
             MenuStyle.DrawButton(canvas, _retryBounds, ResultsText("Retry"), Flow.Pending || _lootPresentation.Pending
                 ? ButtonState.Disabled : ButtonState.Normal);
         }
-        if (_lootPresentation.LastReason is { } reason)
+        if (_lootPresentation.LastReason is { } reason and not (BattleLootReasons.OperationNotDue or DemoCampaignReasons.StaleRevision))
             T(canvas, Localization.Get("loot." + reason), Contents.Left, ExitBounds.Top - 12, 14, Red);
     }
 
@@ -107,13 +116,16 @@ internal sealed partial class BattleResultsScreen
         return false;
     }
 
+    private static LootRowKey? MaterialRow(string objectId, LootRow row) => row.Kind switch
+    {
+        RowKind.Consumable => new(objectId, LootRowKind.Consumable, row.Id),
+        RowKind.Scrap => new(objectId, LootRowKind.Scrap, row.Id),
+        RowKind.Module => new(objectId, LootRowKind.Module, row.Id),
+        _ => null
+    };
+
     private Task<bool> SubmitLootRow(string objectId, LootRow row) => _lootPresentation.SubmitAsync(
-        (id, revision, battle, _) => row.Kind switch
-        {
-            RowKind.Consumable => new CollectLootConsumablesCommand(id, revision, battle, objectId, row.Id, row.Quantity!.Value),
-            RowKind.Scrap => new AttemptScrapCommand(id, revision, battle, objectId),
-            RowKind.Module => new AttemptModuleSalvageCommand(id, revision, battle, objectId, row.Id),
-            RowKind.Pilot => new ArrestPilotCommand(id, revision, battle, objectId),
-            _ => throw new ArgumentOutOfRangeException(nameof(row))
-        }, needsSource: false);
+        (id, revision, battle, _) => MaterialRow(objectId, row) is { } key
+            ? new StartLootOperationsCommand(id, revision, battle, key)
+            : new ArrestPilotCommand(id, revision, battle, objectId), needsSource: false);
 }

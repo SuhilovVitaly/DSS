@@ -61,7 +61,7 @@ internal sealed partial class BattleResultsScreen
                 foreach (var row in rows)
                 {
                     var rect = new SKRect(Contents.Left, y, Contents.Right, y + RowHeight - 4);
-                    if (!SKRect.Intersect(rect, Contents).IsEmpty) DrawLootRow(canvas, source.ObjectId, row, rect);
+                    if (!SKRect.Intersect(rect, Contents).IsEmpty) DrawLootRow(canvas, source.ObjectId, row, rect, loot);
                     y += RowHeight;
                 }
             }

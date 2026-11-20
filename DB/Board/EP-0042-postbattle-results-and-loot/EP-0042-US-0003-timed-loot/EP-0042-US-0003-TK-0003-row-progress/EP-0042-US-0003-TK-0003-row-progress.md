@@ -75,3 +75,12 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0002-TK-0003-loot-rows](../../EP-0042-US-0002-loot-accordion/EP-0042-US-0002-TK-0003-loot-rows/EP-0042-US-0002-TK-0003-loot-rows.md), [EP-0042-US-0003-TK-0002-single-engine](../../EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0002-single-engine/EP-0042-US-0003-TK-0002-single-engine.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+Фактические строки находятся в `BattleResultsScreen.LootRows.cs`. Один периодический обработчик в жизненном цикле модали обновляет таймеры вне Render и просит Engine обработать срок. После переключения UI на новые команды Engine принимает в управляемом режиме только timed команды и ручной арест. Для legacy-сессий прежние команды сохранены.
+
+## Исполнение
+
+- В строке запускается таймер вместо немедленной выдачи. Шкала заполняется снизу вверх, сворачивание не останавливает runner экрана. Арест использует прежнюю команду.
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли. Проверки назначены на границу истории.

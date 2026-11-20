@@ -46,7 +46,7 @@ public sealed partial class SimulationEngine
     private bool IsBattleResultsCommandAllowed(DemoCampaignCommand command) =>
         command is OpenBattleResultsCommand or AcknowledgeBattleResultsCommand or SetLootDebugRequest ||
         (_frozenBattleResults is { Results: { Stage: BattleResultsStage.Open, CanLoot: true } } &&
-            command is ILootCampaignCommand and not FinishBattleLootCommand);
+            command is StartLootOperationsCommand or AdvanceLootOperationsCommand or ClaimExtractedLootCommand or ArrestPilotCommand);
 
     private void PrepareOpenBattleResults(OpenBattleResultsCommand command, ref string? reason, ref Action? commit)
     {

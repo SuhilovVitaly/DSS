@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Demo;
 using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
@@ -14,6 +15,7 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
     private bool _acknowledgeRequested;
     internal bool ConfirmDiscard { get; private set; }
     private readonly TacticalBattleSnapshot? _terminalBattle = flow.State;
+    private readonly BattleLootPresentation _lootPresentation = new(command => flow.Session.ExecuteDemoCampaignAsync(command).AsTask());
     internal SKRect PanelBounds { get; private set; }
     internal SKRect Contents { get; private set; }
     internal SKRect ExitBounds => _exitBounds;
@@ -42,7 +44,7 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
         Contents = new(panel.Left + 20, panel.Top + 148, panel.Right - 20, _exitBounds.Top - 36);
         DrawSources(canvas);
         MenuStyle.DrawButton(canvas, _exitBounds, Localization.Get("TacticalBattle.ToMap"),
-            LootInputBlocked ? ButtonState.Disabled : ButtonState.Normal);
+            ExitBlocked ? ButtonState.Disabled : ButtonState.Normal);
         DrawLootFooter(canvas);
         if (ConfirmDiscard)
             T(canvas, Localization.Get("loot.loot_confirm_discard_required"), panel.Left + 20, _exitBounds.MidY, 18, Text);
@@ -79,7 +81,7 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
 
     private ScreenEvent RequestExit()
     {
-        if (LootInputBlocked) return ScreenEvent.None;
+        if (ExitBlocked) return ScreenEvent.None;
         if (!ConfirmDiscard && CurrentLoot is { HasUnclaimed: true })
         {
             ConfirmDiscard = true;
