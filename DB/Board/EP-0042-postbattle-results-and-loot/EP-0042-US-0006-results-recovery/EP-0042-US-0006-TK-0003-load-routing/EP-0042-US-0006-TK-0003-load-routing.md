@@ -75,3 +75,12 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0001-TK-0002-mandatory-route](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0002-mandatory-route/EP-0042-US-0001-TK-0002-mandatory-route.md), [EP-0042-US-0005-TK-0003-footer-confirmation](../../EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0003-footer-confirmation/EP-0042-US-0005-TK-0003-footer-confirmation.md), [EP-0042-US-0006-TK-0002-checkpoint-transport](../../EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0002-checkpoint-transport/EP-0042-US-0006-TK-0002-checkpoint-transport.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+Диспетчер удерживает ввод модали на время сохранения или смены сессии. Восстановленный Open открывает окно напрямую, AwaitingOpen возвращает в терминальную тактическую панель. Legacy open проходит только подтверждение стадии без повторной выдачи. Признак режима pending encounter хранится в совместимой проекции Contracts. Новый тест использует настоящий headless диспетчер и файл слота.
+
+## Исполнение
+
+- Загрузка сохраняет модальную стадию. Legacy open открывается в новой модали. При активном таймере или незаписанном результате закрыты F5/F9 и прямые события. Во время допустимой навигации вводу не даётся стартовать другую транзакцию.
+- Сборка Client Tests и diff прошли. Scoped whitespace прошёл для новых и изменённых production-файлов и нового теста. Отдельный прежний формат строк fixture BattleNavigationTests зафиксирован в US-0001/TK-0002.

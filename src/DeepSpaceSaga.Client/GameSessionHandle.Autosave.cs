@@ -41,7 +41,8 @@ public sealed partial class GameSessionHandle
                 _autosaveDock = dock;
                 _autosaveBaselinePending = false;
             }
-            if (!_autosaveActive || _disposed || snapshot.IsTacticalBattleActive || ship?.IsDestroyed == true) return;
+            if (!_autosaveActive || _disposed || snapshot.IsTacticalBattleActive || ship?.IsDestroyed == true ||
+                ResultsCheckpointOwnsAutosave(snapshot.DemoCampaign)) return;
             bool changed = snapshot.DemoCampaign.Revision != _autosaveObservedRevision || dock is not null && dock != _autosaveDock;
             _autosaveDock = dock;
             if (!changed) return;
@@ -54,10 +55,15 @@ public sealed partial class GameSessionHandle
     {
         lock (_autosaveStateGate)
         {
-            if (!_autosaveActive || _disposed || _autosaveLatest is not { IsTacticalBattleActive: false, DemoCampaign: { } state } || IsPlayerShipDestroyed) return Task.CompletedTask;
+            if (!_autosaveActive || _disposed || _autosaveLatest is not { IsTacticalBattleActive: false, DemoCampaign: { } state } ||
+                IsPlayerShipDestroyed || ResultsCheckpointOwnsAutosave(state)) return Task.CompletedTask;
             return QueueAutosave(state.CommitSequence);
         }
     }
+
+    private static bool ResultsCheckpointOwnsAutosave(DemoCampaignSnapshot campaign) =>
+        campaign.BattleResults is { Stage: not BattleResultsStage.Acknowledged } ||
+        campaign.Rewards?.Loot is { Phase: LootPhases.Open };
 
     private Task QueueAutosave(long sequence)
     {

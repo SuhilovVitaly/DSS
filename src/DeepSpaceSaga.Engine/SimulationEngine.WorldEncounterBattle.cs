@@ -121,7 +121,10 @@ public sealed partial class SimulationEngine
             : CombatOrLootOpen ? TacticalBattleActiveReason
             : _demoCampaign.PendingSensorReport is not null ? "sensor_report_pending"
             : _dialogue.Active is not null ? "dialogue_active" : null;
-        return new(encounter.Binding, encounter.Phase, reason is null, reason);
+        return new(encounter.Binding, encounter.Phase, reason is null, reason)
+        {
+            RequireBattleResults = encounter.RequireBattleResults
+        };
     }
 
     private void PrepareEncounterBattle(BeginEncounterBattleCommand command, ref DemoCampaignData candidate,

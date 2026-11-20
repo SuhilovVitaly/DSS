@@ -141,7 +141,22 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
         if (Flow.Pending || repeat || modifiers != KeyModifiers.None) return ScreenEvent.None;
+        if (key is Key.F5 or Key.F9)
+            return CanSaveLoad ? (key == Key.F5 ? ScreenEvent.QuickSave : ScreenEvent.QuickLoad) : ScreenEvent.None;
         if (key == Key.Escape) ConfirmDiscard = false;
         return !ConfirmDiscard && key is Key.Enter or Key.KeypadEnter ? RequestExit() : ScreenEvent.None;
     }
+
+    private int _saveLoadInProgress;
+    internal bool SaveLoadInProgress => Volatile.Read(ref _saveLoadInProgress) != 0;
+    internal bool CanSaveLoad => !ConfirmDiscard && !ExitBlocked;
+    internal bool TryBeginSaveLoad()
+    {
+        if (!CanSaveLoad || Interlocked.CompareExchange(ref _saveLoadInProgress, 1, 0) != 0) return false;
+        if (!ConfirmDiscard && !HasLootActivity && CurrentLoot?.Operations.IsEmpty != false) return true;
+        EndSaveLoad();
+        return false;
+    }
+
+    internal void EndSaveLoad() => Volatile.Write(ref _saveLoadInProgress, 0);
 }

@@ -15,7 +15,8 @@ internal sealed partial class BattleResultsScreen
     private SKRect _retryBounds;
     private SKRect _collectAllBounds;
     internal SKRect CollectAllBounds => _collectAllBounds;
-    private bool LootInputBlocked => Flow.Pending || _lootPresentation.Pending || _lootPresentation.RetryCommand is not null;
+    private bool HasLootActivity => Flow.Pending || _lootPresentation.Pending || _lootPresentation.RetryCommand is not null;
+    private bool LootInputBlocked => HasLootActivity || SaveLoadInProgress;
     private bool ExitBlocked => LootInputBlocked || CurrentLoot?.Operations.IsEmpty == false;
     internal IReadOnlyList<(SKRect Bounds, string ObjectId, LootRow Row)> LootActionHits => _rowHits;
     internal Task<bool>? LastLootAction { get; private set; }
@@ -120,7 +121,7 @@ internal sealed partial class BattleResultsScreen
 
     private bool ClickLootAction(float x, float y)
     {
-        if (_retryBounds.Contains(x, y) && !Flow.Pending && !_lootPresentation.Pending)
+        if (_retryBounds.Contains(x, y) && !Flow.Pending && !_lootPresentation.Pending && !SaveLoadInProgress)
         {
             LastLootAction = _lootPresentation.RetryCommand is StartLootOperationsCommand { Row: null }
                 ? CollectAllAsync(retry: true) : _lootPresentation.RetryAsync();

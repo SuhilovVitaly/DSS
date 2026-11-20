@@ -1002,12 +1002,14 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                 ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.NewGame or ScreenEvent.ContinueCheckpoint)) return;
             if (_session?.DemoCampaign?.WorldEncounter is { Phase: not WorldEncounterPhases.Finished } && evt is
                 (ScreenEvent.MainMenu or ScreenEvent.NewGame or ScreenEvent.OpenLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad or ScreenEvent.ContinueCheckpoint)) return;
-            if (_screens.Current is BattleResultsScreen && evt is not (ScreenEvent.None or ScreenEvent.AcknowledgeBattleResults)) return;
+            if (_screens.Current is BattleResultsScreen &&
+                evt is not (ScreenEvent.None or ScreenEvent.AcknowledgeBattleResults or ScreenEvent.QuickSave or ScreenEvent.QuickLoad)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
                 (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
                 ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle or ScreenEvent.OpenBattleResults or ScreenEvent.AcknowledgeBattleResults) &&
                 !(evt == ScreenEvent.MainMenu && activeBattle.Flow.IsTutorial) &&
-                !(activeBattle is TacticalBattleScreen { CanUseLootSave: true } && evt is ScreenEvent.QuickSave or ScreenEvent.QuickLoad))
+                !(activeBattle is (TacticalBattleScreen { CanUseLootSave: true } or BattleResultsScreen { CanSaveLoad: true }) &&
+                    evt is ScreenEvent.QuickSave or ScreenEvent.QuickLoad))
             {
                 activeBattle.NotifyWorldActionBlocked();
                 return;
@@ -1146,10 +1148,10 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
                     _window.Close();
                     break;
                 case ScreenEvent.QuickSave:
-                    await QuickSaveAsync();
+                    if (ReferenceEquals(origin, _screens.Current)) await QuickSaveLoadFromCurrentAsync(save: true);
                     break;
                 case ScreenEvent.QuickLoad:
-                    await QuickLoadAsync();
+                    if (ReferenceEquals(origin, _screens.Current)) await QuickSaveLoadFromCurrentAsync(save: false);
                     break;
                 case ScreenEvent.OpenSettings:
                     await OpenSettingsAsync();
@@ -2068,6 +2070,18 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
     /// deliberately leaves the game at Speed0 afterwards — it does not restore the
     /// pre-save speed. Debounced: a save already in flight makes a new F5 a no-op.
     /// </summary>
+    private async Task QuickSaveLoadFromCurrentAsync(bool save)
+    {
+        var results = _screens.Current as BattleResultsScreen;
+        if (results is not null && !results.TryBeginSaveLoad()) return;
+        try
+        {
+            if (save) await QuickSaveAsync();
+            else await QuickLoadAsync();
+        }
+        finally { results?.EndSaveLoad(); }
+    }
+
     private async Task QuickSaveAsync()
     {
         if (_session is null || _session.IsPlayerShipDestroyed || _quickSaveLoadInFlight)
@@ -2171,6 +2185,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
     /// </summary>
     private async Task<bool> LoadSlotCoreAsync(string slotId, string logPrefix)
     {
+        if (_screens.Current is BattleResultsScreen { SaveLoadInProgress: false }) return false;
         if (_screens.Current is LoadScreen loading) loading.ClearError();
         GameSessionHandle? newSession = null;
         TacticalBattleFlow? recoveredEncounter = null;
@@ -2204,7 +2219,7 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
             if (newSession is not null) await newSession.DisposeAsync();
             previousSession?.DebugTuningFiles.Activate();
             previousSession?.ActivateAutosave();
-            if (!_closing && logPrefix is not ("Continue" or "Checkpoint"))
+            if (!_closing && _screens.Current is not BattleResultsScreen && logPrefix is not ("Continue" or "Checkpoint"))
             {
                 await OpenLoadWindowAsync();
                 if (_screens.Current is LoadScreen load) load.ShowError(SessionConnectionLoader.LoadErrorKey(ex));
@@ -2222,7 +2237,9 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         if (recoveredEncounter is not null)
         {
             _modalDepth = 1;
-            _screens.Push(CreateTacticalBattleView(recoveredEncounter));
+            _screens.Push(recoveredEncounter.RestoreResultsModal
+                ? new BattleResultsScreen(recoveredEncounter, newScreen.UiScale)
+                : CreateTacticalBattleView(recoveredEncounter));
         }
         if (oldSession is not null)
         {
@@ -2244,12 +2261,25 @@ public sealed class SkiaWindow : IDisposable, IDebugConsoleHost
         while (session.DemoCampaign is null) await Task.Delay(10, timeout.Token);
         var campaign = session.DemoCampaign;
         var encounter = campaign.WorldEncounter;
+        if (encounter?.Binding.BattleId != recovered.BattleId) encounter = null;
+        var results = campaign.BattleResults;
+        if (results?.BattleId != recovered.BattleId || recovered.Phase != TacticalBattlePhase.Over) results = null;
         bool frozenLoot = campaign.Rewards?.Loot is { Phase: LootPhases.Open } loot &&
             loot.BattleId == recovered.BattleId && recovered.Phase == TacticalBattlePhase.Over;
-        if (encounter is null || encounter.Phase != WorldEncounterPhases.PendingBattle && !frozenLoot)
+        if (encounter?.Phase != WorldEncounterPhases.PendingBattle && !frozenLoot && results is null)
             throw new IOException("Recovered battle has no pending encounter or frozen loot.");
-        var flow = new TacticalBattleFlow(session) { CampaignEncounter = encounter };
+        var flow = new TacticalBattleFlow(session)
+        {
+            CampaignEncounter = encounter,
+            RequireBattleResults = results is not null || frozenLoot || encounter?.RequireBattleResults != false,
+            RestoreResultsModal = results?.Stage == BattleResultsStage.Open
+        };
         if (!flow.AdoptRecoveredEncounter(recovered)) throw new IOException("Recovered battle identity mismatch.");
+        if (frozenLoot && results is null)
+        {
+            if (!await flow.OpenResultsAsync()) throw new IOException("Could not adopt recovered loot results.");
+            flow.RestoreResultsModal = true;
+        }
         return flow;
     }
 

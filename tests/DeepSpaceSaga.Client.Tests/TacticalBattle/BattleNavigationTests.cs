@@ -479,11 +479,16 @@ public sealed class BattleNavigationTests
                 .Invoke(Window, [focused]);
         public IGameSessionConnection CreateSession() => throw new NotSupportedException();
         internal string? LastRequestedSaveSlot;
-        public IGameSessionConnection CreateSessionFromSave(string slotId) { LastRequestedSaveSlot = slotId; throw new NotSupportedException(); }
+        internal Func<string, IGameSessionConnection>? LoadSlotOverride { get; set; }
+        public IGameSessionConnection CreateSessionFromSave(string slotId)
+        {
+            LastRequestedSaveSlot = slotId;
+            return LoadSlotOverride?.Invoke(slotId) ?? throw new NotSupportedException();
+        }
         public IGameSessionConnection CreateSessionFromScenario(string path) => throw new NotSupportedException();
         public ScenarioInfo[] ListScenarios() => [];
         public SaveSlotInfo[] ListSaveSlots() => [];
-        public bool HasQuickSave() => false;
+        public bool HasQuickSave() => LoadSlotOverride is not null;
         public void DeleteSaveSlot(string id) { }
         public async ValueTask DisposeAsync()
         {
