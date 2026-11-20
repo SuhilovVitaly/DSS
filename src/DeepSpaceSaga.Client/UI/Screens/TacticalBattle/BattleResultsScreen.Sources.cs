@@ -22,7 +22,8 @@ internal sealed partial class BattleResultsScreen
         {
             var campaign = Flow.Session.DemoCampaign;
             var loot = campaign?.Rewards?.Loot;
-            _lootPresentation.Observe(loot, campaign?.Revision ?? 0);
+            if (loot is not null && loot.BattleId == _terminalBattle?.BattleId)
+                _lootPresentation.Observe(loot, campaign!.Revision);
             return _lootPresentation.State is { } current && current.BattleId == _terminalBattle?.BattleId && Report?.CanLoot == true
                 ? current : null;
         }

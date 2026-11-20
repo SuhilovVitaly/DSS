@@ -33,7 +33,9 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
         get
         {
             var campaign = Flow.Session.DemoCampaign;
-            return _terminalBattle is { } battle ? Summary.From(battle, campaign?.BattleResults, campaign?.Rewards?.Loot) : null;
+            return _terminalBattle is { } battle
+                ? Summary.From(battle, campaign?.BattleResults, _lootPresentation.State ?? campaign?.Rewards?.Loot)
+                : null;
         }
     }
 
