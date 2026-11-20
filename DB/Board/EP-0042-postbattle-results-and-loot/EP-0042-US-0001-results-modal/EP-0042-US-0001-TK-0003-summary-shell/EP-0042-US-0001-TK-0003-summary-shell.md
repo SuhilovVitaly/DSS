@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0001-results-modal
 ticket: EP-0042-US-0001-TK-0003-summary-shell
 title: Модаль с подтверждённым итогом
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0042-US-0001-TK-0002-mandatory-route]
 files_touched: 3

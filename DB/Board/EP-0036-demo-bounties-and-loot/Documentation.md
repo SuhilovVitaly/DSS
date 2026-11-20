@@ -14,6 +14,8 @@ approval_scope: "Explicit whole-epic execution under EpicExecutionPrompt; native
 
 # EP-0036 — Боевые заказы и пообъектная добыча
 
+Текущий интерфейс и порядок добычи описаны в [EP-0042](../EP-0042-postbattle-results-and-loot/Documentation.md). Описания прежнего окна на тактической карте ниже относятся к исходной поставке EP-0036.
+
 ## Current execution status
 
 Implementation is complete under the explicit owner execution request. Planning-only authorizations and NOT STARTED statements below are dated planning history, superseded by this execution. Automated evidence, independent reviews and remaining native/product gates: [ExecutionStatus](ExecutionStatus.md). Native/game execution NOT RUN — owner only.

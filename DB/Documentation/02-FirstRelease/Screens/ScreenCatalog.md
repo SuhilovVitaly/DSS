@@ -33,4 +33,4 @@ Ship показывает состояние носителя, постоянн�
 
 ## Послебоевая навигация
 
-TacticalBattle переходит в frozen loot после победы; Continue возвращает туда же. Contracts содержит боевые заказы и итог последнего боя, Ship — отдельный roster пленных. [Описание](../Mechanics/DemoBountiesAndLoot.md).
+После завершённого TacticalBattle игрок открывает [Результаты боя](BattleResults.md). Continue и Load восстанавливают сохранённую стадию. Contracts содержит боевые заказы и итог последнего боя, Ship — отдельный roster пленных.

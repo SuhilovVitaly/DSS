@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0004-parallel-bulk
 ticket: EP-0042-US-0004-TK-0001-bulk-order
 title: Единый состав пачки и порядок строк
-stage: draft
+stage: implemented
 layer: engine
 depends_on: [EP-0042-US-0003-TK-0002-single-engine]
 files_touched: 3

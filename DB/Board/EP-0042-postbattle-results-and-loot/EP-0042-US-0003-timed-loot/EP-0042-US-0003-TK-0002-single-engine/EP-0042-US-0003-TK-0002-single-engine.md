@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0003-timed-loot
 ticket: EP-0042-US-0003-TK-0002-single-engine
 title: Отложенная одиночная операция
-stage: draft
+stage: implemented
 layer: engine
 depends_on: [EP-0042-US-0003-TK-0001-operation-contract]
 files_touched: 5

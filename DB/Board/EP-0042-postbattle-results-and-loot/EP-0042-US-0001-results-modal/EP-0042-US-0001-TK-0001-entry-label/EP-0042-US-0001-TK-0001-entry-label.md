@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0001-results-modal
 ticket: EP-0042-US-0001-TK-0001-entry-label
 title: Кнопка «Результаты боя»
-stage: draft
+stage: implemented
 layer: client
 depends_on: []
 files_touched: 4

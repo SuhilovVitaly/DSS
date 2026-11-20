@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0003-timed-loot
 ticket: EP-0042-US-0003-TK-0003-row-progress
 title: Полосы прогресса и ручной запуск
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0042-US-0002-TK-0003-loot-rows, EP-0042-US-0003-TK-0002-single-engine]
 files_touched: 4

@@ -2,7 +2,7 @@
 epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0007-project-documentation
 title: Документация результатов боя
-stage: draft
+stage: implemented
 dependencies: [EP-0042-US-0001-results-modal, EP-0042-US-0002-loot-accordion, EP-0042-US-0003-timed-loot, EP-0042-US-0004-parallel-bulk, EP-0042-US-0005-safe-exit, EP-0042-US-0006-results-recovery]
 ---
 

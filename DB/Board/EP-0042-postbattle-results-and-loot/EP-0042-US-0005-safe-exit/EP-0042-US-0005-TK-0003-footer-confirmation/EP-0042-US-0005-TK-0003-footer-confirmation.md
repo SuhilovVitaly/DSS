@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0005-safe-exit
 ticket: EP-0042-US-0005-TK-0003-footer-confirmation
 title: Футер, предупреждение и единственное действие выхода
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0042-US-0001-TK-0002-mandatory-route, EP-0042-US-0004-TK-0003-bulk-action, EP-0042-US-0005-TK-0002-capacity-exit-rule]
 files_touched: 5

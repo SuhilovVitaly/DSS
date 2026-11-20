@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0005-safe-exit
 ticket: EP-0042-US-0005-TK-0001-capacity-contract
 title: Проекция статуса трюма и кают
-stage: draft
+stage: implemented
 layer: contracts
 depends_on: [EP-0042-US-0003-TK-0001-operation-contract]
 files_touched: 2

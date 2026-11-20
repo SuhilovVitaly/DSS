@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0003-timed-loot
 ticket: EP-0042-US-0003-TK-0001-operation-contract
 title: Команды и снимок операций по строкам
-stage: draft
+stage: implemented
 layer: contracts
 depends_on: []
 files_touched: 2

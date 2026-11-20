@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0004-parallel-bulk
 ticket: EP-0042-US-0004-TK-0002-cargo-completion
 title: Атомарное начисление и частичные пачки
-stage: draft
+stage: implemented
 layer: engine
 depends_on: [EP-0042-US-0004-TK-0001-bulk-order]
 files_touched: 4

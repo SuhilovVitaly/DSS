@@ -2,7 +2,7 @@
 epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0006-results-recovery
 title: Сохранение и загрузка окна результатов
-stage: draft
+stage: implemented
 dependencies: [EP-0042-US-0001-results-modal, EP-0042-US-0003-timed-loot, EP-0042-US-0004-parallel-bulk, EP-0042-US-0005-safe-exit]
 created: 2026-11-20T10:29:12Z
 source_request: "Решения D-0042-02, D-0042-08, D-0042-09"
@@ -55,3 +55,7 @@ revision: 1
 
 Headless Engine 3/3 и Client 2/2 прошли по фильтру EP0042Us0006. Self-review проверил сохранение стадий, привязки, сериализацию доступа к диску, F5/F9 и отмену повреждённой загрузки. Ручная проверка владельца остаётся открытой.
 Нативная и продуктовая приёмка ожидают владельца.
+
+[TK-0004](EP-0042-US-0006-TK-0004-close-retry-gate/EP-0042-US-0006-TK-0004-close-retry-gate.md) закрыл F5/F9 при повторе записи выхода без добычи. Повтор Client US-0006 прошёл 3/3. [Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-134020-450-us0006-rerun>).
+
+[TK-0005](EP-0042-US-0006-TK-0005-legacy-load-preserves-continuation/EP-0042-US-0006-TK-0005-legacy-load-preserves-continuation.md) сохраняет предыдущий continuation при загрузке старого открытого слота. Повтор Engine 3/3 и Client 3/3 прошёл. [Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-134316-826-us0006-legacy-rerun>).

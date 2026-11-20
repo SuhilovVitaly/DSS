@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0006-results-recovery
 ticket: EP-0042-US-0006-TK-0002-checkpoint-transport
 title: Долговечный checkpoint и повтор записи
-stage: draft
+stage: implemented
 layer: local-client
 depends_on: [EP-0042-US-0006-TK-0001-save-ledger]
 files_touched: 3

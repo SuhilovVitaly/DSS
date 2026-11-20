@@ -2,7 +2,7 @@
 epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0005-safe-exit
 title: Оставленная добыча, трюм и места для пленных
-stage: draft
+stage: implemented
 dependencies: [EP-0042-US-0002-loot-accordion, EP-0042-US-0004-parallel-bulk]
 created: 2026-11-20T10:29:12Z
 source_request: "Решения D-0042-02, D-0042-09, D-0042-11, D-0042-15"

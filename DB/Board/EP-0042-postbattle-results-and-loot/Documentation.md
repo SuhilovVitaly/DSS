@@ -4,15 +4,19 @@ title: Результаты боя и параллельный сбор троф
 stage: draft
 created: 2026-11-20T10:29:12Z
 source_request: "Обсудить переделку сбора лута после боя, затем нарезать пользовательские истории и тикеты."
-current_review: epic-review
-plan_status: decomposed
-implementation_status: in-progress
+current_review: implementation-review
+plan_status: executed
+implementation_status: implemented
 dependencies: [EP-0027-tutorial-start, EP-0032-demo-campaign-continuity, EP-0035-demo-pirate-encounters, EP-0036-demo-bounties-and-loot]
 ---
 
 # EP-0042 — Результаты боя и параллельный сбор трофеев
 
 Игрок открывает обязательные результаты после боя. В одном окне видны итог, источники добычи, параллельные попытки, свободный трюм и свободные каюты для пленных. В систему возвращает только явное завершение.
+
+## Исполнение
+
+Функциональные истории и их headless-результаты зафиксированы в [реестре тикетов](Tickets.md). Текущие правила описаны в [контракте наград](../../Documentation/04-Engineering/DemoRewards.md) и [описании интерфейса](../../Documentation/02-FirstRelease/Screens/BattleResults.md). [Инвентаризация документации](DocumentationImpact.md). Нативная и продуктовая приёмка остаются у владельца.
 
 ## Входное ТЗ и материалы
 
@@ -65,7 +69,7 @@ dependencies: [EP-0027-tutorial-start, EP-0032-demo-campaign-continuity, EP-0035
 | [EP-0042-US-0003-timed-loot](EP-0042-US-0003-timed-loot/EP-0042-US-0003-timed-loot.md) Ручная операция со временем и исходом | US-0002 | 4 |
 | [EP-0042-US-0004-parallel-bulk](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-parallel-bulk.md) Забрать всё параллельно с учётом трюма | US-0002, US-0003 | 3 |
 | [EP-0042-US-0005-safe-exit](EP-0042-US-0005-safe-exit/EP-0042-US-0005-safe-exit.md) Оставленная добыча, трюм и места для пленных | US-0002, US-0004 | 3 |
-| [EP-0042-US-0006-results-recovery](EP-0042-US-0006-results-recovery/EP-0042-US-0006-results-recovery.md) Сохранение и загрузка окна результатов | US-0001, US-0003, US-0004, US-0005 | 3 |
+| [EP-0042-US-0006-results-recovery](EP-0042-US-0006-results-recovery/EP-0042-US-0006-results-recovery.md) Сохранение и загрузка окна результатов | US-0001, US-0003, US-0004, US-0005 | 5 |
 | [EP-0042-US-0007-project-documentation](EP-0042-US-0007-project-documentation/EP-0042-US-0007-project-documentation.md) Документация и навигация | US-0001–US-0006 | 1 |
 
 Связанные основания: [путь обучения EP-0027](../EP-0027-tutorial-start/Documentation.md), [continuation EP-0032](../EP-0032-demo-campaign-continuity/Documentation.md), [исход и settlement встречи EP-0035](../EP-0035-demo-pirate-encounters/Documentation.md). Установленные решения EP-0036 сохраняются, кроме явно заменённого открытия добычи, представления и управления грузом в окне.

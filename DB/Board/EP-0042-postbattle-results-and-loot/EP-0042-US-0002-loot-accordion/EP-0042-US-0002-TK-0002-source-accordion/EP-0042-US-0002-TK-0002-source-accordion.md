@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0002-loot-accordion
 ticket: EP-0042-US-0002-TK-0002-source-accordion
 title: Независимое раскрытие и прокрутка
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0042-US-0002-TK-0001-station-frame]
 files_touched: 4

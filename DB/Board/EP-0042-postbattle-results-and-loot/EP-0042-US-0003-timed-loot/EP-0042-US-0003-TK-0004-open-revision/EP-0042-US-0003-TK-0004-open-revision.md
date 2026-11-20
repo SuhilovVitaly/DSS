@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0003-timed-loot
 ticket: EP-0042-US-0003-TK-0004-open-revision
 title: Ревизия лута при открытии результатов
-stage: implementation
+stage: implemented
 layer: client
 depends_on: [EP-0042-US-0003-TK-0003-row-progress]
 serves: [AC-01, AC-03]

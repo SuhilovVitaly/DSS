@@ -57,4 +57,4 @@ worktree Codex, сохраняя нужную работу перед архив
 
 ## Послебоевая поверхность
 
-Open loot — завершённый frozen battlefield, а не активная tactical session. Engine хранит ledger, Client отображает immutable projection; LocalClient подтверждает мутацию после continuation write. [Награды](../04-Engineering/DemoRewards.md).
+Engine хранит подтверждённый исход и ledger отдельно от активной боевой сессии. Client показывает immutable projection, а LocalClient сериализует стабильные сохранения и checkpoint вместе с командами добычи. [Награды](../04-Engineering/DemoRewards.md).

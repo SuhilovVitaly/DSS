@@ -2,7 +2,7 @@
 epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0002-loot-accordion
 title: Карточки противника и строки добычи
-stage: draft
+stage: implemented
 dependencies: [EP-0042-US-0001-results-modal]
 created: 2026-11-20T10:29:12Z
 source_request: "Решения D-0042-03, D-0042-04, D-0042-10, D-0042-13"

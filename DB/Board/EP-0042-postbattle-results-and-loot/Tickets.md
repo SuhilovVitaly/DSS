@@ -30,6 +30,8 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0006-TK-0001-save-ledger](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0001-save-ledger/EP-0042-US-0006-TK-0001-save-ledger.md) | Опубликован, US-0006 PASS | 437a66b7c49ebdf72e0316f85da30059fde70250 |
 | [EP-0042-US-0006-TK-0002-checkpoint-transport](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0002-checkpoint-transport/EP-0042-US-0006-TK-0002-checkpoint-transport.md) | Опубликован, US-0006 PASS | 29899ca707ca0bc393714da2cc57085071eedcc6 |
 | [EP-0042-US-0006-TK-0003-load-routing](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0003-load-routing/EP-0042-US-0006-TK-0003-load-routing.md) | Опубликован, US-0006 PASS | eb9ee19f0b1991073430c6ba6b79436666fb8b17 |
+| [EP-0042-US-0006-TK-0004-close-retry-gate](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0004-close-retry-gate/EP-0042-US-0006-TK-0004-close-retry-gate.md) | Опубликован, US-0006 PASS | 0b71fd0ccc7bdd2cedcb29100b1872a303592117 |
+| [EP-0042-US-0006-TK-0005-legacy-load-preserves-continuation](EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0005-legacy-load-preserves-continuation/EP-0042-US-0006-TK-0005-legacy-load-preserves-continuation.md) | Опубликован, US-0006 PASS | d722921bc5efcce788e635f76884de478570bc8a |
 | [EP-0042-US-0007-TK-0001-docs-and-graph](EP-0042-US-0007-project-documentation/EP-0042-US-0007-TK-0001-docs-and-graph/EP-0042-US-0007-TK-0001-docs-and-graph.md) | Ожидает | — |
 
 ## План проверок US-0001
@@ -87,3 +89,13 @@ Headless Contracts 1/1, Engine 1/1 и Client 1/1 прошли. Self-review св�
 
 Headless Engine 3/3 и Client 2/2 прошли по фильтру EP0042Us0006. Self-review проверил сохранение стадий, привязки, сериализацию доступа к диску, F5/F9 и отмену повреждённой загрузки. Ручная проверка владельца остаётся открытой.
 [Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-133153-962-us0006>).
+
+## Итоговый тематический набор
+
+- Contracts Tests — `PostbattleResults|TacticalBattleContractTests` для совместимости Save/transport DTO и тактической проекции.
+- Engine Tests — `PostbattleResults|Ep0035Us15Tk3Tests|DemoEp0036Us0007Tk0003Tests|DemoEp0036Us0006Tk0003Tests` для результатов, таймеров, legacy settlement, команд добычи, RNG и сохранения.
+- Client Tests — `PostbattleResults|BattleAndResultsReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed|ClickFrozenDroneOpensItsWindow_AndEscapeWarns` для реального headless маршрута, двух skin, совместимости legacy представления и Save/Load.
+
+Дополнительная проверка US-0006 после TK-0004 прошла 3/3 в Client. [Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-134020-450-us0006-rerun>).
+
+Повтор US-0006 после TK-0005 прошёл в Engine 3/3 и Client 3/3. [Артефакты](<D:/DeepSpaceSaga/artifacts/validation/ep-0042/20261120-134316-826-us0006-legacy-rerun>).

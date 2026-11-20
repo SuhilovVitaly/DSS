@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0001-results-modal
 ticket: EP-0042-US-0001-TK-0002-mandatory-route
 title: Модальный маршрут без обходов
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0042-US-0001-TK-0001-entry-label, EP-0042-US-0001-TK-0005-outcome-lifecycle]
 files_touched: 5

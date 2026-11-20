@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0005-safe-exit
 ticket: EP-0042-US-0005-TK-0002-capacity-exit-rule
 title: Каюты и подтверждаемый список оставляемого
-stage: draft
+stage: implemented
 layer: engine
 depends_on: [EP-0042-US-0004-TK-0002-cargo-completion, EP-0042-US-0005-TK-0001-capacity-contract]
 files_touched: 5

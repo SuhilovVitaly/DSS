@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0002-loot-accordion
 ticket: EP-0042-US-0002-TK-0004-results-localization
 title: Русские и английские строки результатов
-stage: draft
+stage: implemented
 layer: content-data
 depends_on: []
 files_touched: 3

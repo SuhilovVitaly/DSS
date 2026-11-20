@@ -2,7 +2,7 @@
 epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0001-results-modal
 title: Обязательные результаты боя
-stage: draft
+stage: implemented
 dependencies: []
 created: 2026-11-20T10:29:12Z
 source_request: "Решения D-0042-01, D-0042-02"

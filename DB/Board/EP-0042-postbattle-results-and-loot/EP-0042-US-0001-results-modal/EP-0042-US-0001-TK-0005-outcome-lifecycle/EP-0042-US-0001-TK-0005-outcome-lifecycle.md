@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0001-results-modal
 ticket: EP-0042-US-0001-TK-0005-outcome-lifecycle
 title: Подтверждённый итог и однократный учёт вылета
-stage: draft
+stage: implemented
 layer: engine
 depends_on: [EP-0042-US-0001-TK-0004-results-contract]
 files_touched: 5

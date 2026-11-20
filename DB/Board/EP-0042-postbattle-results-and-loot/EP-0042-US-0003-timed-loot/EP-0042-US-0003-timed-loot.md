@@ -2,7 +2,7 @@
 epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0003-timed-loot
 title: Ручная операция со временем и исходом
-stage: draft
+stage: implemented
 dependencies: [EP-0042-US-0002-loot-accordion]
 created: 2026-11-20T10:29:12Z
 source_request: "Решения D-0042-05, D-0042-08, D-0042-13"

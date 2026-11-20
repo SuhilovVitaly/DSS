@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0006-results-recovery
 ticket: EP-0042-US-0006-TK-0001-save-ledger
 title: Снимок завершённых состояний и совместимость
-stage: draft
+stage: implemented
 layer: engine
 depends_on: [EP-0042-US-0005-TK-0002-capacity-exit-rule, EP-0042-US-0001-TK-0005-outcome-lifecycle]
 files_touched: 5

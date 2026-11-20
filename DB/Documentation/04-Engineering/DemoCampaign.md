@@ -81,4 +81,4 @@ settlement группа retired, остальные группы не меняю
 
 ## Послебоевая кампания
 
-Rewards содержит независимые bounty/payment/loot projections, Company — отдельный custody roster. Победа фиксирует sortie до открытия loot, мир остаётся на паузе. Open loot разрешает сохранение; Continue восстанавливает frozen карту без replay. Каждая loot-команда требует durable continuation до Applied. [Полный контракт](DemoRewards.md).
+Rewards содержит отдельные сведения о наградах, выплатах и добыче, Company — roster пленных. Подтверждение исхода фиксирует sortie до открытия результата, мир остаётся на паузе. Continue восстанавливает стадию результата и стабильный ledger. LocalClient пишет checkpoint завершённых операций и удерживает мир до окончательного выхода. [Полный контракт](DemoRewards.md).

@@ -2,7 +2,7 @@
 epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0004-parallel-bulk
 title: Забрать всё параллельно с учётом трюма
-stage: draft
+stage: implemented
 dependencies: [EP-0042-US-0002-loot-accordion, EP-0042-US-0003-timed-loot]
 created: 2026-11-20T10:29:12Z
 source_request: "Решения D-0042-05, D-0042-06, D-0042-07, D-0042-10, D-0042-12, D-0042-14"

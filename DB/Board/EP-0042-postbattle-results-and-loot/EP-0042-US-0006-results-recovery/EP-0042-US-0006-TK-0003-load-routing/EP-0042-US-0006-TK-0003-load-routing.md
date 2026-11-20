@@ -3,7 +3,7 @@ epic: EP-0042-postbattle-results-and-loot
 story: EP-0042-US-0006-results-recovery
 ticket: EP-0042-US-0006-TK-0003-load-routing
 title: Блокировка сохранения и маршрутизация после Load
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0042-US-0001-TK-0002-mandatory-route, EP-0042-US-0005-TK-0003-footer-confirmation, EP-0042-US-0006-TK-0002-checkpoint-transport]
 files_touched: 4
@@ -74,7 +74,7 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 
 ## Self-containment check
 
-Зависимости: [EP-0042-US-0001-TK-0002-mandatory-route](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0002-mandatory-route/EP-0042-US-0001-TK-0002-mandatory-route.md), [EP-0042-US-0005-TK-0003-footer-confirmation](../../EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0003-footer-confirmation/EP-0042-US-0005-TK-0003-footer-confirmation.md), [EP-0042-US-0006-TK-0002-checkpoint-transport](../../EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0002-checkpoint-transport/EP-0042-US-0006-TK-0002-checkpoint-transport.md). Точный allowlist и owning test project указаны выше.
+Зависимости: [EP-0042-US-0001-TK-0002-mandatory-route](../../EP-0042-US-0001-results-modal/EP-0042-US-0001-TK-0002-mandatory-route/EP-0042-US-0001-TK-0002-mandatory-route.md), [EP-0042-US-0005-TK-0003-footer-confirmation](../../EP-0042-US-0005-safe-exit/EP-0042-US-0005-TK-0003-footer-confirmation/EP-0042-US-0005-TK-0003-footer-confirmation.md), [EP-0042-US-0006-TK-0002-checkpoint-transport](../EP-0042-US-0006-TK-0002-checkpoint-transport/EP-0042-US-0006-TK-0002-checkpoint-transport.md). Точный allowlist и owning test project указаны выше.
 
 ## Уточнение реализации
 
