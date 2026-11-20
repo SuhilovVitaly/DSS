@@ -32,6 +32,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     public StartTacticalBattleRequest? LastStart { get; private set; }
     /// <summary>Client-only tutorial mode: mid-battle exit leads to the main menu and a finished battle only returns to the map.</summary>
     public bool IsTutorial { get; init; }
+    internal bool RequireBattleResults { get; init; }
     public WorldEncounterSnapshot? CampaignEncounter { get; init; }
     public bool IsCampaign => CampaignEncounter is not null;
     internal bool ConfirmLootDiscard { get; set; }

@@ -53,6 +53,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     /// <summary>Battle-tutorial session; set only for the tutorial battle (EP-0028).</summary>
     internal TutorialSession? Tutorial { get; init; }
     internal SKRect NewBattleBounds => Raw(_phasePanel.ButtonBounds("new"));
+    internal SKRect ResultsBounds => Raw(_phasePanel.ButtonBounds("primary"));
     internal (SKRect Forecast, SKRect Sectors, SKRect AllFire) OverlayControls =>
         (_enemyForecast.Bounds, _enemySectors.Bounds, _allFireSectors.Bounds);
     internal TacticalBattleView View => _camera.View;
@@ -98,8 +99,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         Flow.State?.Phase == (evt == ScreenEvent.MoveTacticalBattle ? TacticalBattlePhase.Move : TacticalBattlePhase.Fire);
 
     private bool SalvoInFlight => Volatile.Read(ref _presentation)?.Results?.InFlight(ClockMilliseconds()) == true;
-    internal bool CanStartNewBattle => !Flow.IsTutorial && !Flow.IsCampaign && !TurnBusy && !SalvoInFlight && !ConfirmExit && Flow.State is not null;
+    internal bool CanStartNewBattle => !Flow.IsTutorial && !Flow.IsCampaign && !TurnBusy && !SalvoInFlight && !ConfirmExit &&
+        Flow.State is { } state && !(Flow.RequireBattleResults && state.Phase == TacticalBattlePhase.Over);
     private bool OutcomeVisible => Flow.State?.Phase == TacticalBattlePhase.Over && !SalvoInFlight;
+    internal bool CanOpenBattleResults => Flow.RequireBattleResults && OutcomeVisible && !TurnBusy && !HasSalvoPresentation;
 
     internal TacticalBattleFrame? CaptureFrame(int width, int height)
     {
@@ -224,6 +227,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             return ScreenEvent.None;
         }
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
+        if (CanOpenBattleResults && key is Key.Enter or Key.KeypadEnter && modifiers == KeyModifiers.None && !repeat)
+            return ScreenEvent.OpenBattleResults;
+        if (Flow.RequireBattleResults && Flow.State?.Phase == TacticalBattlePhase.Over && key == Key.Escape)
+            return ScreenEvent.None;
         if (!ConfirmExit && Tutorial?.OnKeyDown(key, modifiers, repeat) == true) return ScreenEvent.None;
         if (TurnBusy) return ScreenEvent.None;
         if (key == Key.Escape && !repeat && OutcomeVisible) return ScreenEvent.CloseTacticalBattle;
@@ -449,7 +456,9 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     private ScreenEvent ExitAction()
     {
-        if (OutcomeVisible) return ScreenEvent.CloseTacticalBattle;
+        if (OutcomeVisible) return Flow.RequireBattleResults
+            ? (CanOpenBattleResults ? ScreenEvent.OpenBattleResults : ScreenEvent.None)
+            : ScreenEvent.CloseTacticalBattle;
         if (Flow.IsCampaign) return ScreenEvent.None;
         ConfirmExit = true;
         return ScreenEvent.None;

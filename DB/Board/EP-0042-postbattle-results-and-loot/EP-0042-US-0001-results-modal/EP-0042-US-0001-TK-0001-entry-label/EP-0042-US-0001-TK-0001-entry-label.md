@@ -75,3 +75,12 @@ dotnet format src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: нет новых тикетов перед этой задачей. Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+Ввод правой панели проходит через `TacticalBattleScreen.Overlay.cs`, а прежний выбор обломков живёт в `TacticalBattleScreen.Loot.cs`. Добавлены эти файлы, `TacticalBattleFlow.cs` и два locale JSON: флаг включится при подключении диспетчера в TK-0002. Ключ самой кнопки входит в этот тикет, остальные тексты — в US-0002/TK-0004.
+
+## Исполнение
+
+- При включённом обязательном маршруте клик и Enter открывают результаты. Esc и выбор обломков не дают выйти из завершённого боя и не открывают добычу.
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли. Тест запланирован на завершение US-0001.

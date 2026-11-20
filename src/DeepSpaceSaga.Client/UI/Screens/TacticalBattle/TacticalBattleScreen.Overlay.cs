@@ -56,6 +56,7 @@ public sealed partial class TacticalBattleScreen
         _minimapProjection = TacticalBattleMinimap.Draw(c, f, _minimap);
         _phasePanel.Tutorial = Flow.IsTutorial;
         _phasePanel.Campaign = Flow.IsCampaign;
+        _phasePanel.RequireBattleResults = Flow.RequireBattleResults;
         _phasePanel.Draw(c, f, Layout);
         _pilotColumn.Draw(c, _portraits);
         _hoverCard.Draw(c, f, _portraits);
@@ -124,7 +125,7 @@ public sealed partial class TacticalBattleScreen
         {
             case "primary":
                 if (HasSalvoPresentation) { AdvanceSalvo(); return ScreenEvent.None; }
-                return Flow.State?.Phase == TacticalBattlePhase.Over ? ScreenEvent.CloseTacticalBattle : ActionEvent;
+                return Flow.State?.Phase == TacticalBattlePhase.Over ? ExitAction() : ActionEvent;
             case "replay": ReplaySalvo(); break;
             case "new": return CanStartNewBattle ? ScreenEvent.NewTacticalBattle : ScreenEvent.None;
         }
