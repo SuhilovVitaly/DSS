@@ -73,3 +73,12 @@ dotnet format src/DeepSpaceSaga.Engine.LocalClient/DeepSpaceSaga.Engine.LocalCli
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0006-TK-0001-save-ledger](../../EP-0042-US-0006-results-recovery/EP-0042-US-0006-TK-0001-save-ledger/EP-0042-US-0006-TK-0001-save-ledger.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+Save и autosave используют одну блокировку с admission и completion. Отдельный Engine-параметр удерживает мир после подтверждения до успешного checkpoint; для этого расширен allowlist на Engine dispatch и связь checkpoint. Штатное правило последнего живого continuation для погибшего учебного носителя применяется и к новому маршруту.
+
+## Исполнение
+
+- LocalClient синхронизирует выдачу и запись checkpoint с ручным сохранением и autosave. После сбоя повторяет сохранение того же состояния. Финальный переход удерживает мировые команды до записи.
+- Сборка Engine Tests, scoped whitespace format и `git diff --check` прошли.

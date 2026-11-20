@@ -22,7 +22,8 @@ public sealed partial class SimulationEngine
     public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command) => ExecuteDemoCampaign(command, out _);
 
     /// <summary>Reports a new application atomically, so transport never checkpoints a receipt replay.</summary>
-    public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command, out bool newlyApplied)
+    public DemoCampaignResponse ExecuteDemoCampaign(DemoCampaignCommand command, out bool newlyApplied,
+        bool deferBattleResultsRelease = false)
     {
         lock (_worldStateLock)
         {
@@ -57,7 +58,7 @@ public sealed partial class SimulationEngine
                 _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDestroyed))
                 reason = DemoCampaignReasons.CarrierDestroyed;
             else
-                PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason, ref commit);
+                PrepareDemoCampaignCommand(command, ref candidate, ref handled, ref reason, ref commit, deferBattleResultsRelease);
 
             reason ??= handled ? null : DemoCampaignReasons.Unsupported;
             bool applied = handled && reason is null;
@@ -125,7 +126,7 @@ public sealed partial class SimulationEngine
     // Central dispatch owns ordering. Feature helpers prepare candidates and deferred commits;
     // unsupported or rejected commands never mutate gameplay state.
     private void PrepareDemoCampaignCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
-        ref bool handled, ref string? reason, ref Action? commit)
+        ref bool handled, ref string? reason, ref Action? commit, bool deferBattleResultsRelease)
     {
         handled = true;
         switch (command)
@@ -134,7 +135,7 @@ public sealed partial class SimulationEngine
                 PrepareOpenBattleResults(open, ref reason, ref commit);
                 break;
             case AcknowledgeBattleResultsCommand acknowledge:
-                PrepareAcknowledgeBattleResults(acknowledge, ref candidate, ref reason, ref commit);
+                PrepareAcknowledgeBattleResults(acknowledge, ref candidate, ref reason, ref commit, deferBattleResultsRelease);
                 break;
             case SetLootDebugRequest debug:
                 if (debug.EngineerBonusPp is not (null or 0 or >= 10 and <= 15) ||

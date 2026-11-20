@@ -124,7 +124,7 @@ public sealed partial class SimulationEngine
     }
 
     private void PrepareAcknowledgeBattleResults(AcknowledgeBattleResultsCommand command, ref DemoCampaignData candidate,
-        ref string? reason, ref Action? commit)
+        ref string? reason, ref Action? commit, bool deferRelease)
     {
         if (_frozenBattleResults is not { } frozen || frozen.Results.BattleId != command.BattleId)
         { reason = BattleLootReasons.WrongBattle; return; }
@@ -139,7 +139,8 @@ public sealed partial class SimulationEngine
         commit = () =>
         {
             _frozenBattleResults = frozen with { Results = frozen.Results with { Stage = BattleResultsStage.Acknowledged } };
-            SetTacticalBattleCommandBlock(false);
+            _encounterStoragePending = deferRelease;
+            SetTacticalBattleCommandBlock(deferRelease);
         };
     }
 }

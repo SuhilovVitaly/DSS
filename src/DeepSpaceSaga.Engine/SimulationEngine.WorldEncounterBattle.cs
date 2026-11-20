@@ -11,7 +11,14 @@ public sealed partial class SimulationEngine
     private bool HasCapturedEncounter => _demoCampaign.WorldEncounter is { Phase: not WorldEncounterPhases.Finished };
     private bool _encounterStoragePending;
     public void SetEncounterStoragePending(bool pending)
-    { lock (_worldStateLock) _encounterStoragePending = pending; }
+    {
+        lock (_worldStateLock)
+        {
+            _encounterStoragePending = pending;
+            if (!pending && _frozenBattleResults?.Results.Stage == BattleResultsStage.Acknowledged)
+                SetTacticalBattleCommandBlock(CombatOrLootOpen);
+        }
+    }
 
     /// <summary>Exact restart checkpoint, captured before the tactical session exists. Storage must commit it before Begin.</summary>
     public ScenarioFile CapturePendingEncounterCheckpoint(BeginEncounterBattleCommand command)
