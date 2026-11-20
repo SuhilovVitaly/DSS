@@ -15,10 +15,18 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
     private bool _acknowledgeRequested;
     internal bool ConfirmDiscard { get; private set; }
     private readonly TacticalBattleSnapshot? _terminalBattle = flow.State;
-    private readonly BattleLootPresentation _lootPresentation = new(command => flow.Session.ExecuteDemoCampaignAsync(command).AsTask());
+    private readonly BattleLootPresentation _lootPresentation = CreateLootPresentation(flow);
     internal SKRect PanelBounds { get; private set; }
     internal SKRect Contents { get; private set; }
     internal SKRect ExitBounds => _exitBounds;
+
+    private static BattleLootPresentation CreateLootPresentation(TacticalBattleFlow flow)
+    {
+        var presentation = new BattleLootPresentation(command => flow.Session.ExecuteDemoCampaignAsync(command).AsTask());
+        if (flow.OpenedResultsReceipt is { Rewards.Loot: { } loot } receipt && loot.BattleId == flow.State?.BattleId)
+            presentation.Observe(loot, receipt.Revision);
+        return presentation;
+    }
 
     internal Summary? Report
     {

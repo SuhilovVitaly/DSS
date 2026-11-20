@@ -20,6 +20,7 @@ EP-0036 вошёл в main через PR #127. Дополнительная от
 | [EP-0042-US-0003-TK-0001-operation-contract](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0001-operation-contract/EP-0042-US-0003-TK-0001-operation-contract.md) | Ожидает | — |
 | [EP-0042-US-0003-TK-0002-single-engine](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0002-single-engine/EP-0042-US-0003-TK-0002-single-engine.md) | Ожидает | — |
 | [EP-0042-US-0003-TK-0003-row-progress](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0003-row-progress/EP-0042-US-0003-TK-0003-row-progress.md) | Ожидает | — |
+| [EP-0042-US-0003-TK-0004-open-revision](EP-0042-US-0003-timed-loot/EP-0042-US-0003-TK-0004-open-revision/EP-0042-US-0003-TK-0004-open-revision.md) | Ожидает | — |
 | [EP-0042-US-0004-TK-0001-bulk-order](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0001-bulk-order/EP-0042-US-0004-TK-0001-bulk-order.md) | Ожидает | — |
 | [EP-0042-US-0004-TK-0002-cargo-completion](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0002-cargo-completion/EP-0042-US-0004-TK-0002-cargo-completion.md) | Ожидает | — |
 | [EP-0042-US-0004-TK-0003-bulk-action](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0003-bulk-action/EP-0042-US-0004-TK-0003-bulk-action.md) | Ожидает | — |

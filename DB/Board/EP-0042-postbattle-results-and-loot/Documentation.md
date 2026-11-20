@@ -62,7 +62,7 @@ dependencies: [EP-0027-tutorial-start, EP-0032-demo-campaign-continuity, EP-0035
 |---|---|---:|
 | [EP-0042-US-0001-results-modal](EP-0042-US-0001-results-modal/EP-0042-US-0001-results-modal.md) Обязательные результаты боя | — | 5 |
 | [EP-0042-US-0002-loot-accordion](EP-0042-US-0002-loot-accordion/EP-0042-US-0002-loot-accordion.md) Карточки противника и строки добычи | US-0001 | 4 |
-| [EP-0042-US-0003-timed-loot](EP-0042-US-0003-timed-loot/EP-0042-US-0003-timed-loot.md) Ручная операция со временем и исходом | US-0002 | 3 |
+| [EP-0042-US-0003-timed-loot](EP-0042-US-0003-timed-loot/EP-0042-US-0003-timed-loot.md) Ручная операция со временем и исходом | US-0002 | 4 |
 | [EP-0042-US-0004-parallel-bulk](EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-parallel-bulk.md) Забрать всё параллельно с учётом трюма | US-0002, US-0003 | 3 |
 | [EP-0042-US-0005-safe-exit](EP-0042-US-0005-safe-exit/EP-0042-US-0005-safe-exit.md) Оставленная добыча, трюм и места для пленных | US-0002, US-0004 | 3 |
 | [EP-0042-US-0006-results-recovery](EP-0042-US-0006-results-recovery/EP-0042-US-0006-results-recovery.md) Сохранение и загрузка окна результатов | US-0001, US-0003, US-0004, US-0005 | 3 |

@@ -38,6 +38,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     internal bool ConfirmLootDiscard { get; set; }
     private FinishBattleLootCommand? _pendingLootFinish;
     private DemoCampaignCommand? _pendingResultsCommand;
+    internal DemoCampaignResponse? OpenedResultsReceipt { get; private set; }
     internal bool AdoptRecoveredEncounter(TacticalBattleSnapshot state)
     {
         if (CampaignEncounter?.Binding.BattleId != state.BattleId) return false;
@@ -191,7 +192,8 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
                 if (response.Applied)
                 {
                     Volatile.Write(ref _error, "");
-                    if (!open) { ExportMetrics(state, exited: true); Forget(); }
+                    if (open) OpenedResultsReceipt = response;
+                    else { ExportMetrics(state, exited: true); Forget(); }
                     return true;
                 }
                 if (response.Reason == DemoCampaignReasons.StaleRevision) { revision = response.Revision; continue; }

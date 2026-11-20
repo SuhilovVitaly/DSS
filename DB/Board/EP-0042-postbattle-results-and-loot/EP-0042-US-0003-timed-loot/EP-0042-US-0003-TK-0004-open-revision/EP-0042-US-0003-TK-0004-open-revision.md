@@ -1,0 +1,19 @@
+---
+epic: EP-0042-postbattle-results-and-loot
+story: EP-0042-US-0003-timed-loot
+ticket: EP-0042-US-0003-TK-0004-open-revision
+title: Ревизия лута при открытии результатов
+stage: implementation
+layer: client
+depends_on: [EP-0042-US-0003-TK-0003-row-progress]
+serves: [AC-01, AC-03]
+---
+
+# Ревизия лута при открытии результатов
+
+В headless-сценарии первая команда строки отклонялась между успешным открытием результатов и следующим world snapshot. Инициализировать проекцию окна подтверждённым receipt открытия с его ревизией. Регрессия: LootOperationRow_ProgressBottomUp_ManualAndCollapse.
+
+## Исполнение
+
+- Модаль сразу знает ревизию подтверждённого открытия и соответствующую проекцию. Поздние снимки продолжают обновлять их по возрастанию ревизии.
+- Сборка Client Tests, scoped whitespace format и `git diff --check` прошли. Повтор упавшего теста на границе истории следует за публикацией.
