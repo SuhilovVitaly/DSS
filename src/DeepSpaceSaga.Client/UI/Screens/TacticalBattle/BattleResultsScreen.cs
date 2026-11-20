@@ -149,11 +149,11 @@ internal sealed partial class BattleResultsScreen(TacticalBattleFlow flow, float
 
     private int _saveLoadInProgress;
     internal bool SaveLoadInProgress => Volatile.Read(ref _saveLoadInProgress) != 0;
-    internal bool CanSaveLoad => !ConfirmDiscard && !ExitBlocked;
+    internal bool CanSaveLoad => !ConfirmDiscard && !ExitBlocked && !Flow.ResultsCloseCheckpointPending;
     internal bool TryBeginSaveLoad()
     {
         if (!CanSaveLoad || Interlocked.CompareExchange(ref _saveLoadInProgress, 1, 0) != 0) return false;
-        if (!ConfirmDiscard && !HasLootActivity && CurrentLoot?.Operations.IsEmpty != false) return true;
+        if (!ConfirmDiscard && !HasLootActivity && !Flow.ResultsCloseCheckpointPending && CurrentLoot?.Operations.IsEmpty != false) return true;
         EndSaveLoad();
         return false;
     }

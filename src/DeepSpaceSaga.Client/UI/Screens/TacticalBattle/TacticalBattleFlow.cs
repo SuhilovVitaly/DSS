@@ -40,6 +40,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     private FinishBattleLootCommand? _pendingLootFinish;
     private DemoCampaignCommand? _pendingResultsCommand;
     internal DemoCampaignResponse? OpenedResultsReceipt { get; private set; }
+    internal bool ResultsCloseCheckpointPending => Volatile.Read(ref _pendingResultsCommand) is AcknowledgeBattleResultsCommand;
     internal bool AdoptRecoveredEncounter(TacticalBattleSnapshot state)
     {
         if (CampaignEncounter?.Binding.BattleId != state.BattleId &&
