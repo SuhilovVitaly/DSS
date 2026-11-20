@@ -75,3 +75,12 @@ dotnet format src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --verify-no-c
 ## Self-containment check
 
 Зависимости: [EP-0042-US-0004-TK-0001-bulk-order](../../EP-0042-US-0004-parallel-bulk/EP-0042-US-0004-TK-0001-bulk-order/EP-0042-US-0004-TK-0001-bulk-order.md). Точный allowlist и owning test project указаны выше.
+
+## Уточнение реализации
+
+После успешного броска без места сохраняется ExtractedWaiting; допустимость состояния проверяет BattleLootData. Contracts публикует готовность отдельного подбора. Dispatch принимает ClaimExtractedLootCommand, а архивный отчёт отображает добытое без места и переводит его в оставленное после закрытия. Legacy-команды сохраняют исходную проверку вместимости до броска. Эти файлы расширяют исходный allowlist.
+
+## Исполнение
+
+- Расходники размещаются по реальным секциям трюма до вместимого целого количества. Один успешный бросок модуля/лома без места сохраняет ExtractedWaiting; подбор проверяет cargo без RNG.
+- Сборка Engine Tests, scoped whitespace format и `git diff --check` прошли. Проверки полного и частичного трюма назначены на границу истории.

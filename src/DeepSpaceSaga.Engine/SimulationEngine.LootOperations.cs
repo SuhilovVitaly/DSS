@@ -92,4 +92,33 @@ public sealed partial class SimulationEngine
             .Select(op => new LootOperationSnapshot(op.Id, op.Row, op.DurationMs, (int)Math.Clamp(op.DueAtMs - now, 0, op.DurationMs)))
             .ToImmutableArray();
     }
+
+    private void PrepareClaimExtractedLoot(ClaimExtractedLootCommand command, ref DemoCampaignData candidate,
+        ref string? reason, ref Action? commit)
+    {
+        if (GetTimedLoot(command.BattleId) is not { } loot) { reason = BattleLootReasons.WrongBattle; return; }
+        if (command.Row is not { } row) { reason = BattleLootReasons.InvalidTarget; return; }
+        var source = loot.Sources.FirstOrDefault(source => source.ObjectId == row.ObjectId);
+        if (source is null) { reason = BattleLootReasons.InvalidTarget; return; }
+        string itemId;
+        long quantity;
+        LootSourceData updated;
+        if (row.Kind == LootRowKind.Scrap && source.Scrap is { State: LootAttemptStates.ExtractedWaiting } scrap &&
+            scrap.ItemTypeId == row.EntryId)
+        {
+            itemId = scrap.ItemTypeId;
+            quantity = scrap.Quantity;
+            updated = source with { Scrap = scrap with { State = LootAttemptStates.Collected } };
+        }
+        else if (row.Kind == LootRowKind.Module && source.Modules.FirstOrDefault(module =>
+            module.InstanceId == row.EntryId && module.State == LootAttemptStates.ExtractedWaiting) is { } module)
+        {
+            itemId = module.ItemTypeId;
+            quantity = 1;
+            updated = source with { Modules = source.Modules.Replace(module, module with { State = LootAttemptStates.Collected }) };
+        }
+        else { reason = BattleLootReasons.InvalidTarget; return; }
+        if (!TryPrepareLootCargo(itemId, quantity, out commit)) { reason = BattleLootReasons.CargoFull; return; }
+        candidate = candidate with { LootSession = loot with { Sources = loot.Sources.Replace(source, updated) } };
+    }
 }

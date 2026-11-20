@@ -27,7 +27,8 @@ public sealed record BattleLootData(string BattleId, string Phase, string Catalo
         Require(!data.Jettison.IsDefault && data.Jettison.All(j => j is not null && !string.IsNullOrWhiteSpace(j.CommandId) && !string.IsNullOrWhiteSpace(j.ItemTypeId) && j.Quantity > 0) &&
             data.Jettison.Select(j => j.CommandId).Distinct(StringComparer.Ordinal).Count() == data.Jettison.Length);
         long expectedDraws = 0;
-        bool Attempt(string state) => state is LootAttemptStates.NotAttempted or LootAttemptStates.Failed or LootAttemptStates.Collected;
+        bool Attempt(string state) => state is LootAttemptStates.NotAttempted or LootAttemptStates.Failed or
+            LootAttemptStates.Collected or LootAttemptStates.ExtractedWaiting;
         foreach (var s in data.Sources)
         {
             Require(!string.IsNullOrWhiteSpace(s.ObjectId) && !string.IsNullOrWhiteSpace(s.LayoutId) &&

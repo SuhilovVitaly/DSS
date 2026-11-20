@@ -34,16 +34,16 @@ public sealed partial class SimulationEngine
     }
 
     private void PrepareModuleSalvage(AttemptModuleSalvageCommand command, ref BattleLootData loot,
-        ref LootSourceData source, ref string? reason, ref Action? commit)
+        ref LootSourceData source, ref string? reason, ref Action? commit, bool completingOperation)
     {
         var module = source.Modules.FirstOrDefault(m => m.InstanceId == command.InstanceId && !m.Destroyed);
         if (module is null) { reason = BattleLootReasons.InvalidTarget; return; }
         if (module.State != LootAttemptStates.NotAttempted) { reason = BattleLootReasons.AlreadyAttempted; return; }
-        if (!TryPrepareLootCargo(module.ItemTypeId, 1, out var grant)) { reason = BattleLootReasons.CargoFull; return; }
-        bool success = LootAttemptSucceeded(LootRoll(loot.Seed, loot.DrawCount), module.ChanceBasisPoints);
-        loot = loot with { DrawCount = checked(loot.DrawCount + 1) };
-        source = source with { Modules = source.Modules.Replace(module, module with { State = success ? LootAttemptStates.Collected : LootAttemptStates.Failed }) };
-        commit = success ? grant : null;
+        bool fits = TryPrepareLootCargo(module.ItemTypeId, 1, out var grant);
+        if (!fits && !completingOperation) { reason = BattleLootReasons.CargoFull; return; }
+        string state = ResolveLootAttempt(ref loot, module.ChanceBasisPoints, fits);
+        source = source with { Modules = source.Modules.Replace(module, module with { State = state }) };
+        commit = state == LootAttemptStates.Collected ? grant : null;
     }
 
     private ModuleLootSnapshot ProjectLootModule(LootModuleData module, bool open, Func<string, long, bool> canFit)
@@ -52,6 +52,9 @@ public sealed partial class SimulationEngine
         string? reason = !open ? BattleLootReasons.LootClosed : module.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
             !canFit(module.ItemTypeId, 1) ? BattleLootReasons.CargoFull : null;
         return new(module.InstanceId, module.Category, module.CatalogId, module.ItemTypeId, item?.DisplayName ?? module.ItemTypeId, "intact",
-            item?.BasePriceCredits ?? 0, module.ChanceBasisPoints, module.State, reason is null, reason, item?.UnitMassKg ?? 0);
+            item?.BasePriceCredits ?? 0, module.ChanceBasisPoints, module.State, reason is null, reason, item?.UnitMassKg ?? 0)
+        {
+            CanClaimExtracted = open && module.State == LootAttemptStates.ExtractedWaiting && canFit(module.ItemTypeId, 1)
+        };
     }
 }

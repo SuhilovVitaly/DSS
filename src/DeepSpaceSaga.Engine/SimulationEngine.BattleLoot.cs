@@ -95,6 +95,28 @@ public sealed partial class SimulationEngine
         return true;
     }
 
+    private long MaximumLootQuantity(string itemId, long requested)
+    {
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed);
+        long mass = LootItemDefinition(itemId)?.UnitMassKg ?? 0;
+        if (ship is null || mass <= 0) return 0;
+        long capped = Math.Min(requested, PlayerFreeHoldKg(ship) / mass);
+        long unplaced = capped;
+        foreach (var module in ship.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0))
+        {
+            unplaced -= Math.Min(unplaced, Math.Max(0, module.AvailableCapacityKg ?? 0) / mass);
+            if (unplaced == 0) break;
+        }
+        return capped - unplaced;
+    }
+
+    private static string ResolveLootAttempt(ref BattleLootData loot, int chance, bool fits)
+    {
+        bool success = LootAttemptSucceeded(LootRoll(loot.Seed, loot.DrawCount), chance);
+        loot = loot with { DrawCount = checked(loot.DrawCount + 1) };
+        return !success ? LootAttemptStates.Failed : fits ? LootAttemptStates.Collected : LootAttemptStates.ExtractedWaiting;
+    }
+
     internal void PrepareBattleLootCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
         ref string? reason, ref Action? commit, bool completingOperation = false)
     {
@@ -119,22 +141,23 @@ public sealed partial class SimulationEngine
             var item = source.Consumables.FirstOrDefault(c => c.ItemTypeId == collect.ItemTypeId && !c.Destroyed);
             if (item is null) { reason = BattleLootReasons.InvalidTarget; return; }
             if (collect.Quantity <= 0 || collect.Quantity > item.Remaining) { reason = BattleLootReasons.InvalidQuantity; return; }
-            if (!TryPrepareLootCargo(item.ItemTypeId, collect.Quantity, out commit)) { reason = BattleLootReasons.CargoFull; return; }
-            source = source with { Consumables = source.Consumables.Replace(item, item with { Remaining = item.Remaining - collect.Quantity }) };
+            long quantity = completingOperation ? MaximumLootQuantity(item.ItemTypeId, collect.Quantity) : collect.Quantity;
+            if (!TryPrepareLootCargo(item.ItemTypeId, quantity, out commit)) { reason = BattleLootReasons.CargoFull; return; }
+            source = source with { Consumables = source.Consumables.Replace(item, item with { Remaining = item.Remaining - quantity }) };
         }
         else if (command is AttemptScrapCommand)
         {
             if (source.Scrap is not { } scrap) { reason = BattleLootReasons.InvalidTarget; return; }
             if (scrap.State != LootAttemptStates.NotAttempted) { reason = BattleLootReasons.AlreadyAttempted; return; }
-            if (!TryPrepareLootCargo(scrap.ItemTypeId, scrap.Quantity, out var grant)) { reason = BattleLootReasons.CargoFull; return; }
-            bool success = LootAttemptSucceeded(LootRoll(loot.Seed, loot.DrawCount), scrap.ChanceBasisPoints);
-            loot = loot with { DrawCount = checked(loot.DrawCount + 1) };
-            source = source with { Scrap = scrap with { State = success ? LootAttemptStates.Collected : LootAttemptStates.Failed } };
-            commit = success ? grant : null;
+            bool fits = TryPrepareLootCargo(scrap.ItemTypeId, scrap.Quantity, out var grant);
+            if (!fits && !completingOperation) { reason = BattleLootReasons.CargoFull; return; }
+            string state = ResolveLootAttempt(ref loot, scrap.ChanceBasisPoints, fits);
+            source = source with { Scrap = scrap with { State = state } };
+            commit = state == LootAttemptStates.Collected ? grant : null;
         }
         else if (command is AttemptModuleSalvageCommand salvage)
         {
-            PrepareModuleSalvage(salvage, ref loot, ref source, ref reason, ref commit);
+            PrepareModuleSalvage(salvage, ref loot, ref source, ref reason, ref commit, completingOperation);
             if (reason is not null) return;
         }
         else { reason = DemoCampaignReasons.Unsupported; return; }
@@ -173,10 +196,13 @@ public sealed partial class SimulationEngine
             s.Scrap is { } scrap ? ProjectScrap(scrap, open, CanFit) : null,
             s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open, CanFit)).ToImmutableArray(), ProjectLootPilot(loot, s, ship, freeCabins), s.X, s.Y, s.Direction)).ToImmutableArray();
         return new(loot.BattleId, loot.Phase, objects, open && objects.Any(s =>
-            s.Consumables.Any(c => c.Remaining > 0) || s.Scrap?.State == LootAttemptStates.NotAttempted ||
-            s.Modules.Any(m => m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }))
+            s.Consumables.Any(c => c.Remaining > 0) || IsUnclaimedAttempt(s.Scrap?.State) ||
+            s.Modules.Any(m => IsUnclaimedAttempt(m.State)) || s.Pilot is { Alive: true, Captured: false }))
         { Cargo = BuildLootCargo(), FreeCargoKg = freeMass, Operations = ProjectLootOperations() };
     }
+
+    private static bool IsUnclaimedAttempt(string? state) =>
+        state is LootAttemptStates.NotAttempted or LootAttemptStates.ExtractedWaiting;
 
     private ScrapLootSnapshot ProjectScrap(LootScrapData scrap, bool open, Func<string, long, bool> canFit)
     {
@@ -188,7 +214,8 @@ public sealed partial class SimulationEngine
         return new(scrap.ItemTypeId, scrap.Quantity, scrap.ChanceBasisPoints, scrap.State, reason is null, reason,
             mass > 0 && scrap.Quantity <= long.MaxValue / mass ? scrap.Quantity * mass : 0)
         {
-            EstimatedValueTokens = value is > 0 && scrap.Quantity <= long.MaxValue / value ? scrap.Quantity * value : null
+            EstimatedValueTokens = value is > 0 && scrap.Quantity <= long.MaxValue / value ? scrap.Quantity * value : null,
+            CanClaimExtracted = open && scrap.State == LootAttemptStates.ExtractedWaiting && canFit(scrap.ItemTypeId, scrap.Quantity)
         };
     }
 

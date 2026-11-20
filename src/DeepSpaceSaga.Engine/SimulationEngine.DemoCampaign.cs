@@ -153,6 +153,9 @@ public sealed partial class SimulationEngine
             case AdvanceLootOperationsCommand advance:
                 PrepareAdvanceLootOperations(advance, ref candidate, ref reason, ref commit);
                 break;
+            case ClaimExtractedLootCommand claimLoot:
+                PrepareClaimExtractedLoot(claimLoot, ref candidate, ref reason, ref commit);
+                break;
             case ILootCampaignCommand:
                 PrepareBattleLootCommand(command, ref candidate, ref reason, ref commit);
                 break;
