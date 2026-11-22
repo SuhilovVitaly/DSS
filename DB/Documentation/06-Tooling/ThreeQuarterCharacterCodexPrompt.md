@@ -1,6 +1,6 @@
 # Промт Codex: новый персонаж в три четверти
 
-Промт для Codex (ImageGen + пайплайн W8). Скопируй всё ниже линии, подставь ID и описание внешности. ТЗ: [ThreeQuarterCharacterSprites.md](../03-Design/ThreeQuarterCharacterSprites.md). Рабочая копия: `DSS-Images/Characters/W8/Antropik/prompts/codex-new-character.md`.
+Промт для Codex (ImageGen + пайплайн W8). Скопируй всё ниже линии, подставь ID и описание внешности. Геометрию бери из рабочего [pose.json](../../../../DSS-Images/Characters/W8/Antropik/three-quarter-right/pose.json). Цвет кожи описан в [контракте skinTone](ThreeQuarterCharacterSkinTone.md).
 
 ---
 
@@ -15,13 +15,11 @@
 
 ## Прочитай сначала
 
-1. ТЗ: `D:/DeepSpaceSaga/DSS/DB/Documentation/03-Design/ThreeQuarterCharacterSprites.md` (ред. 0.2), разделы 3–5 и 8.
-2. Пилот: `D:/DeepSpaceSaga/DSS-Images/Characters/W8/Antropik/README.md`.
-3. Скилл: `D:/DeepSpaceSaga/DSS-Images/Characters/W8/Antropik/skills/dss-three-quarter-character/SKILL.md`.
-4. Код: `tools/dss3q.py`, `tools/build_pilot.py` (функции `opaque`, `register`, `tint_skin`, `visible_back_hair`, `head_layers`, расчёт шва в `main`), `tools/review.py`.
-5. Контракт: `three-quarter-right/pose.json`.
-6. Эталон рисовки — [лист из девяти портретов](../../../../DSS-Images/Characters/W8/Antropik/prompts/references/portrait-style-nine-heads.png). Из рабочей папки W8 он доступен по пути `prompts/references/portrait-style-nine-heads.png`. Мастера ER2BKF, NJIY63 и игровые атласы используй для сравнения масштаба и посадки на тело.
-7. [Контракт сборки с skinTone](ThreeQuarterCharacterSkinTone.md) задаёт формат `settings.json`, расчёт цвета по маске и обработку верхней части шеи.
+1. Действующая поза — `three-quarter-right/pose.json`. В ней заданы холст, ячейка, порядок эмоций, точка вставки и шов.
+2. [Контракт сборки с skinTone](ThreeQuarterCharacterSkinTone.md) задаёт формат `settings.json`, расчёт цвета по маске и обработку верхней части шеи.
+3. Пилот и скилл в рабочей папке — `README.md` и `skills/dss-three-quarter-character/SKILL.md`. Для вывода атласа и подбора `skinTone` используй порядок из этого промпта.
+4. Инструменты — `tools/add_character.py`, `tools/dss3q.py`, `tools/review.py` и функции `opaque`, `visible_back_hair`, `head_layers` в `tools/build_pilot.py`.
+5. Эталон рисовки — [лист из девяти портретов](../../../../DSS-Images/Characters/W8/Antropik/prompts/references/portrait-style-nine-heads.png). Мастера ER2BKF, NJIY63 и игровые атласы используй для сравнения масштаба и посадки на тело.
 
 Рабочая папка: `D:/DeepSpaceSaga/DSS-Images/Characters/W8/Antropik`.
 Python: `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts/python.exe`.
@@ -32,7 +30,7 @@ Python: `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts
 
 - `three-quarter-right/Clothes/*.png` не трогать. Тела общие для всех персонажей.
 - В `pose.json` менять только список `characters`. Холст 282×747, ячейка 144×190 в (69, 0), шов `neckSeam` остаются как есть.
-- Атласы ER2BKF и NJIY63 не трогать.
+- Проверь свободен ли ID в клиентском каталоге W8 и в рабочем манифесте до генерации. Существующие атласы и настройки обновляй только для явно запрошенной ревизии персонажа.
 - Ничего не коммитить.
 
 ## Шаг 1. Подложка для ImageGen
@@ -141,7 +139,7 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
   - joy — радость: широкая открытая улыбка, приподнятые щёки.
   - pleasure — удовольствие: мягкая улыбка, полуприкрытые глаза.
 - Причёска одинаковая во всех пяти эмоциях: та же форма, пробор и длина.
-- Волосы не ниже плеч. Всё, что ниже y 189 в игровых координатах, будет обрезано: закладывай причёску выше.
+- Волосы не ниже плеч. Весь силуэт головы и волос должен помещаться в ячейку x 69–212, y 0–189. Если пряди выходят за ячейку, исправь исходник или перегенерируй.
 - Фон однотонный и контрастный к волосам, чтобы его можно было убрать без ореола. Для светлых и рыжих волос — тёмно-серый `#3A3F48`, для тёмных — светлый `#E8E2D4`. Цвет фона один на все пять эмоций. Силуэт волос без свечения и размытия в фон.
 - ImageGen может вернуть другой размер кадра. Перед шагом 3 приведи результат к размеру подложки (1010×1300) с сохранением пропорций и проверь совмещение ворота с подложкой. Если пропорции кадра другие и ворот не совпадает, генерацию повторить.
 
@@ -157,7 +155,7 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 2. Уменьши обратно в игровое разрешение тем же преобразованием, что подложку: ×1/5, ресемплинг BOX на premultiplied alpha, смещение (40, 0) в холсте 282×747.
 3. Проверь совмещение с `work/outfit/GREEN.uncut.png` по шее и вороту. Сдвиг больше ±1 px исправь одним сдвигом на всю эмоцию. Масштаб не меняй.
 4. Раздели на три слоя: `back-hair` (волосы позади шеи и плеч), `face` (голова, лицо, шея до ворота), `front-hair` (пряди поверх лица и плеч). Пикселей комбинезона в слоях быть не должно.
-5. Сохрани оттенок лица принятого `neutral` во всех эмоциях. Для примерки примени выбранный `skinTone` к открытой коже общего тела и к её видимому вкладу в верхнюю часть шеи по контракту сборки. Сверь переход под челюстью и в вырезе на GREEN и GRAY. Общий полутон `#DA9C77` из `provenance.json → bodySkinTarget` служит исходной точкой коррекции.
+5. Сохрани оттенок лица принятого `neutral` во всех эмоциях. Подбери `skinTone` для коррекции общей кожи. Если берёшь маски или регистрацию из `prepare_batch_layers.py`, сохрани цвет лица до его преобразования `tint_skin` к `bodySkinTarget`. Цветовую примерку выполни отдельно на шаге 5.
 
 Слои сохрани в `work/imagegen/xxxxxx/layers/<emotion>/{back-hair,face,front-hair}.png` (282×747).
 
@@ -165,7 +163,7 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 
 Используй существующий импорт готовых слоёв. `build_pilot.py` собирает исходных персонажей W5 через `tools/w5src.py`.
 
-1. Запусти `tools/add_character.py --id XXXXXX --layers work/imagegen/xxxxxx/layers --skin-tone "#RRGGBB"`. Подставь выбранный оттенок. Импорт:
+1. Запусти `python tools/add_character.py --id XXXXXX --layers work/imagegen/xxxxxx/layers --skin-tone "#RRGGBB"` проектным Python из рабочей папки. Подставь выбранный оттенок явно. Импорт выполняет следующие действия:
    - читать слои в игровых координатах, без регистрации W5;
    - брать шов из `pose.json` (а не пересчитывать его) и тело из `work/outfit/GREEN.uncut.png`;
    - собирать мастер на каждую эмоцию `work/masters/xxxxxx/<emotion>.GREEN.png` = back-hair → тело → face → front-hair;
@@ -187,15 +185,15 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 
 ## Шаг 5. Проверки
 
-1. Выполни `python tools/dss3q.py validate --pose three-quarter-right --character XXXXXX` → OK. Для рабочей позы компоновщик ищет атлас в клиентском каталоге W8.
-2. Запусти `tools/review.py` на временной копии конфигурации позы со списком `characters`, ограниченным своим ID. Укажи `review.POSE_DIR` на эту копию, задай в ней абсолютный шаблон `portraitAtlas` до клиентского атласа и положи рядом тела и направляющие. Оставь `review.WORK` направленным на рабочие исходники пилота. Проверь `checks.json` для нового персонажа:
-   - AC-01: разрез + обратная сборка против мастера — в пределах ±1. Если нет, приведи число пикселей и максимум.
-   - AC-02: 0 изменений вне маски ткани и 0 изменений альфы.
+1. Выполни `python tools/dss3q.py validate --pose three-quarter-right --character XXXXXX` → OK. Для рабочей позы компоновщик ищет атлас в клиентском каталоге W8. Сверь, что он разрешил именно клиентский файл.
+2. Для проверок базовой сборки вызови `review.main()` из Python, импортировав `review` из `tools`. В каталоге `D:/DeepSpaceSaga/artifacts/validation/<task>/<run>/` подготовь временную конфигурацию позы со списком `characters` из одного проверяемого ID. Задай в ней абсолютный шаблон `portraitAtlas` вида `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/{id}/threequarter.png` и положи рядом `Clothes` и `Templates` из рабочей позы. Направь `review.POSE_DIR` на эту конфигурацию, `review.OUT` в папку `review` текущего запуска, `review.WORK` на рабочие исходники пилота. Проверь `review/checks.json` для нового персонажа:
+   - AC-01: базовая сборка против мастера. Альфа совпадает точно. Допуск ±1 по RGB применяется только к полупрозрачному портрету поверх тела. При расхождении укажи число пикселей и максимальное отклонение.
+   - AC-02: при переходе с GREEN на GRAY у одной эмоции `changedOutsideMask = 0` и `alphaChanged = 0`.
    - AC-03: тело вне ячейки стабильно.
    - AC-09: `headPixelsWithLessAlpha = 0`.
-   - AC-10: все плитки совпадают попиксельно.
+   - AC-10: все десять плиток совпадают попиксельно. Перечитай `matrix-rgba.png` и соответствующие одиночные кадры с диска, проверь координаты плиток по `matrix-rgba.tiles.json`.
    - Самопроверка со сдвигом на 1 px срабатывает.
-3. Перечитай записанный `settings.json` и проверь `skinTone` на соответствие формату `#RRGGBB`. Для каждой из пяти эмоций сравни кадры с исходным полутоном и с `skinTone` на GREEN и GRAY. Проверь, что изменились только пиксели открытой кожи тела и общей верхней шеи, а альфа совпадает. При отсутствии точных экспортных данных верхней шеи отметь предел проверки. Сам по себе `settings.json` не подключает коррекцию в клиенте.
+3. Перечитай клиентский `settings.json` и сверь `skinTone` с выбранным значением и форматом `#RRGGBB`. Сделай отдельную цветовую примерку по маске из контракта `skinTone`. Сравни кадры до и после коррекции для каждой эмоции на GREEN и GRAY. Проверяй изменение RGB только в области открытой кожи, исходная альфа должна совпасть. Текущий компоновщик собирает базовые кадры. Если точный вклад верхней шеи не экспортирован, проверь коррекцию тела и явно отметь предел проверки стыка. Игровую проверку AC-08 отмечай пройденной только после проверки в клиенте.
 4. Посмотри глазами `review/matrix.png` и `review/closeups-neck.png`:
    - стык шеи на светлом и тёмном фоне;
    - пять эмоций различимы с первого взгляда;
@@ -204,13 +202,11 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
    - причёска одинаковая во всех эмоциях;
    - на GREEN и GRAY голова встаёт без правок.
 
-## Шаг 6. Экспорт и итог
+## Шаг 6. Итог
 
 1. Перечитай PNG и JSON по итоговому пути в `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8` и сверь их с результатами проверки.
-2. Обнови в `README.md` таблицу результатов и отклонения.
-3. Обнови `skills/dss-three-quarter-character/SKILL.md`: добавь путь «новый персонаж из ImageGen» через `add_character.py`.
-4. Скопируй обе папки скиллов из `skills/` в `C:/Users/sushi/.codex/skills/` и `D:/DeepSpaceSaga/DSS-Images/skills/`.
-5. Отчитайся коротко:
+2. Обнови в рабочем `README.md` таблицу результатов и отклонения, если запрос включает документацию. При экспорте только портретов ограничь итоговые файлы атласом и настройками.
+3. Отчитайся коротко:
    - пути к `threequarter.png` и `settings.json`, выбранный `skinTone`;
    - результаты AC;
    - что не получилось и почему;
