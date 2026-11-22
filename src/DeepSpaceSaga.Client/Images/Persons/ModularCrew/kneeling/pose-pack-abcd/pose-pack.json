@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "canvas": [
+    1024,
+    1536
+  ],
+  "groundExclusive": 1519,
+  "poses": {
+    "a": {
+      "headView": "groundedPrisoner",
+      "outfits": {
+        "pilot": {
+          "body": "a/pilot/body.png",
+          "sha256": "8e80a4463722611bf83b3e6fe6e4c6daad6fcda05bb3e284399a97a29c9ffc83",
+          "bounds": [
+            205,
+            1038,
+            819,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.948
+        },
+        "engineer": {
+          "body": "a/engineer/body.png",
+          "sha256": "5983f006b249b5d311a52aaa68b09eded13b6c5788dbc1a609380a994998212f",
+          "bounds": [
+            208,
+            1038,
+            815,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.928
+        },
+        "medic": {
+          "body": "a/medic/body.png",
+          "sha256": "2eabb49306a2b50a046d2a8dd8ecba0a95f1a3fd9716f8b394b788ece6c1b9e1",
+          "bounds": [
+            210,
+            1038,
+            812,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.956
+        },
+        "security": {
+          "body": "a/security/body.png",
+          "sha256": "c3ff83871b762e6a6ffbbf45a00c74ebdd7224834f9a4d5759f64585521c1aef",
+          "bounds": [
+            208,
+            1039,
+            815,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.934
+        },
+        "explorer": {
+          "body": "a/explorer/body.png",
+          "sha256": "36bdde79cbc3d84f7826da678a186481f0b748bc5c1675d87f9e432ac38a156a",
+          "bounds": [
+            207,
+            1038,
+            817,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.944
+        },
+        "eva": {
+          "body": "a/eva/body.png",
+          "sha256": "cb7e7b113d63c05548b9861157cfa7733d76502025f49ce54bb19db31e50b0d8",
+          "bounds": [
+            207,
+            1037,
+            816,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.967
+        },
+        "shorts": {
+          "body": "a/shorts/body.png",
+          "sha256": "9e3bee840e2fcb87f57057169b0278339ef8bee1338e9c33d4cfd296c167abac",
+          "bounds": [
+            203,
+            1039,
+            819,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.833
+        },
+        "pirate": {
+          "body": "a/pirate/body.png",
+          "sha256": "910d4fc10d8b7a6880ed89dcb9cb95f1cfa99428b4ec6f6bfa545b9bc21ab906",
+          "bounds": [
+            207,
+            1038,
+            816,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 1.0
+        }
+      }
+    },
+    "b": {
+      "headView": "groundedPrisonerB",
+      "outfits": {
+        "pilot": {
+          "body": "b/pilot/body.png",
+          "sha256": "f1a84168d564a5ceaf1f9978be462538e46c8ba1c054cdfe3cef734439d72f95",
+          "bounds": [
+            294,
+            915,
+            687,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.974
+        },
+        "engineer": {
+          "body": "b/engineer/body.png",
+          "sha256": "e9a5a00191b3655e786bb432772e93fc43b2939f006be56af281ec9fa5d685ee",
+          "bounds": [
+            290,
+            915,
+            691,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.951
+        },
+        "medic": {
+          "body": "b/medic/body.png",
+          "sha256": "e135969052b7a6b67cbede6b3a63aafcee8d2d300ec5957e4f7ff4ff6b8774f0",
+          "bounds": [
+            293,
+            915,
+            689,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.972
+        },
+        "security": {
+          "body": "b/security/body.png",
+          "sha256": "f25e964ed4588ae51cedc09dcb24f91d4bf15519b59ca66d1f1b0dc0348a10e4",
+          "bounds": [
+            293,
+            915,
+            689,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.973
+        },
+        "explorer": {
+          "body": "b/explorer/body.png",
+          "sha256": "7628423fae193e93ebb03f156bababafecf86930e4f219630ab3cfaaa1b4895a",
+          "bounds": [
+            293,
+            915,
+            689,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.968
+        },
+        "eva": {
+          "body": "b/eva/body.png",
+          "sha256": "27fb3f01d2e9515e3b55a053069e6f4ed4a51c380bb0ea803e299e89d502cd64",
+          "bounds": [
+            293,
+            915,
+            689,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.986
+        },
+        "shorts": {
+          "body": "b/shorts/body.png",
+          "sha256": "a8284fcc324f479f611deb6785d9098d21f6294e4ece1d58fdc6f83d0986b769",
+          "bounds": [
+            293,
+            915,
+            688,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.928
+        },
+        "pirate": {
+          "body": "b/pirate/body.png",
+          "sha256": "aceab6b6690dcc28393e1677169dff412f67528172b303491968a1fb3fcab679",
+          "bounds": [
+            292,
+            915,
+            689,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 1.0
+        }
+      }
+    },
+    "c": {
+      "headView": "groundedPrisonerC",
+      "outfits": {
+        "pilot": {
+          "body": "c/pilot/body.png",
+          "sha256": "fdfab5a0edd773df7222113b2aba52317f21cc66756d76e1f847fdc05a7269b8",
+          "bounds": [
+            288,
+            921,
+            735,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.97
+        },
+        "engineer": {
+          "body": "c/engineer/body.png",
+          "sha256": "a9498248a68ffeb20cf57259910170d69b65df0691bd693b91772891ce548418",
+          "bounds": [
+            290,
+            922,
+            735,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.942
+        },
+        "medic": {
+          "body": "c/medic/body.png",
+          "sha256": "04e01732a75f8e78f12a0ec8e3537cdcb3441968cdd775a95926bc3cd0b2e726",
+          "bounds": [
+            288,
+            922,
+            736,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.97
+        },
+        "security": {
+          "body": "c/security/body.png",
+          "sha256": "ee0a9050dc92e76fdb743d87b9a2672df8c21f09ecf25bae53104cd942a82dd3",
+          "bounds": [
+            289,
+            922,
+            735,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.97
+        },
+        "explorer": {
+          "body": "c/explorer/body.png",
+          "sha256": "764b13fbe0363232ff19eb75a79d4eb224df1d443f949d2c65fb7457e0225c1d",
+          "bounds": [
+            288,
+            922,
+            735,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.968
+        },
+        "eva": {
+          "body": "c/eva/body.png",
+          "sha256": "8f8d27200b03efab9693118bce585a83a37c668e71b93275f5c23bedad1f8c0a",
+          "bounds": [
+            290,
+            922,
+            735,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.978
+        },
+        "shorts": {
+          "body": "c/shorts/body.png",
+          "sha256": "08afc8f83feaf224b8b8c067b43bcf972e966ad6360ef754ff271faecc4494ed",
+          "bounds": [
+            293,
+            922,
+            731,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.845
+        },
+        "pirate": {
+          "body": "c/pirate/body.png",
+          "sha256": "49d1c2d11858ebf85d5f1a72008d47a7be00cc0d93de66c4c7dc205ee82e0488",
+          "bounds": [
+            289,
+            922,
+            735,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 1.0
+        }
+      }
+    },
+    "d": {
+      "headView": "groundedPrisonerD",
+      "outfits": {
+        "pilot": {
+          "body": "d/pilot/body.png",
+          "sha256": "89a62f9396663a801066e4e282b6db3eae34187610a0d8fa51c743f7a74dc6e9",
+          "bounds": [
+            273,
+            999,
+            705,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.968
+        },
+        "engineer": {
+          "body": "d/engineer/body.png",
+          "sha256": "ef7987e6f5af2d09a8b7c9ad2a38bcaca8de49140d0dd444f1152442f898a61c",
+          "bounds": [
+            273,
+            1000,
+            704,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.955
+        },
+        "medic": {
+          "body": "d/medic/body.png",
+          "sha256": "7c4dff2c1bd54747477fe588136d2e2f3e31e4fb44abef882ced6ce45090d9bd",
+          "bounds": [
+            275,
+            1000,
+            702,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.966
+        },
+        "security": {
+          "body": "d/security/body.png",
+          "sha256": "c78961ea53b2e8b3e20030c969d8e20d40ee72e605d8d4a435c9d530c6faddb8",
+          "bounds": [
+            276,
+            1000,
+            700,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.948
+        },
+        "explorer": {
+          "body": "d/explorer/body.png",
+          "sha256": "f55ae66ac07f4f197d9726b978764df003c3e55d12587ba37ef6a3dd16d0d13f",
+          "bounds": [
+            271,
+            1000,
+            706,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.96
+        },
+        "eva": {
+          "body": "d/eva/body.png",
+          "sha256": "9d4b122e5b3f4f59b0f3b6d7106a0b770902e0e6cfe3e1e01a45fab7307d3580",
+          "bounds": [
+            277,
+            1000,
+            701,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.97
+        },
+        "shorts": {
+          "body": "d/shorts/body.png",
+          "sha256": "f7addf42af7aa8df1a357ddf297469fcfafa79a0e6fa04b68c5d150158d720d9",
+          "bounds": [
+            275,
+            1000,
+            703,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 0.911
+        },
+        "pirate": {
+          "body": "d/pirate/body.png",
+          "sha256": "0455ef7c7982b7410a9775c5d49c19464a463bd7b223405c074fa2be163c97fe",
+          "bounds": [
+            276,
+            1000,
+            701,
+            1519
+          ],
+          "silhouetteOverlapWithPirate": 1.0
+        }
+      }
+    }
+  }
+}

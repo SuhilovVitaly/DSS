@@ -4,12 +4,13 @@
 
 ---
 
-Задача: новый персонаж DSS для модульной куклы в три четверти (тело → портрет). Рисуешь головы в ImageGen, режешь по контракту, собираешь атлас, проверяешь. Отвечай по-русски, технические термины — по-английски.
+Задача: новый персонаж DSS для модульной куклы в три четверти (тело → портрет). Рисуешь головы в ImageGen, режешь по контракту, сохраняешь атлас и `settings.json` с `skinTone`, проверяешь сборку. Отвечай по-русски, технические термины — по-английски.
 
 ## Параметры
 
 - Character ID: `XXXXXX` (6 символов A–Z0–9, верхний регистр; папка — нижний регистр `xxxxxx`).
 - Описание внешности: `<пол, возраст, причёска, цвет волос, черты лица, особые приметы>`.
+- `skinTone` — один полутон кожи персонажа в sRGB `#RRGGBB` для всех пяти эмоций и обоих костюмов. Используй заданное значение или подбери его после приёмки `neutral` по репрезентативному полутону щёк. Исключи блики, глубокую тень, губы и волосы. Проверь оттенок на открытой шее и коже в вырезе.
 - Эмоции (ровно 5, в этом порядке): neutral, pain, anger, joy, pleasure.
 
 ## Прочитай сначала
@@ -20,9 +21,12 @@
 4. Код: `tools/dss3q.py`, `tools/build_pilot.py` (функции `opaque`, `register`, `tint_skin`, `visible_back_hair`, `head_layers`, расчёт шва в `main`), `tools/review.py`.
 5. Контракт: `three-quarter-right/pose.json`.
 6. Эталон рисовки — [лист из девяти портретов](../../../../DSS-Images/Characters/W8/Antropik/prompts/references/portrait-style-nine-heads.png). Из рабочей папки W8 он доступен по пути `prompts/references/portrait-style-nine-heads.png`. Мастера ER2BKF, NJIY63 и игровые атласы используй для сравнения масштаба и посадки на тело.
+7. [Контракт сборки с skinTone](ThreeQuarterCharacterSkinTone.md) задаёт формат `settings.json`, расчёт цвета по маске и обработку верхней части шеи.
 
 Рабочая папка: `D:/DeepSpaceSaga/DSS-Images/Characters/W8/Antropik`.
 Python: `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts/python.exe`.
+
+Каталог готовых портретов по умолчанию — `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8`. Для каждого ID создай в нём подпапку `xxxxxx` с `threequarter.png` и `settings.json`.
 
 ## Неизменяемое (Protect)
 
@@ -54,12 +58,12 @@ Python: `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts
 
 ### Приоритет источников: лист против игровых мастеров
 
-Голова встаёт на уже нарисованное тело, поэтому лист из девяти голов задаёт только **манеру** (построение лица, век, носа, губ, прядей). **Цвет, контур и свет** берутся у игровых мастеров ER2BKF и NJIY63 и у комбинезона. Где лист и мастера расходятся, побеждают мастера.
+Голова встаёт на уже нарисованное тело. Лист из девяти голов задаёт **манеру** (построение лица, век, носа, губ, прядей). **Цвет контура, характер палитры и свет** берутся у игровых мастеров ER2BKF и NJIY63 и у комбинезона. Оттенок кожи лица выбирай по внешности персонажа.
 
 | Параметр | На листе (не переносить) | В игре (обязательно) |
 |---|---|---|
 | Цвет контура | почти чёрный, около `#2A2122` | тёмно-коричневый: тени `#3C2215`, основная линия около `#5D3726` |
-| Кожа | приглушённая, холоднее, середина около `#CFA78D` | тёплая персиковая: тень около `#BE8966`, середина `#D79C77`, свет `#DEA987`. Итоговый тон шеи — `#DA9C77` |
+| Кожа | приглушённое моделирование формы | Индивидуальный оттенок лица с тёплыми тенями. `#DA9C77` — исходный полутон общего тела. При сборке открытая кожа тела и верхней шеи подгоняется под `skinTone` персонажа |
 | Макияж | у всех девяти — стрелки, подчёркнутые ресницы, оформленные брови | только если он есть в описании персонажа. По умолчанию естественные веки и брови |
 | Пол и типаж | только женщины 25–35 лет, «бьюти»-пропорции | пол, возраст, телосложение — из описания. Мужчину не феминизировать, возраст не омолаживать, морщины и щетину рисовать той же манерой |
 | Ракурс | фронтальный | три четверти вправо, по подложке |
@@ -101,7 +105,8 @@ Semi-realistic hand-painted game portrait illustration, natural adult proportion
 Confident dark-brown outline (#5D3726, darkest #3C2215), thicker on the hair silhouette and upper eyelid, fading out on the lit cheek.
 Almond eyes with a dark upper lid thickening toward the outer corner, small catchlight, warm muted eye whites.
 Nose modelled by tone with small dark nostril marks; mouth defined mainly by the line between the lips; muted pinkish-brown lips.
-Warm peach skin (shadow #BE8966, mid #D79C77, light #DEA987). Soft diffuse light from the upper front-left;
+Use the character's described complexion, with warm natural shadows and <skinTone midtone if supplied>.
+Soft diffuse light from the upper front-left;
 shadow on the far cheek, temple and a clear cast shadow from the jaw onto the neck.
 Hair built from large masses with a few long tapering strand lines, one broad warm muted highlight band, no gloss.
 Expression: <emotion line>.
@@ -152,51 +157,61 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 2. Уменьши обратно в игровое разрешение тем же преобразованием, что подложку: ×1/5, ресемплинг BOX на premultiplied alpha, смещение (40, 0) в холсте 282×747.
 3. Проверь совмещение с `work/outfit/GREEN.uncut.png` по шее и вороту. Сдвиг больше ±1 px исправь одним сдвигом на всю эмоцию. Масштаб не меняй.
 4. Раздели на три слоя: `back-hair` (волосы позади шеи и плеч), `face` (голова, лицо, шея до ворота), `front-hair` (пряди поверх лица и плеч). Пикселей комбинезона в слоях быть не должно.
-5. Подгони тон кожи лица и шеи к общему тону тела `#DA9C77` (`provenance.json → bodySkinTarget`) формулой `tint_skin`. Стык на шее не должен давать скачок тона.
+5. Сохрани оттенок лица принятого `neutral` во всех эмоциях. Для примерки примени выбранный `skinTone` к открытой коже общего тела и к её видимому вкладу в верхнюю часть шеи по контракту сборки. Сверь переход под челюстью и в вырезе на GREEN и GRAY. Общий полутон `#DA9C77` из `provenance.json → bodySkinTarget` служит исходной точкой коррекции.
 
 Слои сохрани в `work/imagegen/xxxxxx/layers/<emotion>/{back-hair,face,front-hair}.png` (282×747).
 
 ## Шаг 4. Импорт в пайплайн
 
-Сейчас `build_pilot.py` читает головы только из W5 (`tools/w5src.py`). Добавь импорт готовых слоёв, не ломая сборку пилота:
+Используй существующий импорт готовых слоёв. `build_pilot.py` собирает исходных персонажей W5 через `tools/w5src.py`.
 
-1. Создай `tools/add_character.py --id XXXXXX --layers work/imagegen/xxxxxx/layers`. Он должен:
+1. Запусти `tools/add_character.py --id XXXXXX --layers work/imagegen/xxxxxx/layers --skin-tone "#RRGGBB"`. Подставь выбранный оттенок. Импорт:
    - читать слои в игровых координатах, без регистрации W5;
    - брать шов из `pose.json` (а не пересчитывать его) и тело из `work/outfit/GREEN.uncut.png`;
    - собирать мастер на каждую эмоцию `work/masters/xxxxxx/<emotion>.GREEN.png` = back-hair → тело → face → front-hair;
    - собирать портрет так же, как `head_layers` в пилоте: видимая часть задних волос (`visible_back_hair`) + лицо + передние волосы + кожа шеи выше шва;
    - класть исходник портрета в `work/portrait-source/xxxxxx/<emotion>.png`;
-   - писать атлас `three-quarter-right/Portraits/xxxxxx/threequarter.png` (720×190, 5 ячеек слева направо в порядке `expressions`);
+   - сохранять атлас `threequarter.png` (720×190, 5 ячеек слева направо в порядке `expressions`) и `settings.json` прямо в `Images/Persons/W8/xxxxxx` клиентского проекта;
    - добавлять `XXXXXX` в `pose.json → characters`;
    - дописывать в `work/provenance.json` источник, промпты и число пикселей за ячейкой.
 2. Если хоть один пиксель головы выходит за ячейку x 69–212, y 0–189, или выше шва остаётся пиксель комбинезона — остановись с ошибкой и покажи, где именно. Молча не обрезай.
-3. Вынеси общие функции из `build_pilot.py` в общий модуль, если нужно, но `build_pilot.py` должен собирать пилот байт-в-байт как раньше: сравни хеши `three-quarter-right/**` до и после.
+3. Проверь записанный импортёром `settings.json`. Ниже пример для W8A036.
+
+   ```json
+   {
+     "skinTone": "#B16B43"
+   }
+   ```
+
+4. Проверь хеши общих тел, направляющих и существующих атласов до и после импорта. При изменении общих функций проверь воспроизводимость `build_pilot.py` в изолированной сборке.
 
 ## Шаг 5. Проверки
 
-1. `python tools/dss3q.py validate --pose three-quarter-right` → OK.
-2. `python tools/review.py` и проверь `review/checks.json` для нового персонажа:
+1. Выполни `python tools/dss3q.py validate --pose three-quarter-right --character XXXXXX` → OK. Для рабочей позы компоновщик ищет атлас в клиентском каталоге W8.
+2. Запусти `tools/review.py` на временной копии конфигурации позы со списком `characters`, ограниченным своим ID. Укажи `review.POSE_DIR` на эту копию, задай в ней абсолютный шаблон `portraitAtlas` до клиентского атласа и положи рядом тела и направляющие. Оставь `review.WORK` направленным на рабочие исходники пилота. Проверь `checks.json` для нового персонажа:
    - AC-01: разрез + обратная сборка против мастера — в пределах ±1. Если нет, приведи число пикселей и максимум.
    - AC-02: 0 изменений вне маски ткани и 0 изменений альфы.
    - AC-03: тело вне ячейки стабильно.
    - AC-09: `headPixelsWithLessAlpha = 0`.
    - AC-10: все плитки совпадают попиксельно.
    - Самопроверка со сдвигом на 1 px срабатывает.
-3. Посмотри глазами `review/matrix.png` и `review/closeups-neck.png`:
+3. Перечитай записанный `settings.json` и проверь `skinTone` на соответствие формату `#RRGGBB`. Для каждой из пяти эмоций сравни кадры с исходным полутоном и с `skinTone` на GREEN и GRAY. Проверь, что изменились только пиксели открытой кожи тела и общей верхней шеи, а альфа совпадает. При отсутствии точных экспортных данных верхней шеи отметь предел проверки. Сам по себе `settings.json` не подключает коррекцию в клиенте.
+4. Посмотри глазами `review/matrix.png` и `review/closeups-neck.png`:
    - стык шеи на светлом и тёмном фоне;
    - пять эмоций различимы с первого взгляда;
    - во всех пяти эмоциях сохранились рисунок век, матовая кожа, характер теней и прядей принятого neutral; сравни их с листом из девяти портретов;
-   - контур коричневый, а не чёрный; кожа тёплая, как у ER2BKF и NJIY63; свет на лице падает с той же стороны, что на комбинезоне;
+   - контур коричневый, лицо сохраняет выбранный оттенок, свет падает с той же стороны, что на комбинезоне;
    - причёска одинаковая во всех эмоциях;
    - на GREEN и GRAY голова встаёт без правок.
 
-## Шаг 6. Итог
+## Шаг 6. Экспорт и итог
 
-1. Обнови в `README.md` таблицу результатов и отклонения.
-2. Обнови `skills/dss-three-quarter-character/SKILL.md`: добавь путь «новый персонаж из ImageGen» через `add_character.py`.
-3. Скопируй обе папки скиллов из `skills/` в `C:/Users/sushi/.codex/skills/` и `D:/DeepSpaceSaga/DSS-Images/skills/`.
-4. Отчитайся коротко:
-   - файлы;
+1. Перечитай PNG и JSON по итоговому пути в `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8` и сверь их с результатами проверки.
+2. Обнови в `README.md` таблицу результатов и отклонения.
+3. Обнови `skills/dss-three-quarter-character/SKILL.md`: добавь путь «новый персонаж из ImageGen» через `add_character.py`.
+4. Скопируй обе папки скиллов из `skills/` в `C:/Users/sushi/.codex/skills/` и `D:/DeepSpaceSaga/DSS-Images/skills/`.
+5. Отчитайся коротко:
+   - пути к `threequarter.png` и `settings.json`, выбранный `skinTone`;
    - результаты AC;
    - что не получилось и почему;
    - какие генерации переделывались.
