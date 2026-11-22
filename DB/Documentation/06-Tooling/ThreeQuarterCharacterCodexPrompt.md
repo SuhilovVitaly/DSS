@@ -24,13 +24,13 @@
 Рабочая папка: `D:/DeepSpaceSaga/DSS-Images/Characters/W8/Antropik`.
 Python: `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts/python.exe`.
 
-Каталог готовых портретов по умолчанию — `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8`. Итог для каждого ID — ровно два файла в подпапке `xxxxxx`, `threequarter.png` и `settings.json`. Исходники генерации и слои остаются в рабочих каталогах пайплайна.
+Каталог готовых портретов по умолчанию — `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits`. Итог для каждого ID — ровно два файла в подпапке `xxxxxx`, `threequarter.png` и `settings.json`. Исходники генерации и слои остаются в рабочих каталогах пайплайна.
 
 ## Неизменяемое (Protect)
 
-- `three-quarter-right/Clothes/*.png` не трогать. Тела общие для всех персонажей.
+- Сохрани клиентские `Images/Persons/W8/Clothes/*.png`. Тела общие для всех персонажей. Для добавления одежды используй [промпт для костюмов W8](ThreeQuarterOutfitCodexPrompt.md).
 - В `pose.json` менять только список `characters`. Холст 282×747, ячейка 144×190 в (69, 0), шов `neckSeam` остаются как есть.
-- Проверь свободен ли ID в клиентском каталоге W8 и в рабочем манифесте до генерации. Существующие атласы и настройки обновляй только для явно запрошенной ревизии персонажа.
+- Проверь свободен ли ID в клиентском `W8/Portraits` и в рабочем манифесте до генерации. Существующие атласы и настройки обновляй только для явно запрошенной ревизии персонажа.
 - Ничего не коммитить.
 
 ## Шаг 1. Подложка для ImageGen
@@ -169,7 +169,7 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
    - собирать мастер на каждую эмоцию `work/masters/xxxxxx/<emotion>.GREEN.png` = back-hair → тело → face → front-hair;
    - собирать портрет так же, как `head_layers` в пилоте: видимая часть задних волос (`visible_back_hair`) + лицо + передние волосы + кожа шеи выше шва;
    - класть исходник портрета в `work/portrait-source/xxxxxx/<emotion>.png`;
-   - сохранять атлас `threequarter.png` (720×190, 5 ячеек слева направо в порядке `expressions`) и `settings.json` прямо в `Images/Persons/W8/xxxxxx` клиентского проекта;
+   - сохранять атлас `threequarter.png` (720×190, 5 ячеек слева направо в порядке `expressions`) и `settings.json` прямо в `Images/Persons/W8/Portraits/xxxxxx` клиентского проекта;
    - добавлять `XXXXXX` в `pose.json → characters`;
    - дописывать в `work/provenance.json` источник, промпты и число пикселей за ячейкой.
 2. Если хоть один пиксель головы выходит за ячейку x 69–212, y 0–189, или выше шва остаётся пиксель комбинезона — остановись с ошибкой и покажи, где именно. Молча не обрезай.
@@ -185,8 +185,8 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 
 ## Шаг 5. Проверки
 
-1. Выполни `python tools/dss3q.py validate --pose three-quarter-right --character XXXXXX` → OK. Для рабочей позы компоновщик ищет атлас в клиентском каталоге W8. Сверь, что он разрешил именно клиентский файл.
-2. Для проверок базовой сборки вызови `review.main()` из Python, импортировав `review` из `tools`. В каталоге `D:/DeepSpaceSaga/artifacts/validation/<task>/<run>/` подготовь временную конфигурацию позы со списком `characters` из одного проверяемого ID. Задай в ней абсолютный шаблон `portraitAtlas` вида `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/{id}/threequarter.png` и положи рядом `Clothes` и `Templates` из рабочей позы. Направь `review.POSE_DIR` на эту конфигурацию, `review.OUT` в папку `review` текущего запуска, `review.WORK` на рабочие исходники пилота. Проверь `review/checks.json` для нового персонажа:
+1. Выполни `python tools/dss3q.py validate --pose three-quarter-right --character XXXXXX` → OK. Для рабочей позы компоновщик ищет атлас в клиентском `W8/Portraits`. Сверь, что он разрешил именно клиентский файл.
+2. Для проверок базовой сборки вызови `review.main()` из Python, импортировав `review` из `tools`. В каталоге `D:/DeepSpaceSaga/artifacts/validation/<task>/<run>/` подготовь временную конфигурацию позы со списком `characters` из одного проверяемого ID. Задай в ней абсолютный шаблон `portraitAtlas` вида `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits/{id}/threequarter.png`. В `outfits` оставь GREEN и GRAY с абсолютными путями к PNG в клиентском `W8/Clothes`. Скопируй рядом `Templates` из рабочей позы. Направь `review.POSE_DIR` на эту конфигурацию, `review.OUT` в папку `review` текущего запуска, `review.WORK` на рабочие исходники пилота. Проверь `review/checks.json` для нового персонажа:
    - AC-01: базовая сборка против мастера. Альфа совпадает точно. Допуск ±1 по RGB применяется только к полупрозрачному портрету поверх тела. При расхождении укажи число пикселей и максимальное отклонение.
    - AC-02: при переходе с GREEN на GRAY у одной эмоции `changedOutsideMask = 0` и `alphaChanged = 0`.
    - AC-03: тело вне ячейки стабильно.
@@ -205,5 +205,5 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 
 ## Шаг 6. Итог
 
-1. Перечитай `threequarter.png` и `settings.json` по итоговому пути в `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8` и сверь их с результатами проверки. В новой папке персонажа должны лежать ровно эти два файла.
+1. Перечитай `threequarter.png` и `settings.json` из подпапки персонажа в клиентском `Images/Persons/W8/Portraits` и сверь их с результатами проверки. В новой папке персонажа должны лежать ровно эти два файла.
 2. Ответь кратко текстом. Укажи ID и путь к итоговым файлам. При существенных отклонениях кратко опиши их.
