@@ -13,13 +13,13 @@
 ## Прочитай сначала
 
 1. [pose.json](../../../../DSS-Images/Characters/W8/Antropik/three-quarter-right/pose.json) задаёт размеры холста, область портрета, точку вставки, линию шеи и порядок наложения.
-2. [GREEN.uncut.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/GREEN.uncut.png) — базовый костюм до разреза шеи и подложка для рисования. [Клиентский GREEN.png](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/GREEN.png) — эталон готового тела, из которого создаётся итоговый PNG.
+2. [GREEN.uncut.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/GREEN.uncut.png) — базовый костюм до разреза шеи и подложка для рисования. [Клиентский GREEN.png](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/ThreeQuarterOutfit/GREEN.png) — эталон готового тела, из которого создаётся итоговый PNG.
 3. [fabric-mask.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/fabric-mask.png) и [skin-mask.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/skin-mask.png) задают редактируемую ткань и защищённую кожу. Используй их альфа-каналы в координатах тела.
 4. [Промпт для портретов](ThreeQuarterCharacterCodexPrompt.md) описывает общий атлас, а [контракт skinTone](ThreeQuarterCharacterSkinTone.md) — коррекцию открытой кожи.
 
 Рабочая папка — `D:/DeepSpaceSaga/DSS-Images/Characters/W8/Antropik`. Python — `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts/python.exe`.
 
-Каталог готовых костюмов — `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes`.
+Каталог готовых костюмов — `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/ThreeQuarterOutfit`.
 
 ## Шаг 1. Зафиксируй базу и области правки
 
@@ -47,7 +47,7 @@ Keep details inside the original body silhouette.
 
 ## Шаг 3. Собери итоговый PNG из точной копии GREEN
 
-1. Начни с копии клиентского `W8/Clothes/GREEN.png`. Для нового рисунка перенеси только RGB из разрешённой области `E`. Для плавного перехода по краям используй вес маски ткани, обнулённый за пределами `E`. В зоне портрета `R` остаётся исходный RGBA.
+1. Начни с копии клиентского `W8/Clothes/ThreeQuarterOutfit/GREEN.png`. Для нового рисунка перенеси только RGB из разрешённой области `E`. Для плавного перехода по краям используй вес маски ткани, обнулённый за пределами `E`. В зоне портрета `R` остаётся исходный RGBA.
 2. Для заказанной перекраски вычисли RGB из исходных пикселей GREEN, сохраняя объём и тени. Применяй цвет по маске `F`, в том числе на её непрозрачной ткани внутри `R`, если это нужно для единой расцветки. Геометрия воротника сохраняется, а кожа, прозрачность и сглаженные края остаются исходными. Для серого цвета возьми за основу `gray_variant` в `tools/build_pilot.py` и примени разрешённую маску.
 3. Сохрани кандидата как RGBA8 sRGB со straight alpha и исходным размером холста. У готового GREEN разрез уже сделан, включая нулевые пиксели над швом, поэтому он переносится вместе с оригинальной альфой. Начало шеи остаётся на той же строке каждого столбца.
 
@@ -73,6 +73,6 @@ Keep details inside the original body silhouette.
 
 ## Шаг 5. Экспорт
 
-1. После проверок сохрани один `<ID>.png` напрямую в клиентский каталог `Images/Persons/W8/Clothes` и добавь ключ `<ID>` со значением `Clothes/<ID>.png` в `pose.json → outfits`. Рабочий компоновщик разрешает этот путь относительно клиентского W8. Маска открытой кожи остаётся общей для совместимых костюмов.
+1. После проверок сохрани один `<ID>.png` напрямую в клиентский каталог `Images/Persons/W8/Clothes/ThreeQuarterOutfit` и добавь ключ `<ID>` со значением `Clothes/ThreeQuarterOutfit/<ID>.png` в `pose.json → outfits`. Рабочий компоновщик разрешает этот путь относительно клиентского W8. Маска открытой кожи остаётся общей для совместимых костюмов.
 2. Перечитай PNG по итоговому пути, проверь контрольные суммы эталонов и убедись, что в `pose.json` добавилась только новая запись костюма. Сверь, что `Pose.outfit_path(<ID>)` указывает на клиентский PNG.
 3. Удали временные проверочные файлы текущего запуска. В чат дай короткий ответ с путём к PNG и результатом проверок. Проверочные картинки в ответ не прикладывай. Коммит выполняй только по запросу.

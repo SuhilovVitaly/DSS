@@ -28,7 +28,7 @@ Python: `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts
 
 ## Неизменяемое (Protect)
 
-- Сохрани клиентские `Images/Persons/W8/Clothes/*.png`. Тела общие для всех персонажей. Для добавления одежды используй [промпт для костюмов W8](ThreeQuarterOutfitCodexPrompt.md).
+- Сохрани клиентские `Images/Persons/W8/Clothes/ThreeQuarterOutfit/*.png`. Тела общие для всех персонажей. Для добавления одежды используй [промпт для костюмов W8](ThreeQuarterOutfitCodexPrompt.md).
 - В `pose.json` менять только список `characters`. Холст 282×747, ячейка 144×190 в (69, 0), шов `neckSeam` остаются как есть.
 - Проверь свободен ли ID в клиентском `W8/Portraits` и в рабочем манифесте до генерации. Существующие атласы и настройки обновляй только для явно запрошенной ревизии персонажа.
 - Ничего не коммитить.
@@ -186,7 +186,7 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 ## Шаг 5. Проверки
 
 1. Выполни `python tools/dss3q.py validate --pose three-quarter-right --character XXXXXX` → OK. Для рабочей позы компоновщик ищет атлас в клиентском `W8/Portraits`. Сверь, что он разрешил именно клиентский файл.
-2. Для проверок базовой сборки вызови `review.main()` из Python, импортировав `review` из `tools`. В каталоге `D:/DeepSpaceSaga/artifacts/validation/<task>/<run>/` подготовь временную конфигурацию позы со списком `characters` из одного проверяемого ID. Задай в ней абсолютный шаблон `portraitAtlas` вида `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits/{id}/threequarter.png`. В `outfits` оставь GREEN и GRAY с абсолютными путями к PNG в клиентском `W8/Clothes`. Скопируй рядом `Templates` из рабочей позы. Направь `review.POSE_DIR` на эту конфигурацию, `review.OUT` в папку `review` текущего запуска, `review.WORK` на рабочие исходники пилота. Проверь `review/checks.json` для нового персонажа:
+2. Для проверок базовой сборки вызови `review.main()` из Python, импортировав `review` из `tools`. В каталоге `D:/DeepSpaceSaga/artifacts/validation/<task>/<run>/` подготовь временную конфигурацию позы со списком `characters` из одного проверяемого ID. Задай в ней абсолютный шаблон `portraitAtlas` вида `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits/{id}/threequarter.png`. В `outfits` оставь GREEN и GRAY с абсолютными путями к PNG в клиентском `W8/Clothes/ThreeQuarterOutfit`. Скопируй рядом `Templates` из рабочей позы. Направь `review.POSE_DIR` на эту конфигурацию, `review.OUT` в папку `review` текущего запуска, `review.WORK` на рабочие исходники пилота. Проверь `review/checks.json` для нового персонажа:
    - AC-01: базовая сборка против мастера. Альфа совпадает точно. Допуск ±1 по RGB применяется только к полупрозрачному портрету поверх тела. При расхождении укажи число пикселей и максимальное отклонение.
    - AC-02: при переходе с GREEN на GRAY у одной эмоции `changedOutsideMask = 0` и `alphaChanged = 0`.
    - AC-03: тело вне ячейки стабильно.
