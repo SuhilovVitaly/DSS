@@ -1,16 +1,16 @@
-# Промт Codex: новый персонаж в три четверти
+# Промт Codex: портреты персонажа W8 в двух позах
 
 Промт для Codex (ImageGen + пайплайн W8). Скопируй всё ниже линии, подставь ID и описание внешности. Геометрию бери из рабочего [pose.json](../../../../DSS-Images/Characters/W8/Antropik/three-quarter-right/pose.json). Цвет кожи описан в [контракте skinTone](ThreeQuarterCharacterSkinTone.md).
 
 ---
 
-Задача: новый персонаж DSS для модульной куклы в три четверти (тело → портрет). Рисуешь головы в ImageGen, режешь по контракту, сохраняешь атлас и `settings.json` с `skinTone`, проверяешь сборку. Отвечай по-русски, технические термины — по-английски.
+Задача: новый персонаж DSS для модульной куклы в позах «три четверти» и «пленный» (тело → портрет). Рисуешь головы в ImageGen, собираешь отдельный атлас каждой позы и общий `settings.json` с `skinTone`, проверяешь сборки. Отвечай по-русски, технические термины — по-английски.
 
 ## Параметры
 
 - Character ID: `XXXXXX` (6 символов A–Z0–9, верхний регистр; папка — нижний регистр `xxxxxx`).
 - Описание внешности: `<пол, возраст, причёска, цвет волос, черты лица, особые приметы>`.
-- `skinTone` — один полутон кожи персонажа в sRGB `#RRGGBB` для всех пяти эмоций и обоих костюмов. Используй заданное значение или подбери его после приёмки `neutral` по репрезентативному полутону щёк. Исключи блики, глубокую тень, губы и волосы. Проверь оттенок на открытой шее и коже в вырезе.
+- `skinTone` — один полутон кожи персонажа в sRGB `#RRGGBB` для обеих поз, всех пяти эмоций и совместимых костюмов. Используй заданное значение или подбери его после приёмки `neutral` по репрезентативному полутону щёк. Исключи блики, глубокую тень, губы и волосы. Проверь оттенок на открытой шее и коже в вырезе.
 - Эмоции (ровно 5, в этом порядке): neutral, pain, anger, joy, pleasure.
 
 ## Прочитай сначала
@@ -24,12 +24,24 @@
 Рабочая папка: `D:/DeepSpaceSaga/DSS-Images/Characters/W8/Antropik`.
 Python: `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts/python.exe`.
 
-Каталог готовых портретов по умолчанию — `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits`. Итог для каждого ID — ровно два файла в подпапке `xxxxxx`, `threequarter.png` и `settings.json`. Исходники генерации и слои остаются в рабочих каталогах пайплайна.
+Каталог готовых портретов по умолчанию — `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits`. В подпапку `xxxxxx` сохраняй два PNG по пять ячеек: `threequarter.png` и `prisoner.png`, а также один общий `settings.json`. Шаги 1–5 готовят стойку в три четверти, шаг 6 готовит позу пленного. Исходники генерации и слои остаются в рабочих каталогах пайплайна.
+
+### Два ракурса одного персонажа
+
+Сначала прими `neutral` стойки. Передай его как референс личности при рисовании отдельного наклонённого `neutral` пленного по подложке его тела. Сравни оба лица рядом по форме носа, челюсти, линии роста волос, пробору и приметам. Затем сделай четыре изменения мимики от принятого `neutral` **своей позы**. У каждого ракурса одна фиксированная посадка для всех пяти эмоций.
+
+| Поза | Холст тела | Атлас | Ячейка | Вставка ячейки в тело |
+|---|---|---|---|---|
+| Три четверти | 282×747 | `threequarter.png`, 720×190 | 144×190 | (69, 0) |
+| Пленный | 416×747 | `prisoner.png`, 680×144 | 136×144 | (48, 416) |
+
+Для обеих строк тело рисуется первым, затем выбранная ячейка без поворота и масштабирования. Порядок эмоций указан в параметрах выше.
 
 ## Неизменяемое (Protect)
 
-- Сохрани клиентские `Images/Persons/W8/Clothes/ThreeQuarterOutfit/*.png`. Тела общие для всех персонажей. Для добавления одежды используй [промпт для костюмов W8](ThreeQuarterOutfitCodexPrompt.md).
-- В `pose.json` менять только список `characters`. Холст 282×747, ячейка 144×190 в (69, 0), шов `neckSeam` остаются как есть.
+- Сохрани клиентские `Images/Persons/W8/Clothes/ThreeQuarterOutfit/*.png`. Для примерки читай текущие клиентские GREEN, GRAY и IVORY. Они содержат новую отрисовку одежды и открытой кожи, а стоящий IVORY — исправленный контур чулок и высоких шнурованных ботинок. Все персонажи используют эти же файлы. Для добавления одежды используй [промпт для костюмов W8](ThreeQuarterOutfitCodexPrompt.md).
+- Сохрани готовые тела в `Clothes/Prisoner`, маски шаблона и исходные референсы позы.
+- В `pose.json` стойки менять только список `characters`. Холст 282×747, ячейка 144×190 в (69, 0), шов `neckSeam` остаются как есть.
 - Проверь свободен ли ID в клиентском `W8/Portraits` и в рабочем манифесте до генерации. Существующие атласы и настройки обновляй только для явно запрошенной ревизии персонажа.
 - Ничего не коммитить.
 
@@ -93,12 +105,12 @@ Python: `D:/DeepSpaceSaga/DSS-Images/tools/modular-character-pilot/.venv/Scripts
 Пиши запрос по-английски, подставляя описание персонажа и строку эмоции. Шаблон для neutral:
 
 ```text
-Input images: (1) UNDERLAY — exact pose, head turn, scale, neck, collar and coverall; keep them unchanged.
+Input 1 is the standing underlay. Match its head turn, chin height, ear position and scale. Use the body and collar as registration guides. Output the isolated head, hair and short upper neck on transparency.
 (2) STYLE SHEET — copy only the drawing manner; ignore its front view, numbers, makeup and near-black line colour.
 (3) PHOTO (optional) — identity only: features, age, hair colour and cut.
 
 Draw one character: <appearance description in English>.
-Three-quarter view facing right, head and shoulders as in the underlay; only the head and hair change.
+Three-quarter view facing right. Keep the chin and near ear registered to the underlay. Follow both edges of the current body template. The screen-left edge of the exposed neck runs vertically down to the front collar lip. Keep its width and the right edge as supplied. Paint the jaw shadow inside that silhouette. Keep hair that crosses it on a separate layer.
 Semi-realistic hand-painted game portrait illustration, natural adult proportions, matte skin with subtle painted texture, no pores.
 Confident dark-brown outline (#5D3726, darkest #3C2215), thicker on the hair silhouette and upper eyelid, fading out on the lit cheek.
 Almond eyes with a dark upper lid thickening toward the outer corner, small catchlight, warm muted eye whites.
@@ -108,7 +120,7 @@ Soft diffuse light from the upper front-left;
 shadow on the far cheek, temple and a clear cast shadow from the jaw onto the neck.
 Hair built from large masses with a few long tapering strand lines, one broad warm muted highlight band, no gloss.
 Expression: <emotion line>.
-Flat solid background <hex>, clean silhouette, no glow.
+Transparent background, clean antialiased silhouette, no glow.
 No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no makeup unless described, no text, no extra accessories.
 ```
 
@@ -120,9 +132,18 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 - joy: `joy: wide open smile showing upper teeth, raised cheeks, eyes slightly narrowed by the smile`.
 - pleasure: `pleasure: soft closed-lip smile, half-closed relaxed eyelids, relaxed brows`.
 
-Для pain, anger, joy и pleasure начинай запрос с `Edit the accepted neutral image: change only the facial expression; keep identity, hair, line, palette, light, pose and background identical.`
+Для pain, anger, joy и pleasure начинай запрос с `Edit the accepted neutral image: change only the facial expression; keep identity, hair, line, palette, light, pose and background identical. Copy the accepted lower neck and its edges exactly.`
 
 ### Проверка neutral перед серией
+
+#### Обязательная проверка высоты головы и ширины шеи в стойке
+
+1. Собери `neutral` на GREEN в игровом масштабе 1:1. Рядом открой утверждённую нейтральную сборку в той же позе с открытой шеей. На обеих сборках отметь нижнюю точку подбородка, нижний край мочки ближнего уха и одну и ту же верхнюю точку края воротника под челюстью. Запиши их координаты на холсте 282 × 747.
+2. Измерь вертикальный просвет как `y воротника − y подбородка`. Разница с эталоном должна быть не больше **2 игровых пикселей**. Сверь высоту ближнего уха и масштаб головы с эталоном. Если подбородок попал в допуск за счёт неестественного наклона или масштаба, исправь посадку и повтори проверку.
+3. После утверждения посадки зафиксируй подбородок и ближнее ухо. Если стык у воротника требует правки, обработай только нижнюю часть шеи у шва в пределах ячейки. Сохрани положение головы, воротник и геометрию шва. Переходи к остальным четырём эмоциям только после визуальной проверки пропорций в сборке. Применяй к ним регистрацию принятого `neutral`.
+4. На `GREEN.uncut.png` проследи **оба боковых края открытой шеи** от нижней челюсти до воротника. Используй `skin-mask.png` как подсказку для отделения кожи от ткани. Полупрозрачный контур бери из альфы исходного RGBA. В стойке контрольная левая граница общей шеи на строках y=102–105 — x=120 при альфе ≥128. Ниже левый край шеи идёт вертикально до передней кромки воротника. На каждой строке y=102–120 первый слева пиксель кожи с альфой маски ≥124 должен быть в x=121 (проверяй в окне x=110–139 по сохранённой skin-mask.png). Проверяй этот ориентир на текущем теле без головы, затем проверяй видимые края в сборке. Значения `neckSeam` задают разделение верхнего и нижнего слоёв по столбцам. Ширина этого диапазона сама по себе ничего не говорит о ширине шеи на конкретной строке.
+5. До изготовления остальных эмоций подготовь рабочую маску `work/imagegen/xxxxxx/standing-neck-check.png` (L, 282×747). Белым отметь нижнюю шею от челюсти до ворота, оба видимых боковых края и полосу снаружи каждого края вплоть до фона или ткани. Захвати промежуток между волосами и воротником. Границы проводи по общему телу и анатомии принятого лица. Исключай только фактические перекрытия челюстью и прядями. Просмотри маску поверх тела и neutral при увеличении: выступ кожи должен попадать внутрь проверки. Зафиксируй эту маску для всех пяти эмоций.
+
 
 Поставь голову нейтрального мастера рядом с листом. На крупном плане сравни толщину верхнего и нижнего века, способ моделировки носа и губ, края теней и направление блика на волосах. Затем посмотри сборку на теле при 1:1. Убедись, что лицо узнаваемо, челюсть отделяется от шеи, а волосы читаются крупными прядями. Если сходство с человеком есть, но лицо выглядит как уменьшенная фотография или 3D-портрет, исправь neutral до генерации остальных эмоций. Для четырёх edit-запросов передавай принятый neutral и тот же лист стиля. С движением век, щёк и губ сохраняй характер линии, палитру и направление света.
 
@@ -140,12 +161,12 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
   - pleasure — удовольствие: мягкая улыбка, полуприкрытые глаза.
 - Причёска одинаковая во всех пяти эмоциях: та же форма, пробор и длина.
 - Волосы не ниже плеч. Весь силуэт головы и волос должен помещаться в ячейку x 69–212, y 0–189. Если пряди выходят за ячейку, исправь исходник или перегенерируй.
-- Фон однотонный и контрастный к волосам, чтобы его можно было убрать без ореола. Для светлых и рыжих волос — тёмно-серый `#3A3F48`, для тёмных — светлый `#E8E2D4`. Цвет фона один на все пять эмоций. Силуэт волос без свечения и размытия в фон.
-- ImageGen может вернуть другой размер кадра. Перед шагом 3 приведи результат к размеру подложки (1010×1300) с сохранением пропорций и проверь совмещение ворота с подложкой. Если пропорции кадра другие и ворот не совпадает, генерацию повторить.
+- Предпочтителен прозрачный фон. Для исходника без альфы выбери однотонный фон, контрастный к волосам, и удали его без ореола. Для светлых и рыжих волос — тёмно-серый `#3A3F48`, для тёмных — светлый `#E8E2D4`. Цвет фона один на все пять эмоций. Силуэт волос без свечения и размытия в фон.
+- Размести результат на холсте подложки 1010×1300. Для исходника с корпусом проверь совмещение ворота. Для изолированной головы совмести подбородок и ближнее ухо с подложкой переносом и равномерным масштабом. Если эти ориентиры не совмещаются, повтори генерацию с нужным ракурсом.
 
 Первой генерируй neutral. Остальные четыре делай от готового neutral (edit или reference), а не с нуля, чтобы лицо и причёска совпадали.
 
-Сохраняй исходники в `work/imagegen/xxxxxx/raw/<emotion>.png` и промпты в `work/imagegen/xxxxxx/prompts.md`.
+Храни исходные рисунки по позам в `work/imagegen/xxxxxx/raw/standing/<emotion>.png` и `raw/prisoner/<emotion>.png` внутри того же рабочего каталога. При генерации четырёх эмоций одним листом сохрани исходный лист, извлеки рисунки в порядке `pain, anger, joy, pleasure` и перенеси области мимики на принятую голову соответствующей позы. Запросы обеих поз запиши в `work/imagegen/xxxxxx/prompts.md`.
 
 ## Шаг 3. Слои и регистрация
 
@@ -153,7 +174,7 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 
 1. Убери фон, альфа straight. Почти непрозрачное (альфа ≥ 248) сделай 255.
 2. Уменьши обратно в игровое разрешение тем же преобразованием, что подложку: ×1/5, ресемплинг BOX на premultiplied alpha, смещение (40, 0) в холсте 282×747.
-3. Проверь совмещение с `work/outfit/GREEN.uncut.png` по шее и вороту. Сдвиг больше ±1 px исправь одним сдвигом на всю эмоцию. Масштаб не меняй.
+3. Проверь совмещение с `work/outfit/GREEN.uncut.png` по шее и вороту. Посадку и масштаб определи по `neutral` и зафиксируй для всех эмоций. При дрейфе отдельного рисунка совмести его мимику с нейтральным мастером до переноса бровей, век и рта. Если высота подбородка и уха верна, а кожа выступает вбок либо образует выемку, оставь голову на месте. В нижней части слоя `face` восстанови контур из общего тела. Сохрани тень под челюстью внутри контура, а на боковых кромках передай покрытие общему слою шеи. Применяй принятую посадку ко всем пяти эмоциям.
 4. Раздели на три слоя: `back-hair` (волосы позади шеи и плеч), `face` (голова, лицо, шея до ворота), `front-hair` (пряди поверх лица и плеч). Пикселей комбинезона в слоях быть не должно.
 5. Сохрани оттенок лица принятого `neutral` во всех эмоциях. Подбери `skinTone` для коррекции общей кожи. Если берёшь маски или регистрацию из `prepare_batch_layers.py`, сохрани цвет лица до его преобразования `tint_skin` к `bodySkinTarget`. Цветовую примерку выполни отдельно на шаге 5.
 
@@ -161,7 +182,7 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 
 ## Шаг 4. Импорт в пайплайн
 
-Используй существующий импорт готовых слоёв. `build_pilot.py` собирает исходных персонажей W5 через `tools/w5src.py`.
+`tools/add_character.py` импортирует стоящую голову и записывает общий `settings.json`. Для второго ракурса используй экспорт из шага 6. Рабочий каталог для обеих операций — `Antropik`.
 
 1. Запусти `python tools/add_character.py --id XXXXXX --layers work/imagegen/xxxxxx/layers --skin-tone "#RRGGBB"` проектным Python из рабочей папки. Подставь выбранный оттенок явно. Импорт выполняет следующие действия:
    - читать слои в игровых координатах, без регистрации W5;
@@ -185,7 +206,7 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
 
 ## Шаг 5. Проверки
 
-1. Выполни `python tools/dss3q.py validate --pose three-quarter-right --character XXXXXX` → OK. Для рабочей позы компоновщик ищет атлас в клиентском `W8/Portraits`. Сверь, что он разрешил именно клиентский файл.
+1. Выполни `python tools/dss3q.py validate --pose three-quarter-right --character XXXXXX` → OK. Для рабочей позы компоновщик ищет атлас в клиентском `W8/Portraits`. Сверь, что он разрешил именно клиентский файл. Собирай стойку через `dss3q.compose_image`: тело хранит цельную шею, а верхнюю часть под атласом маскирует компоновщик. Затем выполни попиксельную проверку ширины ниже.
 2. Для проверок базовой сборки вызови `review.main()` из Python, импортировав `review` из `tools`. В каталоге `D:/DeepSpaceSaga/artifacts/validation/<task>/<run>/` подготовь временную конфигурацию позы со списком `characters` из одного проверяемого ID. Задай в ней абсолютный шаблон `portraitAtlas` вида `D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits/{id}/threequarter.png`. В `outfits` оставь GREEN и GRAY с абсолютными путями к PNG в клиентском `W8/Clothes/ThreeQuarterOutfit`. Скопируй рядом `Templates` из рабочей позы. Направь `review.POSE_DIR` на эту конфигурацию, `review.OUT` в папку `review` текущего запуска, `review.WORK` на рабочие исходники пилота. Проверь `review/checks.json` для нового персонажа:
    - AC-01: базовая сборка против мастера. Альфа совпадает точно. Допуск ±1 по RGB применяется только к полупрозрачному портрету поверх тела. При расхождении укажи число пикселей и максимальное отклонение.
    - AC-02: при переходе с GREEN на GRAY у одной эмоции `changedOutsideMask = 0` и `alphaChanged = 0`.
@@ -193,17 +214,151 @@ No photorealism, no 3D render, no anime eyes, no cel shading, no rim light, no m
    - AC-09: `headPixelsWithLessAlpha = 0`.
    - AC-10: все десять плиток совпадают попиксельно. Перечитай `matrix-rgba.png` и соответствующие одиночные кадры с диска, проверь координаты плиток по `matrix-rgba.tiles.json`.
    - Самопроверка со сдвигом на 1 px срабатывает.
-3. Перечитай клиентский `settings.json` и сверь `skinTone` с выбранным значением и форматом `#RRGGBB`. Сделай отдельную цветовую примерку по маске из контракта `skinTone`. Сравни кадры до и после коррекции для каждой эмоции на GREEN и GRAY. Проверяй изменение RGB только в области открытой кожи, исходная альфа должна совпасть. Текущий компоновщик собирает базовые кадры. Если точный вклад верхней шеи не экспортирован, проверь коррекцию тела и явно отметь предел проверки стыка. Игровую проверку AC-08 отмечай пройденной только после проверки в клиенте.
+3. Перечитай клиентский `settings.json` и сверь `skinTone` с выбранным значением и форматом `#RRGGBB`. Сделай отдельную цветовую примерку по маске из контракта `skinTone`. Сравни кадры до и после коррекции для каждой эмоции на GREEN, GRAY и IVORY. У всех трёх стоящих тел проверь открытую шею на игровом масштабе и крупным планом, особенно участок от ближнего уха до левой кромки воротника. Тон кожи должен плавно переходить в вырез без отдельной рыжеватой полосы. Для этой проверки загрузи каждый костюм из его клиентского PNG. Проверяй изменение RGB только в области открытой кожи, исходная альфа должна совпасть. Текущий компоновщик собирает базовые кадры. Если точный вклад верхней шеи не экспортирован, проверь коррекцию тела и явно отметь предел проверки стыка. Игровую проверку AC-08 отмечай пройденной только после проверки в клиенте.
 4. Посмотри глазами `review/matrix.png` и `review/closeups-neck.png`:
    - стык шеи на светлом и тёмном фоне;
    - пять эмоций различимы с первого взгляда;
    - во всех пяти эмоциях сохранились рисунок век, матовая кожа, характер теней и прядей принятого neutral; сравни их с листом из девяти портретов;
    - контур коричневый, лицо сохраняет выбранный оттенок, свет падает с той же стороны, что на комбинезоне;
    - причёска одинаковая во всех эмоциях;
-   - на GREEN и GRAY голова встаёт без правок.
-5. Создавай проверочные изображения только во временном каталоге текущего запуска. К ним относятся примерки neutral, матрицы, одиночные кадры, крупные планы, сравнения до и после и карты разницы. Осмотри их в ходе проверки. После проверки удали временные проверочные файлы текущего запуска. Проверочные изображения не выводи в чат, не прикладывай к ответу и не включай в итоговую выдачу.
+   - ячейка встаёт в одну и ту же точку на всех трёх костюмах; отдельно собери пять кадров IVORY из сохранённого атласа, дополнив десять кадров базовой матрицы GREEN/GRAY.
+5. Создавай проверочные изображения только во временном каталоге текущего запуска. К ним относятся примерки neutral, матрицы, одиночные кадры, крупные планы и карты разницы. Лист до и после сохраняй в итоговой выдаче, если пользователь его запросил. Осмотри их в ходе проверки. После проверки удали временные проверочные файлы текущего запуска. Проверочные изображения не выводи в чат. Если пользователь запросил итоговую сборку, выведи только заказанный лист из сохранённых игровых PNG и храни его вне папки портрета.
 
-## Шаг 6. Итог
+### Попиксельная проверка ширины шеи стойки по сохранённому атласу
 
-1. Перечитай `threequarter.png` и `settings.json` из подпапки персонажа в клиентском `Images/Persons/W8/Portraits` и сверь их с результатами проверки. В новой папке персонажа должны лежать ровно эти два файла.
-2. Ответь кратко текстом. Укажи ID и путь к итоговым файлам. При существенных отклонениях кратко опиши их.
+Из каталога `Antropik` запусти код ниже проектным Python, подставив ID персонажа. Эталон содержит ровно тот вклад альфы общей шеи, который импортёр помещает в портрет. Сравнение альфы самого атласа обнаруживает лишнюю кожу даже поверх непрозрачного воротника. Допуск в рабочей маске — **0 пикселей и 0 уровней альфы для каждой эмоции**. Проверь сборки на всех совместимых костюмах в игровом масштабе и с увеличением: у воротника не должно быть ступеньки, разрыва или полосы кожи на ткани. При расхождении исправь слой лица, пересобери атлас и повтори проверку с той же маской.
+
+```python
+from pathlib import Path
+import sys
+import numpy as np
+from PIL import Image
+
+sys.path.insert(0, str(Path("tools").resolve()))
+import dss3q
+
+def check_standing_neck(character):
+    pose = dss3q.Pose("three-quarter-right")
+    work = Path("work")
+    source = work / "imagegen" / character.lower()
+    with Image.open(source / "standing-neck-check.png") as mask:
+        assert mask.mode == "L" and mask.size == pose.canvas
+        guard = np.array(mask) > 0
+        assert guard.any(), "empty standing neck inspection mask"
+    body = dss3q.load_rgba(work / "outfit/GREEN.uncut.png")
+    expected = np.zeros_like(body[..., 3])
+    for x, y in enumerate(pose.seam_y, pose.seam_x0):
+        expected[:y, x] = body[:y, x, 3]
+
+    with Image.open(pose.atlas_path(character)) as image:
+        assert image.mode == "RGBA", "expected RGBA standing atlas"
+        atlas = np.array(image)
+    w, h = pose.cell
+    ox, oy = pose.origin
+    assert atlas.shape == (h, w * len(pose.emotions), 4)
+    for index, emotion in enumerate(pose.emotions):
+        assert np.array_equal(atlas[:, index*w:(index+1)*w, 3], atlas[:, :w, 3]), emotion
+        actual = np.zeros_like(expected)
+        actual[oy:oy+h, ox:ox+w] = atlas[:, index*w:(index+1)*w, 3]
+        diff = guard & (actual != expected)
+        if diff.any():
+            y, x = np.argwhere(diff)[0]
+            raise ValueError(f"{character}/{emotion}: {diff.sum()} px, first at ({x}, {y})")
+
+check_standing_neck("XXXXXX")
+```
+
+## Шаг 6. Поза пленного
+
+### Подложка и геометрия
+
+Холст, точки суставов, шов и список костюмов бери из [шаблона пленного](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/Prisoner/Templates/README.md) и его [pose.json](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/Prisoner/Templates/pose.json).
+
+1. Возьми [готовую подложку пленного](../../../../DSS-Images/Characters/W8/Antropik/work/imagegen/vl8h3a/prisoner-underlay.png) (850×845) и сохрани копию как `work/imagegen/xxxxxx/prisoner-underlay.png`. Она задаёт камеру и посадку; личность, оттенок кожи и причёску бери с принятого стоящего `neutral` нового персонажа. Для обновления подложки сложи [текущее тело GREEN](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/Prisoner/GREEN.png) с головой на холсте 416×747. При наличии файла `referenceHead` из манифеста положи его в (0, 0). При его отсутствии возьми первую ячейку [проверенного атласа пленного VL8H3A](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits/vl8h3a/prisoner.png) и вставь её в (48, 416). Вырежи `(41, 412, 211, 581)` с исключающими правой и нижней границами, увеличь ×5 через NEAREST и положи на однотонный фон. Для численной проверки стыка в обоих случаях используй маски шаблона.
+2. В эталоне видна макушка, голова глубоко наклонена и повёрнута вниз-влево по экрану. Ближнее ухо находится справа и выше глаз. Глаза узкие из-за ракурса, дальний глаз частично закрыт переносицей. Кончик носа ниже глаз и левее подбородка. Челюсть уходит вверх-вправо к уху, кожа шеи подходит к открытому вороту. Альфа эталона занимает `(63, 431, 162, 547)` на общем холсте. Сохраняй масштаб черепа, наклон и положение шва. Волосы конкретного персонажа должны помещаться в ячейку и учитывать перекрытие воротника, плеча и руки. Стык с телом определяй по исходным слоям. Условие для эталона относится к голове из шаблона; форму волос нового персонажа сверяй с его собственным `neutral`.
+3. Зарегистрируй нейтральную голову в координатах тела один раз. Подгоняй переносом и при необходимости равномерным масштабированием. Сверяй макушку, ближнее ухо, переносицу, подбородок и шов на прозрачном холсте. Рисунок мимики для остальных эмоций задавай правками принятого neutral. Переноси только брови, веки и рот с прилегающей кожей. Вне этих областей копируй RGBA neutral. Сохраняй силуэт, ухо, нос, причёску и пиксели шва.
+
+### Готовый запрос ImageGen для пленного
+
+```text
+Input 1 is the W8 prisoner underlay. Match its downward-left head pitch, camera,
+foreshortening, skull scale and exact placement against the collar and shoulder.
+Input 2 is the approved standing neutral. Input 3 is the W8 nine-head style sheet.
+Preserve the standing character's identity, age,
+facial structure, hairline, hairstyle, hair color and complexion.
+Draw the same person in the bowed prisoner pose, with the crown visible. The near
+ear sits above and to the right of the near eye in screen coordinates. The gaze
+points down, the bridge partly hides the far eye, the nose tip is below the eyes
+and the jaw returns upward-right to the ear. Keep the same tight neck docking
+contour and visible skin at the open collar. Keep pose and crop fixed.
+Use W8 matte hand-painted rendering, brown contours, subdued warm skin shadows,
+soft upper-left light and broad, muted hair highlights.
+Expression: <emotion>. In the bowed view express it with brows, lids and mouth.
+For alternate emotions edit the approved prisoner neutral. Hold hair, ears, nose,
+head outline and neck fixed. Export the isolated head and exposed neck on a transparent background. Keep the shoulder, collar and sleeve on the body layer. No captions.
+```
+
+Используй порядок `neutral, pain, anger, joy, pleasure`. Для pain подними внутренние края сведённых бровей и сожми веки. Для anger опусти брови к переносице и напряги рот. Для joy приподними щёки и покажи широкую улыбку. Для pleasure оставь расслабленные веки и мягкую закрытую улыбку.
+
+Сохрани пять зарегистрированных слоёв головы с прозрачным фоном в `work/imagegen/xxxxxx/prisoner-layers/<emotion>.png`. Каждый рабочий PNG имеет полный холст 416×747. Зафиксируй области мимики на собственном `neutral` до переноса остальных эмоций, чтобы проверить неизменность рисунка за их пределами.
+
+### Экспорт и проверка пленного
+
+1. Вырежи для каждой эмоции прямоугольник `(48, 416, 184, 560)` из головы в координатах тела. Сохрани пять ячеек **136 × 144** в один ряд, слева направо, как прозрачный **680 × 144** RGBA8 PNG `prisoner.png` в общей папке `Portraits/<id>/`. Прозрачные поля сохраняют посадку.
+2. Для сборки сначала нарисуй выбранное тело `Clothes/Prisoner/{GREEN,GRAY,IVORY}.png`, затем нужную ячейку `prisoner.png` в **(48, 416)** без поворота, масштабирования или подгонки к высоте стойки. Ячейка с индексом `i` начинается в x=`136*i`. Используй общий `skinTone`. Маска стоящего тела относится только к стойке. Для коррекции открытой кожи используй `Clothes/Prisoner/Templates/skin-mask.png` и `referenceSkinTone` из шаблона позы.
+3. Выполни обязательную проверку стыка по сохранённым PNG. Перечитай `Portraits/<id>/prisoner.png` с диска и проверь формат RGBA8 и размер 680 × 144. Возьми из `Templates/pose.json` размеры ячейки, точку вставки, маску `neckProtect` и эталон альфы `portraitAlpha`. Разложи каждую ячейку на прозрачном холсте 416 × 747 в точке `drawOrigin`. Для каждого ненулевого пикселя маски `neckProtect` сравни альфу портрета с `portraitAlpha` по тем же координатам. Допуск — **0 пикселей и 0 уровней альфы**. В той же маске сверь RGBA каждого тела с эталонным GREEN до коррекции `skinTone`. Это проверяет посадку шеи и геометрию воротника, сохраняя цвет кожи персонажа.
+4. У всех пяти ячеек должны быть одна точка вставки и одна регистрация принятого `neutral`. Сравни альфа-каналы целиком и RGBA вне областей мимики с сохранённой ячейкой `neutral`. Требуется попиксельное совпадение. Не подгоняй отдельные эмоции после экспорта. При расхождении укажи эмоцию, костюм для проверки тела и первую координату на холсте, исправь исходный слой и повтори проверку после сохранения.
+5. Собери пять эмоций на каждом доступном костюме пленного из перечитанных PNG. Проверь, что у воротника нет просветов и что в портрет не попала ткань. Проверь отличимость выражений и узнаваемость персонажа между позами.
+
+Пример экспорта из `Antropik` после шага 4. Подставь ID нового персонажа. Код проверяет границы полных слоёв, перечитывает записанный PNG, сверяет альфу и переносит проверенный файл в папку этого ID. Проверки рисунка лица и сборок на костюмах из пунктов 3–5 выполни отдельно.
+
+```python
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import json
+import sys
+import numpy as np
+from PIL import Image
+
+sys.path.insert(0, str(Path("tools").resolve()))
+import dss3q
+
+def export_prisoner(character):
+    template = dss3q.CLIENT_W8_ROOT / "Clothes/Prisoner/Templates"
+    pose = json.loads((template / "pose.json").read_text(encoding="utf-8"))
+    target = dss3q.CLIENT_PORTRAIT_ROOT / character.lower() / pose["portrait"]["file"]
+    layers = Path("work/imagegen") / character.lower() / "prisoner-layers"
+    x, y = pose["portrait"]["drawOrigin"]
+    w, h = pose["portrait"]["cellSize"]
+    box = (x, y, x + w, y + h)
+    cells = []
+    for emotion in pose["expressions"]:
+        with Image.open(layers / f"{emotion}.png") as layer:
+            assert layer.mode == "RGBA" and layer.size == tuple(pose["canvas"]), emotion
+            bounds = layer.getchannel("A").getbbox()
+            assert bounds and x <= bounds[0] and y <= bounds[1] and bounds[2] <= x+w and bounds[3] <= y+h, emotion
+            cells.append(np.array(layer.crop(box)))
+    with Image.open(template / pose["masks"]["neckProtect"]) as mask:
+        guard = np.array(mask) > 0
+    with Image.open(template / pose["masks"]["portraitAlpha"]) as ref:
+        expected = np.array(ref)
+    with TemporaryDirectory(dir=target.parent) as stage:
+        candidate = Path(stage) / target.name
+        Image.fromarray(np.concatenate(cells, axis=1)).save(candidate)
+        with Image.open(candidate) as image:
+            assert image.mode == "RGBA" and image.size == (w * len(cells), h)
+            for i, emotion in enumerate(pose["expressions"]):
+                cell = np.array(image.crop((i*w, 0, (i+1)*w, h)))
+                assert np.array_equal(cell, cells[i]), emotion
+                assert np.array_equal(cell[..., 3], cells[0][..., 3]), emotion
+                full = np.zeros(expected.shape, dtype=np.uint8)
+                full[y:y+h, x:x+w] = cell[..., 3]
+                assert np.array_equal(full[guard], expected[guard]), emotion
+        candidate.replace(target)
+
+export_prisoner("XXXXXX")
+```
+
+## Шаг 7. Итог
+
+Проверь комплект в `W8/Portraits/xxxxxx`: ровно `threequarter.png`, `prisoner.png` и `settings.json` с одним `skinTone` в формате `#RRGGBB`. По перечитанным PNG собери для каждой позы пять эмоций на трёх телах из её каталога — всего 30 сочетаний. Сверь порядок эмоций, узнаваемость в обоих ракурсах и стык с воротником во всех кадрах. Укажи ID, пути и существенные отклонения. По запросу приложи один итоговый лист из сохранённых слоёв. Для примера двух поз возьми один кадр стойки в три четверти и пять кадров пленного в порядке атласа.
