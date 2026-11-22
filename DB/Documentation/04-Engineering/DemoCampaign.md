@@ -9,8 +9,8 @@ agricultural, far_trade. Геометрия использует существ�
 по [cluster.json](../../../src/DeepSpaceSaga.Client/Data/Demo/cluster.json).
 Стартовое имущество берётся только на New Game из демо-manifest
 [demo-starter-carrier.json](../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json):
-общий starter-carrier с дополнительным жилым модулем для четырёх пассажирских
-кают ([перевозки](DemoTransportContracts.md)); другие сценарии используют общий manifest.
+два жилых модуля по четыре каюты и семь членов экипажа, включая инженера
+([перевозки](DemoTransportContracts.md)). Tutorial и Default используют общий manifest.
 Обучение использует собственные дроны, пилотов и боезапас этого носителя.
 
 ## Последствия вылета
@@ -81,4 +81,4 @@ settlement группа retired, остальные группы не меняю
 
 ## Послебоевая кампания
 
-Rewards содержит независимые bounty/payment/loot projections, Company — отдельный custody roster. Победа фиксирует sortie до открытия loot, мир остаётся на паузе. Open loot разрешает сохранение; Continue восстанавливает frozen карту без replay. Каждая loot-команда требует durable continuation до Applied. [Полный контракт](DemoRewards.md).
+Rewards содержит отдельные сведения о наградах, выплатах и добыче, Company — roster пленных. Подтверждение исхода фиксирует sortie до открытия результата, мир остаётся на паузе. Continue восстанавливает стадию результата и стабильный ledger. LocalClient пишет checkpoint завершённых операций и удерживает мир до окончательного выхода. [Полный контракт](DemoRewards.md).

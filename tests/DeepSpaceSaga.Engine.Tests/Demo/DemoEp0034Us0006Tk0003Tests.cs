@@ -112,7 +112,7 @@ public sealed class DemoEp0034Us0006Tk0003Tests
         // The guaranteed first job: ordinary passengers at the start station, acceptable right away.
         var first = board.Offers.Single(o => o.Id == "jobs:SPC-0002:0:0");
         Assert.Equal(StationJobTypes.Passenger, first.Type);
-        Assert.Equal(3, first.Count);
+        Assert.Equal(1, first.Count);
         Assert.Equal(StationJobRiskBands.Safe, first.RiskBand); // shortest, safest route for the first job
         Assert.Equal(board.Offers.Where(o => o.OriginStationId == Start).Min(o => o.RouteDistanceKm), first.RouteDistanceKm);
         Assert.Null(StationJobReasons.AcceptBlocker(board, first.Id));
@@ -185,10 +185,10 @@ public sealed class DemoEp0034Us0006Tk0003Tests
             Assert.Single(Board(engine).Obligations);
             Assert.Equal(credits, engine.PlayerCredits); // acceptance pays nothing; payout belongs to delivery
 
-            // Capacity: 3 of 4 free cabins are promised, so a larger passenger offer is blocked by the engine.
+            // Boarding the first passenger fills the last cabin.
             var passengers = Board(engine).Offers.Where(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type)).ToArray();
             foreach (var offer in passengers)
-                Assert.Equal(offer.Count > 1 ? PassengerCapacityReasons.NoFreeCabins : null,
+                Assert.Equal(PassengerCapacityReasons.NoFreeCabins,
                     StationJobReasons.AcceptBlocker(Board(engine), offer.Id));
 
             // In flight the journal stays visible, but nothing can be accepted.

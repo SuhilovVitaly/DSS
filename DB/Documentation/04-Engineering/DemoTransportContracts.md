@@ -34,11 +34,11 @@ null-вердиктом Engine (`StationJobReasons.AcceptBlocker`,
 ## Пассажирская вместимость
 
 Демо New Game использует [demo-starter-carrier.json](../../../src/DeepSpaceSaga.Client/Data/Ships/demo-starter-carrier.json):
-общий starter-manifest и дополнительный жилой модуль каталога на свободной клетке
-корпуса (семь членов экипажа, включая инженера, пять свободных кают).
-Loader отвергает manifest с повтором ID модуля, выходом за корпус или наложением.
-Общий [starter-carrier.json](../../../src/DeepSpaceSaga.Client/Data/Ships/starter-carrier.json),
-Tutorial/Default и старые сохранения дополнительных кают не получают.
+два жилых модуля по четыре каюты, семь членов экипажа, включая инженера,
+и одна свободная каюта. Loader отвергает manifest с повтором ID модуля, выходом
+за корпус или наложением. Tutorial и Default используют общий
+[starter-carrier.json](../../../src/DeepSpaceSaga.Client/Data/Ships/starter-carrier.json).
+Сохранения содержат фактически установленные модули.
 
 `PassengerCapacitySnapshot` (Total/Crew/Passenger/Reserved/FreeCabins, PrisonerCabins) вычисляется
 на каждом snapshot из исправных Living quarters, живого экипажа, пассажиров и пленных; фиксированный Reserved равен нулю; он не сохраняется. `LifeSupportReason`: `cabins_overcommitted` или

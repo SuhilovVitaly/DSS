@@ -28,7 +28,7 @@ public sealed partial class LocalGameSessionConnection
         {
             long generation, sequence;
             lock (_autosaveGate) { generation = _autosaveGeneration; sequence = _autosaveSequence; }
-            await WriteSaveAsync(SaveSlotNaming.ContinuationSlotId, sequence, _cts.Token).ConfigureAwait(false);
+            await WriteStableSaveAsync(SaveSlotNaming.ContinuationSlotId, sequence, _cts.Token).ConfigureAwait(false);
             lock (_autosaveGate)
             {
                 if (generation != _autosaveGeneration) continue;

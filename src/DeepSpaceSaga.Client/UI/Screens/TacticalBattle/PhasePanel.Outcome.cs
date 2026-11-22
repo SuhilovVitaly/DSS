@@ -9,6 +9,7 @@ internal sealed partial class PhasePanel
     /// <summary>Tutorial outcome offers no new battle; its only button returns to the map.</summary>
     internal bool Tutorial { get; set; }
     internal bool Campaign { get; set; }
+    internal bool RequireBattleResults { get; set; }
     internal static string OutcomeTitle(TacticalBattleSnapshot battle, bool campaign) =>
         battle.Outcome!.Kind.ToString() == battle.PlayerSide ? "Victory" : campaign ? "Defeat" :
         battle.Outcome.Kind switch { TacticalBattleOutcomeCode.Draw => "Draw", TacticalBattleOutcomeCode.Timeout => "Timeout", _ => "Defeat" };
@@ -18,7 +19,7 @@ internal sealed partial class PhasePanel
         var b = _frame.Battle; if (b.Outcome is not { } outcome) return;
         Head(c, b.ScenarioName, "OutcomeTag");
         bool victory = outcome.Kind.ToString() == b.PlayerSide;
-        string title = U(OutcomeTitle(b, Campaign));
+        string title = U(OutcomeTitle(b, Campaign && !RequireBattleResults));
         T(c, title, 1050, 140, 22, victory ? Yellow : Red, true,
             role: victory ? "ui.outcome.victory" : "ui.outcome.defeat");
         string reason = string.Join("; ", outcome.Reasons.Select(r => r.Kind switch
@@ -37,6 +38,12 @@ internal sealed partial class PhasePanel
             carrierY += 18;
         }
         float y = _db + 28;
+        if (RequireBattleResults)
+        {
+            T(c, U("BattleOver"), 1050, y + 20, 14, Text, true);
+            ButtonAt(c, "primary", new(1048, y + 56, 1266, _db + 112), Localization.Get("TacticalBattle.Results"), true);
+            return;
+        }
         T(c, U("BattleOver"), 1050, y + 20, 14, Text, true); BoxText(c, new(1048, y + 28, 1266, y + 48), U("ExitHelp"));
         if (Tutorial || Campaign)
         {

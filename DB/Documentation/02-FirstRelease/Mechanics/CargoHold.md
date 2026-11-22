@@ -18,6 +18,6 @@
 
 Источники: [SimulationEngine.CargoCost.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CargoCost.cs), [modules-container.json](../../../../src/DeepSpaceSaga.Client/Data/Modules/Container/modules-container.json).
 
-## Трофеи и выброс
+## Трофеи
 
-Сохранившиеся расходники, целые sale-only модули и успешно собранный лом поступают в обычные cargo stacks. Проверяется исправный трюм за вычетом sealed contract reserve. На карте добычи подтверждённый выброс обычного cargo безвозвратен, не приносит денег и сохраняет корректный cost basis. [Добыча](DemoBountiesAndLoot.md).
+Сохранившиеся расходники, целые sale-only модули и успешно собранный лом поступают в обычные cargo stacks. При выдаче проверяются исправные грузовые секции за вычетом резерва контрактов. [Правила сбора и частичного размещения](DemoBountiesAndLoot.md).

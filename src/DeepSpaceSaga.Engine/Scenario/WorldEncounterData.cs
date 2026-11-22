@@ -1,9 +1,14 @@
 using DeepSpaceSaga.Contracts;
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
-public sealed record WorldEncounterData(WorldBattleBinding Binding, long Seed, string Phase);
+public sealed record WorldEncounterData(WorldBattleBinding Binding, long Seed, string Phase)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? RequireBattleResults { get; init; }
+}
 public sealed record WorldEncounterResultData(WorldBattleBinding Binding, bool PlayerWon,
     TacticalOutcomeSnapshot Outcome, ImmutableArray<TacticalUnitSnapshot> Units, string PlayerSide = "A");
 

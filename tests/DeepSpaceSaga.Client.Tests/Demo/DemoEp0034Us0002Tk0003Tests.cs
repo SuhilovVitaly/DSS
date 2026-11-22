@@ -99,11 +99,11 @@ public sealed class DemoEp0034Us0002Tk0003Tests
             await WaitFor(() => handle.DemoCampaign!.Transport!.PassengerContracts!.Contracts.Length == 1);
             Render(screen, activate: false);
             var contract = handle.DemoCampaign!.Transport!.PassengerContracts!.Contracts[0];
-            Assert.Equal(string.Format(Localization.Get("Demo.PassengerContracts.Boarded"), 3, Name(handle, offer.DestinationStationId),
+            Assert.Equal(string.Format(Localization.Get("Demo.PassengerContracts.Boarded"), offer.Count, Name(handle, offer.DestinationStationId),
                 StationJobsPresentation.Time(contract.DeadlineGameTimeMs)), screen.PassengerFeedback);
             var view = screen.PassengersView;
             Assert.Null(view.Empty);
-            Assert.Equal(string.Format(Localization.Get("Demo.PassengerContracts.Aboard"), 3), view.Summary); // AC-02
+            Assert.Equal(string.Format(Localization.Get("Demo.PassengerContracts.Aboard"), offer.Count), view.Summary); // AC-02
             string line = Assert.Single(view.Lines);
             Assert.EndsWith(Localization.Get("Demo.PassengerContracts.State.aboard"), line);
             Assert.Contains(Name(handle, offer.DestinationStationId), line);
@@ -150,10 +150,10 @@ public sealed class DemoEp0034Us0002Tk0003Tests
         Assert.Equal(Localization.Get("Demo.PassengerContracts.State.unavailable"), PassengerContractsPresentation.State("future_state"));
         Assert.Equal(Localization.Get("Demo.PassengerContracts.State.unavailable"), PassengerContractsPresentation.State(null));
 
-        // Not enough cabins: after three passengers board, a larger passenger offer is refused by the engine's
+        // Not enough cabins: after the first passenger boards, another passenger offer is refused by the engine's
         // verdict without sending anything; nothing is charged.
         using var engine = Docked();
-        Assert.True(engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("board-3", 0, FirstOffer)).Applied);
+        Assert.True(engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("board-first", 0, FirstOffer)).Applied);
         int calls = 0;
         var screen = new ContractsScreen(null, () => engine.CaptureSnapshot().DemoCampaign, command =>
         {
@@ -163,7 +163,7 @@ public sealed class DemoEp0034Us0002Tk0003Tests
         Render(screen);
         long credits = engine.CaptureSnapshot().PlayerCredits;
         var big = engine.CaptureSnapshot().DemoCampaign!.Transport!.StationJobs!.Offers
-            .FirstOrDefault(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type) && o.Count > 1);
+            .FirstOrDefault(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type));
         if (big is not null)
         {
             var row = screen.JobsView.Offers.Single(r => r.OfferId == big.Id);
@@ -178,7 +178,7 @@ public sealed class DemoEp0034Us0002Tk0003Tests
         Assert.Equal(StationJobsPresentation.Reason(DemoCampaignReasons.Unavailable), screen.JobsFeedback);
         Assert.Equal(0, calls);
         Assert.Equal(credits, engine.CaptureSnapshot().PlayerCredits);
-        Assert.Equal(3, engine.CaptureSnapshot().DemoCampaign!.Transport!.PassengerContracts!.PassengersAboard);
+        Assert.Equal(1, engine.CaptureSnapshot().DemoCampaign!.Transport!.PassengerContracts!.PassengersAboard);
 
         // No demo passenger contracts at all: an explicit unavailable state.
         var none = new ContractsScreen();
@@ -214,7 +214,7 @@ public sealed class DemoEp0034Us0002Tk0003Tests
         Assert.Null(reopened.PassengerFeedback);
         Assert.Equal(1, Volatile.Read(ref calls));
         var section = engine.CaptureSnapshot().DemoCampaign!.Transport!.PassengerContracts!;
-        Assert.Equal(3, section.PassengersAboard);
+        Assert.Equal(1, section.PassengersAboard);
         Assert.Single(section.Contracts);
         Assert.Single(reopened.PassengersView.Lines);
     }

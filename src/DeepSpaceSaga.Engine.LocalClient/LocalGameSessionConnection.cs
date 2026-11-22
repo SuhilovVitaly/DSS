@@ -139,7 +139,7 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
         // Keep a recoverable living world even for the first tutorial sortie.
         if (request is not null && request.SourceShipId is not null && !string.IsNullOrWhiteSpace(_saveDirectory) && _engine.GetTacticalBattleState() is null)
             await SaveAsync(SaveSlotNaming.ContinuationSlotId, cancellationToken).ConfigureAwait(false);
-        return await TacticalCall(() => _engine.StartTacticalBattle(request!), cancellationToken).ConfigureAwait(false);
+        return await TacticalLootCall(() => _engine.StartTacticalBattle(request!), cancellationToken).ConfigureAwait(false);
     }
     public ValueTask<TacticalBattleResponse> MoveTacticalBattleAsync(MoveTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
         TacticalLootCall(() => _engine.MoveTacticalBattle(request), cancellationToken);
@@ -157,14 +157,12 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
             ObjectDisposedException.ThrowIf(_disposed, this);
             if (_pendingLootCheckpoint is { } pending) await WriteContinuationCheckpointAsync(pending, token).ConfigureAwait(false);
             var response = action();
-            if (response.Accepted && response.Settlement is { } settlement &&
-                !_checkpointedBattles.Contains(settlement.BattleId) &&
-                _engine.CaptureSnapshot().DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot &&
-                loot.BattleId == settlement.BattleId)
+            if (response.Accepted && response.Settlement is { } settlement && !_checkpointedBattles.Contains(settlement.BattleId))
             {
-                _pendingLootCheckpoint = settlement.BattleId;
-                _engine.SetEncounterStoragePending(true);
-                await WriteContinuationCheckpointAsync(settlement.BattleId, token).ConfigureAwait(false);
+                var campaign = _engine.CaptureSnapshot().DemoCampaign;
+                if (campaign?.BattleResults is { Stage: BattleResultsStage.AwaitingOpen } results && results.BattleId == settlement.BattleId ||
+                    campaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == settlement.BattleId)
+                    await CheckpointBattleAsync(settlement.BattleId, token).ConfigureAwait(false);
             }
             return response;
         }
@@ -242,7 +240,7 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
 
         try
         {
-            await SaveAsync(SaveSlotNaming.ContinuationSlotId, cancellationToken).ConfigureAwait(false);
+            await WriteSaveAsync(SaveSlotNaming.ContinuationSlotId, null, cancellationToken).ConfigureAwait(false);
             _checkpointedBattles.Add(battleId);
             _pendingLootCheckpoint = null;
             _pendingEncounterCheckpoint = null;
@@ -256,6 +254,13 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
         }
     }
 
+    private async ValueTask CheckpointBattleAsync(string battleId, CancellationToken cancellationToken)
+    {
+        _pendingLootCheckpoint = battleId;
+        _engine.SetEncounterStoragePending(true);
+        await WriteContinuationCheckpointAsync(battleId, cancellationToken).ConfigureAwait(false);
+    }
+
     public ValueTask<CarrierCommandResponse> RearmDroneAsync(RearmDroneRequest request, CancellationToken cancellationToken = default) =>
         TacticalCall(() => _engine.RearmDrone(request), cancellationToken);
 
@@ -264,20 +269,25 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (command is ILootCampaignCommand loot)
+        if (command is ILootCampaignCommand or OpenBattleResultsCommand or AcknowledgeBattleResultsCommand)
         {
             await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
                 if (_pendingLootCheckpoint is { } pending) await WriteContinuationCheckpointAsync(pending, cancellationToken).ConfigureAwait(false);
-                var response = _engine.ExecuteDemoCampaign(command, out bool newlyApplied);
-                if (newlyApplied)
+                string? checkpointBattleId = command switch
                 {
-                    _pendingLootCheckpoint = loot.BattleId;
-                    _engine.SetEncounterStoragePending(true);
-                    await WriteContinuationCheckpointAsync(loot.BattleId, cancellationToken).ConfigureAwait(false);
-                }
+                    ILootCampaignCommand loot => loot.BattleId,
+                    OpenBattleResultsCommand { AdoptLegacyCheckpoint: false } open when IsOwnedFrozenBattle(open.BattleId) => open.BattleId,
+                    AcknowledgeBattleResultsCommand acknowledge when IsOwnedFrozenBattle(acknowledge.BattleId) => acknowledge.BattleId,
+                    _ => null
+                };
+                var response = _engine.ExecuteDemoCampaign(command, out bool newlyApplied,
+                    deferBattleResultsRelease: checkpointBattleId is not null && command is AcknowledgeBattleResultsCommand);
+                if (newlyApplied && checkpointBattleId is not null && command is not StartLootOperationsCommand &&
+                    response.Rewards?.Loot?.Operations.IsEmpty != false)
+                    await CheckpointBattleAsync(checkpointBattleId, cancellationToken).ConfigureAwait(false);
                 return response;
             }
             finally { _checkpointGate.Release(); }
@@ -295,6 +305,9 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
                         _pendingEncounterCheckpoint = saved;
                         response = _engine.ExecuteDemoCampaign(begin);
                     }).ConfigureAwait(false);
+                if (response?.Applied == true && _engine.CaptureSnapshot().DemoCampaign?.BattleResults is
+                    { Stage: BattleResultsStage.AwaitingOpen } results)
+                    await CheckpointBattleAsync(results.BattleId, cancellationToken).ConfigureAwait(false);
                 return response!;
             }
             finally { _checkpointGate.Release(); }
@@ -306,6 +319,11 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
             return _engine.ExecuteDemoCampaign(command);
         }, cancellationToken).ConfigureAwait(false);
     }
+
+    private bool IsOwnedFrozenBattle(string battleId) =>
+        _engine.GetTacticalBattleState() is { } battle && battle.BattleId == battleId &&
+        (battle.SourceShipId is not null ||
+         _engine.CaptureSnapshot().DemoCampaign?.Rewards?.Loot is { Phase: LootPhases.Open } loot && loot.BattleId == battleId);
 
     private ValueTask<T> TacticalCall<T>(Func<T> action, CancellationToken token)
     {
@@ -390,7 +408,19 @@ public sealed partial class LocalGameSessionConnection : IGameSessionConnection
     /// Failed or cancelled writes remove their own temporary file.
     /// </summary>
     public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default) =>
-        WriteSaveAsync(slotId, null, cancellationToken);
+        WriteStableSaveAsync(slotId, null, cancellationToken);
+
+    private async ValueTask WriteStableSaveAsync(string slotId, long? minimumSequence, CancellationToken cancellationToken)
+    {
+        await _checkpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_engine.HasActiveLootOperations) throw new InvalidOperationException(BattleLootReasons.OperationsRunning);
+            if (_pendingLootCheckpoint is not null) throw new InvalidOperationException("battle_results_checkpoint_pending");
+            await WriteSaveAsync(slotId, minimumSequence, cancellationToken).ConfigureAwait(false);
+        }
+        finally { _checkpointGate.Release(); }
+    }
 
     private ScenarioFile? _pendingEncounterCheckpoint;
     private async ValueTask WriteSaveAsync(string slotId, long? minimumSequence, CancellationToken cancellationToken,

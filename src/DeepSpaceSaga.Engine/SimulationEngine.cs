@@ -249,6 +249,7 @@ public sealed partial class SimulationEngine : IDisposable
         {
             var previous = _registry;
             ThrowIfTacticalBattleActive();
+            ThrowIfLootOperationsActive();
             if (HasCapturedEncounter || _encounterStoragePending) throw new InvalidOperationException("encounter_captured");
             try
             {
@@ -519,6 +520,7 @@ public sealed partial class SimulationEngine : IDisposable
         restoredDemoCampaign = PreparePirateWorldForLoad(restoredDemoCampaign, runtimeObjects, gs, loadingSave, resolvedMasterSeed);
         restoredDemoCampaign = PrepareBountiesForLoad(restoredDemoCampaign);
         ValidateBattleLootForLoad(restoredDemoCampaign);
+        var restoredBattleResults = ValidateFrozenBattleResults(restoredDemoCampaign, gs, speed);
         if (restoredDemoCampaign.LootSession?.Phase == LootPhases.Open && gs.DialogueState?.ActiveDialogue is not null)
             throw new ScenarioException("Open loot cannot overlap an active dialogue.");
         ValidateSensorDialogueSave(restoredDemoCampaign, scenario with { GameState = gs });
@@ -565,7 +567,10 @@ public sealed partial class SimulationEngine : IDisposable
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
             RestoreCarrierState(gs);
-            _demoCampaign = restoredDemoCampaign;
+            _demoCampaign = restoredDemoCampaign with { BattleResults = null };
+            _frozenBattleResults = restoredBattleResults;
+            _requireBattleResults = false;
+            _lootOperations.Clear();
             InitializeCrewUpkeep(gs.GameTimeMs);
             _appliedMotionTimeMs = gs.MotionTimeMs;
             _processedWorldTimeMs = gs.GameTimeMs;
@@ -1137,6 +1142,7 @@ public sealed partial class SimulationEngine : IDisposable
     private ScenarioFile CaptureSaveStateCore(SimulationClockState clockState)
     {
         ThrowIfTacticalBattleActive();
+        ThrowIfLootOperationsActive();
         ThrowIfStoppedByStationSecurity();
         long gameTimeMs = clockState.MotionTimeMs;
         bool dialogueWasActive = _dialogue.Active is not null;

@@ -246,9 +246,8 @@ public class ScenarioEngineTests
 
         Assert.Equal("SPC-0001", engine.PlayerShipObjectId);
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        // Settings.defaultScenario is the demo New Game: the shared starter plus one more four-cabin
-        // living quarters for passengers (EP-0034-US-0001-TK-0002).
-        Assert.Equal(11, playerShip.Modules.Length);
+        // The demo starts with the shared starter's two living quarters.
+        Assert.Equal(10, playerShip.Modules.Length);
         var cargoModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-CARGO-01");
         var engineModule = Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-ENGINE-01");
         // Module type registry order follows the deterministic (ordinal) sort of
@@ -260,9 +259,9 @@ public class ScenarioEngineTests
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
         Assert.Equal(2, playerShip.Modules.Count(m =>
             actualRegistry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).TypeId == "module.drone-bay.medium"));
-        Assert.Equal(3, playerShip.Modules.Count(m =>
+        Assert.Equal(2, playerShip.Modules.Count(m =>
             actualRegistry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).TypeId == "living.quarters.mk1.four-cabins"));
-        Assert.Equal(3, playerShip.Modules.Count(m => m.ModuleId is "MOD-PLAYER-LIVING-QUARTERS-01" or "MOD-PLAYER-LIVING-QUARTERS-02" or "MOD-PLAYER-LIVING-QUARTERS-03"));
+        Assert.Equal(2, playerShip.Modules.Count(m => m.ModuleId is "MOD-PLAYER-LIVING-QUARTERS-01" or "MOD-PLAYER-LIVING-QUARTERS-02"));
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-GENERATOR-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-SCANNER-01");
         // Item-catalog registry order follows the deterministic (ordinal) sort of
@@ -279,7 +278,7 @@ public class ScenarioEngineTests
             stack => registry.ItemTypes.GetDefinition(stack.ItemTypeIndex).TypeId == itemTypeId).Quantity;
 
     [Fact]
-    public void Real_default_scenario_occupies_17_of_24_hull_cells()
+    public void Real_default_scenario_occupies_16_of_24_hull_cells()
     {
         string settingsPath = Path.GetFullPath(Path.Combine(
             TestPaths.Repository,
@@ -294,26 +293,25 @@ public class ScenarioEngineTests
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
 
         var playerShip = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "SPC-0001");
-        Assert.Equal(11, playerShip.Modules.Length);
+        Assert.Equal(10, playerShip.Modules.Length);
         Assert.NotNull(playerShip.HullLayout);
         Assert.Equal(24, playerShip.HullLayout!.Cells.Count);
 
-        // The default (demo) scenario: the shared starter's eight 1-cell modules and two 2x2 medium bays
-        // (16 cells) plus the demo passenger quarters at (4,1) occupy 17 distinct hull cells (EP-0034-US-0001).
+        // Eight single-cell modules and two medium bays occupy 16 cells.
         var occupiedCells = playerShip.Modules.SelectMany(m => m.OccupiedCells).ToArray();
-        Assert.Equal(17, occupiedCells.Length);
+        Assert.Equal(16, occupiedCells.Length);
         Assert.DoesNotContain((3, 2), occupiedCells);
-        Assert.Contains((4, 1), occupiedCells);
+        Assert.DoesNotContain((4, 1), occupiedCells);
         Assert.Contains((3, 4), occupiedCells);
-        Assert.Equal(17, occupiedCells.Distinct().Count());
+        Assert.Equal(16, occupiedCells.Distinct().Count());
 
         // Every occupied cell must belong to the object's hull layout.
         var hullCells = playerShip.HullLayout.Cells.Select(c => (c.X, c.Y)).ToHashSet();
         Assert.All(occupiedCells, cell => Assert.Contains(cell, hullCells));
 
-        // Seven authored hull cells, including both former weapon positions, remain unoccupied.
+        // Eight authored hull cells, including both former weapon positions, remain unoccupied.
         int freeCells = hullCells.Count - occupiedCells.Distinct().Count();
-        Assert.Equal(7, freeCells);
+        Assert.Equal(8, freeCells);
     }
 
     // --- story-20260901-112254 (Batch A, U3): AuthoritativeSnapshot.PlayerCrewCount / ---
@@ -327,25 +325,23 @@ public class ScenarioEngineTests
 
         var snapshot = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
 
-        Assert.Equal(6, snapshot.PlayerCrewCount);
+        Assert.Equal(7, snapshot.PlayerCrewCount);
 
-        // Default (demo) New Game: three four-cabin living quarters, 12 cabins total, 6 occupied,
-        // 2 reserved for (future) prisoners and 4 free for passengers (EP-0029 A-01, EP-0034-US-0001).
-        // Tutorial/Default keep the shared 8-cabin starter (DemoEp0034Us0001Tk0002Tests).
+        // The demo's engineer fills the seventh of the eight cabins.
         var livingQuarters = snapshot.InstalledModules
             .Where(m => m.ModuleTypeId == "living.quarters.mk1.four-cabins").ToArray();
-        Assert.Equal(3, livingQuarters.Length);
+        Assert.Equal(2, livingQuarters.Length);
         Assert.Equal(
-            ["MOD-PLAYER-LIVING-QUARTERS-01", "MOD-PLAYER-LIVING-QUARTERS-02", "MOD-PLAYER-LIVING-QUARTERS-03"],
+            ["MOD-PLAYER-LIVING-QUARTERS-01", "MOD-PLAYER-LIVING-QUARTERS-02"],
             livingQuarters.Select(m => m.ModuleId));
         Assert.All(livingQuarters, module => Assert.Equal(4, module.CabinesCount!.Value));
-        Assert.Equal(12, livingQuarters.Sum(module => module.CabinesCount!.Value));
+        Assert.Equal(8, livingQuarters.Sum(module => module.CabinesCount!.Value));
 
         var cabins = snapshot.CarrierOperations!.CabinReservation!;
-        Assert.Equal(12, cabins.TotalCabins);
-        Assert.Equal(6, cabins.OccupiedCabins);
-        Assert.Equal(2, cabins.ReservedCabins);
-        Assert.Equal(4, cabins.FreeCabins);
+        Assert.Equal(8, cabins.TotalCabins);
+        Assert.Equal(7, cabins.OccupiedCabins);
+        Assert.Equal(0, cabins.ReservedCabins);
+        Assert.Equal(1, cabins.FreeCabins);
         Assert.Equal(0, cabins.PrisonerCount);
 
         // A module type that does not house crew must project CabinesCount == null.

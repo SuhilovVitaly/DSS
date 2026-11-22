@@ -45,6 +45,9 @@ public static class RewardReportPresentation
         return lines.ToArray();
     }
 
-    private static string State(string state, string phase) => Localization.Get("loot.state." +
-        (state == LootAttemptStates.NotAttempted && phase == LootPhases.Closed ? LootAttemptStates.Discarded : state));
+    private static string State(string state, string phase) =>
+        phase == LootPhases.Closed && state is LootAttemptStates.NotAttempted or LootAttemptStates.ExtractedWaiting
+            ? Localization.Get("loot.state." + LootAttemptStates.Discarded)
+            : state == LootAttemptStates.ExtractedWaiting ? Localization.Get("BattleResults.Recovered")
+            : Localization.Get("loot.state." + state);
 }

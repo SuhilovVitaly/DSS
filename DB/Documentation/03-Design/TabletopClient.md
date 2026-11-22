@@ -12,4 +12,4 @@
 
 ## Послебоевые поверхности
 
-Contracts также показывает bounty и отчёт, Ship — пленников, а frozen tactical map — действия добычи, выброса и ареста. Эти поверхности читают подтверждённые Engine projections. [Правила](../02-FirstRelease/Mechanics/DemoBountiesAndLoot.md).
+Contracts показывает bounty и отчёт, Ship — пленных. Отдельная модаль результатов наследует рамку станции и показывает сводку, прокручиваемые карточки, операции и закреплённый футер. Эти поверхности читают подтверждённые Engine projections. [Результаты боя](../02-FirstRelease/Screens/BattleResults.md).

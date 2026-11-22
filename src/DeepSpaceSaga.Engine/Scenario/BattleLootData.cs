@@ -14,6 +14,9 @@ public sealed record LootSourceData(string ObjectId, string Kind, string LayoutI
 public sealed record BattleLootData(string BattleId, string Phase, string CatalogFingerprint, ulong Seed, long DrawCount,
     TacticalBattleSnapshot Map, ImmutableArray<LootSourceData> Sources)
 {
+    /// <summary>A debug victory in an owned sortie outside a campaign encounter.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool DebugSortie { get; init; }
     public ImmutableArray<LootJettisonData> Jettison { get; init; } = [];
     internal static void Validate(BattleLootData? data)
     {
@@ -27,7 +30,8 @@ public sealed record BattleLootData(string BattleId, string Phase, string Catalo
         Require(!data.Jettison.IsDefault && data.Jettison.All(j => j is not null && !string.IsNullOrWhiteSpace(j.CommandId) && !string.IsNullOrWhiteSpace(j.ItemTypeId) && j.Quantity > 0) &&
             data.Jettison.Select(j => j.CommandId).Distinct(StringComparer.Ordinal).Count() == data.Jettison.Length);
         long expectedDraws = 0;
-        bool Attempt(string state) => state is LootAttemptStates.NotAttempted or LootAttemptStates.Failed or LootAttemptStates.Collected;
+        bool Attempt(string state) => state is LootAttemptStates.NotAttempted or LootAttemptStates.Failed or
+            LootAttemptStates.Collected or LootAttemptStates.ExtractedWaiting;
         foreach (var s in data.Sources)
         {
             Require(!string.IsNullOrWhiteSpace(s.ObjectId) && !string.IsNullOrWhiteSpace(s.LayoutId) &&

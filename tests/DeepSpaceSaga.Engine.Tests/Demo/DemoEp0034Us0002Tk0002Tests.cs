@@ -165,25 +165,25 @@ public sealed class DemoEp0034Us0002Tk0002Tests
         long credits = flight.Snapshot.PlayerCredits;
         Assert.Empty(Contracts(flight.Snapshot).Contracts);
 
-        // Acceptance boards three real passengers in the same commit; nothing is charged.
+        // Acceptance boards one real passenger in the same commit; nothing is charged.
         var accepted = engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-accept", 0, FirstOffer));
         Assert.True(accepted.Applied, accepted.Reason);
         var after = flight.Capture();
         var contract = Assert.Single(Contracts(after).Contracts);
         string id = "contract:" + FirstOffer;
-        Assert.Equal((id, offer.DestinationStationId, 3, offer.Payout, StationJobStatuses.Active, PassengerDeliveryStates.Aboard),
+        Assert.Equal((id, offer.DestinationStationId, 1, offer.Payout, StationJobStatuses.Active, PassengerDeliveryStates.Aboard),
             (contract.ContractId, contract.DestinationStationId, contract.Count, contract.Payout, contract.Status, contract.DeliveryState));
         Assert.Equal(offer.DeadlineDurationMs, contract.DeadlineGameTimeMs);
         Assert.Equal("passenger:" + id, contract.PostingId);
-        Assert.Equal([id + ":pax-1", id + ":pax-2", id + ":pax-3"], contract.PassengerIds.ToArray());
+        Assert.Equal([id + ":pax-1"], contract.PassengerIds.ToArray());
         Assert.Equal(contract.PassengerIds.ToArray(), PassengersAboard(engine, 0));
-        Assert.Equal(3, Contracts(after).PassengersAboard);
-        Assert.Equal(new PassengerCapacitySnapshot(12, 7, 3, 0, 2, null), Capacity(after));
-        Assert.Equal((10, 2), (after.CarrierOperations!.CabinReservation!.OccupiedCabins, after.CarrierOperations.CabinReservation.FreeCabins));
+        Assert.Equal(1, Contracts(after).PassengersAboard);
+        Assert.Equal(new PassengerCapacitySnapshot(8, 7, 1, 0, 0, null), Capacity(after));
+        Assert.Equal((8, 0), (after.CarrierOperations!.CabinReservation!.OccupiedCabins, after.CarrierOperations.CabinReservation.FreeCabins));
         Assert.Equal(credits, after.PlayerCredits);
-        // Boarded passengers are not counted twice: the remaining two cabins still take a two-person offer.
+        // Boarding the first passenger fills the last cabin.
         Assert.All(Board(after).Offers.Where(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type)),
-            o => Assert.Equal(o.Count > 2 ? PassengerCapacityReasons.NoFreeCabins : null, StationJobReasons.AcceptBlocker(Board(after), o.Id)));
+            o => Assert.Equal(PassengerCapacityReasons.NoFreeCabins, StationJobReasons.AcceptBlocker(Board(after), o.Id)));
 
         // Real flight to the destination: delivery disembarks exactly these people and pays once with a ledger posting.
         flight.FlyTo(offer.DestinationStationId);
@@ -240,7 +240,7 @@ public sealed class DemoEp0034Us0002Tk0002Tests
             {
                 var there = wrong.CaptureSnapshotForTests(hour, SimulationSpeed.Speed0, hour / Ratio);
                 Assert.Equal(PassengerDeliveryStates.Aboard, Assert.Single(Contracts(there).Contracts).DeliveryState);
-                Assert.Equal(3, PassengersAboard(wrong, hour).Length);
+                Assert.Single(PassengersAboard(wrong, hour));
                 Assert.Equal(creditsAtHour, there.PlayerCredits);
             }
 
@@ -248,16 +248,16 @@ public sealed class DemoEp0034Us0002Tk0002Tests
             Assert.Equal(accepted, engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-1", 0, FirstOffer)));
             Assert.Equal(StationJobReasons.OfferAlreadyAccepted,
                 engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-2", accepted.Revision, FirstOffer)).Reason);
-            Assert.Equal(3, PassengersAboard(engine, hour).Length);
+            Assert.Single(PassengersAboard(engine, hour));
 
             // Not enough cabins: a larger passenger offer is refused before anything is boarded or charged.
             var snapshot = engine.CaptureSnapshotForTests(hour, SimulationSpeed.Speed0, hour / Ratio);
-            var tooBig = Board(snapshot).Offers.FirstOrDefault(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type) && o.Count > 1);
+            var tooBig = Board(snapshot).Offers.FirstOrDefault(o => o.OriginStationId == Start && StationJobTypes.CarriesPassengers(o.Type));
             if (tooBig is not null)
             {
                 var refused = engine.ExecuteDemoCampaign(new AcceptJobOfferCommand("pax-big", accepted.Revision, tooBig.Id));
                 Assert.Equal((false, PassengerCapacityReasons.NoFreeCabins), (refused.Applied, refused.Reason));
-                Assert.Equal(3, PassengersAboard(engine, hour).Length);
+                Assert.Single(PassengersAboard(engine, hour));
                 Assert.Equal(snapshot.PlayerCredits, engine.CaptureSnapshotForTests(hour, SimulationSpeed.Speed0, hour / Ratio).PlayerCredits);
             }
 
@@ -265,7 +265,7 @@ public sealed class DemoEp0034Us0002Tk0002Tests
             long withPassengers = RationsAboard(start) - RationsAboard(engine.CaptureSnapshotForTests(meal, SimulationSpeed.Speed0, meal / Ratio));
             var twinStart = twin.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
             long crewOnly = RationsAboard(twinStart) - RationsAboard(twin.CaptureSnapshotForTests(meal, SimulationSpeed.Speed0, meal / Ratio));
-            Assert.Equal((7L, 10L), (crewOnly, withPassengers));
+            Assert.Equal((7L, 8L), (crewOnly, withPassengers));
 
             // Arriving at the destination after the deadline pays nothing. Since US-0003 the contract has expired
             // (Failed, penalty in TransportFailures) and its passengers leave at this confirmed docking without payout.

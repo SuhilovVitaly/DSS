@@ -14,6 +14,7 @@ internal static class DebugCommandCatalog
         registry.Register(new LootStateDebugCommand());
         registry.Register(new ExitBattleDebugCommand());
         registry.Register(new KillDroneDebugCommand());
+        registry.Register(new KillAllDebugCommand());
         registry.Register(new ListUnitsDebugCommand());
         return registry;
     }

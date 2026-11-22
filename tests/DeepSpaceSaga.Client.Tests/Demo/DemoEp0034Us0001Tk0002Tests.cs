@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Client.Tests.Demo;
 
 /// <summary>
 /// EP-0034-US-0001-TK-0002: the demo New Game references its own derived starter manifest with the original
-/// crew/wing identities plus an engineer and one four-cabin living quarters (7 crew, 5 free, no reserve).
+/// crew/wing identities plus an engineer (7 crew, 1 free cabin, no reserve).
 /// Shared starter content and other scenarios are unchanged. Reads the shipped content copied to the test
 /// output and loads it through the production loader/engine.
 /// </summary>
@@ -39,12 +39,8 @@ public sealed class DemoEp0034Us0001Tk0002Tests
         // Legacy manifest field remains accepted; runtime ignores this old empty-cabin reserve.
         Assert.Equal(shared.CarrierState.ReservedCabins, demo.CarrierState.ReservedCabins);
 
-        // The only installed module difference remains one additional living quarters.
-        var added = demo.Modules!.Select(m => m.ModuleId).Except(shared.Modules!.Select(m => m.ModuleId)).ToArray();
-        Assert.Equal(["MOD-PLAYER-LIVING-QUARTERS-03"], added);
-        Assert.Equal(shared.Modules!.Count + 1, demo.Modules!.Count);
-        var module = demo.Modules.Single(m => m.ModuleId == added[0]);
-        Assert.Equal("living.quarters.mk1.four-cabins", module.ModuleTypeId);
+        Assert.Equal(shared.Modules!.Count, demo.Modules!.Count);
+        Assert.Equal(2, demo.Modules.Count(module => module.ModuleTypeId == "living.quarters.mk1.four-cabins"));
         foreach (var original in shared.Modules)
         {
             var copy = demo.Modules.Single(m => m.ModuleId == original.ModuleId);
@@ -60,10 +56,10 @@ public sealed class DemoEp0034Us0001Tk0002Tests
         engine.SetSpeed(SimulationSpeed.Speed0);
         var snapshot = engine.CaptureSnapshot();
         var cabins = snapshot.CarrierOperations!.CabinReservation!;
-        Assert.Equal(12, cabins.TotalCabins);
+        Assert.Equal(8, cabins.TotalCabins);
         Assert.Equal(7, cabins.OccupiedCabins);
         Assert.Equal(0, cabins.ReservedCabins);
-        Assert.Equal(5, cabins.FreeCabins);
+        Assert.Equal(1, cabins.FreeCabins);
         Assert.Equal(7, snapshot.CarrierOperations.Crew.Length);
 
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);

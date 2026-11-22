@@ -61,6 +61,8 @@ Board — единственное место эпиков, историй и т
 | [EP-0039](EP-0039-demo-cluster-story/Documentation.md) Сюжет кластера и финал демо | approved | 0 | Не начат | Демо: 6 историй, 27 тикетов; workflow ready; [DemoPlan](EP-0031-board-and-demo-scope/DemoPlan.md) |
 | [EP-0040](EP-0040-demo-campaign-onboarding/Documentation.md) Обучение и понятность кампании | approved | 0 | Не начат | Демо: 5 историй, 9 тикетов; workflow ready; [DemoPlan](EP-0031-board-and-demo-scope/DemoPlan.md) |
 | [EP-0041](EP-0041-demo-validation-and-release/Documentation.md) Сквозная проверка и выпуск демо | approved | 0 | Не начат | Демо: 7 историй, 17 тикетов; workflow ready; [DemoPlan](EP-0031-board-and-demo-scope/DemoPlan.md) |
+| [EP-0042](EP-0042-postbattle-results-and-loot/Documentation.md) Результаты боя и параллельный сбор трофеев | implemented | 100 | Приёмка владельцем | 7 историй, 26 тикетов; [реестр исполнения](EP-0042-postbattle-results-and-loot/Tickets.md) |
+| [EP-0043](EP-0043-demo-ambush-prologue/Documentation.md) Засада у маяка и начало поисков пилотов | draft | 0 | Спланирован | 5 историй, 20 тикетов |
 | [EP-maintenance](EP-maintenance/Documentation.md) Исправления и доделки | ongoing | 35 | Постоянный | Завершённые тикеты — `EP-maintenance/Done` |
 
 ## Дорожная карта первой демо-версии

@@ -1,8 +1,18 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Contracts;
 
 public interface ILootCampaignCommand { string BattleId { get; } }
+public sealed record OpenBattleResultsCommand(string CommandId, long ExpectedRevision, string BattleId)
+    : DemoCampaignCommand(CommandId, ExpectedRevision)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AdoptLegacyCheckpoint { get; init; }
+}
+public sealed record AcknowledgeBattleResultsCommand(string CommandId, long ExpectedRevision, string BattleId,
+    bool ConfirmDiscard = false) : DemoCampaignCommand(CommandId, ExpectedRevision);
+
 public sealed record JettisonCargoCommand(string CommandId, long ExpectedRevision, string BattleId, string ItemTypeId, long Quantity)
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
 public sealed record CollectLootConsumablesCommand(string CommandId, long ExpectedRevision, string BattleId,
@@ -14,10 +24,31 @@ public sealed record AttemptModuleSalvageCommand(string CommandId, long Expected
 public sealed record FinishBattleLootCommand(string CommandId, long ExpectedRevision, string BattleId, bool ConfirmDiscard = false)
     : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
 
+public enum LootRowKind { Consumable, Scrap, Module }
+public enum LootBatchKind { Components, Scrap }
+public sealed record LootRowKey(string ObjectId, LootRowKind Kind, string EntryId);
+
+/// <summary>A null Row requests all eligible material rows in the optional batch. Pilot arrest is a separate command.</summary>
+public sealed record StartLootOperationsCommand(string CommandId, long ExpectedRevision, string BattleId, LootRowKey? Row = null)
+    : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? RequestedQuantity { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LootBatchKind? Batch { get; init; }
+}
+public sealed record AdvanceLootOperationsCommand(string CommandId, long ExpectedRevision, string BattleId)
+    : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
+public sealed record ClaimExtractedLootCommand(string CommandId, long ExpectedRevision, string BattleId, LootRowKey Row)
+    : DemoCampaignCommand(CommandId, ExpectedRevision), ILootCampaignCommand;
+public sealed record LootOperationSnapshot(string OperationId, LootRowKey Row, int DurationMs, int RemainingMs);
+
 public sealed record LootSessionSnapshot(string BattleId, string Phase, ImmutableArray<LootObjectSnapshot> Objects, bool HasUnclaimed)
 {
     public ImmutableArray<LootCargoSnapshot> Cargo { get; init; } = [];
     public long FreeCargoKg { get; init; }
+    public int? FreePrisonerCabins { get; init; }
+    public ImmutableArray<LootOperationSnapshot> Operations { get; init; } = [];
 }
 public sealed record LootCargoSnapshot(string ItemTypeId, long Quantity, long UnitMassKg, long QuantityStep);
 public sealed record LootObjectSnapshot(string ObjectId, string Kind, ImmutableArray<LootConsumableSnapshot> Consumables,
@@ -27,9 +58,16 @@ public sealed record LootConsumableSnapshot(string ItemTypeId, long Remaining, b
 {
     public long? OriginalQuantity { get; init; }
 }
-public sealed record ScrapLootSnapshot(string ItemTypeId, long Quantity, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0);
+public sealed record ScrapLootSnapshot(string ItemTypeId, long Quantity, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0)
+{
+    public long? EstimatedValueTokens { get; init; }
+    public bool CanClaimExtracted { get; init; }
+}
 public sealed record ModuleLootSnapshot(string InstanceId, string Category, string CatalogId, string ItemTypeId,
-    string DisplayName, string ConditionLabel, long EstimatedValueTokens, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0);
+    string DisplayName, string ConditionLabel, long EstimatedValueTokens, int ChanceBasisPoints, string State, bool CanAttempt, string? Reason, long RequiredMassKg = 0)
+{
+    public bool CanClaimExtracted { get; init; }
+}
 public sealed record LootPilotSnapshot(string SourcePilotId, string DisplayName, string? PortraitAssetId, bool Alive,
     string? CaptureReason, bool Captured = false, CrewGender Gender = CrewGender.Female);
 
@@ -43,6 +81,7 @@ public static class LootAttemptStates
     public const string NotAttempted = "NotAttempted";
     public const string Failed = "Failed";
     public const string Collected = "Collected";
+    public const string ExtractedWaiting = "ExtractedWaiting";
     public const string Discarded = "Discarded";
 }
 public static class BattleLootReasons
@@ -57,4 +96,6 @@ public static class BattleLootReasons
     public const string CargoFull = "loot_cargo_full";
     public const string ConfirmDiscardRequired = "loot_confirm_discard_required";
     public const string InvalidQuantity = "loot_invalid_quantity";
+    public const string OperationsRunning = "loot_operations_running";
+    public const string OperationNotDue = "loot_operation_not_due";
 }

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Rng;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Engine.TacticalBattle;
@@ -11,7 +12,11 @@ public sealed partial class SimulationEngine
     private static int LootRoll(ulong seed, long draw) => RngStreamNames.CreateDeterministicRandom(
         RngStreamSeedDerivation.DeriveStreamSeed(seed, "battle-loot/v1/draw/" + draw.ToString(System.Globalization.CultureInfo.InvariantCulture))).Next(10000);
 
-    internal BattleLootData InitializeBattleLoot(TacticalBattleSession session)
+    private static long DroneLootScrapQuantity(DemoLootDefinitions definitions, string frameId, bool debugSortie) =>
+        debugSortie && !definitions.DroneScrapQuantityByFrame.ContainsKey(frameId)
+            ? definitions.DroneScrapQuantityByFrame["light"] : definitions.DroneScrapQuantityByFrame[frameId];
+
+    internal BattleLootData InitializeBattleLoot(TacticalBattleSession session, bool debugSortie = false)
     {
         var definitions = _demoDefinitions.Loot ?? throw new ScenarioException("Missing loot content.");
         ulong seed = RngStreamSeedDerivation.DeriveStreamSeed(unchecked((ulong)session.Battle.Seed), "battle-loot/v1/" + session.Id);
@@ -19,15 +24,19 @@ public sealed partial class SimulationEngine
         int chance = 2500 + (int)Math.Round(GetAssignedEngineerBonusFraction() * 10000);
         var sources = ImmutableArray.CreateBuilder<LootSourceData>();
         var frozen = session.Capture();
+        if (debugSortie) frozen = frozen with { SourceShipId = _tacticalBattleSourceShipId };
+        var scenarioEnemy = debugSortie ? session.Battle.Catalog.Scenarios[session.Battle.ScenarioId].Sides
+            .Single(s => s.Id != session.PlayerSide) : null;
         foreach (var drone in session.Battle.Drones.Where(d => d.Side != session.PlayerSide).OrderBy(d => d.Id, StringComparer.Ordinal))
         {
             if (drone.Status == TacticalDroneStatus.Air) continue;
-            string layoutId = _demoCampaign.PirateCompositions.SelectMany(c => c.Drones).FirstOrDefault(d => d.DroneId == drone.Id)?.LayoutId
-                ?? session.Battle.Catalog.Layouts.Entries.First(p => p.Value == drone.Layout).Id;
+            string layoutId = scenarioEnemy is not null ? scenarioEnemy.Drones.Single(d => d.Id == drone.Id).Layout
+                : _demoCampaign.PirateCompositions.SelectMany(c => c.Drones).FirstOrDefault(d => d.DroneId == drone.Id)?.LayoutId
+                    ?? session.Battle.Catalog.Layouts.Entries.First(p => p.Value == drone.Layout).Id;
             if (drone.Status == TacticalDroneStatus.Destroyed)
             {
                 sources.Add(new(drone.Id, "DestroyedDrone", layoutId, drone.Pose.X, drone.Pose.Y, drone.Pose.Course, null, [],
-                    new(definitions.ScrapItemTypeId, definitions.DroneScrapQuantityByFrame[drone.Frame.Id], chance), []));
+                    new(definitions.ScrapItemTypeId, DroneLootScrapQuantity(definitions, drone.Frame.Id, debugSortie), chance), []));
                 continue;
             }
             var consumables = ImmutableArray.CreateBuilder<LootConsumableData>();
@@ -44,17 +53,18 @@ public sealed partial class SimulationEngine
             var pilot = new LootPilotSnapshot(LootPilotIdentity(session.Id, drone.Id, build.PilotId), build.PilotName, build.PilotPortraitAssetId,
                 true, null, Gender: build.PilotGender ?? CrewGender.Female);
             sources.Add(new(drone.Id, "DisabledDrone", layoutId, drone.Pose.X, drone.Pose.Y, drone.Pose.Course,
-                pilot, consumables.ToImmutable(), null, InitializeLootModules(session.Id, drone, seed, ref draws, chance)));
+                pilot, consumables.ToImmutable(), null, InitializeLootModules(session.Id, drone, seed, ref draws, chance, debugSortie)));
         }
         foreach (var carrier in session.Battle.Carriers.Where(c => c.Side != session.PlayerSide && !c.IsActive).OrderBy(c => c.Id, StringComparer.Ordinal))
         {
             var composition = _demoCampaign.PirateCompositions.SingleOrDefault(c => c.CarrierId == carrier.Id);
-            string layout = composition is not null ? _demoDefinitions.Encounters!.Profiles.Single(p => p.SignatureTypeId == composition.SignatureTypeId).CarrierLayoutId
-                : "carrier.standard";
+            string layout = scenarioEnemy is not null ? scenarioEnemy.CarrierGroup.Single(c => c.Id == carrier.Id).Layout
+                : composition is not null ? _demoDefinitions.Encounters!.Profiles.Single(p => p.SignatureTypeId == composition.SignatureTypeId).CarrierLayoutId
+                    : "carrier.standard";
             sources.Add(new(carrier.Id, session.Battle.SelfDestructedCarrierIds.Contains(carrier.Id) ? "SelfDestructCarrier" : "Carrier", layout, carrier.Pose.X, carrier.Pose.Y, carrier.Pose.Course, null, [],
                 new(definitions.ScrapItemTypeId, definitions.CarrierScrapQuantityByLayout[layout], chance), []));
         }
-        return new(session.Id, LootPhases.Open, definitions.Fingerprint, seed, draws, frozen, sources.ToImmutable());
+        return new(session.Id, LootPhases.Open, definitions.Fingerprint, seed, draws, frozen, sources.ToImmutable()) { DebugSortie = debugSortie };
     }
 
     private bool TryPrepareLootCargo(string itemId, long quantity, out Action? commit)
@@ -95,12 +105,35 @@ public sealed partial class SimulationEngine
         return true;
     }
 
+    private long MaximumLootQuantity(string itemId, long requested)
+    {
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed);
+        long mass = LootItemDefinition(itemId)?.UnitMassKg ?? 0;
+        if (ship is null || mass <= 0) return 0;
+        long capped = Math.Min(requested, PlayerFreeHoldKg(ship) / mass);
+        long unplaced = capped;
+        foreach (var module in ship.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0))
+        {
+            unplaced -= Math.Min(unplaced, Math.Max(0, module.AvailableCapacityKg ?? 0) / mass);
+            if (unplaced == 0) break;
+        }
+        return capped - unplaced;
+    }
+
+    private static string ResolveLootAttempt(ref BattleLootData loot, int chance, bool fits)
+    {
+        bool success = LootAttemptSucceeded(LootRoll(loot.Seed, loot.DrawCount), chance);
+        loot = loot with { DrawCount = checked(loot.DrawCount + 1) };
+        return !success ? LootAttemptStates.Failed : fits ? LootAttemptStates.Collected : LootAttemptStates.ExtractedWaiting;
+    }
+
     internal void PrepareBattleLootCommand(DemoCampaignCommand command, ref DemoCampaignData candidate,
-        ref string? reason, ref Action? commit)
+        ref string? reason, ref Action? commit, bool completingOperation = false)
     {
         if (command is not ILootCampaignCommand lootCommand || candidate.LootSession is not { } loot || loot.BattleId != lootCommand.BattleId)
         { reason = BattleLootReasons.WrongBattle; return; }
         if (loot.Phase != LootPhases.Open) { reason = BattleLootReasons.LootClosed; return; }
+        if (!completingOperation && _lootOperations.Count != 0) { reason = BattleLootReasons.OperationsRunning; return; }
         if (command is JettisonCargoCommand jettison) { PrepareJettisonCargo(jettison, ref candidate, ref reason, ref commit); return; }
         string? objectId = command switch
         {
@@ -118,22 +151,23 @@ public sealed partial class SimulationEngine
             var item = source.Consumables.FirstOrDefault(c => c.ItemTypeId == collect.ItemTypeId && !c.Destroyed);
             if (item is null) { reason = BattleLootReasons.InvalidTarget; return; }
             if (collect.Quantity <= 0 || collect.Quantity > item.Remaining) { reason = BattleLootReasons.InvalidQuantity; return; }
-            if (!TryPrepareLootCargo(item.ItemTypeId, collect.Quantity, out commit)) { reason = BattleLootReasons.CargoFull; return; }
-            source = source with { Consumables = source.Consumables.Replace(item, item with { Remaining = item.Remaining - collect.Quantity }) };
+            long quantity = completingOperation ? MaximumLootQuantity(item.ItemTypeId, collect.Quantity) : collect.Quantity;
+            if (!TryPrepareLootCargo(item.ItemTypeId, quantity, out commit)) { reason = BattleLootReasons.CargoFull; return; }
+            source = source with { Consumables = source.Consumables.Replace(item, item with { Remaining = item.Remaining - quantity }) };
         }
         else if (command is AttemptScrapCommand)
         {
             if (source.Scrap is not { } scrap) { reason = BattleLootReasons.InvalidTarget; return; }
             if (scrap.State != LootAttemptStates.NotAttempted) { reason = BattleLootReasons.AlreadyAttempted; return; }
-            if (!TryPrepareLootCargo(scrap.ItemTypeId, scrap.Quantity, out var grant)) { reason = BattleLootReasons.CargoFull; return; }
-            bool success = LootAttemptSucceeded(LootRoll(loot.Seed, loot.DrawCount), scrap.ChanceBasisPoints);
-            loot = loot with { DrawCount = checked(loot.DrawCount + 1) };
-            source = source with { Scrap = scrap with { State = success ? LootAttemptStates.Collected : LootAttemptStates.Failed } };
-            commit = success ? grant : null;
+            bool fits = TryPrepareLootCargo(scrap.ItemTypeId, scrap.Quantity, out var grant);
+            if (!fits && !completingOperation) { reason = BattleLootReasons.CargoFull; return; }
+            string state = ResolveLootAttempt(ref loot, scrap.ChanceBasisPoints, fits);
+            source = source with { Scrap = scrap with { State = state } };
+            commit = state == LootAttemptStates.Collected ? grant : null;
         }
         else if (command is AttemptModuleSalvageCommand salvage)
         {
-            PrepareModuleSalvage(salvage, ref loot, ref source, ref reason, ref commit);
+            PrepareModuleSalvage(salvage, ref loot, ref source, ref reason, ref commit, completingOperation);
             if (reason is not null) return;
         }
         else { reason = DemoCampaignReasons.Unsupported; return; }
@@ -172,18 +206,32 @@ public sealed partial class SimulationEngine
             s.Scrap is { } scrap ? ProjectScrap(scrap, open, CanFit) : null,
             s.Modules.Where(m => !m.Destroyed).Select(m => ProjectLootModule(m, open, CanFit)).ToImmutableArray(), ProjectLootPilot(loot, s, ship, freeCabins), s.X, s.Y, s.Direction)).ToImmutableArray();
         return new(loot.BattleId, loot.Phase, objects, open && objects.Any(s =>
-            s.Consumables.Any(c => c.Remaining > 0) || s.Scrap?.State == LootAttemptStates.NotAttempted ||
-            s.Modules.Any(m => m.State == LootAttemptStates.NotAttempted) || s.Pilot is { Alive: true, Captured: false }))
-        { Cargo = BuildLootCargo(), FreeCargoKg = freeMass };
+            s.Consumables.Any(c => c.Remaining > 0) || IsUnclaimedAttempt(s.Scrap?.State) ||
+            s.Modules.Any(m => IsUnclaimedAttempt(m.State)) || s.Pilot is { Alive: true, Captured: false }))
+        {
+            Cargo = BuildLootCargo(),
+            FreeCargoKg = freeMass,
+            FreePrisonerCabins = ship is null ? null : freeCabins,
+            Operations = ProjectLootOperations()
+        };
     }
+
+    private static bool IsUnclaimedAttempt(string? state) =>
+        state is LootAttemptStates.NotAttempted or LootAttemptStates.ExtractedWaiting;
 
     private ScrapLootSnapshot ProjectScrap(LootScrapData scrap, bool open, Func<string, long, bool> canFit)
     {
         string? reason = !open ? BattleLootReasons.LootClosed : scrap.State != LootAttemptStates.NotAttempted ? BattleLootReasons.AlreadyAttempted :
             !canFit(scrap.ItemTypeId, scrap.Quantity) ? BattleLootReasons.CargoFull : null;
-        long mass = LootItemDefinition(scrap.ItemTypeId)?.UnitMassKg ?? 0;
+        var item = LootItemDefinition(scrap.ItemTypeId);
+        long mass = item?.UnitMassKg ?? 0;
+        long? value = item?.BasePriceCredits;
         return new(scrap.ItemTypeId, scrap.Quantity, scrap.ChanceBasisPoints, scrap.State, reason is null, reason,
-            mass > 0 && scrap.Quantity <= long.MaxValue / mass ? scrap.Quantity * mass : 0);
+            mass > 0 && scrap.Quantity <= long.MaxValue / mass ? scrap.Quantity * mass : 0)
+        {
+            EstimatedValueTokens = value is > 0 && scrap.Quantity <= long.MaxValue / value ? scrap.Quantity * value : null,
+            CanClaimExtracted = open && scrap.State == LootAttemptStates.ExtractedWaiting && canFit(scrap.ItemTypeId, scrap.Quantity)
+        };
     }
 
     // Closed audit identities may outlive their content; quantities and outcomes remain visible.
