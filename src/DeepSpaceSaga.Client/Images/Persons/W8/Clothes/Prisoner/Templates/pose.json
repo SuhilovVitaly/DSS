@@ -1,0 +1,154 @@
+{
+  "pose": "prisoner",
+  "canvas": [
+    416,
+    747
+  ],
+  "coordinateSystem": "Pixel coordinates, upper-left origin; left/right are anatomical, right arm is screen-left.",
+  "portrait": {
+    "file": "prisoner.png",
+    "cellSize": [
+      136,
+      144
+    ],
+    "drawOrigin": [
+      48,
+      416
+    ],
+    "referenceBounds": [
+      63,
+      431,
+      162,
+      547
+    ]
+  },
+  "expressions": [
+    "neutral",
+    "pain",
+    "anger",
+    "joy",
+    "pleasure"
+  ],
+  "renderOrder": [
+    "body",
+    "portrait"
+  ],
+  "outfits": {
+    "GREEN": "../GREEN.png",
+    "GRAY": "../GRAY.png",
+    "IVORY": "../IVORY.png"
+  },
+  "referenceBody": "../GREEN.png",
+  "referenceHead": "../GREEN.head.png",
+  "referenceSkinTone": "#C18A69",
+  "masks": {
+    "referenceBodyAlpha": "green-body-alpha.png",
+    "neckProtect": "neck-protect.png",
+    "portraitAlpha": "portrait-alpha.png",
+    "skin": "skin-mask.png",
+    "allowedRightShoulderFill": "shoulder-right-mask.png"
+  },
+  "landmarks": {
+    "neckBack": [
+      151,
+      481
+    ],
+    "neckSeam": [
+      140,
+      514
+    ],
+    "collarBack": [
+      151,
+      467
+    ],
+    "collarOpening": [
+      164,
+      541
+    ],
+    "shoulderRight": [
+      105,
+      529
+    ],
+    "shoulderLeft": [
+      210,
+      480
+    ],
+    "elbowRight": [
+      103,
+      599
+    ],
+    "elbowLeft": [
+      215,
+      607
+    ],
+    "wristRight": [
+      82,
+      689
+    ],
+    "wristLeft": [
+      188,
+      705
+    ],
+    "palmRight": [
+      64,
+      708
+    ],
+    "palmLeft": [
+      163,
+      725
+    ],
+    "fingertipsRight": [
+      15,
+      716
+    ],
+    "fingertipsLeft": [
+      117,
+      737
+    ],
+    "waist": [
+      258,
+      554
+    ],
+    "hipRight": [
+      246,
+      574
+    ],
+    "hipLeft": [
+      307,
+      556
+    ],
+    "kneeRight": [
+      150,
+      676
+    ],
+    "kneeLeft": [
+      258,
+      690
+    ],
+    "ankleRight": [
+      230,
+      672
+    ],
+    "ankleLeft": [
+      336,
+      674
+    ],
+    "bootToeRight": [
+      244,
+      640
+    ],
+    "bootToeLeft": [
+      399,
+      683
+    ],
+    "ground": [
+      204,
+      745
+    ]
+  },
+  "groundRow": 745,
+  "sourceSha256": {
+    "GREEN.png": "4b49761c227f8842ac237a66dbe8ba2412476d5def273c9faa796a5b9381e7d6",
+    "GREEN.head.png": "86f033ef9a0a8d9d34c46c149501b1b02f7a3aab61abdcb235fc972932f97836"
+  }
+}

@@ -111,6 +111,7 @@
   <ItemGroup>
     <Folder Include="Images\Persons\W5\Clothes\" />
     <Folder Include="Images\Persons\W5\Portraits\" />
+    <Folder Include="Images\Persons\W8\Clothes\" />
     <Folder Include="Images\UI\GameSessionScreenUI\title-bar\" />
     <Folder Include="UI\Screens\" />
   </ItemGroup>
