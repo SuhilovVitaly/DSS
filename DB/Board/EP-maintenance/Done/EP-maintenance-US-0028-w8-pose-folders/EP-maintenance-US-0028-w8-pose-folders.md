@@ -16,3 +16,5 @@ implementation_status: implemented
 - [AC1. Разложить тела W8 по каталогам поз](EP-maintenance-US-0028-TK-0001-sort-outfits-by-pose/EP-maintenance-US-0028-TK-0001-sort-outfits-by-pose.md). Три готовых спрайта лежат в `Clothes/ThreeQuarterOutfit`, а `Clothes/Prisoner` готова для будущего тела. Существующие сборки воспроизводятся после переноса.
 
 - [AC2. Правое плечо костюмов пленного](EP-maintenance-US-0028-TK-0002-prisoner-shoulder/EP-maintenance-US-0028-TK-0002-prisoner-shoulder.md). GREEN, GRAY и IVORY используют один восстановленный силуэт плеча.
+
+- [AC3. Чёткие детали во всех размерах костюма пленного](EP-maintenance-US-0028-TK-0003-prisoner-size-detail/EP-maintenance-US-0028-TK-0003-prisoner-size-detail.md). Промпт задаёт прорисовку смещённой отделки и проверку силуэта по сохранённому PNG каждого размера.

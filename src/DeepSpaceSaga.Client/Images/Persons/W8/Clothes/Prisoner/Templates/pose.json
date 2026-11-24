@@ -16,10 +16,10 @@
       416
     ],
     "referenceBounds": [
-      63,
-      431,
-      162,
-      547
+      78,
+      434,
+      158,
+      546
     ]
   },
   "expressions": [
@@ -34,19 +34,23 @@
     "portrait"
   ],
   "outfits": {
-    "GREEN": "../GREEN.png",
-    "GRAY": "../GRAY.png",
-    "IVORY": "../IVORY.png"
+    "RIBBONSMALL": "../RIBBONSMALL.png",
+    "RIBBONMEDIUM": "../RIBBONMEDIUM.png",
+    "RIBBONLARGE": "../RIBBONLARGE.png",
+    "AEGISSMALL": "../AEGISSMALL.png",
+    "AEGISMEDIUM": "../AEGISMEDIUM.png",
+    "AEGISLARGE": "../AEGISLARGE.png"
   },
-  "referenceBody": "../GREEN.png",
-  "referenceHead": "../GREEN.head.png",
-  "referenceSkinTone": "#C18A69",
+  "referenceSkinTone": "#C98E6E",
   "masks": {
-    "referenceBodyAlpha": "green-body-alpha.png",
-    "neckProtect": "neck-protect.png",
-    "portraitAlpha": "portrait-alpha.png",
-    "skin": "skin-mask.png",
-    "allowedRightShoulderFill": "shoulder-right-mask.png"
+    "skinByOutfit": {
+      "RIBBONSMALL": "skin-mask-ribbonsmall.png",
+      "RIBBONMEDIUM": "skin-mask-ribbonmedium.png",
+      "RIBBONLARGE": "skin-mask-ribbonlarge.png",
+      "AEGISSMALL": "skin-mask-aegissmall.png",
+      "AEGISMEDIUM": "skin-mask-aegismedium.png",
+      "AEGISLARGE": "skin-mask-aegislarge.png"
+    }
   },
   "landmarks": {
     "neckBack": [
@@ -67,7 +71,7 @@
     ],
     "shoulderRight": [
       105,
-      529
+      511
     ],
     "shoulderLeft": [
       210,
@@ -144,11 +148,49 @@
     "ground": [
       204,
       745
+    ],
+    "upperNeckFront": [
+      130,
+      484
+    ],
+    "upperNeckBack": [
+      151,
+      475
     ]
   },
   "groundRow": 745,
-  "sourceSha256": {
-    "GREEN.png": "4b49761c227f8842ac237a66dbe8ba2412476d5def273c9faa796a5b9381e7d6",
-    "GREEN.head.png": "86f033ef9a0a8d9d34c46c149501b1b02f7a3aab61abdcb235fc972932f97836"
+  "headLandmarks": {
+    "crown": [
+      119,
+      436
+    ],
+    "forehead": [
+      103,
+      490
+    ],
+    "eyeNear": [
+      120,
+      512
+    ],
+    "eyeFar": [
+      94,
+      514
+    ],
+    "noseTip": [
+      104,
+      531
+    ],
+    "earNear": [
+      148,
+      493
+    ],
+    "jawAngle": [
+      142,
+      515
+    ],
+    "chin": [
+      119,
+      543
+    ]
   }
 }
