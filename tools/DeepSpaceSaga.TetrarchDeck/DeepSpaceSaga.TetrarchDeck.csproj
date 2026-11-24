@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <GameContent>../../src/DeepSpaceSaga.Client</GameContent>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj" />
+    <None Update="Art/*.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Art/crew-female.png;Art/crew-male.png;Art/walk-*.png;Art/drone.png" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+    <None Update="Art/crew-motion.bin;Art/NOTICE-Cesium.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(GameContent)/Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png" Link="Art/tetrarch.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(GameContent)/Scenarios/**/scenario.json" LinkBase="Scenarios" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(GameContent)/Data/Ships/*carrier.json" Link="Data/Ships/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(GameContent)/Data/Modules/**/*.json" LinkBase="Data/Modules" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(GameContent)/Images/Persons/M4/Portraits/*.png" Link="Images/Persons/M4/Portraits/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(GameContent)/Images/Persons/W4/Portraits/*.png" Link="Images/Persons/W4/Portraits/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

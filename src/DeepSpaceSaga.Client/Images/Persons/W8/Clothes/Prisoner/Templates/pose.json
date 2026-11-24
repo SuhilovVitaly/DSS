@@ -33,52 +33,10 @@
     "body",
     "portrait"
   ],
-  "outfits": {
-    "SATIN": "../SATIN.png",
-    "FIELD": "../FIELD.png",
-    "RESCUE": "../RESCUE.png",
-    "FROST": "../FROST.png",
-    "ORCHID": "../ORCHID.png",
-    "SATINSMALL": "../SATINSMALL.png",
-    "SATINMEDIUM": "../SATINMEDIUM.png",
-    "SATINLARGE": "../SATINLARGE.png",
-    "FIELDSMALL": "../FIELDSMALL.png",
-    "FIELDMEDIUM": "../FIELDMEDIUM.png",
-    "FIELDLARGE": "../FIELDLARGE.png",
-    "RESCUESMALL": "../RESCUESMALL.png",
-    "RESCUEMEDIUM": "../RESCUEMEDIUM.png",
-    "RESCUELARGE": "../RESCUELARGE.png",
-    "FROSTSMALL": "../FROSTSMALL.png",
-    "FROSTMEDIUM": "../FROSTMEDIUM.png",
-    "FROSTLARGE": "../FROSTLARGE.png",
-    "ORCHIDSMALL": "../ORCHIDSMALL.png",
-    "ORCHIDMEDIUM": "../ORCHIDMEDIUM.png",
-    "ORCHIDLARGE": "../ORCHIDLARGE.png"
-  },
-  "referenceSkinTone": "#C18A69",
+  "outfits": {},
+  "referenceSkinTone": "#C98E6E",
   "masks": {
-    "skinByOutfit": {
-      "SATIN": "skin-mask-satin.png",
-      "FIELD": "skin-mask-field.png",
-      "RESCUE": "skin-mask-rescue.png",
-      "FROST": "skin-mask-frost.png",
-      "ORCHID": "skin-mask-orchid.png",
-      "SATINSMALL": "skin-mask-satinsmall.png",
-      "SATINMEDIUM": "skin-mask-satinmedium.png",
-      "SATINLARGE": "skin-mask-satinlarge.png",
-      "FIELDSMALL": "skin-mask-fieldsmall.png",
-      "FIELDMEDIUM": "skin-mask-fieldmedium.png",
-      "FIELDLARGE": "skin-mask-fieldlarge.png",
-      "RESCUESMALL": "skin-mask-rescuesmall.png",
-      "RESCUEMEDIUM": "skin-mask-rescuemedium.png",
-      "RESCUELARGE": "skin-mask-rescuelarge.png",
-      "FROSTSMALL": "skin-mask-frostsmall.png",
-      "FROSTMEDIUM": "skin-mask-frostmedium.png",
-      "FROSTLARGE": "skin-mask-frostlarge.png",
-      "ORCHIDSMALL": "skin-mask-orchidsmall.png",
-      "ORCHIDMEDIUM": "skin-mask-orchidmedium.png",
-      "ORCHIDLARGE": "skin-mask-orchidlarge.png"
-    }
+    "skinByOutfit": {}
   },
   "landmarks": {
     "neckBack": [

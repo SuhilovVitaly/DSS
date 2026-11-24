@@ -1,0 +1,8 @@
+Crew body mesh and walk animation adapted from Cesium Man © 2017 Cesium.
+Source: https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan
+License: Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+
+The deck application uses a cropped body, modified stride, custom uniform
+materials, an added standing pose, DSS portrait heads and runtime animation.
+The original texture and logo are omitted.
