@@ -33,10 +33,24 @@
     "body",
     "portrait"
   ],
-  "outfits": {},
+  "outfits": {
+    "RIBBONSMALL": "../RIBBONSMALL.png",
+    "RIBBONMEDIUM": "../RIBBONMEDIUM.png",
+    "RIBBONLARGE": "../RIBBONLARGE.png",
+    "AEGISSMALL": "../AEGISSMALL.png",
+    "AEGISMEDIUM": "../AEGISMEDIUM.png",
+    "AEGISLARGE": "../AEGISLARGE.png"
+  },
   "referenceSkinTone": "#C98E6E",
   "masks": {
-    "skinByOutfit": {}
+    "skinByOutfit": {
+      "RIBBONSMALL": "skin-mask-ribbonsmall.png",
+      "RIBBONMEDIUM": "skin-mask-ribbonmedium.png",
+      "RIBBONLARGE": "skin-mask-ribbonlarge.png",
+      "AEGISSMALL": "skin-mask-aegissmall.png",
+      "AEGISMEDIUM": "skin-mask-aegismedium.png",
+      "AEGISLARGE": "skin-mask-aegislarge.png"
+    }
   },
   "landmarks": {
     "neckBack": [

@@ -158,6 +158,8 @@ and the natural overlaps of the gently bent fingers, including inside gloves.
 2. Для нового рисунка приложи [чистый манекен](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/PRISONER-MANNEQUIN.png) и его копию с [разметкой суставов](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/PRISONER-LANDMARKS.png) как POSE ONLY. Они задают ракурс, положение рук и ног и опору. Комплекцию задаёт подложка выбранного размера. Для серийного выпуска приложи готового стоящего кандидата как образец дизайна. В пилоте одной позы дизайн задаёт заказ. Образец из `Portraits-Master` передай как STYLE ONLY. Повтори материалы, цвета, панели, застёжки и отделку на согнутом теле. Сохрани положение шеи, ворота, обоих плеч, локтей, кистей, коленей и стоп по шаблону. Для одной расцветки используй тот же рецепт цвета и тени исходного тела пленного.
 3. Начни с принятой подложки пленного того же размера. Для закрытого комбинезона переноси RGB только внутрь непрозрачной ткани вне маски кожи текущего размера и `masks.neckProtect` общего шаблона. Для открытого кроя используй правила раздела «Крой с открытой кожей». Маски шаблона читай как одноканальные изображения L. Сохрани исходную альфу по всему холсту, исходный RGBA кожи, зоны шеи и сглаженных краёв. В зоне `masks.allowedRightShoulderFill` можно менять рисунок ткани с сохранением заполнения и контура восстановленного плеча. Сохрани кандидата как RGBA8 со straight alpha.
 
+При подготовке Medium и Large используй Small как образец дизайна. Законченный рисунок каждого размера должен давать один силуэт и одно положение каждой детали. Это правило действует и при генерации, и при подгонке перед экспортом. Если бант, ремень или складка смещаются, перерисуй деталь целиком вместе с кожей или тканью под её прежним положением. При смещении внешнего края очисти прежний силуэт до прозрачности и восстанови сглаживание нового края. Не смешивай два размерных варианта полупрозрачным переходом (crossfade) через фурнитуру, край тела или просвет между частями фигуры. Мягкие тени внутри одной поверхности сохраняй. После такой правки сверь именную маску кожи с окончательным рисунком и повтори проверки защищённых зон.
+
 Для нового рисунка в позе пленного включи в запрос следующий блок. Ориентиры таза и опоры бери из `landmarks` игрового манифеста.
 
 ```text
@@ -167,6 +169,11 @@ Render the headless garment with clear hands and both knees at the same contacts
 Match the standing garment when supplied; for a single-pose pilot follow the costume brief.
 Small uses the former Medium physique. Medium has 5% more fat mass than Small;
 Large has 10% more fat mass than Small. Keep height, skeleton and muscle mass fixed.
+Paint one finished body for the requested size. Use Small as a design reference.
+Redraw each shifted strap, knot and ribbon tail in its new position, including the
+surface exposed where it used to be. Give the heel and ankle a single continuous
+silhouette. Keep the painted edges as legible as in Small at native resolution.
+Do not crossfade size variants or leave translucent copies of old contours.
 Keep each forearm on the template elbow-to-wrist axis. Let both sides taper smoothly
 from the muscle belly toward the wrist. Avoid waves, dents and repeated bulges in the outline.
 Keep both palms planted. Match each wrist, palm and fingertip landmark on its
@@ -185,6 +192,8 @@ paint this volume inside the approved silhouette for this size and preserve its 
 ## Шаг 6. Проверь пленного по сохранённым PNG
 
 Примени [проверку и локальное исправление кистей](#кисти-и-пальцы-в-обеих-позах) к обеим рукам каждого размера.
+
+- Поставь три сохранённых PNG тела без головы рядом в масштабе 1:1, затем увеличь одинаковые фрагменты в ×4 без интерполяции. Проследи пояс и отделку на бедре от крепления до каждого свободного конца, а также край голени и пятки на светлом и тёмном фоне. Сверь детали с дизайном Small с учётом их нового положения. Второй след ленты, внезапно обрезанная деталь или полупрозрачная копия силуэта за сглаженным краем — брак данного размера. Вернись к его исходному рисунку, перерисуй участок и проверь повторный экспорт до регистрации PNG.
 
 - По сохранённому PNG проверь оба предплечья отдельно при 1:1 и ×4. На каждом проведи ось между ориентирами локтя и запястья из `landmarks`, затем проследи обе кромки до кисти. Сохрани естественную выпуклость мышцы и плавное сужение к запястью. Чередующиеся впадины и выпуклости, излом у манжеты или боковой изгиб оси требуют правки до приёмки. Складки рукава допустимы внутри контура. Проверь также просвет между руками на сборке с головой.
 
