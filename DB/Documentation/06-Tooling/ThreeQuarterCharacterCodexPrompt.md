@@ -52,13 +52,15 @@ W8 style sheet. Draw the same person with head bowed deeply down-left, crown vis
 Match camera, foreshortening, skull scale and placement at the collar and raised
 shoulder. The near ear sits above and right of the near eye. The bridge partly hides
 the far eye. The nose tip is left of the chin. Preserve the full near cheekbone,
-jaw angle and rounded chin. Paint a short continuous patch of upper throat down to
-the Adam’s apple, with a soft shadow below the chin. Let the patch overlap exposed
-body skin. Keep nape locks attached and skin behind the ear clean. Trace this
+jaw angle and rounded chin. Trace the visible chin-to-cheek contour against the garment.
+Where the jaw overlaps cloth, end the cutout exactly on that anatomical contour:
+all pixels outside its antialiased edge must be transparent. Keep a crisp painted edge
+on the face side. Upper throat may connect only over exposed body skin shared by all
+three outfits. Never paint neck skin or a cast shadow on the garment. Keep nape locks attached and skin behind the ear clean. Trace this
 character’s own silhouette. Leave collar, sleeve and shoulder on the body layer.
 ```
 
-Сверь обе головы по носу, скулам, подбородку, уху, линии роста волос и приметам. По исходному рисунку пленного проследи скулу до угла челюсти, шею под подбородком и пряди за ухом. Зарегистрируй голову по черепу, уху, подбородку и верхнему срезу шеи. На светлом и тёмном фоне проверь собственный непрерывный контур, затем примерь его на три тела с `skinTone`. Тень заканчивается на открытой коже. У левого на экране плеча виден естественный переход в рукав. Ступенька под челюстью, прямая срезанная скула, прорези в волосах или отдельные пиксели на затылке требуют исправления нейтрального слоя. Сохрани принятый полный холст как `prisoner-neutral-fit.png`. Присваивать голове альфу чужого `portraitAlpha`, вычитать из неё силуэт тела или достраивать шею растяжением крайнего пикселя запрещено.
+Сверь обе головы по носу, скулам, подбородку, уху, линии роста волос и приметам. По исходному рисунку пленного проследи скулу до угла челюсти, шею под подбородком и пряди за ухом. Зарегистрируй голову по черепу, уху, подбородку и верхнему срезу шеи. На светлом и тёмном фоне проверь собственный непрерывный контур, затем примерь его на три тела с `skinTone`. Разметь на зарегистрированном исходном neutral собственную линию подбородок–скула. Примерь её на GREEN, GRAY и IVORY. Там, где под этой линией хотя бы один костюм показывает ткань, доведи прозрачность точно до контура лица. Сохрани естественное сглаживание в граничном пикселе и ясный рисунок со стороны щеки. Снаружи края альфа должна быть 0. Короткий переход шеи разрешён только там, где все три костюма показывают открытую кожу. Край у ткани не растушёвывай. До обработки альфы разметь на полном холсте маску L `prisoner-jaw-clear.png`: белым отметь зону сразу за сглаженным краем под челюстью над тканью, включая место возможного выступа шеи. Сверь разметку с неизменённым исходником, исключи реальные пряди и обязательное перекрытие верхнего среза тела. Не выводи контрольную маску из готового альфа-канала. Для всех пяти эмоций используй одну разметку. У левого на экране плеча виден естественный переход в рукав. Ступенька под челюстью, прямая срезанная скула, прорези в волосах или отдельные пиксели на затылке требуют исправления нейтрального слоя. Сохрани принятый полный холст как `prisoner-neutral-fit.png`. Присваивать голове альфу чужого `portraitAlpha`, вычитать из неё силуэт тела или достраивать шею растяжением крайнего пикселя запрещено.
 
 ## Четыре изменения мимики на каждую позу
 
@@ -82,7 +84,7 @@ Pleasure: relaxed brows, half-closed lids, soft closed smile.
 Убирай фон до уменьшения. Для исходника на цветной подложке проверь отсутствие цветной каймы на светлом и тёмном фоне. Уменьшай зарегистрированный рисунок фильтром BOX в premultiplied alpha, сохраняй PNG в **straight RGBA8 sRGB**. При работе с подложкой ×5 верни рисунок в её исходный прямоугольник. Оставь сглаживание внешнего контура и прозрачные поля. Волосы стойки доходят максимум до плеч. Если рисунок выходит за ячейку, исправь исходник до экспорта.
 
 - **Стойка.** Сохрани `layers/<emotion>/{back-hair,face,front-hair}.png` размером 282×747. Задние волосы проходят за телом, передние пряди лежат поверх. Лицо и собственная тень под челюстью заканчиваются внутри общей шеи. Ткань и ворот принадлежат телу. Импортёр собирает мастер на GREEN, учитывает перекрытие задних волос и включает в портрет кожу тела выше шва.
-- **Пленный.** Сохрани пять `prisoner-layers/<emotion>.png` размером 416×747. В слоях остаются голова, волосы и собственный участок верхней шеи. Непрозрачные пиксели головы закрывают верхний срез тела. Эталонная маска контролирует именно перекрытие среза. Остальной силуэт сверяется с собственным `prisoner-neutral-fit.png`.
+- **Пленный.** Сохрани пять `prisoner-layers/<emotion>.png` размером 416×747. В слоях остаются голова, волосы и участок верхней шеи только над общей открытой кожей тел. Непрозрачные пиксели головы закрывают верхний срез тела. Эталонная маска контролирует именно перекрытие среза. Остальной силуэт сверяется с собственным `prisoner-neutral-fit.png`.
 
 Для серии сначала собери комплект в рабочем каталоге кандидата. Команды ниже выполняй в одной сессии PowerShell из `Antropik`, подставив ID и выбранный по щеке тон. Импорт одного персонажа выполняй последовательно: `add_character.py` блокирует на время записи общие рабочие манифесты. Даже с `--portraits-dir` он обновляет `characters`, `work/provenance.json` и рабочие мастера. Папка кандидата — место назначения игровых файлов.
 
@@ -178,6 +180,8 @@ for outfit, rel in pr["outfits"].items():
     assert np.array_equal(read(template / rel, "RGBA", canvas)[seam], reference[seam]), outfit
 
 neutral = read(src / "prisoner-neutral-fit.png", "RGBA", canvas)
+jaw_clear = read(src / "prisoner-jaw-clear.png", "L", canvas) > 0
+assert jaw_clear[area].any() and not (jaw_clear & seam).any(), "jaw mask"
 cells = []
 for emotion in emotions:
     head = read(src / "prisoner-layers" / f"{emotion}.png", "RGBA", canvas)
@@ -185,6 +189,7 @@ for emotion in emotions:
     if emotion == "neutral":
         assert np.array_equal(head, neutral), "accepted neutral"
     assert (head[..., 3][seam] == 255).all(), (emotion, "prisoner neck")
+    assert not head[..., 3][jaw_clear].any(), (emotion, "neck over garment")
     cells.append(head[area])
 with TemporaryDirectory(dir=dst) as tmp:
     candidate = Path(tmp) / p["file"]
