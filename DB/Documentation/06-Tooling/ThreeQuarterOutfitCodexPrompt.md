@@ -60,9 +60,18 @@ The source fixes the entire canvas, pose, body proportions, shoulders,
 neck opening, collar contour, hand and boot positions, and silhouette.
 Keep the original framing and alignment. Use the allowed cloth panels
 for the design. Keep the upper portrait and neck docking area as supplied.
+Where the cut exposes neck skin to be painted, match the midtone of the adjoining
+GREEN neck. Keep the hue even from side to side and down to the collarbones.
+Use a soft, low-contrast change in lightness to suggest volume. Avoid blotches,
+bright edge stripes and coloured reflections from the garment.
 Use art samples selected from the Portraits-Master folder (STYLE ONLY) for painted folds, edge weight,
 material highlights and detail density. Follow the requested garment design and
 the pose underlay.
+Give the adult figure a more feminine shape through the cut of the garment.
+Shape fitted panels around the bust, bring them in at the natural waist and
+let them curve out over the hips. In loose or rigid clothing, carry that shape
+through darts, panel seams and the way the material hangs. Keep the proportions
+and outer contour of the GREEN coverall wherever its template is locked.
 Keep details inside the original body silhouette.
 ```
 
@@ -80,6 +89,8 @@ Keep details inside the original body silhouette.
 
 Перечитай сохранённый PNG и сравни с исходным GREEN по координатам пикселей.
 
+**Ровный тон шеи в стойке.** Осмотри открытый участок от линии челюсти до воротника или ключиц при 1:1 на сборке с базовым и контрастным `skinTone`. Слева и справа должен читаться один оттенок кожи с мягкой разницей освещённости. Цветные пятна, светлая полоса вдоль края или скачок тона на стыке требуют исправления. В новом рисунке выровняй полутон по соседней коже эталонной шеи, сохрани естественную тень под челюстью. Защищённые пиксели GREEN переноси по правилам шага 3.
+
 | Проверка | Условие выпуска |
 |---|---|
 | Формат и контур | Режим RGBA8, размер из `pose.json`, альфа совпадает пиксель в пиксель по всему холсту |
@@ -94,14 +105,30 @@ Keep details inside the original body silhouette.
 
 Осмотри стойку в масштабе 1:1 рядом с образцом из `Portraits-Master`. Сравни толщину контура, свет на складках и детализацию застёжек. При совпадении формы GREEN проверки геометрии дополняют визуальную примерку VL8H3A. У открытого кроя проверь также перекрытие прядей, контур шеи и границу ткани на доступных игровых атласах. Для иного кроя выполни проверки открытого костюма выше. Точка стыковки остаётся общей.
 
+На сохранённой стойке при 1:1 проверь, читается ли переход от грудной клетки через талию к бёдрам. В приталенной одежде его показывают крой и натяжение ткани, в свободной — посадка пояса и крупные складки. Толщина и жёсткость материала должны оставаться убедительными.
+
 ## Шаг 5. Перенеси дизайн на готовый шаблон пленного
 
 1. Загрузи [игровой манифест пленного](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/Prisoner/Templates/pose.json). Из него бери `landmarks`, `groundRow`, размеры и точку вставки. Эталоны и проверочные маски бери из [производственного шаблона](../../../../DSS-Images/Characters/W8/Antropik/prisoner/Templates/template.json). Каждый путь отсчитывай от файла JSON, в котором он записан. Для геометрии используй `referenceBody` производственного шаблона и [BODY-GUIDE.png](../../../../DSS-Images/Characters/W8/Antropik/prisoner/Templates/BODY-GUIDE.png). Холст 416 × 747. Правое плечо персонажа находится слева на изображении и уже дорисовано в GREEN.
 2. Для нового рисунка передай ImageGen тело пленного как основу позы и готового стоящего кандидата как образец дизайна и изображение из `Portraits-Master` с пометкой `STYLE ONLY` для рисовки ткани и фурнитуры. Повтори материалы, цвета, панели, застёжки и отделку на согнутом теле. Сохрани положение шеи, ворота, обоих плеч, локтей, кистей, коленей и стоп по шаблону. Для одной расцветки используй тот же рецепт цвета и тени исходного тела пленного.
 3. Начни с копии `referenceBody`. В координатах пленного выдели ткань по его собственному рисунку. Переноси новый RGB только внутрь непрозрачной ткани с нулём в масках `masks.skin` и `masks.neckProtect`. Маски шаблона читай как одноканальные изображения L. Сохрани исходную альфу по всему холсту, исходный RGBA кожи, зоны шеи и сглаженных краёв. В зоне `masks.allowedRightShoulderFill` можно менять рисунок ткани с сохранением заполнения и контура восстановленного плеча. Сохрани кандидата как RGBA8 со straight alpha.
 
+Для нового рисунка в позе пленного включи в запрос следующий блок. Ориентиры таза и опоры бери из `landmarks` игрового манифеста.
+
+```text
+Keep the same adult feminine build and garment as in the standing view.
+In this forward-leaning kneeling pose, give the visible buttock a fuller,
+rounded volume from the lower back into the upper thigh. Follow the tilt of
+the template pelvis and the three-quarter foreshortening. Describe the curve
+with a broad light-to-shadow transition. Let seams and fabric tension follow
+the curve according to the cut and weight of the garment. Keep waist, hips,
+knees and ground contacts at their template landmarks. For a GREEN-fit suit,
+paint this volume inside the original silhouette and preserve its alpha.
+```
+
 ## Шаг 6. Проверь пленного по сохранённым PNG
 
+- Рядом со стойкой посмотри на тело пленного при 1:1. Со стороны видимого бедра должен читаться округлый объём ягодицы, с плавным переходом от поясницы сверху и в заднюю поверхность бедра снизу. Проверь, что форма различима по крупным светотеневым плоскостям даже на участке без кармана или шва. Сверь `waist`, `hipRight`, `hipLeft`, колени и опору с шаблоном: усиление объёма должно сохранять наклон таза и позу.
 - Перечитай кандидата и сверь его размеры и альфу с альфа-каналом `referenceBody` для комбинезона базовой формы. Отдельно сравни альфу с этим эталоном на каждом ненулевом пикселе `masks.allowedRightShoulderFill`. Контроль плеча выполняй на теле без головы, включая переход в рукав и просвет между руками.
 - На каждом ненулевом пикселе `masks.neckProtect` и `masks.skin` сравни все четыре канала кандидата с `referenceBody` до коррекции `skinTone`. Допуск для шеи, кожи и альфы плеча — ноль. При расхождении укажи маску, координату первого пикселя и число отличий. Исправь кандидата и повтори проверку.
 - Для примерки загрузи `vl8h3a/prisoner.png` и `settings.json` из извлечённого архива. Этот атлас служит источником головы и для нейтральной подложки. Разрежь его на пять ячеек 136 × 144 слева направо по `expressions`. Для каждой ячейки положи её на прозрачный холст в `portrait.drawOrigin` (48, 416). На 60 контрольных пикселях верхнего среза альфа головы должна быть 255. Проверь пересечение `neckProtect > 0` и `portraitAlpha == 255` в полосе ±4 строки между `upperNeckFront` и `upperNeckBack`. Остальной контур принадлежит конкретной голове. [Координаты по строкам](W8DollAssembly.md)
