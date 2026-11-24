@@ -36,7 +36,9 @@
   "outfits": {
     "GREEN": "../GREEN.png",
     "GRAY": "../GRAY.png",
-    "IVORY": "../IVORY.png"
+    "IVORY": "../IVORY.png",
+    "SATIN": "../SATIN.png",
+    "FLIGHT": "../FLIGHT.png"
   },
   "referenceBody": "../GREEN.png",
   "referenceHead": "REFERENCE-HEAD.png",
@@ -50,7 +52,9 @@
     "skinByOutfit": {
       "GREEN": "skin-mask.png",
       "GRAY": "skin-mask-gray.png",
-      "IVORY": "skin-mask-ivory.png"
+      "IVORY": "skin-mask-ivory.png",
+      "SATIN": "skin-mask-satin.png",
+      "FLIGHT": "skin-mask.png"
     }
   },
   "landmarks": {

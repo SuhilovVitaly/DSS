@@ -14,7 +14,7 @@
 
 | Поза | Тело относительно `W8/Clothes` | Портрет | Открытая кожа тела |
 |---|---|---|---|
-| Три четверти | `ThreeQuarterOutfit/<ID>.png` | `threequarter.png` | Базовый тон `#DA9C77`. Источник маски GREEN и GRAY — [skin-mask.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/skin-mask.png). |
+| Три четверти | `ThreeQuarterOutfit/<ID>.png` | `threequarter.png` | Базовый тон `#DA9C77`. Источник общей маски GREEN, GRAY и FLIGHT — [skin-mask.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/skin-mask.png). |
 | Пленный | `Prisoner/<ID>.png` | `prisoner.png` | Возьми `referenceSkinTone` и `masks.skinByOutfit[ID]` из [шаблона позы](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/Prisoner/Templates/pose.json). Пути разрешаются относительно шаблона. |
 
 По манифесту позы выбери тело, прямоугольник эмоции и точку вставки. Нарисуй тело, затем ячейку портрета в натуральном размере оператором source-over. Для стойки с `bodyHasFullNeck=true` перед наложением ячейки обнули в теле пиксели выше `firstBodyPixelYByColumn` **только** в столбцах `startX..endXInclusive`. Саму строку шва оставь телу. Верх общей шеи уже включён в атлас. Отдельно стоящий костюм показывай целиком. Для пленного рисуй полное тело и голову поверх него. Кожа до кадыка нарисована в собственном цвете головы.
@@ -29,7 +29,8 @@ outRGB = round(clamp(inRGB * (1 + mask * (gain - 1)), 0, 255))
 outAlpha = inAlpha
 ```
 
-- **Стойка.** Вес открытой кожи — `min(alphaSkin / 248, 1)`. Обнули его на прозрачном фоне и в зоне [fabric-mask.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/fabric-mask.png). Для IVORY отдельная стоящая маска в комплекте отсутствует. На примерке используй общую маску там, где RGBA тела совпадает с GREEN. Остальные участки сохраняют исходный цвет до подготовки собственной маски IVORY.
+- **Стойка с собственной маской.** Если для костюма задано `masks.skinByOutfit[ID]` в манифесте стойки, загрузи одноканальный PNG по этому пути относительно клиентского `Images/Persons/W8` и используй вес `L / 255`. У [SATIN](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/ThreeQuarterOutfit/Templates/skin-mask-satin.png) эта маска охватывает также плечи, руки, ноги и босые стопы.
+- **Стойка с общей маской (GREEN, GRAY, FLIGHT).** Вес открытой кожи — `min(alphaSkin / 248, 1)`. Обнули его на прозрачном фоне и в зоне [fabric-mask.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/fabric-mask.png). Для IVORY отдельная стоящая маска в комплекте отсутствует. На примерке используй общую маску там, где RGBA тела совпадает с GREEN. Остальные участки сохраняют исходный цвет до подготовки собственной маски IVORY.
 - **Пленный.** Одноканальная маска соответствующего костюма даёт вес `L / 255`. Запасная `masks.skin` подходит для подтверждённой геометрии кожи GREEN. Если подходящей маски нет, сохрани исходный цвет тела и отметь ограничение при проверке.
 - Множитель сохраняет тени и блики. При работе с premultiplied RGB сохраняй альфу и ограничивай результат допустимым для неё диапазоном. Волосы, ткань и нарисованное лицо сохраняют исходный RGB.
 
