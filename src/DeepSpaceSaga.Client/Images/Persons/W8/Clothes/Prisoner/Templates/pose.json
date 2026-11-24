@@ -39,14 +39,19 @@
     "IVORY": "../IVORY.png"
   },
   "referenceBody": "../GREEN.png",
-  "referenceHead": "../GREEN.head.png",
+  "referenceHead": "REFERENCE-HEAD.png",
   "referenceSkinTone": "#C18A69",
   "masks": {
     "referenceBodyAlpha": "green-body-alpha.png",
     "neckProtect": "neck-protect.png",
     "portraitAlpha": "portrait-alpha.png",
     "skin": "skin-mask.png",
-    "allowedRightShoulderFill": "shoulder-right-mask.png"
+    "allowedRightShoulderFill": "shoulder-right-mask.png",
+    "skinByOutfit": {
+      "GREEN": "skin-mask.png",
+      "GRAY": "skin-mask-gray.png",
+      "IVORY": "skin-mask-ivory.png"
+    }
   },
   "landmarks": {
     "neckBack": [
@@ -67,7 +72,7 @@
     ],
     "shoulderRight": [
       105,
-      529
+      511
     ],
     "shoulderLeft": [
       210,
@@ -144,11 +149,19 @@
     "ground": [
       204,
       745
+    ],
+    "upperNeckFront": [
+      130,
+      484
+    ],
+    "upperNeckBack": [
+      151,
+      475
     ]
   },
   "groundRow": 745,
   "sourceSha256": {
-    "GREEN.png": "4b49761c227f8842ac237a66dbe8ba2412476d5def273c9faa796a5b9381e7d6",
-    "GREEN.head.png": "86f033ef9a0a8d9d34c46c149501b1b02f7a3aab61abdcb235fc972932f97836"
+    "GREEN.png": "a30902c0802d9da3a536eb9015c2b453300c8e75103e19e02660cadfe2c11090",
+    "REFERENCE-HEAD.png": "26d8c88dd051f87533fd15b09943ec6dc2f1a4919489b08b8bfae1f2e0cc291e"
   }
 }

@@ -23,7 +23,7 @@
 
 Рабочий источник маски для GREEN и GRAY — [skin-mask.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/skin-mask.png). При подготовке игровой маски берите её альфа-канал, нормализуйте как `min(alpha / 248, 1)` и обнуляйте маску на прозрачных пикселях экспортированного тела и в зоне [fabric-mask.png](../../../../DSS-Images/Characters/W8/Antropik/work/outfit/fabric-mask.png). Упакуйте маску вместе с игровым ассетом тела в тех же размерах и координатах. В маску входят шея и кожа в вырезе. Ткань, молния и воротник получают вес 0.
 
-Для пленного используйте вес из [маски тела](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/Prisoner/Templates/skin-mask.png), делённый на 255, и вычисляйте `gain = skinTone / referenceSkinTone` по шаблону этой позы. Тон кожи головы уже заложен в `prisoner.png`.
+Для пленного берите имя маски из `masks.skinByOutfit[ID]` или используйте `masks.skin` для костюмов с геометрией GREEN. Обе записи находятся в [шаблоне позы](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Clothes/Prisoner/Templates/pose.json). Делите значение маски на 255 и вычисляйте `gain = skinTone / referenceSkinTone`. Тон кожи головы уже заложен в `prisoner.png`.
 
 ### Стык с атласом
 
