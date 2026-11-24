@@ -38,13 +38,18 @@ of the portrait. Avoid photographic pores, glossy 3D, exaggerated eyes and rim l
 Input 1 is the standing pose underlay. Use the selected Portraits-Master samples for drawing style only. Draw one head facing
 screen-right in three-quarter view. Match skull scale, ear and chin height against
 the collar. Preserve both edges of the exposed neck. Its screen-left edge runs
-vertically down to the front collar lip. Keep the contact shadow inside the neck.
+vertically down to the front collar lip. Paint the underside of the near jaw inside
+the opaque face. Let the warm shadow deepen just forward of the earlobe, turn with
+the jaw angle and taper towards the lit chin. The cheek must still separate from
+a neck of the same complexion when reduced to game size.
 Separate locks crossing the collar from the skin.
 ```
 
 Привяжи голову один раз переносом и равномерным масштабом. На сборке neutral с рабочим эталоном GREEN отметь нижнюю точку подбородка, мочку ближнего уха и одну и ту же точку края воротника, что у принятой сборки-эталона. Разница просвета `y воротника − y подбородка` — **до 2 игровых пикселей**. Сверь масштаб черепа и высоту уха. Проверь оба края кожи от челюсти до воротника. Контроль слева на текущем теле при y=102…105 — x=120 при альфе тела ≥128. На маске кожи при y=102…120 первый пиксель с альфой ≥124 в окне x=110…139 — x=121. Диапазон столбцов `neckSeam` определяет разделение слоёв. Ширину шеи определяет рисунок тела на каждой строке.
 
 Если после приёмки высоты головы кожа выступает у ворота, исправь нижнюю кромку кожи, сохранив челюсть и боковые края общего тела. На полном холсте сделай маску `standing-neck-check.png` (L). Включи нижнюю шею, оба видимых края и полосу сразу за каждым из них. Исключи реальные перекрытия лица и прядей. Проверь маску поверх тела и зафиксируй до генерации эмоций.
+
+**Приёмка челюсти стойки до генерации мимики.** На крупном neutral проследи нижний край лица от мочки через угол челюсти к подбородку до вырезания шеи. Оставь на стороне лица нарисованный поворот формы в тень и сглаживание края. Уменьши голову, сохрани PNG, перечитай и собери neutral на SATIN с собственным `skinTone` по правилам [тонирования](ThreeQuarterCharacterSkinTone.md). При замене SATIN в наборе выбери зарегистрированное тело с открытой шеей. При 1:1 должны читаться угол под ухом и переход щеки в подбородок там, где за лицом видна кожа. У освещённого подбородка допустим мягкий край. При ×4 NEAREST сопоставь этот участок с исходной разметкой. Если срез задел тень, поправь маску вырезания. Если прозрачность верна, а щека сливается с шеей, усили собственную тень внутри neutral с учётом освещения. Однотонная обводка по периметру даёт ложный контур. Зафиксируй принятый участок вне маски мимики. При выпуске повтори проверку на всех пяти ячейках сохранённого атласа поверх тонированных тел.
 
 **Пленный.** Собери `referenceBody` из [производственного шаблона](../../../../DSS-Images/Characters/W8/Antropik/prisoner/Templates/template.json) с первой ячейкой проверенного клиентского `prisoner.png` в точке из манифеста (например, KA4V7N). При отсутствии такого атласа `referenceHead` из шаблона уже размещён на полном холсте и накладывается в (0, 0). Подложка задаёт геометрию позы. Вырежи `(41, 412, 211, 581)`, увеличь ×5 методом NEAREST на том же фоне и сохрани `prisoner-underlay.png`.
 

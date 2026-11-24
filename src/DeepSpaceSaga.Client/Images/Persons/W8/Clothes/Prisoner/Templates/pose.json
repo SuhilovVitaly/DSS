@@ -34,12 +34,16 @@
     "portrait"
   ],
   "outfits": {
-    "SATIN": "../SATIN.png"
+    "SATIN": "../SATIN.png",
+    "FIELD": "../FIELD.png",
+    "RESCUE": "../RESCUE.png"
   },
   "referenceSkinTone": "#C18A69",
   "masks": {
     "skinByOutfit": {
-      "SATIN": "skin-mask-satin.png"
+      "SATIN": "skin-mask-satin.png",
+      "FIELD": "skin-mask-field.png",
+      "RESCUE": "skin-mask-rescue.png"
     }
   },
   "landmarks": {
