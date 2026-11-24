@@ -17,9 +17,17 @@
 2. Для каждого ID используй отдельный рабочий каталог `work/imagegen/<id>/`. Здесь сохраняй фактические запросы в `prompts.md`, оригиналы в `raw/standing/` и `raw/prisoner/`, подложки, принятые слои и маски. Зарезервируй по одному файлу на эмоцию в каждой папке исходников. Если эмоции получены листом, сохрани также оригинал листа.
 3. Перед серией проверь рабочий эталон `work/outfit/GREEN.uncut.png`, который читает импортёр. Сверь ключи `outfits` двух манифестов. Проверь каждое зарегистрированное тело, направляющие и маски его позы. При пустом каталоге костюмов проверяй геометрию головы на рабочих эталонах обеих поз. Примерку с одеждой выполни после регистрации первой размерной серии. Костюм поставляет для каждой позы собственный `Templates/skin-mask-<id>.png` в режиме L. При производстве портрета загрузи и проверь эти маски; в папку персонажа записываются только атласы и `settings.json`. Зафиксируй хеши общих ресурсов и ранее готовых атласов для проверки в конце партии.
 
+## Масштаб головы на стандартном теле
+
+В стойке приложи [манекен SMALL с головой без волос](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/STANDING-MANNEQUIN.png) целиком как PROPORTION ONLY вместе с крупной подложкой. Его тело построено из SMALL-BUILD, а [контур головы без волос](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/HEAD-CONSTRUCTION.png) задаёт художественный масштаб. На холсте 282×747 анатомическая макушка находится на y=14 (допуск 3 px), подбородок на y=111 (допуск 2 px). Высота головы 98±3 px, ширина 73±3 px; обе величины включают крайние пиксели. Это около 7,5 высот головы от макушки до подошвы манекена. Размер ячейки 144×190 описывает упаковку атласа.
+
+До генерации мимики обведи на собственном рисунке neutral анатомическую голову в ракурсе три четверти единым силуэтом от затылка до наиболее выступающей точки лица, от анатомической макушки до подбородка. Под волосами восстанови форму черепа по линии лба, виску и уху. Сохрани разметку как `standing-head-construction.png` (L, 282×747, белая голова на чёрном фоне, волосы и шея исключены). Наложи эту разметку поверх исходника при 1:1. Затем из Antropik запусти [проверку размеров](../../../../DSS-Images/Characters/W8/Antropik/tools/check_standing_proportions.py) проектным Python: `python tools/check_standing_proportions.py --head-mask work/imagegen/<id>/standing-head-construction.png`. При отклонении исправь единый масштаб и положение всех слоёв neutral, повторно проверь ухо, подбородок и открытый стык шеи. Если единым переносом и масштабом совпадения добиться нельзя, перерисуй neutral. Для остальных эмоций сохрани его регистрацию.
+
+Для проверки масштаба наложи neutral на силуэт [SMALL-BUILD](../../../../DSS-Images/Characters/W8/Antropik/three-quarter-right/Templates/SMALL-BUILD.png) в исходных координатах. Покажи результат рядом с целым манекеном в масштабе 1:1. Посадку уха, челюсти и шеи отдельно проверь на GREEN. Используй одинаковый холст и опору. Высокая причёска может выступать за разметку головы в пределах ячейки. Для пленного используй [эталонную голову без волос](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/PRISONER-BALD-HEAD.png), [эталонное тело](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/REFERENCE-BODY.png) и опоры челюсти: наклон и перспективное сокращение меняют проекцию головы.
+
 ## Сначала две нейтральные головы
 
-Для обеих поз и всех пяти эмоций бери образцы художественного оформления из [Portraits-Master](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits-Master). При каждом запуске выбирай образцы из текущего содержимого папки по характеру рисовки лица. Передавай их генератору с пометкой `STYLE ONLY`. Это правило действует для любой эмоции независимо от имён файлов. Сверяй характер контура, переходы света и тени на коже, группировку прядей и количество деталей, различимых в игровом масштабе. Внешность, возраст, причёску и тон кожи задаёт заказ персонажа. Фото, если приложено, уточняет внешность. Ракурс, масштаб и посадку в каждой позе бери из её подложки и манифеста.
+Для обеих поз и всех пяти эмоций бери образцы художественного оформления из [Portraits-Master](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Portraits-Master). При каждом запуске выбирай образцы из текущего содержимого папки по характеру рисовки лица. Передавай их генератору с пометкой `STYLE ONLY`. Это правило действует для любой эмоции независимо от имён файлов. Сверяй характер контура, переходы света и тени на коже, группировку прядей и количество деталей, различимых в игровом масштабе. Черты лица, возраст и причёску бери из заказа. Если приложено фото, используй его для уточнения внешности. Лицо, уши и открытая шея в обеих позах используют общий с телом полутон EV4N8S `#C98E6E`. Ракурс, масштаб и посадку в каждой позе бери из её подложки и манифеста.
 
 К запросу на нейтральную голову каждой позы добавь общий блок.
 
@@ -35,43 +43,52 @@ Transparent antialiased cutout. Keep clothing, backdrop, labels and accessories 
 of the portrait. Avoid photographic pores, glossy 3D, exaggerated eyes and rim light.
 ```
 
-**Стойка.** Возьми `work/outfit/GREEN.uncut.png` с верхней точкой шеи y=78. На рабочей копии обозначь опоры уха, челюсти и подбородка по разделу ниже. Вырежи (40, 0, 242, 260), увеличь ×5 методом NEAREST и сохрани подложку на фоне `#E8E2D4` как `underlay.png`. Приложи общий эталон среза лица как CUT ONLY.
+**Стойка.** Возьми ростовой манекен с головой для масштаба и `work/outfit/GREEN.uncut.png` с верхней точкой шеи y=78 для стыка. К чистому манекену приложи отдельную копию с [разметкой](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/STANDING-LANDMARKS.png) в (0, 0). Бирюзовые точки показывают суставы, золотые — направление лица, включая ухо, глаза и подбородок, розовая линия — стык слоёв. Координаты бери из `landmarks`, `headLandmarks` и `neckSeam` манифеста стойки. Если поза пленного уже готова, приложи её neutral как образец внешности. Вырежи (40, 0, 242, 260), увеличь ×5 методом NEAREST и сохрани подложку на фоне `#E8E2D4` как `underlay.png`. Приложи общий эталон среза лица как `CUT ONLY`. Из цельного `work/outfit/GREEN.uncut.png` вырежи тот же прямоугольник в том же масштабе и приложи отдельно как `NECK LIGHT`. На образце должны быть видны задний край за ухом, кожа под всей челюстью и оба края воротника. Приложи [примерку Лены в SURVEYSMALL](../../../../DSS-Images/Characters/W8/Antropik/work/imagegen/li8m2q/standing/neutral-nape-fit/LI8M2Q-SURVEYSMALL.png) как `NAPE CONTOUR ONLY` для перехода из-под ближнего уха к воротнику. Для первой примерки сохрани также этот участок заказанного костюма, если он уже готов.
 
 ```text
-Input 1 is the standing pose underlay. Input 2, labelled CUT ONLY, shows exactly
-where the head cutout ends. Use the Portraits-Master samples for drawing style only.
+Use the unmarked bald standing mannequin for the upright camera and anatomical scale. Its POSE ONLY
+overlay locates the eyes, ear and chin. Keep all landmarks out of the art. Match the existing
+identity across poses. The CUT ONLY reference shows where the head cutout ends. Use the Portraits-Master samples for drawing style only.
+Use the complete PROPORTION ONLY mannequin to set anatomical head size relative to the body.
+At final game scale the hairless head is 98 px high and 73 px wide, with crown at y=14 and chin at y=111.
+Keep hair volume separate from skull size. Use the close-up for painting detail.
 Draw the requested person facing screen-right. Match skull scale, ear and chin
 height to the underlay. The body supplies the extended neck behind the near ear
-(SN7L4D “After”). Keep exposed neck transparent on the face layer. Keep the entire visible earlobe and the short return below
+(SN7L4D “After”). Use NAPE CONTOUR ONLY to register the short return below the near ear. In the assembled silhouette the screen-left nape turns gently inward, then widens towards screen left and disappears behind the near collar. The body supplies that curve. Keep exposed neck transparent on the face layer. Keep the entire visible earlobe and the short return below
 and behind it to the nape hairline. From there, follow the lower edge of the
 shaded jaw plane down and forward into the full rounded chin, then up its front.
 Keep the narrow shaded wedge below the ear. End the skin there; leave the throat
 and everything below the cut transparent. Paint the underside of the near jaw inside
-the opaque face. Let the warm shadow deepen just forward of the earlobe, turn with
-the jaw angle and taper towards the lit chin. The cheek must still separate from
-a neck of the same complexion when reduced to game size.
+the opaque face. Use the actual body crop labelled NECK LIGHT to match the local hue,
+midtone and direction of light on the lower cheek to the exposed neck. Turn the jaw
+with a broad change of plane inside the cheek. Keep the deepest accent local to the
+angle by the ear and ease it towards the chin. A dark stroke tracing the whole cut
+makes the face look pasted on. Judge the shadow with the supplied neck visible in place.
+Export the isolated head with that same shading and a clean antialiased edge.
 Separate locks crossing the collar from the skin.
 ```
 
-Привяжи голову один раз переносом и равномерным масштабом. На сборке neutral с рабочим эталоном GREEN отметь нижнюю точку подбородка, мочку ближнего уха и фиксированную точку края воротника GREEN. За исходную высоту подбородка возьми опору y=111. Разница просвета `y воротника − y подбородка` — **до 2 игровых пикселей**. Сверь масштаб черепа и высоту уха. Проверь оба края кожи от челюсти до воротника. Контроль слева на текущем теле при y=102…105 — x=120 при альфе тела ≥128. На маске кожи при y=102…120 первый пиксель с альфой ≥124 в окне x=110…139 — x=121. Диапазон столбцов `neckSeam` определяет разделение слоёв. Ширину шеи определяет рисунок тела на каждой строке.
+Привяжи голову один раз переносом и равномерным масштабом. На сборке neutral с рабочим эталоном GREEN отметь нижнюю точку подбородка, мочку ближнего уха и фиксированную точку края воротника GREEN. За исходную высоту подбородка возьми опору y=111. Разница просвета `y воротника − y подбородка` — **до 2 игровых пикселей**. Сверь масштаб черепа и высоту уха. Проверь оба края кожи от челюсти до воротника. При 1:1 и ×4 проследи левый на экране контур от затылка до передней кромки воротника по образцу `NAPE CONTOUR ONLY`. Если излом виден уже на цельном теле, исправление относится к общей шее. Перед выпуском используй [проверку подложки стойки](ThreeQuarterOutfitCodexPrompt.md#цвет-и-геометрия-стойки). Диапазон столбцов `neckSeam` определяет разделение слоёв. Ширину шеи определяет рисунок тела на каждой строке.
 
 Если после приёмки высоты головы кожа выступает у ворота, исправь нижнюю кромку кожи, сохранив челюсть и боковые края общего тела. На полном холсте сделай маску `standing-neck-check.png` (L). Включи нижнюю шею, оба видимых края и полосу сразу за каждым из них. Исключи реальные перекрытия лица и прядей. Проверь маску поверх тела и зафиксируй до генерации эмоций.
 
 ### Срез лица в стойке
 
-При каждой генерации стойки приложи [эталон среза](../../../tools/DeepSpaceSaga.PortraitAssets/References/W8/standing-face-cut.png) как второй вход с пометкой `CUT ONLY`. Он задаёт границу кожи снизу. Черты и пропорции лица берутся из внешности персонажа, поза и масштаб — из подложки, рисовка — из `Portraits-Master`.
+При каждой генерации стойки приложи [эталон среза](../../../tools/DeepSpaceSaga.PortraitAssets/References/W8/standing-face-cut.png) как отдельный вход с пометкой `CUT ONLY`. Он задаёт границу кожи снизу. Черты и пропорции лица берутся из внешности персонажа, поза и масштаб — из подложки, рисовка — из `Portraits-Master`.
 
-На крупном neutral разметь срез до обработки прозрачности. На эталоне мочка видна целиком. Под ней у затылочной линии волос остаётся короткий затенённый клин кожи. От нижнего конца клина край плавно спускается вперёд по нижней границе тени челюсти, огибает округлый низ подбородка и поднимается по его переднему краю. Сохрани этот клин и всю толщину тени со стороны щеки. Срез от самой мочки прямо к подбородку удаляет видимую на эталоне часть головы. За сглаженной кромкой слоя `face.png` альфа равна нулю. Открытая шея до воротника принадлежит телу. Пряди, пересекающие срез, остаются в слоях волос.
+На крупном neutral разметь срез до обработки прозрачности. На эталоне мочка видна целиком. Под ней у затылочной линии волос остаётся короткий затенённый клин кожи. От нижнего конца клина край плавно спускается вперёд по нижней границе тени челюсти, огибает округлый низ подбородка и поднимается по его переднему краю. Сохрани этот клин и объём нижней плоскости щеки. Плотность тени оцени на цветной подложке `NECK LIGHT`. Срез от самой мочки прямо к подбородку удаляет видимую на эталоне часть головы. За сглаженной кромкой слоя `face.png` альфа равна нулю. Открытая шея до воротника принадлежит телу. Пряди, пересекающие срез, остаются в слоях волос.
 
-**Приёмка до генерации мимики.** Сопоставь сохранённый слой лица с эталоном по мочке, затылочному концу среза, углу челюсти и нижней точке подбородка. На светлом и тёмном фоне проверь полноту кромки и прозрачность ниже неё. Затем собери сохранённый neutral на зарегистрированном теле с открытой шеей и общим `#C98E6E` по [правилам тонирования](ThreeQuarterCharacterSkinTone.md). До выпуска подходящей одежды используй рабочий эталон позы для проверки стыка. При 1:1 должны читаться угол под ухом и переход щеки в подбородок. При ×4 NEAREST сверь форму среза с разметкой. Если срез задел тень, исправь маску. Если кромка верна, а щека сливается с шеей, усили тень внутри лица с плавным ослаблением к подбородку.
+**Приёмка до генерации мимики.** Сопоставь сохранённый слой лица с эталоном по мочке, затылочному концу среза, углу челюсти и нижней точке подбородка. На светлом и тёмном фоне проверь полноту кромки и прозрачность ниже неё. Затем собери сохранённый neutral на зарегистрированном теле с открытой шеей и общим `#C98E6E` по [правилам тонирования](ThreeQuarterCharacterSkinTone.md). До выпуска подходящей одежды используй рабочий эталон позы для проверки стыка. Осмотри кадр по [проверке света под челюстью](ThreeQuarterCharacterSkinTone.md#проверка-света-под-челюстью-в-стойке). Если срез захватил горло или отсёк часть челюсти, исправь маску по исходнику. Если анатомическая кромка на месте, а голова выглядит наклеенной, перерисуй светотень нижней щеки на подложенной шее, сохрани посадку и снова примерь neutral. К генерации мимики переходи после приёмки геометрии и света.
 
 Для остальных четырёх эмоций используй принятую кромку neutral. Вдоль среза от затылка до подбородка сравни RGBA всех пяти сохранённых `face.png` с neutral побайтно. После импорта проверь те же пять эмоций на тонированных телах по перечитанному атласу: в нём под срезом лица уже видна верхняя часть общей шеи.
 
-**Пленный.** Собери `referenceBody` из [производственного шаблона](../../../../DSS-Images/Characters/W8/Antropik/prisoner/Templates/template.json) с общим `referenceHead` этого шаблона в (0, 0). Подложка задаёт геометрию позы. Вырежи `(41, 412, 211, 581)`, увеличь ×5 методом NEAREST на том же фоне и сохрани `prisoner-underlay.png`.
+**Пленный.** Используй [манекен SMALL с головой без волос](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/PRISONER-MANNEQUIN.png) на холсте 416×747 и [прозрачную разметку](../../../src/DeepSpaceSaga.Client/Images/Persons/W8/Templates/PRISONER-LANDMARKS.png) в (0, 0). Из чистого манекена вырежи `(41, 412, 211, 581)` и увеличь ×5 NEAREST на том же фоне. Передай крупный план для рисования, а копию с разметкой — как POSE ONLY. Бирюзовые точки обозначают суставы, золотые — ориентиры головы, розовые — скрытые под головой опоры верхнего среза шеи. Сверь наклон по макушке, линии глаз, ближнему уху и подбородку. Индивидуальную форму лица и объём волос бери из заказа. Для отдельной проверки стыка наложи голову на `referenceBody` из [производственного шаблона](../../../../DSS-Images/Characters/W8/Antropik/prisoner/Templates/template.json).
 
 ```text
-Input 1 is the prisoner underlay, input 2 the accepted standing neutral, the remaining inputs are art samples
-selected from the Portraits-Master folder for style only. Use input 1 for the bowed pose. Draw the same person with head bowed deeply down-left, crown visible.
+Use the clean bald mannequin close-up for the bowed pose and the POSE ONLY overlay for orientation.
+The unmarked full mannequin fixes head-to-body scale. Keep the landmark colours and lines out of the art.
+If the standing neutral already exists, use it for identity. Otherwise use the supplied character description or identity reference. Use Portraits-Master for style.
+Draw the requested person with head bowed deeply down-left, crown visible.
 Match camera, foreshortening, skull scale and placement at the collar and raised
 shoulder. The near ear sits above and right of the near eye. The bridge partly hides
 the far eye. The nose tip is left of the chin. Preserve the full near cheekbone,
@@ -83,7 +100,7 @@ registered prisoner outfits. Never paint neck skin or a cast shadow on the garme
 character’s own silhouette. Leave collar, sleeve and shoulder on the body layer.
 ```
 
-Сверь обе головы по носу, скулам, подбородку, уху, линии роста волос и приметам. По исходному рисунку пленного проследи скулу до угла челюсти, шею под подбородком и пряди за ухом. Зарегистрируй голову по черепу, уху, подбородку и верхнему срезу шеи. На светлом и тёмном фоне проверь собственный непрерывный контур, затем примерь его на все тела из `outfits` пленного с `skinTone`. Разметь на зарегистрированном исходном neutral собственную линию подбородок–скула. Проверь её на каждом зарегистрированном теле. Там, где под этой линией хотя бы один костюм показывает ткань, доведи прозрачность точно до контура лица. Сохрани естественное сглаживание в граничном пикселе и ясный рисунок со стороны щеки. Снаружи края альфа должна быть 0. Короткий переход шеи разрешён только там, где все костюмы позы показывают открытую кожу. Край у ткани не растушёвывай. До обработки альфы разметь на полном холсте маску L `prisoner-jaw-clear.png`: белым отметь зону сразу за сглаженным краем под челюстью над тканью, включая место возможного выступа шеи. Сверь разметку с неизменённым исходником, исключи реальные пряди и обязательное перекрытие верхнего среза тела. Не выводи контрольную маску из готового альфа-канала. Для всех пяти эмоций используй одну разметку. У левого на экране плеча виден естественный переход в рукав. Ступенька под челюстью, прямая срезанная скула, прорези в волосах или отдельные пиксели на затылке требуют исправления нейтрального слоя. Сохрани принятый полный холст как `prisoner-neutral-fit.png`. Присваивать голове альфу чужого `portraitAlpha`, вычитать из неё силуэт тела или достраивать шею растяжением крайнего пикселя запрещено.
+Сверь обе головы по носу, скулам, подбородку, уху, линии роста волос и приметам. По исходному рисунку пленного проследи скулу до угла челюсти, шею под подбородком и пряди за ухом. Зарегистрируй голову по черепу, уху, подбородку и верхнему срезу шеи. На светлом и тёмном фоне проверь собственный непрерывный контур, затем примерь его на все тела из `outfits` пленного с `skinTone`. Разметь на зарегистрированном исходном neutral собственную линию подбородок–скула. Проверь её на каждом зарегистрированном теле. Там, где под этой линией хотя бы один костюм показывает ткань, доведи прозрачность точно до контура лица. Сохрани естественное сглаживание в граничном пикселе и ясный рисунок со стороны щеки. Снаружи края альфа должна быть 0. Короткий переход шеи разрешён только там, где все костюмы позы показывают открытую кожу. Край у ткани не растушёвывай. До обработки альфы разметь на полном холсте маску L `prisoner-jaw-clear.png`: белым отметь зону сразу за сглаженным краем под челюстью над тканью, включая место возможного выступа шеи. Сверь разметку с неизменённым исходником, исключи реальные пряди и обязательное перекрытие верхнего среза тела. Не выводи контрольную маску из готового альфа-канала. Для всех пяти эмоций используй одну разметку. У левого на экране плеча виден естественный переход в рукав. Ступенька под челюстью, прямая срезанная скула, прорези в волосах или отдельные пиксели на затылке требуют исправления нейтрального слоя. Сохрани принятый прозрачный слой нейтральной головы на полном холсте 416×747 как `prisoner-neutral-fit.png`. Он должен попиксельно совпадать с `prisoner-layers/neutral.png`. Примерку с телом сохраняй отдельно. Присваивать голове альфу чужого `portraitAlpha`, вычитать из неё силуэт тела или достраивать шею растяжением крайнего пикселя запрещено.
 
 ## Четыре изменения мимики на каждую позу
 
@@ -92,7 +109,7 @@ character’s own silhouette. Leave collar, sleeve and shoulder on the body laye
 ```text
 Edit the accepted neutral of this pose. Use art samples from the Portraits-Master folder
 for the drawing style of every expression. Lock hair, nose, ears, silhouette, pose,
-neck, skin tone and lighting. Change brows, lids and mouth as coherent features.
+neck, skin tone and lighting. In the standing pose keep the accepted jaw-to-neck shading. Change brows, lids and mouth as coherent features.
 Pain: inner brows raised and drawn together, squint, tense or parted lips.
 Anger: brows lowered towards the bridge, narrowed eyes, tight lips.
 Joy: raised cheeks, broad smile, upper teeth read as one warm light shape.
@@ -155,9 +172,14 @@ template = d.CLIENT_W8_ROOT / "Clothes/Prisoner/Templates"
 pr = json.loads((template / "pose.json").read_text(encoding="utf-8"))
 production = Path("prisoner/Templates")
 refs = json.loads((production / "template.json").read_text(encoding="utf-8"))
+assert standing.canvas == (282, 747) and standing.cell == (144, 190) and standing.origin == (69, 0)
+assert pr["canvas"] == [416, 747] and pr["portrait"]["cellSize"] == [136, 144]
+assert pr["portrait"]["drawOrigin"] == [48, 416]
+assert pr["referenceSkinTone"] == tone
 assert set(standing.m["outfits"]) == set(pr["outfits"])
 for manifest, base, prefix in [(standing.m, d.CLIENT_W8_ROOT, "Clothes/ThreeQuarterOutfit/Templates/"),
                                (pr, template, "")]:
+    assert set(manifest["outfits"]) == set(manifest["masks"]["skinByOutfit"])
     for outfit, rel in manifest["outfits"].items():
         mask_path = manifest["masks"]["skinByOutfit"][outfit]
         assert mask_path == f"{prefix}skin-mask-{outfit.lower()}.png", outfit
@@ -192,6 +214,10 @@ green = read("work/outfit/GREEN.uncut.png", "RGBA", standing.canvas)
 guard = read(src / "standing-neck-check.png", "L", standing.canvas) > 0
 assert guard.any()
 assert np.flatnonzero((green[:106, 110:166, 3] >= 128).any(axis=1))[0] == 78, "standing After neck"
+neck_mask = read("work/outfit/skin-mask.png", "RGBA", standing.canvas)[..., 3]
+for row, first_x in [(101, 118), (106, 117), (110, 116), (114, 114), (117, 113)]:
+    covered = np.flatnonzero(neck_mask[row, 110:140] >= 124)
+    assert covered.size and 110 + covered[0] == first_x, ("standing nape", row, first_x)
 upper = np.zeros_like(green[..., 3])
 for x, y in enumerate(standing.seam_y, standing.seam_x0):
     upper[:y, x] = green[:y, x, 3]
@@ -221,7 +247,7 @@ assert hi > lo
 line = front[1] + (xx-front[0]) * (back[1]-front[1]) / (back[0]-front[0])
 seam = (mask("neckProtect") > 0) & (mask("portraitAlpha") == 255)
 seam &= (xx >= lo) & (xx <= hi) & (np.abs(yy-line) <= 4)
-assert seam[:, lo:hi+1].any(axis=0).all()
+assert seam.sum() == 60 and seam[:, lo:hi+1].any(axis=0).all()
 reference = read(production / refs["referenceBody"], "RGBA", canvas)
 for outfit, rel in pr["outfits"].items():
     assert np.array_equal(read(template / rel, "RGBA", canvas)[seam], reference[seam]), outfit
@@ -249,8 +275,10 @@ assert {f.name for f in dst.iterdir()} == {"threequarter.png", "prisoner.png", "
 
 ## Приёмка и выдача основного комплекта
 
+Перед выдачей перечитай оба реестра костюмов. Если серия костюмов уже опубликована после примерки на манекенах, при приёмке первого портрета выполни все 30 сборок по шагу 1 для каждой такой серии, включая открытый крой. Для открытого кроя осмотри границу ткани и кожи под челюстью и передними прядями. Если зарегистрированных костюмов пока нет, укажи результат примерки на шаблонах и статус «совместная примерка ожидает первого костюма». Первый выпуск одежды закрывает эту проверку по опубликованным PNG.
+
 1. Перечитай **файлы кандидата**. Собери для каждой позы каждую эмоцию на каждом теле из её манифеста. Для одной полной размерной серии это 30 сочетаний на персонажа (3 размера × 2 позы × 5 эмоций). Положение ячейки и масштаб одинаковы на всех костюмах позы. Для стойки используй `Pose.portrait_underlay` и `dss3q.over`, для пленного — полное тело с ячейкой поверх. Примени [контракт тонирования](ThreeQuarterCharacterSkinTone.md). При базовом тоне кадр на рабочем эталоне GREEN стойки должен совпадать с рабочим мастером по видимым каналам с допуском 1 уровень на сглаживании.
-2. Осмотри все выражения в игровом масштабе и крупно. Проверь пропорции, стык с обеих сторон, участок под подбородком, затылок и плечи. Сравни нейтральные головы между позами. Для проверки базовой сборки можно использовать `tools/review.py` с отдельной временной конфигурацией на текущий ID и явным путём к атласу кандидата. Его проверки рабочих мастеров дополни всеми зарегистрированными телами обеих поз. Собирай кадры один раз, для увеличения вырезай области из тех же сборок. На светлом и тёмном фоне должны сохраняться естественный контур и чистые промежутки между прядями. При дефекте исправь соответствующий исходник и повтори проверку этого ID.
+2. Осмотри все выражения в игровом масштабе и крупно. Проверь пропорции, стык с обеих сторон, участок под подбородком, затылок и плечи. Для стойки повтори проверку света под челюстью на перечитанном атласе с каждым костюмом. Сравни нейтральные головы между позами. Для базовой проверки собери каждую из пяти ячеек стойки из файла кандидата на `work/outfit/GREEN.uncut.png` и сравни с `work/masters/<id>/<emotion>.GREEN.png`. У пленного наложи соответствующую ячейку на `referenceBody`. Эти две примерки доступны и при пустых реестрах костюмов. Собирай кадры один раз, для увеличения вырезай области из тех же сборок. На светлом и тёмном фоне должны сохраняться естественный контур и чистые промежутки между прядями. При дефекте исправь соответствующий исходник и повтори проверку этого ID.
 3. После приёмки нового ID перенеси целиком проверенную папку кандидата в клиентский каталог на том же диске. Команда ниже завершается ошибкой, если целевая папка уже существует. После прерывания сверь рабочие исходники и запись в `imagegenCharacters` и продолжи тот же ID с незавершённого этапа. Если папка уже опубликована, проверь её содержимое и хеши. Ревизия существующего персонажа требует отдельного запроса и сохранения предыдущего комплекта.
 4. Проверь клиентский путь, хеши трёх файлов и результат валидатора. Засчитывай персонажа только после успешной проверки обеих поз. По партии укажи число заказанных и готовых ID, причину каждого пропуска. Сверь сохранность ранее готовых ассетов. Временные матрицы держи в `D:/DeepSpaceSaga/artifacts/validation/<task>/<run>/` и удаляй после проверки. Итоговые картинки сохраняй и показывай по запросу, вне игровой папки. В `Portraits/<id>/` остаются ровно два атласа и один JSON.
 

@@ -16,10 +16,10 @@
       416
     ],
     "referenceBounds": [
-      63,
-      431,
-      162,
-      547
+      78,
+      434,
+      158,
+      546
     ]
   },
   "expressions": [
@@ -144,5 +144,39 @@
       475
     ]
   },
-  "groundRow": 745
+  "groundRow": 745,
+  "headLandmarks": {
+    "crown": [
+      119,
+      436
+    ],
+    "forehead": [
+      103,
+      490
+    ],
+    "eyeNear": [
+      120,
+      512
+    ],
+    "eyeFar": [
+      94,
+      514
+    ],
+    "noseTip": [
+      104,
+      531
+    ],
+    "earNear": [
+      148,
+      493
+    ],
+    "jawAngle": [
+      142,
+      515
+    ],
+    "chin": [
+      119,
+      543
+    ]
+  }
 }
