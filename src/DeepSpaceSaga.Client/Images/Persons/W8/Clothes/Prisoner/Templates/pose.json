@@ -34,27 +34,12 @@
     "portrait"
   ],
   "outfits": {
-    "GREEN": "../GREEN.png",
-    "GRAY": "../GRAY.png",
-    "IVORY": "../IVORY.png",
-    "SATIN": "../SATIN.png",
-    "FLIGHT": "../FLIGHT.png"
+    "SATIN": "../SATIN.png"
   },
-  "referenceBody": "../GREEN.png",
-  "referenceHead": "REFERENCE-HEAD.png",
   "referenceSkinTone": "#C18A69",
   "masks": {
-    "referenceBodyAlpha": "green-body-alpha.png",
-    "neckProtect": "neck-protect.png",
-    "portraitAlpha": "portrait-alpha.png",
-    "skin": "skin-mask.png",
-    "allowedRightShoulderFill": "shoulder-right-mask.png",
     "skinByOutfit": {
-      "GREEN": "skin-mask.png",
-      "GRAY": "skin-mask-gray.png",
-      "IVORY": "skin-mask-ivory.png",
-      "SATIN": "skin-mask-satin.png",
-      "FLIGHT": "skin-mask.png"
+      "SATIN": "skin-mask-satin.png"
     }
   },
   "landmarks": {
@@ -163,9 +148,5 @@
       475
     ]
   },
-  "groundRow": 745,
-  "sourceSha256": {
-    "GREEN.png": "a30902c0802d9da3a536eb9015c2b453300c8e75103e19e02660cadfe2c11090",
-    "REFERENCE-HEAD.png": "26d8c88dd051f87533fd15b09943ec6dc2f1a4919489b08b8bfae1f2e0cc291e"
-  }
+  "groundRow": 745
 }
