@@ -36,14 +36,18 @@
   "outfits": {
     "SATIN": "../SATIN.png",
     "FIELD": "../FIELD.png",
-    "RESCUE": "../RESCUE.png"
+    "RESCUE": "../RESCUE.png",
+    "FROST": "../FROST.png",
+    "ORCHID": "../ORCHID.png"
   },
   "referenceSkinTone": "#C18A69",
   "masks": {
     "skinByOutfit": {
       "SATIN": "skin-mask-satin.png",
       "FIELD": "skin-mask-field.png",
-      "RESCUE": "skin-mask-rescue.png"
+      "RESCUE": "skin-mask-rescue.png",
+      "FROST": "skin-mask-frost.png",
+      "ORCHID": "skin-mask-orchid.png"
     }
   },
   "landmarks": {
