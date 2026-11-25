@@ -1,7 +1,7 @@
 {
   "pose": "prisoner",
   "canvas": [
-    416,
+    480,
     747
   ],
   "coordinateSystem": "Pixel coordinates, upper-left origin; left/right are anatomical, right arm is screen-left.",
@@ -12,15 +12,16 @@
       144
     ],
     "drawOrigin": [
-      48,
-      416
+      75,
+      338
     ],
     "referenceBounds": [
-      78,
-      434,
-      158,
-      546
-    ]
+      105,
+      355,
+      187,
+      465
+    ],
+    "referenceBoundsCharacter": "iv6k9n/neutral"
   },
   "expressions": [
     "neutral",
@@ -34,163 +35,175 @@
     "portrait"
   ],
   "outfits": {
-    "RIBBONSMALL": "../RIBBONSMALL.png",
-    "RIBBONMEDIUM": "../RIBBONMEDIUM.png",
-    "RIBBONLARGE": "../RIBBONLARGE.png",
-    "AEGISSMALL": "../AEGISSMALL.png",
-    "AEGISMEDIUM": "../AEGISMEDIUM.png",
-    "AEGISLARGE": "../AEGISLARGE.png"
+    "CHARCOALOFFICERMEDIUM": "../CHARCOALOFFICERMEDIUM.png",
+    "GARNETRIBBONMEDIUM": "../GARNETRIBBONMEDIUM.png",
+    "OXBLOODAEGISMEDIUM": "../OXBLOODAEGISMEDIUM.png",
+    "ONYXWINGMEDIUM": "../ONYXWINGMEDIUM.png",
+    "IVORYFLIGHTMEDIUM": "../IVORYFLIGHTMEDIUM.png",
+    "SILKBOWMEDIUM": "../SILKBOWMEDIUM.png",
+    "PEARLSLIPMEDIUM": "../PEARLSLIPMEDIUM.png"
   },
   "referenceSkinTone": "#C98E6E",
   "masks": {
     "skinByOutfit": {
-      "RIBBONSMALL": "skin-mask-ribbonsmall.png",
-      "RIBBONMEDIUM": "skin-mask-ribbonmedium.png",
-      "RIBBONLARGE": "skin-mask-ribbonlarge.png",
-      "AEGISSMALL": "skin-mask-aegissmall.png",
-      "AEGISMEDIUM": "skin-mask-aegismedium.png",
-      "AEGISLARGE": "skin-mask-aegislarge.png"
+      "CHARCOALOFFICERMEDIUM": "skin-mask-charcoalofficermedium.png",
+      "GARNETRIBBONMEDIUM": "skin-mask-garnetribbonmedium.png",
+      "OXBLOODAEGISMEDIUM": "skin-mask-oxbloodaegismedium.png",
+      "ONYXWINGMEDIUM": "skin-mask-onyxwingmedium.png",
+      "IVORYFLIGHTMEDIUM": "skin-mask-ivoryflightmedium.png",
+      "SILKBOWMEDIUM": "skin-mask-silkbowmedium.png",
+      "PEARLSLIPMEDIUM": "skin-mask-pearlslipmedium.png"
     }
   },
   "landmarks": {
-    "neckBack": [
-      151,
-      481
-    ],
-    "neckSeam": [
-      140,
-      514
-    ],
-    "collarBack": [
-      151,
-      467
-    ],
-    "collarOpening": [
-      164,
-      541
-    ],
     "shoulderRight": [
-      105,
-      511
+      118,
+      476
     ],
     "shoulderLeft": [
-      210,
-      480
+      225,
+      463
     ],
     "elbowRight": [
-      103,
-      599
+      109,
+      588
     ],
     "elbowLeft": [
-      215,
-      607
+      225,
+      590
     ],
     "wristRight": [
-      82,
-      689
+      78,
+      694
     ],
     "wristLeft": [
-      188,
+      195,
       705
     ],
     "palmRight": [
-      64,
-      708
+      56,
+      707
     ],
     "palmLeft": [
-      163,
-      725
+      177,
+      723
     ],
     "fingertipsRight": [
-      15,
-      716
+      13,
+      720
     ],
     "fingertipsLeft": [
-      117,
-      737
+      134,
+      741
     ],
     "waist": [
-      258,
-      554
+      277,
+      522
     ],
     "hipRight": [
-      246,
-      574
-    ],
-    "hipLeft": [
-      307,
+      270,
       556
     ],
+    "hipLeft": [
+      345,
+      543
+    ],
     "kneeRight": [
-      150,
-      676
+      158,
+      673
     ],
     "kneeLeft": [
       258,
-      690
+      682
     ],
     "ankleRight": [
-      230,
-      672
+      369,
+      652
     ],
     "ankleLeft": [
-      336,
-      674
+      416,
+      670
     ],
     "bootToeRight": [
-      244,
-      640
+      404,
+      674
     ],
     "bootToeLeft": [
-      399,
-      683
+      463,
+      680
     ],
     "ground": [
-      204,
+      147,
       745
     ],
     "upperNeckFront": [
-      130,
-      484
+      138,
+      446
     ],
     "upperNeckBack": [
-      151,
-      475
+      166,
+      432
+    ],
+    "neckBack": [
+      168,
+      436
+    ],
+    "neckSeam": [
+      153,
+      440
+    ],
+    "collarBack": [
+      169,
+      438
+    ],
+    "collarOpening": [
+      154,
+      464
     ]
   },
   "groundRow": 745,
   "headLandmarks": {
     "crown": [
-      119,
-      436
+      145,
+      355
     ],
     "forehead": [
-      103,
-      490
+      140,
+      411
     ],
     "eyeNear": [
-      120,
-      512
+      144,
+      435
     ],
     "eyeFar": [
-      94,
-      514
+      123,
+      433
     ],
     "noseTip": [
-      104,
-      531
+      130,
+      450
     ],
     "earNear": [
-      148,
-      493
+      176,
+      417
     ],
     "jawAngle": [
-      142,
-      515
+      165,
+      446
     ],
     "chin": [
-      119,
-      543
+      146,
+      464
     ]
+  },
+  "referenceBody": "../../../Templates/PRISONER-MANNEQUIN.png",
+  "referenceHead": "../../../Templates/PRISONER-BALD-HEAD.png",
+  "poseMannequin": "../../../Templates/PRISONER-MANNEQUIN.png",
+  "referenceDrawOrigin": [
+    0,
+    0
+  ],
+  "landmarkNotes": {
+    "bootToeRight": "Projected tip of the far foot, occluded by the near leg; not a visible contact point."
   }
 }

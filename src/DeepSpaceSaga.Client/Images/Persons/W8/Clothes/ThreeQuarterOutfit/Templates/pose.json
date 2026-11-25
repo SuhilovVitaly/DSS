@@ -1,0 +1,156 @@
+{
+  "pose": "three-quarter-right",
+  "canvas": [
+    282,
+    747
+  ],
+  "coordinateSystem": "Pixel coordinates, upper-left origin; left/right are anatomical, right arm is screen-left.",
+  "portrait": {
+    "file": "threequarter.png",
+    "cellSize": [
+      144,
+      190
+    ],
+    "drawOrigin": [
+      60,
+      0
+    ],
+    "referenceBounds": [
+      85,
+      7,
+      169,
+      119
+    ],
+    "referenceBoundsCharacter": "iv6k9n/neutral"
+  },
+  "expressions": [
+    "neutral",
+    "pain",
+    "anger",
+    "joy",
+    "pleasure"
+  ],
+  "renderOrder": [
+    "body",
+    "portrait"
+  ],
+  "outfits": {
+    "CHARCOALOFFICERMEDIUM": "Clothes/ThreeQuarterOutfit/CHARCOALOFFICERMEDIUM.png",
+    "GARNETRIBBONMEDIUM": "Clothes/ThreeQuarterOutfit/GARNETRIBBONMEDIUM.png",
+    "OXBLOODAEGISMEDIUM": "Clothes/ThreeQuarterOutfit/OXBLOODAEGISMEDIUM.png",
+    "ONYXWINGMEDIUM": "Clothes/ThreeQuarterOutfit/ONYXWINGMEDIUM.png",
+    "IVORYFLIGHTMEDIUM": "Clothes/ThreeQuarterOutfit/IVORYFLIGHTMEDIUM.png",
+    "SILKBOWMEDIUM": "Clothes/ThreeQuarterOutfit/SILKBOWMEDIUM.png",
+    "PEARLSLIPMEDIUM": "Clothes/ThreeQuarterOutfit/PEARLSLIPMEDIUM.png"
+  },
+  "referenceSkinTone": "#C98E6E",
+  "masks": {
+    "skinByOutfit": {
+      "CHARCOALOFFICERMEDIUM": "Clothes/ThreeQuarterOutfit/Templates/skin-mask-charcoalofficermedium.png",
+      "GARNETRIBBONMEDIUM": "Clothes/ThreeQuarterOutfit/Templates/skin-mask-garnetribbonmedium.png",
+      "OXBLOODAEGISMEDIUM": "Clothes/ThreeQuarterOutfit/Templates/skin-mask-oxbloodaegismedium.png",
+      "ONYXWINGMEDIUM": "Clothes/ThreeQuarterOutfit/Templates/skin-mask-onyxwingmedium.png",
+      "IVORYFLIGHTMEDIUM": "Clothes/ThreeQuarterOutfit/Templates/skin-mask-ivoryflightmedium.png",
+      "SILKBOWMEDIUM": "Clothes/ThreeQuarterOutfit/Templates/skin-mask-silkbowmedium.png",
+      "PEARLSLIPMEDIUM": "Clothes/ThreeQuarterOutfit/Templates/skin-mask-pearlslipmedium.png"
+    }
+  },
+  "referenceBody": "../../../Templates/STANDING-HEADLESS.png",
+  "referenceHead": "../../../Templates/STANDING-BALD-HEAD.png",
+  "poseMannequin": "../../../Templates/STANDING-MANNEQUIN.png",
+  "referenceDrawOrigin": [
+    0,
+    0
+  ],
+  "groundRow": 741,
+  "landmarks": {
+    "shoulderRight": [
+      68,
+      159
+    ],
+    "shoulderLeft": [
+      190,
+      165
+    ],
+    "elbowRight": [
+      59,
+      256
+    ],
+    "elbowLeft": [
+      202,
+      261
+    ],
+    "wristRight": [
+      46,
+      365
+    ],
+    "wristLeft": [
+      231,
+      367
+    ],
+    "palmRight": [
+      48,
+      394
+    ],
+    "palmLeft": [
+      234,
+      397
+    ],
+    "fingertipsRight": [
+      62,
+      436
+    ],
+    "fingertipsLeft": [
+      220,
+      432
+    ],
+    "waist": [
+      145,
+      278
+    ],
+    "hipRight": [
+      104,
+      343
+    ],
+    "hipLeft": [
+      182,
+      346
+    ],
+    "kneeRight": [
+      85,
+      509
+    ],
+    "kneeLeft": [
+      164,
+      513
+    ],
+    "ankleRight": [
+      47,
+      685
+    ],
+    "ankleLeft": [
+      151,
+      683
+    ],
+    "bootToeRight": [
+      46,
+      738
+    ],
+    "bootToeLeft": [
+      208,
+      727
+    ],
+    "ground": [
+      47,
+      741
+    ],
+    "upperNeckFront": [
+      147,
+      94
+    ],
+    "upperNeckBack": [
+      106,
+      81
+    ]
+  }
+}
