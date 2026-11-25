@@ -18,3 +18,5 @@ implementation_status: implemented
 - [AC2. Правое плечо костюмов пленного](EP-maintenance-US-0028-TK-0002-prisoner-shoulder/EP-maintenance-US-0028-TK-0002-prisoner-shoulder.md). GREEN, GRAY и IVORY используют один восстановленный силуэт плеча.
 
 - [AC3. Чёткие детали во всех размерах костюма пленного](EP-maintenance-US-0028-TK-0003-prisoner-size-detail/EP-maintenance-US-0028-TK-0003-prisoner-size-detail.md). Промпт задаёт прорисовку смещённой отделки и проверку силуэта по сохранённому PNG каждого размера.
+
+- [AC4. Примерка формы NOIR](EP-maintenance-US-0028-TK-0004-noir-uniform/EP-maintenance-US-0028-TK-0004-noir-uniform.md). Чёрный мундир с золотым кантом доступен в обеих позах и трёх размерах.

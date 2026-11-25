@@ -18,3 +18,5 @@ implementation_status: implemented
 - [AC3. Стык шеи пленного W8](EP-maintenance-US-0023-TK-0003-prisoner-neck-seam/EP-maintenance-US-0023-TK-0003-prisoner-neck-seam.md). Пять эмоций каждого проверенного атласа совпадают с шаблоном в зоне стыка.
 
 - [AC4. Ширина шеи MT6Q2R в стойке](EP-maintenance-US-0023-TK-0004-standing-neck-width/EP-maintenance-US-0023-TK-0004-standing-neck-width.md). Оба края открытой шеи согласованы с телом для всех пяти эмоций.
+
+- [AC5. Точный экспорт портретов W8](EP-maintenance-US-0023-TK-0005-w8-portrait-export/EP-maintenance-US-0023-TK-0005-w8-portrait-export.md). Ячейки обеих поз совпадают с уменьшенными оригиналами, а стык сохраняет перекрытие при допустимой альфе.

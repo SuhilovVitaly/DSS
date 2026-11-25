@@ -9,3 +9,5 @@ Cargo capacity, fuel tank, жилая вместимость и вооружен
 ShipScreen показывает носитель, постоянное крыло и пополнение торпед; полноценного редактора модулей нет.
 
 Источники: [ship-classes.json](../../../../src/DeepSpaceSaga.Client/Data/Ships/ship-classes.json), [modules-engine.json](../../../../src/DeepSpaceSaga.Client/Data/Modules/Engine/modules-engine.json), [ShipScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipScreen.cs).
+
+Геометрия тайлов Gloria Station 2 и эскиз демо-носителя описаны в [концепте изометрической палубы](../../03-Design/TetrarchIsometricDeck.md).
